@@ -1,7 +1,7 @@
 package cmd
 
 /**
- * Bare bones sendmail drop-in replacement borrowed from Mailhog
+ * Bare bones sendmail drop-in replacement borrowed from MailHog
  */
 
 import (
