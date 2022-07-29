@@ -38,5 +38,6 @@ jobs:
         goos: ${{ matrix.goos }}
         goarch: ${{ matrix.goarch }}
         binary_name: "mailpit"
+        asset_name: mailpit-${{ matrix.goos }}-${{ matrix.goarch }}
         extra_files: LICENSE README.md
         ldflags: -w -X "github.com/axllent/mailpit/cmd.Version=${{ steps.tag.outputs.tag }}"
