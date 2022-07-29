@@ -76,7 +76,7 @@ func pruneCron() {
 				if err := db.Delete(clover.NewQuery(m).
 					Sort(clover.SortOption{Field: "Created", Direction: 1}).
 					Limit(limit)); err != nil {
-					logger.Log().Warnf("Error pruning: %s", err.Error())
+					logger.Log().Warnf("Error pruning %s: %s", m, err.Error())
 					continue
 				}
 				elapsed := time.Since(start)
