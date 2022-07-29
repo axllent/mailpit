@@ -77,7 +77,7 @@ func GithubLatest(repo, name string) (string, string, string, error) {
 		return "", "", "", err
 	}
 
-	archiveName := fmt.Sprintf("%s_%s_%s%s", name, linkOS, linkArch, linkExt)
+	archiveName := fmt.Sprintf("%s-%s-%s%s", name, linkOS, linkArch, linkExt)
 
 	// loop through releases
 	for _, r := range releases {
@@ -148,13 +148,13 @@ func GithubUpdate(repo, appName, currentVersion string) (string, error) {
 		return "", err
 	}
 
-	newExec := filepath.Join(tmpDir, "golp")
+	newExec := filepath.Join(tmpDir, "mailpit")
 
 	if runtime.GOOS == "windows" {
 		if _, err := Unzip(outFile, tmpDir); err != nil {
 			return "", err
 		}
-		newExec = filepath.Join(tmpDir, "golp.exe")
+		newExec = filepath.Join(tmpDir, "mailpit.exe")
 	} else {
 		if err := TarGZExtract(outFile, tmpDir); err != nil {
 			return "", err
