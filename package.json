@@ -1,0 +1,25 @@
+{
+  "name": "mailpit",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "build": "node esbuild.config.js",
+    "watch": "WATCH=true node esbuild.config.js",
+    "package": "MINIFY=true node esbuild.config.js"
+  },
+  "dependencies": {
+    "axios": "^0.27.2",
+    "bootstrap": "^5.2.0",
+    "bootstrap-icons": "^1.9.1",
+    "moment": "^2.29.4",
+    "remove": "^0.1.5",
+    "vue": "^3.2.13"
+  },
+  "devDependencies": {
+    "@popperjs/core": "^2.11.5",
+    "@vue/compiler-sfc": "^3.2.37",
+    "esbuild": "^0.14.50",
+    "esbuild-plugin-sass": "^1.0.1",
+    "esbuild-plugin-vue-next": "^0.1.4"
+  }
+}

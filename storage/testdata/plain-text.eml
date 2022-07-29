@@ -1,0 +1,116 @@
+Delivered-To: recipient@example.com
+Received: by 2002:a0c:fe87:0:0:0:0:0 with SMTP id d7csp146390qvs;
+        Tue, 26 Jul 2022 20:45:20 -0700 (PDT)
+X-Received: by 2002:a17:90a:1943:b0:1ef:8146:f32f with SMTP id 3-20020a17090a194300b001ef8146f32fmr2327371pjh.112.1658893508159;
+        Tue, 26 Jul 2022 20:45:08 -0700 (PDT)
+ARC-Seal: i=1; a=rsa-sha256; t=1658893507; cv=none;
+        d=google.com; s=arc-20160816;
+        b=KrXcumoy4Oldq3Ny6ZLUfED4+/+4ndNbrM3uw1COEhqCVWWv7lLfFeNHTyxJQJLBK3
+         tVgmPBX2XRmX+531CFRNquUDrqhsvc4kgIq0ExWPz99wG2vgsKWQ2x89AIfQ8sEYMwxY
+         HOwErTH6XQuJ45YE+5Lt4pjMP+7NqnJ1NTRQyc7FB/c1Wt1JdTWscgaJGqUMnIFSbCPG
+         xi0xpJnrIkh4giARIhabCRmVoo1g8BfzYrmy8uHtbIcDDuCJ8tN2lMLscwfw3u8hZWm6
+         e1nAx4iDYyShdMZPPoUVoMHDf9P39DKwhdfb/xP/cQ6ulv7ECzVSp5DM8aLpfjw6SU9G
+         JYJA==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20160816;
+        h=content-disposition:mime-version:message-id:subject:to:from:date
+         :dkim-signature;
+        bh=8shE8duj4atyKhQhO1qlS4/NgHN4ubjWq86U+mmAH9M=;
+        b=TGK9vlNQRpyHvcpQonLjrFuLubL2mo9vT15CPwtC6ltsrYccKUozKiyb+id79dPatM
+         y2unMpJqJFB4rZnASRm20Ck9dFRulM8bowO4l9BWKAUti9+u7bmLYbOPQCgDmJRA88ij
+         YTkSKE8TuFMZQMJTkyZZTwE3F/Vrv84fAekWzGlwFoV3D6r6t1D5EUYUoR4xCVZdpMo1
+         Ic0bEqgmRXl44uEqyVNpIC0w86Hzz84zl2V+nca+gxfObMzbJheDkOwVKkNNmr0ja936
+         QZK+aO9s9VQGtqmjWtWhc1OWO50Bc5vE/krLFvZM6+vbMBEuDE5rkfHdf5mSD9Ix4xWl
+         6/Rg==
+ARC-Authentication-Results: i=1; mx.google.com;
+       dkim=pass header.i=@gmail.com header.s=20210112 header.b=fpxRepVP;
+       spf=pass (google.com: domain of sender@example.com designates 209.85.220.41 as permitted sender) smtp.mailfrom=sender@example.com;
+       dmarc=pass (p=NONE sp=QUARANTINE dis=NONE) header.from=gmail.com
+Return-Path: <sender@example.com>
+Received: from mail-sor-f41.google.com (mail-sor-f41.google.com. [209.85.220.41])
+        by mx.google.com with SMTPS id t3-20020a17090a2f8300b001f25e258dfasor335081pjd.34.2022.07.26.20.45.07
+        for <recipient@example.com>
+        (Google Transport Security);
+        Tue, 26 Jul 2022 20:45:07 -0700 (PDT)
+Received-SPF: pass (google.com: domain of sender@example.com designates 209.85.220.41 as permitted sender) client-ip=209.85.220.41;
+Authentication-Results: mx.google.com;
+       dkim=pass header.i=@gmail.com header.s=20210112 header.b=fpxRepVP;
+       spf=pass (google.com: domain of sender@example.com designates 209.85.220.41 as permitted sender) smtp.mailfrom=sender@example.com;
+       dmarc=pass (p=NONE sp=QUARANTINE dis=NONE) header.from=gmail.com
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20210112;
+        h=date:from:to:subject:message-id:mime-version:content-disposition;
+        bh=8shE8duj4atyKhQhO1qlS4/NgHN4ubjWq86U+mmAH9M=;
+        b=fpxRepVPdRgZF9VI4rCzO4n1l9+OHrm254/c1PaNcNnC1+0Rr78o1ASLvDKoQY4INc
+         gRN1kJIk+ozQumJSfQPEIe+rHbJxe+wzjbYhEfUwBUnFHZykqvYWl6Xmjwg61IhxwwWk
+         b3Gp/ODHkdQrm5QqIFACEn1fQmqkk4XBlcKMYEU/NOswGDOFULfbrhDcBWmR/gp2kHmT
+         DkqRA9UJ1Cc6GO9lG+McRi8uLNaTymuLwzBydVV0bZOQTLxHQcQBTfUFrp/fwjHc9V19
+         l9uQcn5rOOsh3vR37NGpv8WPi7BORLRFGjMVD0DZ7CtJwTDHz4EVvdLijt6YbUV9ecp1
+         df3Q==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=x-gm-message-state:date:from:to:subject:message-id:mime-version
+         :content-disposition;
+        bh=8shE8duj4atyKhQhO1qlS4/NgHN4ubjWq86U+mmAH9M=;
+        b=Z8ndxERf1NU67swjZ7cSjkSTTaa2YzhtrRyJkg0vnRxi87af7ECZNT+Zaxuxmxmqvb
+         5T3IN2ymjPu1Y52EqRdZQpnzS/E5OjHbA6AYSn5qneNXNDxqJwp5qVSXuyB265QOo/9M
+         bGp4fqfi8Qe5pmgkzyTqyrigWFOzcl23sCGXqvnrD8+0e+/n1dqo2tYk4v2KpSoAUxF0
+         SNwHocpTDBDxOMEulUkQpqNlyZsgqNGdRhZmUN+2tQnpCQULd4B7+pydyWBCp9o8J1W4
+         0IqmhJiNT8pB8MVzyUsWNG+WX9GBh8PK6XndOjmp2WvYh0LcUKeEYQ6zBsIdDFNEkMD1
+         dU9w==
+X-Gm-Message-State: AJIora+ZXWhiNwKn6ik6LuIUHc1hskP3Nneo2J0m0wSC9wwGXI1RPi1a
+	Ml5Ex/pAryQwTi7MXqbUQkCIrEe5kU0=
+X-Google-Smtp-Source: AGRyM1v7CWOR6/X4d18Wv11XTnkfT25QfmsqBowwGsebQlPqhR1ogD3bo1sZRs/OSAHP7AjywIebfw==
+X-Received: by 2002:a17:90a:5e0b:b0:1f0:5565:ee6e with SMTP id w11-20020a17090a5e0b00b001f05565ee6emr2290528pjf.128.1658893506447;
+        Tue, 26 Jul 2022 20:45:06 -0700 (PDT)
+Return-Path: <sender@example.com>
+Received: from localhost.localhost ([8.8.8.8])
+        by smtp.gmail.com with ESMTPSA id s7-20020a170902ea0700b0016a3f9e4865sm12488166plg.148.2022.07.26.20.45.04
+        for <recipient@example.com>
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Tue, 26 Jul 2022 20:45:06 -0700 (PDT)
+Date: Wed, 27 Jul 2022 15:44:41 +1200
+From: Sender Smith <sender@example.com>
+To: Recipient Ross <recipient@example.com>
+Subject: Plain text message
+Message-ID: <20220727034441.7za34h6ljuzfpmj6@localhost.localhost>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Cras non massa lacinia, 
+fringilla ex vel, ornare nulla. Suspendisse dapibus commodo sapien, non 
+hendrerit diam feugiat sit amet. Nulla lorem quam, laoreet vitae nisl volutpat, 
+mollis bibendum felis. In eget ultricies justo. Donec vitae hendrerit tortor, at 
+posuere libero. Fusce a gravida nibh. Nulla ac odio ex.
+
+Aliquam sem turpis, cursus vitae condimentum at, scelerisque pulvinar lectus. 
+Cras tempor nisl ut arcu interdum, et luctus arcu cursus. Maecenas mollis 
+sagittis commodo. Mauris ac lorem nec ex interdum consequat. Morbi congue 
+ultrices ullamcorper. Aenean ex tortor, dapibus quis dapibus iaculis, iaculis 
+eget felis. Vestibulum purus ante, efficitur in turpis ac, tristique laoreet 
+orci. Nulla facilisi. Praesent mollis orci posuere elementum laoreet. 
+Pellentesque enim nibh, varius at ante id, consequat posuere ante.
+
+Cras maximus venenatis nulla nec cursus. Morbi convallis, enim eget viverra 
+vulputate, ipsum arcu tincidunt tortor, ut cursus dui enim commodo quam. Donec 
+et vulputate quam. Vivamus non posuere erat. Nam commodo pellentesque 
+condimentum. Vivamus condimentum eros at odio dictum feugiat. Ut imperdiet 
+tempor luctus. Aenean varius libero ac faucibus dictum. Aliquam sed finibus 
+massa. Morbi dolor lorem, feugiat quis neque et, suscipit posuere ex. Sed auctor 
+et augue at finibus. Vestibulum interdum mi ac justo porta aliquam. Curabitur 
+nec enim sit amet enim aliquet accumsan. Etiam accumsan tellus tortor, interdum 
+sodales odio finibus eu. Integer eget ante eu nisi lobortis pulvinar et vel 
+ipsum. Cras condimentum posuere vulputate.
+
+Cras nulla felis, blandit vitae egestas quis, fringilla ut dolor. Phasellus est 
+augue, feugiat eu risus quis, posuere ultrices libero. Phasellus non nunc eget 
+justo sollicitudin tincidunt. Praesent pretium dui id felis bibendum sodales. 
+Phasellus eget dictum libero, auctor tempor nibh. Suspendisse posuere libero 
+venenatis elit imperdiet porttitor. In condimentum dictum luctus. Nullam in 
+nulla vitae augue blandit posuere. Vestibulum consectetur ultricies tincidunt. 
+Vivamus dolor quam, pharetra sed eros sed, hendrerit ultrices diam. Vestibulum 
+vulputate tellus eget tellus lacinia, a pulvinar velit vulputate. Suspendisse 
+mauris odio, scelerisque eget turpis sed, tincidunt ultrices magna. Nunc arcu 
+arcu, commodo et porttitor quis, accumsan viverra purus. Fusce id libero iaculis 
+lorem tristique commodo porttitor id ipsum. Vestibulum odio dui, tincidunt eget 
+lectus vel, tristique lacinia libero. Aliquam dapibus ac felis vitae cursus.

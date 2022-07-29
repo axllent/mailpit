@@ -1,0 +1,42 @@
+on:
+  release:
+    types: [created]
+
+name: Build & release
+jobs:
+  releases-matrix:
+    name: Release Go Binary
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        goos: [linux, windows, darwin]
+        goarch: ["386", amd64, arm64]
+        exclude:
+          - goarch: "386"
+            goos: darwin
+          - goarch: arm64
+            goos: windows
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Get tag
+      id: tag
+      uses: dawidd6/action-get-tag@v1
+
+    # build the assets
+    - uses: actions/setup-node@v3
+      with:
+        node-version: 16
+        cache: 'npm'
+    - run: npm install
+    - run: npm run package
+
+    # build the binaries
+    - uses: wangyoucao577/go-release-action@v1.30
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        goos: ${{ matrix.goos }}
+        goarch: ${{ matrix.goarch }}
+        binary_name: "mailpit"
+        extra_files: LICENSE README.md
+        build_command: go build -trimpath -ldflags '-s -w -X github.com/axllent/mailpit/cmd.Version=${{ steps.tag.outputs.tag }}'

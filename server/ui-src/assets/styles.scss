@@ -1,0 +1,54 @@
+// @import "../../../node_modules/bootstrap-icons"; ///scss/root";
+
+@import "bootstrap";
+
+[v-cloak] {
+    display: none !important;
+}
+
+.navbar-brand {
+    color: #2d4a5d;
+
+    img {
+        width: 40px;
+    }
+}
+
+#loading {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    background: rgba(255, 255, 255, 0.4);
+    z-index: 1500;
+}
+
+.message.read:not(.active) {
+    // background: $gray-100;
+    color: $gray-500;
+}
+
+#nav-plain-text,
+#nav-source {
+    white-space: pre;
+    font-family: Courier New, Courier, System, fixed-width;
+    font-size: 0.85em;
+}
+#nav-plain-text {
+    white-space: pre-wrap;
+}
+
+.messageHeaders {
+    margin: 15px 0 0;
+
+    th {
+        padding-right: 10px;
+        font-weight: normal;
+        vertical-align: top;
+    }
+
+    td {
+        vertical-align: top;
+    }
+}

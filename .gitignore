@@ -1,0 +1,6 @@
+/node_modules/
+/send
+/server/ui/dist
+/Makefile
+/mailpit
+*.old
