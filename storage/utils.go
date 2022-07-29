@@ -11,7 +11,7 @@ import (
 	"github.com/axllent/mailpit/server/websockets"
 	"github.com/jhillyerd/enmime"
 	"github.com/k3a/html2text"
-	"github.com/ostafen/clover"
+	"github.com/ostafen/clover/v2"
 )
 
 // Return a header field as a []*mail.Address, or "null" is not found/empty

@@ -16,7 +16,7 @@ import (
 	"github.com/axllent/mailpit/logger"
 	"github.com/axllent/mailpit/server/websockets"
 	"github.com/jhillyerd/enmime"
-	"github.com/ostafen/clover"
+	"github.com/ostafen/clover/v2"
 )
 
 var (
