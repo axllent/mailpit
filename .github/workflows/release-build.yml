@@ -39,4 +39,4 @@ jobs:
         goarch: ${{ matrix.goarch }}
         binary_name: "mailpit"
         extra_files: LICENSE README.md
-        ldflags: -w -X "github.com/axllent/mailpit/cmd.Version=${{ steps.tag.outputs.tag }}""
+        ldflags: -w -X "github.com/axllent/mailpit/cmd.Version=${{ steps.tag.outputs.tag }}"
