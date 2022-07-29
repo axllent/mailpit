@@ -53,7 +53,7 @@ You can build a mailpit-specific sendmail binary from source ( see [building fro
 
 ## Why rewrite MailHog?
 
-I had been using MailHog for a few years to intercept and test emails generated from several projects. Mailhog has a number of severe performance issues, many of the modules are horribly out of date, and other than a few accepted MRs, it is not actively developed.
+I had been using MailHog for a few years to intercept and test emails generated from several projects. MailHog has a number of severe performance issues, many of the modules are horribly out of date, and other than a few accepted MRs, it is not actively developed.
 
 Initially I started trying to upgrade a fork of MailHog (both the UI as well as the HTTP server & API), but soon discovered that it is (with all due respect) very poorly designed. It is over-engineered (split over 9 separate projects), has too many unnecessary features for my purpose, and performs exceptionally poorly when dealing with large lumbers of emails or processing any email with an attachment (a single email with a 3MB attachment can take over a minute). The API transmits a lot of duplicate and unnecessary data on every message request for all web calls, and there is no HTTP compression.
 
