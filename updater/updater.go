@@ -170,7 +170,7 @@ func GithubUpdate(repo, appName, currentVersion string) (string, error) {
 
 	// ensure the new binary is executable (mainly for inconsistent darwin builds)
 	/* #nosec G204 */
-	cmd := exec.Command(newExec)
+	cmd := exec.Command(newExec, "-h")
 	if err := cmd.Run(); err != nil {
 		return "", err
 	}
