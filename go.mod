@@ -9,7 +9,7 @@ require (
 	github.com/jhillyerd/enmime v0.10.0
 	github.com/k3a/html2text v1.0.8
 	github.com/mhale/smtpd v0.8.0
-	github.com/ostafen/clover/v2 v2.0.0-alpha.1
+	github.com/ostafen/clover/v2 v2.0.0-alpha.2
 	github.com/sirupsen/logrus v1.9.0
 	github.com/spf13/cobra v1.5.0
 	github.com/spf13/pflag v1.0.5
@@ -38,7 +38,7 @@ require (
 	github.com/mattn/go-runewidth v0.0.13 // indirect
 	github.com/olekukonko/tablewriter v0.0.5 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
-	github.com/rivo/uniseg v0.3.0 // indirect
+	github.com/rivo/uniseg v0.3.1 // indirect
 	github.com/satori/go.uuid v1.2.0 // indirect
 	github.com/ssor/bom v0.0.0-20170718123548-6386211fdfcf // indirect
 	github.com/stretchr/testify v1.7.2 // indirect
