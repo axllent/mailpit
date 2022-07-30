@@ -81,6 +81,7 @@ func pruneCron() {
 				}
 				elapsed := time.Since(start)
 				logger.Log().Infof("Pruned %d messages from %s in %s", limit, m, elapsed)
+				statsRefresh(m)
 				if !strings.HasSuffix(m, "_data") {
 					websockets.Broadcast("prune", nil)
 				}

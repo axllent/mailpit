@@ -12,10 +12,11 @@ import (
 )
 
 type messagesResult struct {
-	Total int            `json:"total"`
-	Count int            `json:"count"`
-	Start int            `json:"start"`
-	Items []data.Summary `json:"items"`
+	Total  int            `json:"total"`
+	Unread int            `json:"unread"`
+	Count  int            `json:"count"`
+	Start  int            `json:"start"`
+	Items  []data.Summary `json:"items"`
 }
 
 // Return a list of available mailboxes
@@ -49,18 +50,15 @@ func apiListMailbox(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	total, err := storage.Count(mailbox)
-	if err != nil {
-		httpError(w, err.Error())
-		return
-	}
+	stats := storage.StatsGet(mailbox)
 
 	var res messagesResult
 
 	res.Start = start
 	res.Items = messages
 	res.Count = len(res.Items)
-	res.Total = total
+	res.Total = stats.Total
+	res.Unread = stats.Unread
 
 	bytes, _ := json.Marshal(res)
 	w.Header().Add("Content-Type", "application/json")
@@ -92,24 +90,15 @@ func apiSearchMailbox(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	total, err := storage.Count(mailbox)
-	if err != nil {
-		httpError(w, err.Error())
-		return
-	}
-
-	// total := limit
-	// count := len(messages)
-	// if total > count {
-	// 	total = count
-	// }
+	stats := storage.StatsGet(mailbox)
 
 	var res messagesResult
 
 	res.Start = start
 	res.Items = messages
 	res.Count = len(messages)
-	res.Total = total
+	res.Total = stats.Total
+	res.Unread = stats.Unread
 
 	bytes, _ := json.Marshal(res)
 	w.Header().Add("Content-Type", "application/json")
