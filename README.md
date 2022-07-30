@@ -10,9 +10,9 @@ Mailpit is inspired by [MailHog](#why-rewrite-mailhog), but much, much faster.
 ## Features
 
 - Runs completely on a single binary
-- SMTP server (default `127.0.0.1:1025`)
-- Web UI to view emails (HTML format, text, source and MIME attachments, default `127.0.0.1:8025`)
-- Real-time web UI updates using websockets for new mail
+- SMTP server (default `0.0.0.0:1025`)
+- Web UI to view emails (HTML format, text, source and MIME attachments, default `0.0.0.0:8025`)
+- Real-time web UI updates using web sockets for new mail
 - Email storage in either memory or disk (using [CloverDB](https://github.com/ostafen/clover)) - note that in-memory has a physical limit of 1MB per email
 - Configurable automatic email pruning (default keeps the most recent 500 emails)
 - Fast SMTP processing & storing - approximately 300-600 emails per second depending on CPU, network speed & email size

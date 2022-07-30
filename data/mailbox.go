@@ -16,3 +16,9 @@ type WebsocketNotification struct {
 	Type string
 	Data interface{}
 }
+
+// MailboxStats struct for quick mailbox total/read lookups
+type MailboxStats struct {
+	Total  int
+	Unread int
+}

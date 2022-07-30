@@ -15,6 +15,7 @@ export default {
 			items: [],
 			limit: 50,
 			total: 0,
+			unread: 0,
 			start: 0,
 			search: "",
 			searching: false,
@@ -71,6 +72,7 @@ export default {
 
 			self.get(uri, params, function(response){
 				self.total = response.data.total;
+				self.unread = response.data.unread;
 				self.count = response.data.count;
 				self.start = response.data.start;
 				self.items = response.data.items;
@@ -119,7 +121,10 @@ export default {
 			self.get(uri, params, function(response) {
 				for (let i in self.items) {
 					if (self.items[i].ID == self.currentPath) {
-						self.items[i].Read = true;
+						if (!self.items[i].Read) {
+							self.items[i].Read = true;
+							self.unread--;
+						}
 					}
 				}
 				let d = response.data;
@@ -208,6 +213,7 @@ export default {
 						}
 					}
 	                self.total++;
+					self.unread++;
                 } else if (response.Type == "prune") {
 					// messages have been deleted, reload messages to adjust
 					self.scrollInPlace = true;
@@ -323,8 +329,8 @@ export default {
 						<i class="bi bi-envelope me-1" v-if="isConnected"></i>
 						<i class="bi bi-arrow-clockwise me-1" v-else></i>
 						Inbox 
-						<span class="position-absolute mt-2 ms-4 start-100 translate-middle badge rounded-pill text-bg-secondary" v-if="total">
-							{{ formatNumber(total) }}
+						<span class="position-absolute mt-2 ms-4 start-100 translate-middle badge rounded-pill text-bg-secondary" title="Unread messages" v-if="unread">
+							{{ formatNumber(unread) }}
 						</span>
 					</a>
 				</li>

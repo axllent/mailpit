@@ -11,7 +11,7 @@ import (
 	"github.com/axllent/mailpit/server/websockets"
 	"github.com/jhillyerd/enmime"
 	"github.com/k3a/html2text"
-	"github.com/ostafen/clover"
+	"github.com/ostafen/clover/v2"
 )
 
 // Return a header field as a []*mail.Address, or "null" is not found/empty
@@ -76,11 +76,12 @@ func pruneCron() {
 				if err := db.Delete(clover.NewQuery(m).
 					Sort(clover.SortOption{Field: "Created", Direction: 1}).
 					Limit(limit)); err != nil {
-					logger.Log().Warnf("Error pruning: %s", err.Error())
+					logger.Log().Warnf("Error pruning %s: %s", m, err.Error())
 					continue
 				}
 				elapsed := time.Since(start)
 				logger.Log().Infof("Pruned %d messages from %s in %s", limit, m, elapsed)
+				statsRefresh(m)
 				if !strings.HasSuffix(m, "_data") {
 					websockets.Broadcast("prune", nil)
 				}
