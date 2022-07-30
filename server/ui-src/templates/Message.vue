@@ -80,7 +80,8 @@ export default {
 					<th>From</th>
 					<td>
 						<span v-if="message.From">
-							{{ message.From.Name + " <" + message.From.Address +">" }}
+							<span v-if="message.From.Name">{{ message.From.Name }}</span>
+							<span v-if="message.From.Address">&lt;{{ message.From.Address }}&gt;</span>
 						</span>
 						<span v-else>
 							[ Unknown ]

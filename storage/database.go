@@ -185,6 +185,8 @@ func Store(mailbox string, b []byte) (string, error) {
 	fromData := addressToSlice(env, "From")
 	if len(fromData) > 0 {
 		from = fromData[0]
+	} else if env.GetHeader("From") != "" {
+		from = &mail.Address{Name: env.GetHeader("From")}
 	}
 
 	obj := CloverStore{
@@ -311,7 +313,7 @@ func List(mailbox string, start, limit int) ([]data.Summary, error) {
 
 // Search returns a summary of items mathing a search. It searched the SearchText field.
 func Search(mailbox, search string, start, limit int) ([]data.Summary, error) {
-	sq := fmt.Sprintf("(?i)%s", regexp.QuoteMeta(search))
+	sq := fmt.Sprintf("(?i)%s", cleanString(regexp.QuoteMeta(search)))
 	q, err := db.FindAll(clover.NewQuery(mailbox).
 		Skip(start).
 		Limit(limit).
@@ -393,6 +395,8 @@ func GetMessage(mailbox, id string) (*data.Message, error) {
 	fromData := addressToSlice(env, "From")
 	if len(fromData) > 0 {
 		from = fromData[0]
+	} else if env.GetHeader("From") != "" {
+		from = &mail.Address{Name: env.GetHeader("From")}
 	}
 
 	date, err := env.Date()

@@ -42,15 +42,18 @@ func createSearchText(env *enmime.Envelope) string {
 		b.WriteString(a.FileName + " ")
 	}
 
-	d := b.String()
-
-	// remove/replace new lines
-	re := regexp.MustCompile(`(\r?\n|\t|>|<|"|:|\,|;)`)
-	d = re.ReplaceAllString(d, " ")
-	// remove duplicate whitespace and trim
-	d = strings.ToLower(strings.Join(strings.Fields(strings.TrimSpace(d)), " "))
+	d := cleanString(b.String())
 
 	return d
+}
+
+// cleanString removed unwanted characters from stored search text and search queries
+func cleanString(str string) string {
+	// remove/replace new lines
+	re := regexp.MustCompile(`(\r?\n|\t|>|<|"|:|\,|;)`)
+	str = re.ReplaceAllString(str, " ")
+	// remove duplicate whitespace and trim
+	return strings.ToLower(strings.Join(strings.Fields(strings.TrimSpace(str)), " "))
 }
 
 // Auto-prune runs every 5 minutes to automatically delete oldest messages
