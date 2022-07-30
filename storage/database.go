@@ -224,7 +224,7 @@ func Store(mailbox string, b []byte) (string, error) {
 
 	count++
 	if count%100 == 0 {
-		logger.Log().Infof("%d messages added (%s per 100)", count, time.Since(per100start))
+		logger.Log().Infof("100 messages added in %s", time.Since(per100start))
 
 		per100start = time.Now()
 	}
