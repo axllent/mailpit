@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/signal"
 	"regexp"
+	"strings"
 	"syscall"
 	"time"
 
@@ -99,24 +100,20 @@ func ListMailboxes() ([]data.MailboxSummary, error) {
 	results := []data.MailboxSummary{}
 
 	for _, m := range mailboxes {
-
-		total, err := Count(m)
-		if err != nil {
-			return nil, err
+		// ignore *_data collections
+		if strings.HasSuffix(m, "_data") {
+			continue
 		}
 
-		unread, err := CountUnread(m)
-		if err != nil {
-			return nil, err
-		}
+		stats := StatsGet(m)
 
 		mb := data.MailboxSummary{}
 		mb.Name = m
 		mb.Slug = m
-		mb.Total = total
-		mb.Unread = unread
+		mb.Total = stats.Total
+		mb.Unread = stats.Unread
 
-		if total > 0 {
+		if mb.Total > 0 {
 			q, err := db.FindFirst(
 				clover.NewQuery(m).Sort(clover.SortOption{Field: "Created", Direction: -1}),
 			)
@@ -172,7 +169,7 @@ func CreateMailbox(name string) error {
 		}
 	}
 
-	return nil
+	return statsRefresh(name)
 }
 
 // Store will store a message in the database and return the unique ID
@@ -222,6 +219,8 @@ func Store(mailbox string, b []byte) (string, error) {
 		_ = DeleteOneMessage(mailbox, id)
 		return "", err
 	}
+
+	statsAddNewMessage(mailbox)
 
 	count++
 	if count%100 == 0 {
@@ -441,11 +440,16 @@ func GetMessage(mailbox, id string) (*data.Message, error) {
 
 	obj.HTML = html
 
-	updates := make(map[string]interface{})
-	updates["Read"] = true
+	msg, err := db.FindById(mailbox, id)
+	if err == nil && !msg.Get("Read").(bool) {
+		updates := make(map[string]interface{})
+		updates["Read"] = true
 
-	if err := db.UpdateById(mailbox, id, updates); err != nil {
-		return nil, err
+		if err := db.UpdateById(mailbox, id, updates); err != nil {
+			return nil, err
+		}
+
+		statsReadOneMessage(mailbox)
 	}
 
 	return &obj, nil
@@ -507,6 +511,8 @@ func UnreadMessage(mailbox, id string) error {
 	updates := make(map[string]interface{})
 	updates["Read"] = false
 
+	statsUnreadOneMessage(mailbox)
+
 	return db.UpdateById(mailbox, id, updates)
 }
 
@@ -515,6 +521,8 @@ func DeleteOneMessage(mailbox, id string) error {
 	if err := db.DeleteById(mailbox, id); err != nil {
 		return err
 	}
+
+	statsDeleteOneMessage(mailbox)
 
 	return db.DeleteById(mailbox+"_data", id)
 }
@@ -545,13 +553,8 @@ func DeleteAllMessages(mailbox string) error {
 		}
 	}
 
-	// if err := db.Delete(clover.NewQuery(mailbox)); err != nil {
-	// 	return err
-	// }
-
-	// if err := db.Delete(clover.NewQuery(mailbox + "_data")); err != nil {
-	// 	return err
-	// }
+	// resets stats for mailbox
+	statsRefresh(mailbox)
 
 	elapsed := time.Since(totalStart)
 	logger.Log().Infof("Deleted %d messages from %s in %s", totalMessages, mailbox, elapsed)
