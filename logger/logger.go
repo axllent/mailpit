@@ -28,7 +28,7 @@ func Log() *logrus.Logger {
 		log.Out = os.Stdout
 		log.SetFormatter(&logrus.TextFormatter{
 			FullTimestamp:   true,
-			TimestampFormat: "15:04:05",
+			TimestampFormat: "2006/01/02 15:04:05",
 			ForceColors:     true,
 		})
 	}

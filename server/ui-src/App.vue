@@ -408,7 +408,7 @@ export default {
 				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 			</div>
 			<div class="modal-body">
-				This will permanently delete all messages.
+				This will permanently delete {{ formatNumber(total) }} message<span v-if="total > 1">s</span>.
 			</div>
 			<div class="modal-footer">
 				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -418,5 +418,4 @@ export default {
 		</div>
 	</div>
 
-	
 </template>
