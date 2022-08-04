@@ -3,6 +3,12 @@
 Notable changes to Mailpit will be documented in this file.
 
 
+## 0.0.7
+
+### Bugfix
+- Command flag should be `--auth-file`
+
+
 ## 0.0.6
 
 ### Bugfix
