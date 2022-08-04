@@ -3,6 +3,12 @@
 Notable changes to Mailpit will be documented in this file.
 
 
+## 0.0.5
+
+### Feature
+- Basic authentication support
+
+
 ## 0.0.4
 
 ### Bugfix
