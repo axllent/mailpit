@@ -18,7 +18,7 @@ Mailpit is inspired by [MailHog](#why-rewrite-mailhog), but much, much faster.
 - Configurable automatic email pruning (default keeps the most recent 500 emails)
 - Fast SMTP processing & storing - approximately 300-600 emails per second depending on CPU, network speed & email size
 - Can handle tens of thousands of emails
-- Multi-arch [Docker images](https://github.com/axllent/mailpit/wiki/Docker-image)
+- Multi-arch [Docker images](https://github.com/axllent/mailpit/wiki/Docker-images)
 
 
 ## Planned features
