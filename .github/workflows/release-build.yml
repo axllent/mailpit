@@ -38,6 +38,7 @@ jobs:
         goos: ${{ matrix.goos }}
         goarch: ${{ matrix.goarch }}
         binary_name: "mailpit"
+        pre_command: export CGO_ENABLED=0
         asset_name: mailpit-${{ matrix.goos }}-${{ matrix.goarch }}
         extra_files: LICENSE README.md
         md5sum: false

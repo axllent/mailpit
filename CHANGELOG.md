@@ -3,6 +3,12 @@
 Notable changes to Mailpit will be documented in this file.
 
 
+## 0.0.6
+
+### Bugfix
+- Disable CGO when building multi-arch binaries
+
+
 ## 0.0.5
 
 ### Feature
