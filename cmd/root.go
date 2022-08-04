@@ -77,10 +77,14 @@ func init() {
 	if len(os.Getenv("MP_MAX_MESSAGES")) > 0 {
 		config.MaxMessages, _ = strconv.Atoi(os.Getenv("MP_MAX_MESSAGES"))
 	}
+	if len(os.Getenv("MP_AUTH_FILE")) > 0 {
+		config.AuthFile = os.Getenv("MP_AUTH_FILE")
+	}
 
 	rootCmd.Flags().StringVarP(&config.DataDir, "data", "d", config.DataDir, "Optional path to store peristent data")
 	rootCmd.Flags().StringVarP(&config.SMTPListen, "smtp", "s", config.SMTPListen, "SMTP bind interface and port")
 	rootCmd.Flags().StringVarP(&config.HTTPListen, "listen", "l", config.HTTPListen, "HTTP bind interface and port for UI")
 	rootCmd.Flags().IntVarP(&config.MaxMessages, "max", "m", config.MaxMessages, "Max number of messages per mailbox")
+	rootCmd.Flags().StringVarP(&config.AuthFile, "-auth-file", "a", config.AuthFile, "A username:bcryptpw mapping file")
 	rootCmd.Flags().BoolVarP(&config.VerboseLogging, "verbose", "v", false, "Verbose logging")
 }

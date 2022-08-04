@@ -3,6 +3,8 @@ package config
 import (
 	"errors"
 	"regexp"
+
+	"github.com/tg123/go-htpasswd"
 )
 
 var (
@@ -21,13 +23,19 @@ var (
 	// VerboseLogging for console output
 	VerboseLogging = false
 
-	// NoLogging for testing
+	// NoLogging for tests
 	NoLogging = false
 
 	// SSLCert @TODO
 	SSLCert string
 	// SSLKey @TODO
 	SSLKey string
+
+	// AuthFile for basic authentication
+	AuthFile string
+
+	// Auth used for euthentication
+	Auth *htpasswd.File
 )
 
 // VerifyConfig wil do some basic checking
@@ -38,6 +46,14 @@ func VerifyConfig() error {
 	}
 	if !re.MatchString(HTTPListen) {
 		return errors.New("HTTP bind should be in the format of <ip>:<port>")
+	}
+
+	if AuthFile != "" {
+		a, err := htpasswd.New(AuthFile, htpasswd.DefaultSystems, nil)
+		if err != nil {
+			return err
+		}
+		Auth = a
 	}
 
 	return nil
