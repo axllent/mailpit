@@ -85,6 +85,6 @@ func init() {
 	rootCmd.Flags().StringVarP(&config.SMTPListen, "smtp", "s", config.SMTPListen, "SMTP bind interface and port")
 	rootCmd.Flags().StringVarP(&config.HTTPListen, "listen", "l", config.HTTPListen, "HTTP bind interface and port for UI")
 	rootCmd.Flags().IntVarP(&config.MaxMessages, "max", "m", config.MaxMessages, "Max number of messages per mailbox")
-	rootCmd.Flags().StringVarP(&config.AuthFile, "-auth-file", "a", config.AuthFile, "A username:bcryptpw mapping file")
+	rootCmd.Flags().StringVarP(&config.AuthFile, "auth-file", "a", config.AuthFile, "A username:bcryptpw mapping file")
 	rootCmd.Flags().BoolVarP(&config.VerboseLogging, "verbose", "v", false, "Verbose logging")
 }
