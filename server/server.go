@@ -34,18 +34,17 @@ func Listen() {
 	go websockets.MessageHub.Run()
 
 	r := mux.NewRouter()
-	r.HandleFunc("/api/mailboxes", gzipHandlerFunc(apiListMailboxes))
-	r.HandleFunc("/api/{mailbox}/messages", gzipHandlerFunc(apiListMailbox))
-	r.HandleFunc("/api/{mailbox}/search", gzipHandlerFunc(apiSearchMailbox))
-	r.HandleFunc("/api/{mailbox}/delete", gzipHandlerFunc(apiDeleteAll))
+	r.HandleFunc("/api/mailboxes", middleWareFunc(apiListMailboxes))
+	r.HandleFunc("/api/{mailbox}/messages", middleWareFunc(apiListMailbox))
+	r.HandleFunc("/api/{mailbox}/search", middleWareFunc(apiSearchMailbox))
+	r.HandleFunc("/api/{mailbox}/delete", middleWareFunc(apiDeleteAll))
 	r.HandleFunc("/api/{mailbox}/events", apiWebsocket)
-	r.HandleFunc("/api/{mailbox}/{id}/source", gzipHandlerFunc(apiDownloadSource))
-	r.HandleFunc("/api/{mailbox}/{id}/part/{partID}", gzipHandlerFunc(apiDownloadAttachment))
-	r.HandleFunc("/api/{mailbox}/{id}/delete", gzipHandlerFunc(apiDeleteOne))
-	r.HandleFunc("/api/{mailbox}/{id}/unread", gzipHandlerFunc(apiUnreadOne))
-	r.HandleFunc("/api/{mailbox}/{id}", gzipHandlerFunc(apiOpenMessage))
-	r.HandleFunc("/api/{mailbox}/search", gzipHandlerFunc(apiSearchMailbox))
-	r.PathPrefix("/").Handler(gzipHandler(http.FileServer(http.FS(serverRoot))))
+	r.HandleFunc("/api/{mailbox}/{id}/source", middleWareFunc(apiDownloadSource))
+	r.HandleFunc("/api/{mailbox}/{id}/part/{partID}", middleWareFunc(apiDownloadAttachment))
+	r.HandleFunc("/api/{mailbox}/{id}/delete", middleWareFunc(apiDeleteOne))
+	r.HandleFunc("/api/{mailbox}/{id}/unread", middleWareFunc(apiUnreadOne))
+	r.HandleFunc("/api/{mailbox}/{id}", middleWareFunc(apiOpenMessage))
+	r.PathPrefix("/").Handler(middlewareHandler(http.FileServer(http.FS(serverRoot))))
 	http.Handle("/", r)
 
 	if config.SSLCert != "" && config.SSLKey != "" {
@@ -55,7 +54,13 @@ func Listen() {
 		logger.Log().Infof("[http] starting server on http://%s", config.HTTPListen)
 		log.Fatal(http.ListenAndServe(config.HTTPListen, nil))
 	}
+}
 
+// BasicAuthResponse returns an basic auth response to the browser
+func basicAuthResponse(w http.ResponseWriter) {
+	w.Header().Set("WWW-Authenticate", `Basic realm="Login"`)
+	w.WriteHeader(http.StatusUnauthorized)
+	w.Write([]byte("Unauthorised.\n"))
 }
 
 type gzipResponseWriter struct {
@@ -67,9 +72,24 @@ func (w gzipResponseWriter) Write(b []byte) (int, error) {
 	return w.Writer.Write(b)
 }
 
-// GzipHandlerFunc http middleware
-func gzipHandlerFunc(fn http.HandlerFunc) http.HandlerFunc {
+// MiddleWareFunc http middleware adds optional basic authentication
+// and gzip compression.
+func middleWareFunc(fn http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		if config.AuthFile != "" {
+			user, pass, ok := r.BasicAuth()
+
+			if !ok {
+				basicAuthResponse(w)
+				return
+			}
+
+			if !config.Auth.Match(user, pass) {
+				basicAuthResponse(w)
+				return
+			}
+		}
+
 		if !strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") {
 			fn(w, r)
 			return
@@ -82,8 +102,25 @@ func gzipHandlerFunc(fn http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-func gzipHandler(h http.Handler) http.Handler {
+// MiddlewareHandler http middleware adds optional basic authentication
+// and gzip compression
+func middlewareHandler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		if config.AuthFile != "" {
+			user, pass, ok := r.BasicAuth()
+
+			if !ok {
+				basicAuthResponse(w)
+				return
+			}
+
+			if !config.Auth.Match(user, pass) {
+				basicAuthResponse(w)
+				return
+			}
+		}
+
 		if !strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") {
 			h.ServeHTTP(w, r)
 			return
@@ -95,14 +132,14 @@ func gzipHandler(h http.Handler) http.Handler {
 	})
 }
 
-// FourOFour returns a standard 404 meesage
+// FourOFour returns a basic 404 message
 func fourOFour(w http.ResponseWriter) {
 	w.WriteHeader(http.StatusNotFound)
 	w.Header().Set("Content-Type", "text/plain")
 	fmt.Fprint(w, "404 page not found")
 }
 
-// HTTPError returns a standard 404 meesage
+// HTTPError returns a basic error message (400 response)
 func httpError(w http.ResponseWriter, msg string) {
 	w.WriteHeader(http.StatusBadRequest)
 	w.Header().Set("Content-Type", "text/plain")
