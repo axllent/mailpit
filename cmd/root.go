@@ -20,7 +20,11 @@ var rootCmd = &cobra.Command{
 	Short: "Mailpit is an email testing tool for developers",
 	Long: `Mailpit is an email testing tool for developers.
 
-It acts as an SMTP server, and provides a web interface to view all captured emails.`,
+It acts as an SMTP server, and provides a web interface to view all captured emails.
+
+Documentation:
+  https://github.com/axllent/mailpit
+  https://github.com/axllent/mailpit/wiki`,
 	Run: func(_ *cobra.Command, _ []string) {
 		if err := config.VerifyConfig(); err != nil {
 			logger.Log().Error(err.Error())
@@ -60,9 +64,12 @@ func SendmailExecute() {
 func init() {
 	// hide autocompletion
 	rootCmd.CompletionOptions.HiddenDefaultCmd = true
-	// rootCmd.Flags().SortFlags = false
-	// hide help
+	rootCmd.Flags().SortFlags = false
+	// hide help command
 	rootCmd.SetHelpCommand(&cobra.Command{Hidden: true})
+	// hide help flag
+	rootCmd.PersistentFlags().BoolP("help", "h", false, "This help")
+	rootCmd.PersistentFlags().Lookup("help").Hidden = true
 
 	// defaults from envars if provided
 	if len(os.Getenv("MP_DATA_DIR")) > 0 {
@@ -84,7 +91,7 @@ func init() {
 	rootCmd.Flags().StringVarP(&config.DataDir, "data", "d", config.DataDir, "Optional path to store peristent data")
 	rootCmd.Flags().StringVarP(&config.SMTPListen, "smtp", "s", config.SMTPListen, "SMTP bind interface and port")
 	rootCmd.Flags().StringVarP(&config.HTTPListen, "listen", "l", config.HTTPListen, "HTTP bind interface and port for UI")
-	rootCmd.Flags().IntVarP(&config.MaxMessages, "max", "m", config.MaxMessages, "Max number of messages per mailbox")
-	rootCmd.Flags().StringVarP(&config.AuthFile, "auth-file", "a", config.AuthFile, "A username:bcryptpw mapping file")
+	rootCmd.Flags().IntVarP(&config.MaxMessages, "max", "m", config.MaxMessages, "Max number of messages to store")
+	rootCmd.Flags().StringVarP(&config.AuthFile, "auth-file", "a", config.AuthFile, "A password file for authentication (see wiki)")
 	rootCmd.Flags().BoolVarP(&config.VerboseLogging, "verbose", "v", false, "Verbose logging")
 }
