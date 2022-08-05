@@ -3,6 +3,15 @@
 Notable changes to Mailpit will be documented in this file.
 
 
+## 0.0.8
+
+### Bugfix
+- Fix total/unread count after failed message inserts
+
+### UI
+- Add project links to help in CLI
+
+
 ## 0.0.7
 
 ### Bugfix
