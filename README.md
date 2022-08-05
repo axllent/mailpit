@@ -6,6 +6,7 @@ It acts as both an SMTP server, and provides a web interface to view all capture
 
 Mailpit is inspired by [MailHog](#why-rewrite-mailhog), but much, much faster.
 
+![Mailpit](https://raw.githubusercontent.com/axllent/mailpit/develop/screenshot.png)
 
 ## Features
 
@@ -31,7 +32,7 @@ Mailpit is inspired by [MailHog](#why-rewrite-mailhog), but much, much faster.
 
 Download a pre-built binary in the [releases](https://github.com/axllent/mailpit/releases/latest). The `mailpit` can be placed in your `$PATH`, or simply run as `./mailpit`. See `mailpit -h` for options.
 
-To build Maailpit from source see [building from source](https://github.com/axllent/mailpit/wiki/Building-from-source).
+To build Mailpit from source see [building from source](https://github.com/axllent/mailpit/wiki/Building-from-source).
 
 
 ### Configuring sendmail
@@ -43,7 +44,7 @@ You can use `mailpit sendmail` as your sendmail configuration in `php.ini`:
 sendmail_path = /usr/local/bin/mailpit sendmail
 ```
 
-If Mailpit is found on the same host as sendmail, you can symlink the mailpit binary to sendmail, eg: `ln -s /usr/local/bin/mailpit /usr/sbin/sendmail`  (only if Mailpit is running on default 1025 port).
+If Mailpit is found on the same host as sendmail, you can symlink the Mailpit binary to sendmail, eg: `ln -s /usr/local/bin/mailpit /usr/sbin/sendmail`  (only if Mailpit is running on default 1025 port).
 
 You can use your default system `sendmail` binary to route directly to port `1025` (configurable) by calling `/usr/sbin/sendmail -S localhost:1025`.
 
