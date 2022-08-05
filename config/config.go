@@ -2,6 +2,8 @@ package config
 
 import (
 	"errors"
+	"fmt"
+	"os"
 	"regexp"
 
 	"github.com/tg123/go-htpasswd"
@@ -26,9 +28,10 @@ var (
 	// NoLogging for tests
 	NoLogging = false
 
-	// SSLCert @TODO
+	// SSLCert file
 	SSLCert string
-	// SSLKey @TODO
+
+	// SSLKey file
 	SSLKey string
 
 	// AuthFile for basic authentication
@@ -49,6 +52,10 @@ func VerifyConfig() error {
 	}
 
 	if AuthFile != "" {
+		if !isFile(AuthFile) {
+			return fmt.Errorf("password file not found: %s", AuthFile)
+		}
+
 		a, err := htpasswd.New(AuthFile, htpasswd.DefaultSystems, nil)
 		if err != nil {
 			return err
@@ -56,5 +63,29 @@ func VerifyConfig() error {
 		Auth = a
 	}
 
+	if SSLCert != "" && SSLKey == "" || SSLCert == "" && SSLKey != "" {
+		return errors.New("you must provide both an SSL certificate and a key")
+	}
+
+	if SSLCert != "" {
+		if !isFile(SSLCert) {
+			return fmt.Errorf("SSL certificate not found: %s", SSLCert)
+		}
+
+		if !isFile(SSLKey) {
+			return fmt.Errorf("SSL key not found: %s", SSLKey)
+		}
+	}
+
 	return nil
+}
+
+// IsFile returns if a path is a file
+func isFile(path string) bool {
+	info, err := os.Stat(path)
+	if os.IsNotExist(err) || !info.Mode().IsRegular() {
+		return false
+	}
+
+	return true
 }
