@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"math/rand"
+	"os"
+	"path"
 	"testing"
 	"time"
 
@@ -18,8 +20,10 @@ var (
 )
 
 func TestTextEmailInserts(t *testing.T) {
-	setup()
+	setup(false)
+	t.Log("Testing memory storage")
 
+RepeatTest:
 	start := time.Now()
 	for i := 0; i < 1000; i++ {
 		if _, err := Store(DefaultMailbox, testTextEmail); err != nil {
@@ -55,11 +59,20 @@ func TestTextEmailInserts(t *testing.T) {
 	t.Logf("deleted 1,000 text emails in %s\n", time.Since(delStart))
 
 	db.Close()
+	if config.DataDir == "" {
+		setup(true)
+		t.Logf("Testing physical storage to %s", config.DataDir)
+		defer os.RemoveAll(config.DataDir)
+		goto RepeatTest
+	}
+
 }
 
 func TestMimeEmailInserts(t *testing.T) {
-	setup()
+	setup(false)
+	t.Log("Testing memory storage")
 
+RepeatTest:
 	start := time.Now()
 	for i := 0; i < 1000; i++ {
 		if _, err := Store(DefaultMailbox, testMimeEmail); err != nil {
@@ -95,11 +108,19 @@ func TestMimeEmailInserts(t *testing.T) {
 	t.Logf("deleted 1,000 mime emails in %s\n", time.Since(delStart))
 
 	db.Close()
+	if config.DataDir == "" {
+		setup(true)
+		t.Logf("Testing physical storage to %s", config.DataDir)
+		defer os.RemoveAll(config.DataDir)
+		goto RepeatTest
+	}
 }
 
 func TestRetrieveMimeEmail(t *testing.T) {
-	setup()
+	setup(false)
+	t.Log("Testing memory storage")
 
+RepeatTest:
 	id, err := Store(DefaultMailbox, testMimeEmail)
 	if err != nil {
 		t.Log("error ", err)
@@ -128,11 +149,20 @@ func TestRetrieveMimeEmail(t *testing.T) {
 	assertEqual(t, len(inlineData.Content), msg.Inline[0].Size, "inline attachment size does not match")
 
 	db.Close()
+
+	if config.DataDir == "" {
+		setup(true)
+		t.Logf("Testing physical storage to %s", config.DataDir)
+		defer os.RemoveAll(config.DataDir)
+		goto RepeatTest
+	}
 }
 
 func TestSearch(t *testing.T) {
-	setup()
+	setup(false)
+	t.Log("Testing memory storage")
 
+RepeatTest:
 	for i := 0; i < 1000; i++ {
 		msg := enmime.Builder().
 			From(fmt.Sprintf("From %d", i), fmt.Sprintf("from-%d@example.com", i)).
@@ -198,10 +228,17 @@ func TestSearch(t *testing.T) {
 	assertEqual(t, len(summaries), 200, "200 search results expected")
 
 	db.Close()
+
+	if config.DataDir == "" {
+		setup(true)
+		t.Logf("Testing physical storage to %s", config.DataDir)
+		defer os.RemoveAll(config.DataDir)
+		goto RepeatTest
+	}
 }
 
 func BenchmarkImportText(b *testing.B) {
-	setup()
+	setup(false)
 
 	for i := 0; i < b.N; i++ {
 		if _, err := Store(DefaultMailbox, testTextEmail); err != nil {
@@ -214,7 +251,7 @@ func BenchmarkImportText(b *testing.B) {
 }
 
 func BenchmarkImportMime(b *testing.B) {
-	setup()
+	setup(false)
 
 	for i := 0; i < b.N; i++ {
 		if _, err := Store(DefaultMailbox, testMimeEmail); err != nil {
@@ -225,9 +262,16 @@ func BenchmarkImportMime(b *testing.B) {
 	db.Close()
 }
 
-func setup() {
+func setup(dataDir bool) {
 	config.NoLogging = true
 	config.MaxMessages = 0
+
+	if dataDir {
+		config.DataDir = fmt.Sprintf("%s-%d", path.Join(os.TempDir(), "mailpit-tests"), time.Now().UnixNano())
+	} else {
+		config.DataDir = ""
+	}
+
 	if err := InitDB(); err != nil {
 		panic(err)
 	}
@@ -243,7 +287,6 @@ func setup() {
 	if err != nil {
 		panic(err)
 	}
-
 }
 
 func assertEqual(t *testing.T, a interface{}, b interface{}, message string) {
