@@ -87,11 +87,19 @@ func init() {
 	if len(os.Getenv("MP_AUTH_FILE")) > 0 {
 		config.AuthFile = os.Getenv("MP_AUTH_FILE")
 	}
+	if len(os.Getenv("MP_SSL_CERT")) > 0 {
+		config.SSLCert = os.Getenv("MP_SSL_CERT")
+	}
+	if len(os.Getenv("MP_SSL_KEY")) > 0 {
+		config.SSLKey = os.Getenv("MP_SSL_KEY")
+	}
 
 	rootCmd.Flags().StringVarP(&config.DataDir, "data", "d", config.DataDir, "Optional path to store peristent data")
 	rootCmd.Flags().StringVarP(&config.SMTPListen, "smtp", "s", config.SMTPListen, "SMTP bind interface and port")
 	rootCmd.Flags().StringVarP(&config.HTTPListen, "listen", "l", config.HTTPListen, "HTTP bind interface and port for UI")
 	rootCmd.Flags().IntVarP(&config.MaxMessages, "max", "m", config.MaxMessages, "Max number of messages to store")
 	rootCmd.Flags().StringVarP(&config.AuthFile, "auth-file", "a", config.AuthFile, "A password file for authentication (see wiki)")
+	rootCmd.Flags().StringVar(&config.SSLCert, "ssl-cert", config.SSLCert, "SSL certificate - requires ssl-key (see wiki)")
+	rootCmd.Flags().StringVar(&config.SSLKey, "ssl-key", config.SSLKey, "SSL key - requires ssl-cert (see wiki)")
 	rootCmd.Flags().BoolVarP(&config.VerboseLogging, "verbose", "v", false, "Verbose logging")
 }

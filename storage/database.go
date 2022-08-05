@@ -327,12 +327,12 @@ func Search(mailbox, search string, start, limit int) ([]data.Summary, error) {
 	results := []data.Summary{}
 
 	for _, d := range q {
-		cs := &CloverStore{}
+		cs := &data.Summary{}
 		if err := d.Unmarshal(cs); err != nil {
 			return nil, err
 		}
-
-		results = append(results, cs.Summary(d.ObjectId()))
+		cs.ID = d.ObjectId()
+		results = append(results, *cs)
 	}
 
 	return results, nil
@@ -349,25 +349,6 @@ func CountUnread(mailbox string) (int, error) {
 		clover.NewQuery(mailbox).
 			Where(clover.Field("Read").IsFalse()),
 	)
-}
-
-// Summary generated a message summary. ID must be supplied
-// as this is not stored within the CloverStore but rather the
-// *clover.Document
-func (c *CloverStore) Summary(id string) data.Summary {
-	s := data.Summary{
-		ID:          id,
-		From:        c.From,
-		To:          c.To,
-		Cc:          c.Cc,
-		Bcc:         c.Bcc,
-		Subject:     c.Subject,
-		Created:     c.Created,
-		Size:        c.Size,
-		Attachments: c.Attachments,
-	}
-
-	return s
 }
 
 // GetMessage returns a data.Message generated from the {mailbox}_data collection.
