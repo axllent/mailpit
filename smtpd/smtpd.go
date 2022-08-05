@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"net"
 	"net/mail"
+	"regexp"
 
 	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/logger"
@@ -19,7 +20,15 @@ func mailHandler(origin net.Addr, from string, to []string, data []byte) error {
 	}
 
 	if _, err := storage.Store(storage.DefaultMailbox, data); err != nil {
-		logger.Log().Errorf("error storing message: %s", err.Error())
+		// Value with size 4800709 exceeded 1048576 limit
+		re := regexp.MustCompile(`(Value with size \d+ exceeded \d+ limit)`)
+		tooLarge := re.FindStringSubmatch(err.Error())
+		if len(tooLarge) > 0 {
+			logger.Log().Errorf("[db] error storing message: %s", tooLarge[0])
+		} else {
+			logger.Log().Errorf("[db] error storing message")
+			logger.Log().Errorf(err.Error())
+		}
 		return err
 	}
 

@@ -63,13 +63,23 @@ func statsAddNewMessage(mailbox string) {
 	statsLock.Unlock()
 }
 
-// Deleting one will always mean it was read
-func statsDeleteOneMessage(mailbox string) {
+// Delete one message from the totals. If the message was unread,
+// then it will also deduct one from the Unread status.
+func statsDeleteOneMessage(mailbox string, unread bool) {
 	statsLock.Lock()
 	s, ok := mailboxStats[mailbox]
 	if ok {
+		// deduct from the totals
+		if s.Total > 0 {
+			s.Total = s.Total - 1
+		}
+		// only deduct if the original was unread
+		if unread && s.Unread > 0 {
+			s.Unread = s.Unread - 1
+		}
+
 		mailboxStats[mailbox] = data.MailboxStats{
-			Total:  s.Total - 1,
+			Total:  s.Total,
 			Unread: s.Unread,
 		}
 	}

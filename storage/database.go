@@ -209,6 +209,8 @@ func Store(mailbox string, b []byte) (string, error) {
 		return "", err
 	}
 
+	statsAddNewMessage(mailbox)
+
 	// save the raw email in a separate collection
 	raw := clover.NewDocument()
 	raw.Set("_id", id)
@@ -218,11 +220,10 @@ func Store(mailbox string, b []byte) (string, error) {
 	if err != nil {
 		// delete the summary because the data insert failed
 		logger.Log().Debugf("[db] error inserting raw message, rolling back")
-		_ = DeleteOneMessage(mailbox, id)
+		DeleteOneMessage(mailbox, id)
+
 		return "", err
 	}
-
-	statsAddNewMessage(mailbox)
 
 	count++
 	if count%100 == 0 {
@@ -399,10 +400,7 @@ func GetMessage(mailbox, id string) (*data.Message, error) {
 		from = &mail.Address{Name: env.GetHeader("From")}
 	}
 
-	date, err := env.Date()
-	if err != nil {
-		// date =
-	}
+	date, _ := env.Date()
 
 	obj := data.Message{
 		ID:      q.ObjectId(),
@@ -522,11 +520,18 @@ func UnreadMessage(mailbox, id string) error {
 
 // DeleteOneMessage will delete a single message from a mailbox
 func DeleteOneMessage(mailbox, id string) error {
+	q, err := db.FindById(mailbox, id)
+	if err != nil {
+		return err
+	}
+
+	unreadStatus := !q.Get("Read").(bool)
+
 	if err := db.DeleteById(mailbox, id); err != nil {
 		return err
 	}
 
-	statsDeleteOneMessage(mailbox)
+	statsDeleteOneMessage(mailbox, unreadStatus)
 
 	return db.DeleteById(mailbox+"_data", id)
 }
