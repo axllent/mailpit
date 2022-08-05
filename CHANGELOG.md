@@ -3,6 +3,18 @@
 Notable changes to Mailpit will be documented in this file.
 
 
+## 0.0.9
+
+### Bugfix
+- Include read status in search results
+
+### Feature
+- HTTPS option for web UI
+
+### Testing
+- Memory & physical database tests
+
+
 ## 0.0.8
 
 ### Bugfix
