@@ -15,6 +15,8 @@ var (
 
 // StatsGet returns the total/unread statistics for a mailbox
 func StatsGet(mailbox string) data.MailboxStats {
+	mailbox = sanitizeMailboxName(mailbox)
+
 	statsLock.Lock()
 	defer statsLock.Unlock()
 	s, ok := mailboxStats[mailbox]
