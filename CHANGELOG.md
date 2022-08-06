@@ -3,6 +3,12 @@
 Notable changes to Mailpit will be documented in this file.
 
 
+## 0.1.1
+
+### Bugfix
+- Fix env variable for MP_UI_SSL_KEY
+
+
 ## 0.1.0
 
 ### Feature
