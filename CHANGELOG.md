@@ -3,6 +3,21 @@
 Notable changes to Mailpit will be documented in this file.
 
 
+## 0.1.3
+
+### Feature
+- Mark all messages as read
+
+### UI
+- Better error handling when connection to server is broken
+- Add reset search button
+- Minor UI tweaks
+- Update pagination values when new mail arrives when not on first page
+
+
+### Pull Requests
+- Merge pull request [#6](https://github.com/axllent/mailpit/issues/6) from KaptinLin/develop
+
 ## 0.1.2
 
 ### Feature

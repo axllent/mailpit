@@ -574,3 +574,38 @@ func DeleteAllMessages(mailbox string) error {
 
 	return nil
 }
+
+// MarkAllRead will mark every unread message in a mailbox as read
+func MarkAllRead(mailbox string) error {
+	mailbox = sanitizeMailboxName(mailbox)
+
+	totalStart := time.Now()
+
+	q, err := db.FindAll(clover.NewQuery(mailbox).
+		Where(clover.Field("Read").IsFalse()))
+	if err != nil {
+		return err
+	}
+
+	total := len(q)
+
+	updates := make(map[string]interface{})
+	updates["Read"] = true
+
+	for _, m := range q {
+		if err := db.UpdateById(mailbox, m.ObjectId(), updates); err != nil {
+			logger.Log().Error(err)
+			return err
+		}
+	}
+
+	if err := statsRefresh(mailbox); err != nil {
+		return err
+	}
+
+	elapsed := time.Since(totalStart)
+
+	logger.Log().Debugf("[db] marked %d messages in %s as read in %s", total, mailbox, elapsed)
+
+	return nil
+}

@@ -39,6 +39,7 @@ func Listen() {
 	r.HandleFunc("/api/{mailbox}/search", middleWareFunc(apiSearchMailbox))
 	r.HandleFunc("/api/{mailbox}/delete", middleWareFunc(apiDeleteAll))
 	r.HandleFunc("/api/{mailbox}/events", apiWebsocket)
+	r.HandleFunc("/api/{mailbox}/read", apiMarkAllRead)
 	r.HandleFunc("/api/{mailbox}/{id}/source", middleWareFunc(apiDownloadSource))
 	r.HandleFunc("/api/{mailbox}/{id}/part/{partID}", middleWareFunc(apiDownloadAttachment))
 	r.HandleFunc("/api/{mailbox}/{id}/delete", middleWareFunc(apiDeleteOne))

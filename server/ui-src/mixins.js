@@ -27,7 +27,7 @@ const commonMixins = {
         // Ajax error message
         handleError: function (error) {
             // handle error
-            if (error.response) {
+            if (error.response && error.response.data) {
                 // The request was made and the server responded with a status code
                 // that falls out of the range of 2xx
                 if (error.response.data.Error) {
