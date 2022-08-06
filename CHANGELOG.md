@@ -3,6 +3,23 @@
 Notable changes to Mailpit will be documented in this file.
 
 
+## 0.1.2
+
+### Feature
+- Optional browser notifications (HTTPS only)
+
+### Security
+- Don't allow tar files containing a ".."
+- Sanitize mailbox names
+- Use strconv.Atoi() for safe string to int conversions
+
+
+## 0.1.1
+
+### Bugfix
+- Fix env variable for MP_UI_SSL_KEY
+
+
 ## 0.1.0
 
 ### Feature

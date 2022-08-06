@@ -21,7 +21,9 @@ export default {
 			searching: false,
 			isConnected: false,
 			scrollInPlace: false,
-			message: false
+			message: false,
+			notificationsSupported: false,
+			notificationsEnabled: false
 		}
 	},
 	watch: {
@@ -46,6 +48,10 @@ export default {
 		window.addEventListener('hashchange', () => {
 			this.currentPath = window.location.hash.slice(1);
 		});
+
+		this.notificationsSupported = 'https:' == document.location.protocol 
+			&& ("Notification" in window && Notification.permission !== "denied");
+		this.notificationsEnabled = this.notificationsSupported && Notification.permission == "granted";
 
 		this.connect();
 		this.loadMessages();
@@ -214,6 +220,7 @@ export default {
 					}
 	                self.total++;
 					self.unread++;
+					self.browserNotify("New mail from: " + response.Data.From.Address, response.Data.Subject);
                 } else if (response.Type == "prune") {
 					// messages have been deleted, reload messages to adjust
 					self.scrollInPlace = true;
@@ -252,6 +259,41 @@ export default {
             let d = new Date(message.Created)
             return moment(d).fromNow().toString();
         },
+
+		browserNotify: function(title, message) {
+			if (!("Notification" in window)) {
+				return;
+			}
+
+			if (Notification.permission === "granted") {
+				let b = message.Subject;
+				let options = {
+					body: message,
+					icon: 'mailpit.png'
+				}
+				new Notification(title, options);
+			}
+		},
+
+		requestNotifications: function() {
+			// check if the browser supports notifications
+			if (!("Notification" in window)) {
+				alert("This browser does not support desktop notification");
+			}
+
+			// we need to ask the user for permission
+			else if (Notification.permission !== "denied") {
+				let self = this;
+				Notification.requestPermission().then(function (permission) {
+				// If the user accepts, let's create a notification
+					if (permission === "granted") {
+						self.browserNotify("Notifications enabled", "You will receive notifications when new mails are received.");
+						self.notificationsEnabled = true;
+					}
+				});
+			}
+		}
+
 	}
 }
 </script>
@@ -315,7 +357,7 @@ export default {
 	</div>
 	<div class="row flex-fill" style="min-height:0">
 		<div class="d-none d-md-block col-lg-2 col-md-3 mh-100 position-relative" style="overflow-y: auto;">
-			<ul class="list-unstyled mt-3">
+			<ul class="list-unstyled mt-3 mb-5">
 				<li v-if="isConnected" title="Messages will auto-load">
 					<i class="bi bi-power text-success"></i>
 					Connected
@@ -334,13 +376,19 @@ export default {
 						</span>
 					</a>
 				</li>
-				<li class="mt-3 mb-5">
-					<a v-if="total" href="#" data-bs-toggle="modal" data-bs-target="#deleteAllModal">
+				<li class="mt-3">
+					<a v-if="total" href="#" data-bs-toggle="modal" data-bs-target="#DeleteAllModal">
 						<i class="bi bi-trash-fill me-1 text-danger"></i>
 						Delete all
 					</a>
 				</li>
-				<li class="mt-5 position-fixed bottom-0 w-100">
+				<li class="mt-3" v-if="notificationsSupported && !notificationsEnabled">
+					<a href="#" data-bs-toggle="modal" data-bs-target="#EnableNotificationsModal" title="Enable browser notifications">
+						<i class="bi bi-bell"></i>
+						Enable alerts
+					</a>
+				</li>
+				<li class="mt-5 position-fixed bottom-0">
 					<a href="https://github.com/axllent/mailpit" target="_blank" class="text-muted w-100 d-block bg-white py-2">
 						<i class="bi bi-github"></i>
 						GitHub
@@ -400,11 +448,11 @@ export default {
 	</div>
 
 	<!-- Modal -->
-	<div class="modal fade" id="deleteAllModal" tabindex="-1" aria-labelledby="deleteAllModalLabel" aria-hidden="true">
+	<div class="modal fade" id="DeleteAllModal" tabindex="-1" aria-labelledby="DeleteAllModalLabel" aria-hidden="true">
 		<div class="modal-dialog">
 			<div class="modal-content">
 			<div class="modal-header">
-				<h5 class="modal-title" id="deleteAllModalLabel">Delete all messages?</h5>
+				<h5 class="modal-title" id="DeleteAllModalLabel">Delete all messages?</h5>
 				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 			</div>
 			<div class="modal-body">
@@ -413,6 +461,29 @@ export default {
 			<div class="modal-footer">
 				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
 				<button type="button" class="btn btn-danger" data-bs-dismiss="modal" v-on:click="deleteAll">Delete</button>
+			</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Modal -->
+	<div class="modal fade" id="EnableNotificationsModal" tabindex="-1" aria-labelledby="EnableNotificationsModalLabel" aria-hidden="true">
+		<div class="modal-dialog modal-lg">
+			<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="EnableNotificationsModalLabel">Enable browser notifications?</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+				<p class="h4">Get browser notifications when Mailpit receives a new mail?</p>
+				<p>
+					Note that your browser will ask you for confirmation when you click <code>enable notifications</code>,
+					and that you must have Mailpit open in a browser tab to be able to receive the notifications.
+				</p>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+				<button type="button" class="btn btn-primary" data-bs-dismiss="modal" v-on:click="requestNotifications">Enable notifications</button>
 			</div>
 			</div>
 		</div>

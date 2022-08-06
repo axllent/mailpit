@@ -133,5 +133,5 @@ func ServeWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
 func basicAuthResponse(w http.ResponseWriter) {
 	w.Header().Set("WWW-Authenticate", `Basic realm="Login"`)
 	w.WriteHeader(http.StatusUnauthorized)
-	w.Write([]byte("Unauthorised.\n"))
+	_, _ = w.Write([]byte("Unauthorised.\n"))
 }

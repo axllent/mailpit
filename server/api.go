@@ -29,7 +29,7 @@ func apiListMailboxes(w http.ResponseWriter, _ *http.Request) {
 
 	bytes, _ := json.Marshal(res)
 	w.Header().Add("Content-Type", "application/json")
-	w.Write(bytes)
+	_, _ = w.Write(bytes)
 }
 
 func apiListMailbox(w http.ResponseWriter, r *http.Request) {
@@ -62,7 +62,7 @@ func apiListMailbox(w http.ResponseWriter, r *http.Request) {
 
 	bytes, _ := json.Marshal(res)
 	w.Header().Add("Content-Type", "application/json")
-	w.Write(bytes)
+	_, _ = w.Write(bytes)
 }
 
 func apiSearchMailbox(w http.ResponseWriter, r *http.Request) {
@@ -102,7 +102,7 @@ func apiSearchMailbox(w http.ResponseWriter, r *http.Request) {
 
 	bytes, _ := json.Marshal(res)
 	w.Header().Add("Content-Type", "application/json")
-	w.Write(bytes)
+	_, _ = w.Write(bytes)
 }
 
 // Open a message
@@ -120,7 +120,7 @@ func apiOpenMessage(w http.ResponseWriter, r *http.Request) {
 
 	bytes, _ := json.Marshal(msg)
 	w.Header().Add("Content-Type", "application/json")
-	w.Write(bytes)
+	_, _ = w.Write(bytes)
 }
 
 // Download/view an attachment
@@ -143,7 +143,7 @@ func apiDownloadAttachment(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Add("Content-Type", a.ContentType)
 	w.Header().Set("Content-Disposition", "filename=\""+fileName+"\"")
-	w.Write(a.Content)
+	_, _ = w.Write(a.Content)
 }
 
 // View the full email source as plain text
@@ -165,7 +165,7 @@ func apiDownloadSource(w http.ResponseWriter, r *http.Request) {
 	if dl == "1" {
 		w.Header().Set("Content-Disposition", "attachment; filename=\""+id+".eml\"")
 	}
-	w.Write(data)
+	_, _ = w.Write(data)
 }
 
 // Delete all messages in the mailbox
@@ -181,7 +181,7 @@ func apiDeleteAll(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Add("Content-Type", "text/plain")
-	w.Write([]byte("ok"))
+	_, _ = w.Write([]byte("ok"))
 }
 
 // Delete a single message
@@ -198,7 +198,7 @@ func apiDeleteOne(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Add("Content-Type", "text/plain")
-	w.Write([]byte("ok"))
+	_, _ = w.Write([]byte("ok"))
 }
 
 // Mark single message as unread
@@ -215,7 +215,7 @@ func apiUnreadOne(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Add("Content-Type", "text/plain")
-	w.Write([]byte("ok"))
+	_, _ = w.Write([]byte("ok"))
 }
 
 // Websocket to broadcast changes

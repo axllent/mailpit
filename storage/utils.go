@@ -84,11 +84,19 @@ func pruneCron() {
 				}
 				elapsed := time.Since(start)
 				logger.Log().Infof("Pruned %d messages from %s in %s", limit, m, elapsed)
-				statsRefresh(m)
+				_ = statsRefresh(m)
 				if !strings.HasSuffix(m, "_data") {
 					websockets.Broadcast("prune", nil)
 				}
 			}
 		}
 	}
+}
+
+// SanitizeMailboxName returns a clean mailbox name
+// allowing only `alphanumeric` characters and `-``
+func sanitizeMailboxName(mailbox string) string {
+	re := regexp.MustCompile(`[^a-zA-Z0-9\-]`)
+
+	return re.ReplaceAllString(mailbox, "")
 }

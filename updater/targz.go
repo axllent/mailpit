@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"syscall"
 )
 
@@ -184,6 +185,10 @@ func extract(filePath string, directory string) error {
 		}
 
 		fileInfo := header.FileInfo()
+		// paths could contain a '..', is used in a file system operations
+		if strings.Contains(fileInfo.Name(), "..") {
+			continue
+		}
 		dir := filepath.Join(directory, filepath.Dir(header.Name))
 		filename := filepath.Join(dir, fileInfo.Name())
 
