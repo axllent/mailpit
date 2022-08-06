@@ -461,7 +461,14 @@ export default {
 						</div>
 					</a>
 				</div>
-				<div v-else class="text-muted my-3">No messages</div>
+				<div v-else class="text-muted my-3">
+					<span v-if="searching">
+						No results matching your search
+					</span>
+					<span v-else>
+						There are no emails in your mailbox
+					</span>
+				</div>
 			</div>
 
 			<Message v-if="message" :message="message" :mailbox="mailbox"></Message>
