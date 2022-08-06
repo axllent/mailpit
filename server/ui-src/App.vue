@@ -362,7 +362,7 @@ export default {
 					<i class="bi bi-power text-success"></i>
 					Connected
 				</li>
-				<li v-else title="Messages will auto-load">
+				<li v-else title="You need to manually refresh your mailbox">
 					<i class="bi bi-power text-danger"></i>
 					Disconnected
 				</li>
