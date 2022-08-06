@@ -84,14 +84,22 @@ func init() {
 	if len(os.Getenv("MP_MAX_MESSAGES")) > 0 {
 		config.MaxMessages, _ = strconv.Atoi(os.Getenv("MP_MAX_MESSAGES"))
 	}
-	if len(os.Getenv("MP_AUTH_FILE")) > 0 {
-		config.UIAuthFile = os.Getenv("MP_AUTH_FILE")
-	}
 	if len(os.Getenv("MP_UI_AUTH_FILE")) > 0 {
 		config.UIAuthFile = os.Getenv("MP_UI_AUTH_FILE")
 	}
 	if len(os.Getenv("MP_SMTP_AUTH_FILE")) > 0 {
 		config.SMTPAuthFile = os.Getenv("MP_SMTP_AUTH_FILE")
+	}
+	if len(os.Getenv("MP_UI_SSL_CERT")) > 0 {
+		config.UISSLCert = os.Getenv("MP_UI_SSL_CERT")
+	}
+	if len(os.Getenv("MP_UI_SSL_KEY")) > 0 {
+		config.UISSLKey = os.Getenv("MP_UI_SSL_KEY")
+	}
+
+	// deprecated 2022/08/06
+	if len(os.Getenv("MP_AUTH_FILE")) > 0 {
+		config.UIAuthFile = os.Getenv("MP_AUTH_FILE")
 	}
 	// deprecated 2022/08/06
 	if len(os.Getenv("MP_SSL_CERT")) > 0 {
@@ -100,12 +108,6 @@ func init() {
 	// deprecated 2022/08/06
 	if len(os.Getenv("MP_SSL_KEY")) > 0 {
 		config.UISSLKey = os.Getenv("MP_SSL_KEY")
-	}
-	if len(os.Getenv("MP_UI_SSL_CERT")) > 0 {
-		config.UISSLCert = os.Getenv("MP_UI_SSL_CERT")
-	}
-	if len(os.Getenv("MP_UISSL_KEY")) > 0 {
-		config.UISSLKey = os.Getenv("MP_UI_SSL_KEY")
 	}
 
 	rootCmd.Flags().StringVarP(&config.DataDir, "data", "d", config.DataDir, "Optional path to store peristent data")
