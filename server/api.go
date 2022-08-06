@@ -218,6 +218,22 @@ func apiUnreadOne(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write([]byte("ok"))
 }
 
+// Mark single message as unread
+func apiMarkAllRead(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+
+	mailbox := vars["mailbox"]
+
+	err := storage.MarkAllRead(mailbox)
+	if err != nil {
+		httpError(w, err.Error())
+		return
+	}
+
+	w.Header().Add("Content-Type", "text/plain")
+	_, _ = w.Write([]byte("ok"))
+}
+
 // Websocket to broadcast changes
 func apiWebsocket(w http.ResponseWriter, r *http.Request) {
 	websockets.ServeWs(websockets.MessageHub, w, r)

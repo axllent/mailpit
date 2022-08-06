@@ -1,16 +1,18 @@
-// @import "../../../node_modules/bootstrap-icons"; ///scss/root";
-
 @import "bootstrap";
 
 [v-cloak] {
     display: none !important;
 }
 
-.navbar-brand {
-    color: #2d4a5d;
+.navbar {
+    z-index: 99;
 
-    img {
-        width: 40px;
+    .navbar-brand {
+        color: #2d4a5d;
+
+        img {
+            width: 40px;
+        }
     }
 }
 
@@ -25,7 +27,6 @@
 }
 
 .message.read:not(.active) {
-    // background: $gray-100;
     color: $gray-500;
 }
 
@@ -51,4 +52,8 @@
     td {
         vertical-align: top;
     }
+}
+
+.list-group-item:first-child {
+    border-top: 0;
 }
