@@ -87,14 +87,20 @@ func init() {
 	if len(os.Getenv("MP_UI_AUTH_FILE")) > 0 {
 		config.UIAuthFile = os.Getenv("MP_UI_AUTH_FILE")
 	}
-	if len(os.Getenv("MP_SMTP_AUTH_FILE")) > 0 {
-		config.SMTPAuthFile = os.Getenv("MP_SMTP_AUTH_FILE")
-	}
 	if len(os.Getenv("MP_UI_SSL_CERT")) > 0 {
 		config.UISSLCert = os.Getenv("MP_UI_SSL_CERT")
 	}
 	if len(os.Getenv("MP_UI_SSL_KEY")) > 0 {
 		config.UISSLKey = os.Getenv("MP_UI_SSL_KEY")
+	}
+	if len(os.Getenv("MP_SMTP_AUTH_FILE")) > 0 {
+		config.SMTPAuthFile = os.Getenv("MP_SMTP_AUTH_FILE")
+	}
+	if len(os.Getenv("MP_SMTP_SSL_CERT")) > 0 {
+		config.SMTPSSLCert = os.Getenv("MP_SMTP_SSL_CERT")
+	}
+	if len(os.Getenv("MP_SMTP_SSL_KEY")) > 0 {
+		config.SMTPSSLKey = os.Getenv("MP_SMTP_SSL_KEY")
 	}
 
 	// deprecated 2022/08/06
