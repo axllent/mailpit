@@ -28,17 +28,29 @@ var (
 	// NoLogging for tests
 	NoLogging = false
 
-	// SSLCert file
-	SSLCert string
+	// UISSLCert file
+	UISSLCert string
 
-	// SSLKey file
-	SSLKey string
+	// UISSLKey file
+	UISSLKey string
 
-	// AuthFile for basic authentication
-	AuthFile string
+	// UIAuthFile for basic authentication
+	UIAuthFile string
 
-	// Auth used for euthentication
-	Auth *htpasswd.File
+	// UIAuth used for euthentication
+	UIAuth *htpasswd.File
+
+	// SMTPSSLCert file
+	SMTPSSLCert string
+
+	// SMTPSSLKey file
+	SMTPSSLKey string
+
+	// SMTPAuthFile for SMTP authentication
+	SMTPAuthFile string
+
+	// SMTPAuth used for euthentication
+	SMTPAuth *htpasswd.File
 )
 
 // VerifyConfig wil do some basic checking
@@ -51,30 +63,60 @@ func VerifyConfig() error {
 		return errors.New("HTTP bind should be in the format of <ip>:<port>")
 	}
 
-	if AuthFile != "" {
-		if !isFile(AuthFile) {
-			return fmt.Errorf("password file not found: %s", AuthFile)
+	if UIAuthFile != "" {
+		if !isFile(UIAuthFile) {
+			return fmt.Errorf("HTTP password file not found: %s", UIAuthFile)
 		}
 
-		a, err := htpasswd.New(AuthFile, htpasswd.DefaultSystems, nil)
+		a, err := htpasswd.New(UIAuthFile, htpasswd.DefaultSystems, nil)
 		if err != nil {
 			return err
 		}
-		Auth = a
+		UIAuth = a
 	}
 
-	if SSLCert != "" && SSLKey == "" || SSLCert == "" && SSLKey != "" {
-		return errors.New("you must provide both an SSL certificate and a key")
+	if UISSLCert != "" && UISSLKey == "" || UISSLCert == "" && UISSLKey != "" {
+		return errors.New("you must provide both a UI SSL certificate and a key")
 	}
 
-	if SSLCert != "" {
-		if !isFile(SSLCert) {
-			return fmt.Errorf("SSL certificate not found: %s", SSLCert)
+	if UISSLCert != "" {
+		if !isFile(UISSLCert) {
+			return fmt.Errorf("SSL certificate not found: %s", UISSLCert)
 		}
 
-		if !isFile(SSLKey) {
-			return fmt.Errorf("SSL key not found: %s", SSLKey)
+		if !isFile(UISSLKey) {
+			return fmt.Errorf("SSL key not found: %s", UISSLKey)
 		}
+	}
+
+	if SMTPSSLCert != "" && SMTPSSLKey == "" || SMTPSSLCert == "" && SMTPSSLKey != "" {
+		return errors.New("you must provide both an SMTP SSL certificate and a key")
+	}
+
+	if SMTPSSLCert != "" {
+		if !isFile(SMTPSSLCert) {
+			return fmt.Errorf("SMTP SSL certificate not found: %s", SMTPSSLCert)
+		}
+
+		if !isFile(SMTPSSLKey) {
+			return fmt.Errorf("SMTP SSL key not found: %s", SMTPSSLKey)
+		}
+	}
+
+	if SMTPAuthFile != "" {
+		if !isFile(SMTPAuthFile) {
+			return fmt.Errorf("SMTP password file not found: %s", SMTPAuthFile)
+		}
+
+		if SMTPSSLCert == "" {
+			return errors.New("SMTP authentication requires SMTP encryption")
+		}
+
+		a, err := htpasswd.New(SMTPAuthFile, htpasswd.DefaultSystems, nil)
+		if err != nil {
+			return err
+		}
+		SMTPAuth = a
 	}
 
 	return nil

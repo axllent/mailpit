@@ -3,6 +3,12 @@
 Notable changes to Mailpit will be documented in this file.
 
 
+## 0.1.0
+
+### Feature
+- SMTP STARTTLS & SMTP authentication support
+
+
 ## 0.0.9
 
 ### Bugfix

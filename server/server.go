@@ -47,9 +47,13 @@ func Listen() {
 	r.PathPrefix("/").Handler(middlewareHandler(http.FileServer(http.FS(serverRoot))))
 	http.Handle("/", r)
 
-	if config.SSLCert != "" && config.SSLKey != "" {
+	if config.UIAuthFile != "" {
+		logger.Log().Info("[http] enabling web UI basic authentication")
+	}
+
+	if config.UISSLCert != "" && config.UISSLKey != "" {
 		logger.Log().Infof("[http] starting secure server on https://%s", config.HTTPListen)
-		log.Fatal(http.ListenAndServeTLS(config.HTTPListen, config.SSLCert, config.SSLKey, nil))
+		log.Fatal(http.ListenAndServeTLS(config.HTTPListen, config.UISSLCert, config.UISSLKey, nil))
 	} else {
 		logger.Log().Infof("[http] starting server on http://%s", config.HTTPListen)
 		log.Fatal(http.ListenAndServe(config.HTTPListen, nil))
@@ -76,7 +80,7 @@ func (w gzipResponseWriter) Write(b []byte) (int, error) {
 // and gzip compression.
 func middleWareFunc(fn http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if config.AuthFile != "" {
+		if config.UIAuthFile != "" {
 			user, pass, ok := r.BasicAuth()
 
 			if !ok {
@@ -84,7 +88,7 @@ func middleWareFunc(fn http.HandlerFunc) http.HandlerFunc {
 				return
 			}
 
-			if !config.Auth.Match(user, pass) {
+			if !config.UIAuth.Match(user, pass) {
 				basicAuthResponse(w)
 				return
 			}
@@ -107,7 +111,7 @@ func middleWareFunc(fn http.HandlerFunc) http.HandlerFunc {
 func middlewareHandler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-		if config.AuthFile != "" {
+		if config.UIAuthFile != "" {
 			user, pass, ok := r.BasicAuth()
 
 			if !ok {
@@ -115,7 +119,7 @@ func middlewareHandler(h http.Handler) http.Handler {
 				return
 			}
 
-			if !config.Auth.Match(user, pass) {
+			if !config.UIAuth.Match(user, pass) {
 				basicAuthResponse(w)
 				return
 			}

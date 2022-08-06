@@ -9,7 +9,7 @@ import (
 	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/logger"
 	"github.com/axllent/mailpit/storage"
-	s "github.com/mhale/smtpd"
+	"github.com/mhale/smtpd"
 )
 
 func mailHandler(origin net.Addr, from string, to []string, data []byte) error {
@@ -37,12 +37,45 @@ func mailHandler(origin net.Addr, from string, to []string, data []byte) error {
 	return nil
 }
 
+func authHandler(remoteAddr net.Addr, mechanism string, username []byte, password []byte, shared []byte) (bool, error) {
+	return config.SMTPAuth.Match(string(username), string(password)), nil
+}
+
 // Listen starts the SMTPD server
 func Listen() error {
-	logger.Log().Infof("[smtp] starting on %s", config.SMTPListen)
-	if err := s.ListenAndServe(config.SMTPListen, mailHandler, "Mailpit", ""); err != nil {
-		return err
+	if config.SMTPSSLCert != "" {
+		logger.Log().Info("[smtp] enabling TLS")
+	}
+	if config.SMTPAuthFile != "" {
+		logger.Log().Info("[smtp] enabling authentication")
 	}
 
-	return nil
+	logger.Log().Infof("[smtp] starting on %s", config.SMTPListen)
+
+	return listenAndServe(config.SMTPListen, mailHandler, authHandler)
+}
+
+func listenAndServe(addr string, handler smtpd.Handler, authHandler smtpd.AuthHandler) error {
+	srv := &smtpd.Server{
+		Addr:         addr,
+		Handler:      handler,
+		Appname:      "Mailpit",
+		Hostname:     "",
+		AuthHandler:  nil,
+		AuthRequired: false,
+	}
+
+	if config.SMTPAuthFile != "" {
+		srv.AuthHandler = authHandler
+		srv.AuthRequired = true
+	}
+
+	if config.SMTPSSLCert != "" {
+		err := srv.ConfigureTLS(config.SMTPSSLCert, config.SMTPSSLKey)
+		if err != nil {
+			return err
+		}
+	}
+
+	return srv.ListenAndServe()
 }
