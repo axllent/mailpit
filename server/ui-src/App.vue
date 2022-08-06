@@ -99,6 +99,13 @@ export default {
 			this.loadMessages();
 		},
 
+		resetSearch: function(e) {
+			e.preventDefault();
+			this.search = '';
+			this.scrollInPlace = true;
+			this.loadMessages();
+		},
+
 		reloadMessages: function() {
 			this.search = "";
             this.start = 0;
@@ -337,7 +344,10 @@ export default {
 		<div class="col col-md-9 col-lg-5" v-if="!message && total">
 			<form v-on:submit="doSearch">
 				<div class="input-group">
-					<input type="text" class="form-control" v-model.trim="search" placeholder="Search mailbox">
+					<div class="d-flex bg-white border rounded-start flex-fill position-relative">
+						<input type="text" class="form-control border-0" v-model.trim="search" placeholder="Search mailbox">
+						<span class="btn btn-link position-absolute end-0 text-muted" v-if="search" v-on:click="resetSearch"><i class="bi bi-x-circle"></i></span>
+					</div>
 					<button class="btn btn-outline-secondary" type="submit"><i class="bi bi-search"></i></button>
 				</div>
 			</form>
