@@ -92,3 +92,11 @@ func pruneCron() {
 		}
 	}
 }
+
+// SanitizeMailboxName returns a clean mailbox name
+// allowing only `alphanumeric` characters and `-``
+func sanitizeMailboxName(mailbox string) string {
+	re := regexp.MustCompile(`[^a-zA-Z0-9\-]`)
+
+	return re.ReplaceAllString(mailbox, "")
+}
