@@ -198,6 +198,16 @@ export default {
 			});
 		},
 
+		markAllRead: function() {
+			let self = this;
+			let uri = 'api/' +  self.mailbox + '/read'
+			self.get(uri, false, function(response) {
+				window.location.hash = "";
+				self.scrollInPlace = true;
+				self.loadMessages();
+			});
+		},
+
 		// websocket connect
         connect: function () {
             let wsproto = location.protocol == 'https:' ? 'wss' : 'ws';
@@ -360,15 +370,15 @@ export default {
 	<div class="row flex-fill" style="min-height:0">
 		<div class="d-none d-md-block col-lg-2 col-md-3 mh-100 position-relative" style="overflow-y: auto;">
 			<ul class="list-unstyled mt-3 mb-5">
-				<li v-if="isConnected" title="Messages will auto-load">
+				<li v-if="isConnected" title="Messages will auto-load" class="mb-2">
 					<i class="bi bi-power text-success"></i>
 					Connected
 				</li>
-				<li v-else title="You need to manually refresh your mailbox">
+				<li v-else title="You need to manually refresh your mailbox" class="mb-3">
 					<i class="bi bi-power text-danger"></i>
 					Disconnected
 				</li>
-				<li class="mt-3">
+				<li class="mb-5">
 					<a class="position-relative ps-0" href="#" v-on:click="reloadMessages">
 						<i class="bi bi-envelope me-1" v-if="isConnected"></i>
 						<i class="bi bi-arrow-clockwise me-1" v-else></i>
@@ -378,20 +388,26 @@ export default {
 						</span>
 					</a>
 				</li>
-				<li class="mt-3">
-					<a v-if="total" href="#" data-bs-toggle="modal" data-bs-target="#DeleteAllModal">
+				<li class="my-3" v-if="unread">
+					<a href="#" data-bs-toggle="modal" data-bs-target="#MarkAllReadModal">
+						<i class="bi bi-check2-square"></i>
+						Mark all read
+					</a>
+				</li>
+				<li class="my-3" v-if="total">
+					<a href="#" data-bs-toggle="modal" data-bs-target="#DeleteAllModal">
 						<i class="bi bi-trash-fill me-1 text-danger"></i>
 						Delete all
 					</a>
 				</li>
-				<li class="mt-3" v-if="notificationsSupported && !notificationsEnabled">
+				<li class="my-3" v-if="notificationsSupported && !notificationsEnabled">
 					<a href="#" data-bs-toggle="modal" data-bs-target="#EnableNotificationsModal" title="Enable browser notifications">
 						<i class="bi bi-bell"></i>
 						Enable alerts
 					</a>
 				</li>
 				<li class="mt-5 position-fixed bottom-0">
-					<a href="https://github.com/axllent/mailpit" target="_blank" class="text-muted w-100 d-block bg-white py-2">
+					<a href="https://github.com/axllent/mailpit" target="_blank" class="text-muted w-100 d-block bg-white my-3">
 						<i class="bi bi-github"></i>
 						GitHub
 					</a>
@@ -435,7 +451,7 @@ export default {
 						</div>
 					</a>
 				</div>
-				<div v-else class="text-muted py-3">No messages</div>
+				<div v-else class="text-muted my-3">No messages</div>
 			</div>
 
 			<Message v-if="message" :message="message" :mailbox="mailbox"></Message>
@@ -463,6 +479,25 @@ export default {
 			<div class="modal-footer">
 				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
 				<button type="button" class="btn btn-danger" data-bs-dismiss="modal" v-on:click="deleteAll">Delete</button>
+			</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Modal -->
+	<div class="modal fade" id="MarkAllReadModal" tabindex="-1" aria-labelledby="MarkAllReadModalLabel" aria-hidden="true">
+		<div class="modal-dialog">
+			<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="MarkAllReadModalLabel">Mark all messages as read?</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+				This will mark {{ formatNumber(unread) }} message<span v-if="unread > 1">s</span> as read.
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+				<button type="button" class="btn btn-primary" data-bs-dismiss="modal" v-on:click="markAllRead">Confirm</button>
 			</div>
 			</div>
 		</div>
