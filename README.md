@@ -14,14 +14,15 @@ Mailpit is inspired by [MailHog](#why-rewrite-mailhog), but much, much faster.
 - Runs completely on a single binary
 - SMTP server (default `0.0.0.0:1025`)
 - Web UI to view emails (HTML format, text, source and MIME attachments, default `0.0.0.0:8025`)
-- Optional HTTPS for web UI ([see wiki](https://github.com/axllent/mailpit/wiki/HTTPS))
 - Real-time web UI updates using web sockets for new mail
-- Optional basic authentication for web UI ([see wiki](https://github.com/axllent/mailpit/wiki/Basic-authentication))
-- Email storage in either memory or disk (using [CloverDB](https://github.com/ostafen/clover)) - note that in-memory has a physical limit of 1MB per email
 - Configurable automatic email pruning (default keeps the most recent 500 emails)
+- Email storage either in memory or disk ([see wiki](https://github.com/axllent/mailpit/wiki/Email-storage))
 - Fast SMTP processing & storing - approximately 300-600 emails per second depending on CPU, network speed & email size
 - Can handle tens of thousands of emails
-- Multi-arch [Docker images](https://github.com/axllent/mailpit/wiki/Docker-images)
+- Optional SMTP with STARTTLS & SMTP authentication ([see wiki](https://github.com/axllent/mailpit/wiki/SMTP-with-STARTTLS-and-authentication))
+- Optional HTTPS for web UI ([see wiki](https://github.com/axllent/mailpit/wiki/HTTPS))
+- Optional basic authentication for web UI ([see wiki](https://github.com/axllent/mailpit/wiki/Basic-authentication))
+- Multi-architecture [Docker images](https://github.com/axllent/mailpit/wiki/Docker-images)
 
 
 ## Planned features
@@ -49,7 +50,7 @@ If Mailpit is found on the same host as sendmail, you can symlink the Mailpit bi
 
 You can use your default system `sendmail` binary to route directly to port `1025` (configurable) by calling `/usr/sbin/sendmail -S localhost:1025`.
 
-You can build a Mailpit-specific sendmail binary from source ( see [building from source](https://github.com/axllent/mailpit/wiki/Building-from-source)).
+You can build a Mailpit-specific sendmail binary from source (see [building from source](https://github.com/axllent/mailpit/wiki/Building-from-source)).
 
 
 ## Why rewrite MailHog?

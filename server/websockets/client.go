@@ -99,8 +99,8 @@ func (c *Client) writePump() {
 
 // ServeWs handles websocket requests from the peer.
 func ServeWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
-	if config.AuthFile != "" {
-		if config.AuthFile != "" {
+	if config.UIAuthFile != "" {
+		if config.UIAuthFile != "" {
 			user, pass, ok := r.BasicAuth()
 
 			if !ok {
@@ -108,7 +108,7 @@ func ServeWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			if !config.Auth.Match(user, pass) {
+			if !config.UIAuth.Match(user, pass) {
 				basicAuthResponse(w)
 				return
 			}

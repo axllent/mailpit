@@ -85,21 +85,52 @@ func init() {
 		config.MaxMessages, _ = strconv.Atoi(os.Getenv("MP_MAX_MESSAGES"))
 	}
 	if len(os.Getenv("MP_AUTH_FILE")) > 0 {
-		config.AuthFile = os.Getenv("MP_AUTH_FILE")
+		config.UIAuthFile = os.Getenv("MP_AUTH_FILE")
 	}
+	if len(os.Getenv("MP_UI_AUTH_FILE")) > 0 {
+		config.UIAuthFile = os.Getenv("MP_UI_AUTH_FILE")
+	}
+	if len(os.Getenv("MP_SMTP_AUTH_FILE")) > 0 {
+		config.SMTPAuthFile = os.Getenv("MP_SMTP_AUTH_FILE")
+	}
+	// deprecated 2022/08/06
 	if len(os.Getenv("MP_SSL_CERT")) > 0 {
-		config.SSLCert = os.Getenv("MP_SSL_CERT")
+		config.UISSLCert = os.Getenv("MP_SSL_CERT")
 	}
+	// deprecated 2022/08/06
 	if len(os.Getenv("MP_SSL_KEY")) > 0 {
-		config.SSLKey = os.Getenv("MP_SSL_KEY")
+		config.UISSLKey = os.Getenv("MP_SSL_KEY")
+	}
+	if len(os.Getenv("MP_UI_SSL_CERT")) > 0 {
+		config.UISSLCert = os.Getenv("MP_UI_SSL_CERT")
+	}
+	if len(os.Getenv("MP_UISSL_KEY")) > 0 {
+		config.UISSLKey = os.Getenv("MP_UI_SSL_KEY")
 	}
 
 	rootCmd.Flags().StringVarP(&config.DataDir, "data", "d", config.DataDir, "Optional path to store peristent data")
 	rootCmd.Flags().StringVarP(&config.SMTPListen, "smtp", "s", config.SMTPListen, "SMTP bind interface and port")
 	rootCmd.Flags().StringVarP(&config.HTTPListen, "listen", "l", config.HTTPListen, "HTTP bind interface and port for UI")
 	rootCmd.Flags().IntVarP(&config.MaxMessages, "max", "m", config.MaxMessages, "Max number of messages to store")
-	rootCmd.Flags().StringVarP(&config.AuthFile, "auth-file", "a", config.AuthFile, "A password file for authentication (see wiki)")
-	rootCmd.Flags().StringVar(&config.SSLCert, "ssl-cert", config.SSLCert, "SSL certificate - requires ssl-key (see wiki)")
-	rootCmd.Flags().StringVar(&config.SSLKey, "ssl-key", config.SSLKey, "SSL key - requires ssl-cert (see wiki)")
+
+	rootCmd.Flags().StringVar(&config.UIAuthFile, "ui-auth-file", config.UIAuthFile, "A password file for web UI authentication")
+	rootCmd.Flags().StringVar(&config.UISSLCert, "ui-ssl-cert", config.UISSLCert, "SSL certificate for web UI - requires ui-ssl-key")
+	rootCmd.Flags().StringVar(&config.UISSLKey, "ui-ssl-key", config.UISSLKey, "SSL key for web UI - requires ui-ssl-cert")
+
+	rootCmd.Flags().StringVar(&config.SMTPAuthFile, "smtp-auth-file", config.SMTPAuthFile, "A password file for SMTP authentication")
+	rootCmd.Flags().StringVar(&config.SMTPSSLCert, "smtp-ssl-cert", config.SMTPSSLCert, "SSL certificate for SMTP - requires smtp-ssl-key")
+	rootCmd.Flags().StringVar(&config.SMTPSSLKey, "smtp-ssl-key", config.SMTPSSLKey, "SSL key for SMTP - requires smtp-ssl-cert")
+
 	rootCmd.Flags().BoolVarP(&config.VerboseLogging, "verbose", "v", false, "Verbose logging")
+
+	// deprecated 2022/08/06
+	rootCmd.Flags().StringVarP(&config.UIAuthFile, "auth-file", "a", config.UIAuthFile, "A password file for web UI authentication")
+	rootCmd.Flags().StringVar(&config.UISSLCert, "ssl-cert", config.UISSLCert, "SSL certificate - requires ssl-key")
+	rootCmd.Flags().StringVar(&config.UISSLKey, "ssl-key", config.UISSLKey, "SSL key - requires ssl-cert")
+	rootCmd.Flags().Lookup("auth-file").Hidden = true
+	rootCmd.Flags().Lookup("auth-file").Deprecated = "use --ui-auth-file"
+	rootCmd.Flags().Lookup("ssl-cert").Hidden = true
+	rootCmd.Flags().Lookup("ssl-cert").Deprecated = "use --ui-ssl-cert"
+	rootCmd.Flags().Lookup("ssl-key").Hidden = true
+	rootCmd.Flags().Lookup("ssl-key").Deprecated = "use --ui-ssl-key"
 }
