@@ -311,7 +311,7 @@ export default {
 </script>
 
 <template>
-	<div class="navbar navbar-expand-lg navbar-light row flex-shrink-0 bg-light">
+	<div class="navbar navbar-expand-lg navbar-light row flex-shrink-0 bg-light shadow-sm">
 		<div class="col-lg-2 col-md-3 col-auto">
 			<a class="navbar-brand" href="#" v-on:click="reloadMessages">
 				<img src="mailpit.svg" alt="Mailpit">
