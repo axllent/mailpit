@@ -64,7 +64,7 @@ func Listen() {
 func basicAuthResponse(w http.ResponseWriter) {
 	w.Header().Set("WWW-Authenticate", `Basic realm="Login"`)
 	w.WriteHeader(http.StatusUnauthorized)
-	w.Write([]byte("Unauthorised.\n"))
+	_, _ = w.Write([]byte("Unauthorised.\n"))
 }
 
 type gzipResponseWriter struct {

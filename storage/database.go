@@ -224,7 +224,7 @@ func Store(mailbox string, b []byte) (string, error) {
 	if err != nil {
 		// delete the summary because the data insert failed
 		logger.Log().Debugf("[db] error inserting raw message, rolling back")
-		DeleteOneMessage(mailbox, id)
+		_ = DeleteOneMessage(mailbox, id)
 
 		return "", err
 	}
@@ -567,7 +567,7 @@ func DeleteAllMessages(mailbox string) error {
 	}
 
 	// resets stats for mailbox
-	statsRefresh(mailbox)
+	_ = statsRefresh(mailbox)
 
 	elapsed := time.Since(totalStart)
 	logger.Log().Infof("Deleted %d messages from %s in %s", totalMessages, mailbox, elapsed)
