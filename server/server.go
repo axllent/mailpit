@@ -156,16 +156,13 @@ func getStartLimit(req *http.Request) (start int, limit int) {
 	limit = 50
 
 	s := req.URL.Query().Get("start")
-	if n, e := strconv.ParseInt(s, 10, 64); e == nil && n > 0 {
-		start = int(n)
+	if n, err := strconv.Atoi(s); err == nil && n > 0 {
+		start = n
 	}
 
 	l := req.URL.Query().Get("limit")
-	if n, e := strconv.ParseInt(l, 10, 64); e == nil && n > 0 {
-		if n > 500 {
-			n = 500
-		}
-		limit = int(n)
+	if n, err := strconv.Atoi(l); err == nil && n > 0 {
+		limit = n
 	}
 
 	return start, limit
