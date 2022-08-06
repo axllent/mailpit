@@ -210,12 +210,14 @@ export default {
 				}
 				// new messages
 				if (response.Type == "new" && response.Data) {
-                	if (self.start < 1) {
-						if (!self.searching) {
+					if (!self.searching) {
+                		if (self.start < 1) {
 							self.items.unshift(response.Data);
 							if (self.items.length > self.limit) {
 								self.items.pop();
 							}
+						} else {
+							self.start++;
 						}
 					}
 	                self.total++;
