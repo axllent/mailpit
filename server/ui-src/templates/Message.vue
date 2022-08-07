@@ -78,7 +78,7 @@ export default {
 			<tbody>
 				<tr class="small">
 					<th>From</th>
-					<td>
+					<td class="privacy">
 						<span v-if="message.From">
 							<span v-if="message.From.Name">{{ message.From.Name + " " }}</span>
 							<span v-if="message.From.Address">&lt;{{ message.From.Address }}&gt;</span>
@@ -90,7 +90,7 @@ export default {
 				</tr>
 				<tr class="small">
 					<th>To</th>
-					<td>
+					<td class="privacy">
 						<span v-for="(t, i) in message.To">
 							<template v-if="i > 0">,</template>
 							{{ t.Name + " <" + t.Address +">" }}
@@ -99,7 +99,7 @@ export default {
 				</tr>
 				<tr v-if="message.Cc" class="small">
 					<th>CC</th>
-					<td>
+					<td class="privacy">
 						<span v-for="(t, i) in message.Cc">
 							<template v-if="i > 0">,</template>
 							{{ t.Name + " <" + t.Address +">" }}
@@ -108,7 +108,7 @@ export default {
 				</tr>
 				<tr v-if="message.Bcc" class="small">
 					<th>CC</th>
-					<td>
+					<td class="privacy">
 						<span v-for="(t, i) in message.Bcc">
 							<template v-if="i > 0">,</template>
 							{{ t.Name + " <" + t.Address +">" }}
