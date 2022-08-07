@@ -65,7 +65,7 @@ func InitDB() error {
 		// method invoked upon seeing signal
 		go func() {
 			s := <-sigs
-			logger.Log().Infof("[db] got %s signal, saving persistant data & shutting down", s)
+			logger.Log().Infof("[db] got %s signal, saving persistent data & shutting down", s)
 			if err := db.Close(); err != nil {
 				logger.Log().Errorf("[db] %s", err.Error())
 			}
