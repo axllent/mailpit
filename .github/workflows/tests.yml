@@ -3,7 +3,7 @@ on:
   pull_request:
     branches: [ develop ]
   push:
-    branches: [ develop ]
+    branches: [ develop, 'feature/**' ]
 jobs:
   test:
     strategy:
