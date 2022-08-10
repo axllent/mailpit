@@ -44,6 +44,7 @@
     font-family: Courier New, Courier, System, fixed-width;
     font-size: 0.85em;
 }
+
 #nav-plain-text {
     white-space: pre-wrap;
 }
@@ -52,7 +53,7 @@
     margin: 15px 0 0;
 
     th {
-        padding-right: 10px;
+        padding-right: 1.5rem;
         font-weight: normal;
         vertical-align: top;
     }
@@ -60,6 +61,14 @@
     td {
         vertical-align: top;
     }
+}
+
+#nav-html {
+    padding-right: 1.5rem;
+}
+
+#preview-html {
+    min-height: 300px;
 }
 
 .list-group-item:first-child {

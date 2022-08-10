@@ -443,33 +443,33 @@ export default {
 				<div class="list-group" v-if="items.length">
 					<a v-for="message in items" :href="'#'+message.ID" class="row message d-flex small list-group-item list-group-item-action"
 						:class="message.Read ? 'read':''" XXXv-on:click="openMessage(message)">
-						<div class="col-md-3">
-							<div class="d-md-none float-end text-muted text-nowrap small">
+						<div class="col-lg-3">
+							<div class="d-lg-none float-end text-muted text-nowrap small">
 								<i class="bi bi-paperclip h6 me-1" v-if="message.Attachments"></i>
 								{{ getRelativeCreated(message) }}
 							</div>
 
-							<div class="text-truncate d-md-none privacy">
+							<div class="text-truncate d-lg-none privacy">
 								<span v-if="message.From" :title="message.From.Address">{{ message.From.Name ? message.From.Name : message.From.Address }}</span>
 							</div> 
-							<div class="text-truncate d-none d-md-block privacy">
+							<div class="text-truncate d-none d-lg-block privacy">
 								<b v-if="message.From" :title="message.From.Address">{{ message.From.Name ? message.From.Name : message.From.Address }}</b>
 							</div>
-							<div class="d-none d-md-block text-truncate text-muted small privacy">
+							<div class="d-none d-lg-block text-truncate text-muted small privacy">
 								{{ getPrimaryEmailTo(message) }}
 								<span v-if="message.To && message.To.length > 1">
 									[+{{message.To.length - 1}}]
 								</span>
 							</div>
 						</div>
-						<div class="col-md-6 mt-2 mt-md-0">
+						<div class="col-lg-6 mt-2 mt-lg-0">
 							<b>{{ message.Subject != "" ? message.Subject : "[ no subject ]" }}</b>
 						</div>
-						<div class="d-none d-md-block col-1 small text-end text-muted">
+						<div class="d-none d-lg-block col-1 small text-end text-muted">
 							<i class="bi bi-paperclip float-start h6" v-if="message.Attachments"></i>
 							{{ getFileSize(message.Size) }}
 						</div>
-						<div class="d-none d-md-block col-2 small text-end text-muted">
+						<div class="d-none d-lg-block col-2 small text-end text-muted">
 							{{ getRelativeCreated(message) }}
 						</div>
 					</a>
