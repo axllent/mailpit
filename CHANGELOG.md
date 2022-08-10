@@ -12,6 +12,9 @@ Notable changes to Mailpit will be documented in this file.
 - Enable testing on feature branches
 - Database total/unread statistics tests
 
+### UI
+- Mobile compatibility improvements & functionality
+
 
 ## 0.1.3
 
