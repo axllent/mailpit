@@ -436,13 +436,13 @@ export default {
 								{{ getRelativeCreated(message) }}
 							</div>
 
-							<div class="text-truncate d-md-none">
+							<div class="text-truncate d-md-none privacy">
 								<span v-if="message.From" :title="message.From.Address">{{ message.From.Name ? message.From.Name : message.From.Address }}</span>
 							</div> 
-							<div class="text-truncate d-none d-md-block">
+							<div class="text-truncate d-none d-md-block privacy">
 								<b v-if="message.From" :title="message.From.Address">{{ message.From.Name ? message.From.Name : message.From.Address }}</b>
 							</div>
-							<div class="d-none d-md-block text-truncate text-muted small">
+							<div class="d-none d-md-block text-truncate text-muted small privacy">
 								{{ getPrimaryEmailTo(message) }}
 								<span v-if="message.To && message.To.length > 1">
 									[+{{message.To.length - 1}}]

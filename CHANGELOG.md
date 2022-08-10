@@ -3,6 +3,16 @@
 Notable changes to Mailpit will be documented in this file.
 
 
+## 0.1.4
+
+### Feature
+- Email compression in storage
+
+### Testing
+- Enable testing on feature branches
+- Database total/unread statistics tests
+
+
 ## 0.1.3
 
 ### Feature

@@ -1,5 +1,11 @@
 # Mailpit
 
+![Tests](https://github.com/axllent/mailpit/actions/workflows/tests.yml/badge.svg)
+![Build status](https://github.com/axllent/mailpit/actions/workflows/release-build.yml/badge.svg)
+![Docker builds](https://github.com/axllent/mailpit/actions/workflows/build-docker.yml/badge.svg)
+![CodeQL](https://github.com/axllent/mailpit/actions/workflows/codeql-analysis.yml/badge.svg)
+[![Go Report Card](https://goreportcard.com/badge/github.com/axllent/mailpit)](https://goreportcard.com/report/github.com/axllent/mailpit)
+
 Mailpit is an email testing tool for developers.
 
 It acts as both an SMTP server, and provides a web interface to view all captured emails.

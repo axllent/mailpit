@@ -17,6 +17,7 @@ import (
 	"github.com/axllent/mailpit/logger"
 	"github.com/axllent/mailpit/server/websockets"
 	"github.com/jhillyerd/enmime"
+	"github.com/klauspost/compress/zstd"
 	"github.com/ostafen/clover/v2"
 )
 
@@ -28,6 +29,10 @@ var (
 
 	count       int
 	per100start = time.Now()
+
+	// zstd encoder & decoder
+	encoder, _ = zstd.NewWriter(nil)
+	decoder, _ = zstd.NewReader(nil)
 )
 
 // CloverStore struct
@@ -65,7 +70,7 @@ func InitDB() error {
 		// method invoked upon seeing signal
 		go func() {
 			s := <-sigs
-			logger.Log().Infof("[db] got %s signal, saving persistant data & shutting down", s)
+			logger.Log().Infof("[db] got %s signal, saving persistent data & shutting down", s)
 			if err := db.Close(); err != nil {
 				logger.Log().Errorf("[db] %s", err.Error())
 			}
@@ -219,7 +224,10 @@ func Store(mailbox string, b []byte) (string, error) {
 	raw := clover.NewDocument()
 	raw.Set("_id", id)
 	raw.Set("Created", time.Now())
-	raw.Set("Data", string(b))
+
+	compressed := encoder.EncodeAll(b, make([]byte, 0, len(b)))
+	raw.Set("Email", string(compressed))
+
 	_, err = db.InsertOne(mailbox+"_data", raw)
 	if err != nil {
 		// delete the summary because the data insert failed
@@ -369,18 +377,12 @@ func CountUnread(mailbox string) (int, error) {
 func GetMessage(mailbox, id string) (*data.Message, error) {
 	mailbox = sanitizeMailboxName(mailbox)
 
-	q, err := db.FindById(mailbox+"_data", id)
-	if err != nil {
-		return nil, err
-	}
-
-	if q == nil {
+	raw, err := GetMessageRaw(mailbox, id)
+	if err != nil || raw == nil {
 		return nil, errors.New("message not found")
 	}
 
-	raw := q.Get("Data").(string)
-
-	r := bytes.NewReader([]byte(raw))
+	r := bytes.NewReader(raw)
 
 	env, err := enmime.ReadEnvelope(r)
 	if err != nil {
@@ -398,9 +400,8 @@ func GetMessage(mailbox, id string) (*data.Message, error) {
 	date, _ := env.Date()
 
 	obj := data.Message{
-		ID:      q.ObjectId(),
+		ID:      id,
 		Read:    true,
-		Created: q.Get("Created").(time.Time),
 		From:    from,
 		Date:    date,
 		To:      addressToSlice(env, "To"),
@@ -456,12 +457,12 @@ func GetMessage(mailbox, id string) (*data.Message, error) {
 func GetAttachmentPart(mailbox, id, partID string) (*enmime.Part, error) {
 	mailbox = sanitizeMailboxName(mailbox)
 
-	data, err := GetMessageRaw(mailbox, id)
+	raw, err := GetMessageRaw(mailbox, id)
 	if err != nil {
 		return nil, err
 	}
 
-	r := bytes.NewReader(data)
+	r := bytes.NewReader(raw)
 
 	env, err := enmime.ReadEnvelope(r)
 	if err != nil {
@@ -502,9 +503,20 @@ func GetMessageRaw(mailbox, id string) ([]byte, error) {
 		return nil, errors.New("message not found")
 	}
 
-	data := q.Get("Data").(string)
+	var raw []byte
 
-	return []byte(data), err
+	if q.Has("Email") {
+		msg := q.Get("Email").(string)
+		raw, err = decoder.DecodeAll([]byte(msg), nil)
+		if err != nil {
+			return nil, fmt.Errorf("error decompressing message: %s", err.Error())
+		}
+	} else {
+		// deprecated 2022/08/10 - can be eventually removed
+		raw = []byte(q.Get("Data").(string))
+	}
+
+	return raw, err
 }
 
 // UnreadMessage will delete all messages from a mailbox

@@ -12,11 +12,13 @@ import (
 
 	"github.com/axllent/mailpit/config"
 	"github.com/jhillyerd/enmime"
+	"github.com/ostafen/clover/v2"
 )
 
 var (
 	testTextEmail []byte
 	testMimeEmail []byte
+	testRuns      = 1000
 )
 
 func TestTextEmailInserts(t *testing.T) {
@@ -25,7 +27,10 @@ func TestTextEmailInserts(t *testing.T) {
 
 RepeatTest:
 	start := time.Now()
-	for i := 0; i < 1000; i++ {
+
+	assertEqualStats(t, 0, 0)
+
+	for i := 0; i < testRuns; i++ {
 		if _, err := Store(DefaultMailbox, testTextEmail); err != nil {
 			t.Log("error ", err)
 			t.Fail()
@@ -38,9 +43,11 @@ RepeatTest:
 		t.Fail()
 	}
 
-	assertEqual(t, count, 1000, "incorrect number of text emails stored")
+	assertEqual(t, count, testRuns, "incorrect number of text emails stored")
 
-	t.Logf("inserted 1,000 text emails in %s\n", time.Since(start))
+	t.Logf("inserted %d text emails in %s", testRuns, time.Since(start))
+
+	assertEqualStats(t, testRuns, testRuns)
 
 	delStart := time.Now()
 	if err := DeleteAllMessages(DefaultMailbox); err != nil {
@@ -56,7 +63,9 @@ RepeatTest:
 
 	assertEqual(t, count, 0, "incorrect number of text emails deleted")
 
-	t.Logf("deleted 1,000 text emails in %s\n", time.Since(delStart))
+	t.Logf("deleted %d text emails in %s", testRuns, time.Since(delStart))
+
+	assertEqualStats(t, 0, 0)
 
 	db.Close()
 	if config.DataDir == "" {
@@ -74,7 +83,10 @@ func TestMimeEmailInserts(t *testing.T) {
 
 RepeatTest:
 	start := time.Now()
-	for i := 0; i < 1000; i++ {
+
+	assertEqualStats(t, 0, 0)
+
+	for i := 0; i < testRuns; i++ {
 		if _, err := Store(DefaultMailbox, testMimeEmail); err != nil {
 			t.Log("error ", err)
 			t.Fail()
@@ -87,9 +99,11 @@ RepeatTest:
 		t.Fail()
 	}
 
-	assertEqual(t, count, 1000, "incorrect number of mime emails stored")
+	assertEqual(t, count, testRuns, "incorrect number of emails with mime attachments stored")
 
-	t.Logf("inserted 1,000 emails with mime attachments in %s\n", time.Since(start))
+	t.Logf("inserted %d emails with mime attachments in %s", testRuns, time.Since(start))
+
+	assertEqualStats(t, testRuns, testRuns)
 
 	delStart := time.Now()
 	if err := DeleteAllMessages(DefaultMailbox); err != nil {
@@ -103,9 +117,11 @@ RepeatTest:
 		t.Fail()
 	}
 
-	assertEqual(t, count, 0, "incorrect number of mime emails deleted")
+	assertEqual(t, count, 0, "incorrect number of emails with mime attachments deleted")
 
-	t.Logf("deleted 1,000 mime emails in %s\n", time.Since(delStart))
+	t.Logf("deleted %d emails with mime attachments in %s", testRuns, time.Since(delStart))
+
+	assertEqualStats(t, 0, 0)
 
 	db.Close()
 	if config.DataDir == "" {
@@ -158,12 +174,56 @@ RepeatTest:
 	}
 }
 
+func TestDatabaseStats(t *testing.T) {
+	setup(false)
+	t.Log("Testing database stats")
+	assertEqualStats(t, 0, 0)
+
+	for i := 0; i < 100; i++ {
+		if _, err := Store(DefaultMailbox, testTextEmail); err != nil {
+			t.Log("error ", err)
+			t.Fail()
+		}
+	}
+
+	assertEqualStats(t, 100, 100)
+
+	// mark 10 as read
+	docs, err := db.FindAll(
+		clover.NewQuery(DefaultMailbox).
+			Limit(10),
+	)
+	if err != nil {
+		t.Log("error ", err)
+		t.Fail()
+	}
+
+	for _, d := range docs {
+		_, err := GetMessage(DefaultMailbox, d.ObjectId())
+		if err != nil {
+			t.Log("error ", err)
+			t.Fail()
+		}
+	}
+
+	assertEqualStats(t, 100, 90)
+
+	if err := MarkAllRead(DefaultMailbox); err != nil {
+		t.Log("error ", err)
+		t.Fail()
+	}
+
+	assertEqualStats(t, 100, 0)
+
+	db.Close()
+}
+
 func TestSearch(t *testing.T) {
 	setup(false)
 	t.Log("Testing memory storage")
 
 RepeatTest:
-	for i := 0; i < 1000; i++ {
+	for i := 0; i < testRuns; i++ {
 		msg := enmime.Builder().
 			From(fmt.Sprintf("From %d", i), fmt.Sprintf("from-%d@example.com", i)).
 			Subject(fmt.Sprintf("Subject line %d end", i)).
@@ -189,7 +249,7 @@ RepeatTest:
 		}
 	}
 
-	for i := 1; i < 101; i++ {
+	for i := 1; i < 51; i++ {
 		// search a random something that will return a single result
 		searchIndx := rand.Intn(4) + 1
 		var search string
@@ -204,7 +264,7 @@ RepeatTest:
 			search = fmt.Sprintf("the email body %d jdsauk dwqmdqw", i)
 		}
 
-		summaries, err := Search(DefaultMailbox, search, 0, 200)
+		summaries, err := Search(DefaultMailbox, search, 0, 10)
 		if err != nil {
 			t.Log("error ", err)
 			t.Fail()
@@ -220,12 +280,12 @@ RepeatTest:
 	}
 
 	// search something that will return 200 rsults
-	summaries, err := Search(DefaultMailbox, "This is the email body", 0, 200)
+	summaries, err := Search(DefaultMailbox, "This is the email body", 0, 50)
 	if err != nil {
 		t.Log("error ", err)
 		t.Fail()
 	}
-	assertEqual(t, len(summaries), 200, "200 search results expected")
+	assertEqual(t, len(summaries), 50, "50 search results expected")
 
 	db.Close()
 
@@ -295,4 +355,15 @@ func assertEqual(t *testing.T, a interface{}, b interface{}, message string) {
 	}
 	message = fmt.Sprintf("%s: \"%v\" != \"%v\"", message, a, b)
 	t.Fatal(message)
+}
+
+func assertEqualStats(t *testing.T, total int, unread int) {
+	s := StatsGet(DefaultMailbox)
+	if total != s.Total {
+		t.Fatal(fmt.Sprintf("Incorrect total mailbox stats: \"%d\" != \"%d\"", total, s.Total))
+	}
+
+	if unread != s.Unread {
+		t.Fatal(fmt.Sprintf("Incorrect unread mailbox stats: \"%d\" != \"%d\"", unread, s.Unread))
+	}
 }
