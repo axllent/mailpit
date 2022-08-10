@@ -17,6 +17,7 @@ export default {
 			total: 0,
 			unread: 0,
 			start: 0,
+			count: 0,
 			search: "",
 			searching: false,
 			isConnected: false,
@@ -319,42 +320,54 @@ export default {
 
 <template>
 	<div class="navbar navbar-expand-lg navbar-light row flex-shrink-0 bg-light shadow-sm">
-		<div class="col-lg-2 col-md-3 col-auto">
+		<div class="col-lg-2 col-md-3 d-none d-md-block">
 			<a class="navbar-brand" href="#" v-on:click="reloadMessages">
 				<img src="mailpit.svg" alt="Mailpit">
-				<span class="d-none d-md-inline-block ms-2">Mailpit</span>
+				<span class="ms-2">Mailpit</span>
 			</a>
 		</div>
 		
-		<div class="col col-md-9 col-lg-8" v-if="message">
+		<div class="col col-md-9 col-lg-10" v-if="message">
 			<a class="btn btn-outline-secondary me-4 px-3" href="#" v-on:click="message=false" title="Return to messages">
 				<i class="bi bi-arrow-return-left"></i>
 			</a>
 			<button class="btn btn-outline-secondary me-2" title="Delete message" v-on:click="deleteOne">
-				<i class="bi bi-trash-fill"></i>
+				<i class="bi bi-trash-fill"></i> <span class="d-none d-md-inline">Delete</span>
 			</button>
 			<button class="btn btn-outline-secondary me-2" title="Mark unread" v-on:click="markUnread">
-				<i class="bi bi-envelope"></i>
+				<i class="bi bi-envelope"></i> <span class="d-none d-md-inline">Mark unread</span>
 			</button>
-			<a :href="'api/' + mailbox + '/' + message.ID + '/source?dl=1'" class="btn btn-outline-secondary me-2" title="Download message">
-				<i class="bi bi-file-arrow-down-fill"></i>
+			<a :href="'api/' + mailbox + '/' + message.ID + '/source?dl=1'" class="btn btn-outline-secondary me-2 float-end" title="Download message">
+				<i class="bi bi-file-arrow-down-fill"></i> <span class="d-none d-md-inline">Download</span>
 			</a>
 		</div>
 
-		<div class="col col-md-9 col-lg-5" v-if="!message && total">
+		<div class="col col-md-9 col-lg-5 LOL" v-if="!message">
 			<form v-on:submit="doSearch">
 				<div class="input-group">
-					<div class="d-flex bg-white border rounded-start flex-fill position-relative">
+					<a class="navbar-brand d-md-none" href="#" v-on:click="reloadMessages">
+						<img src="mailpit.svg" alt="Mailpit">
+						<span v-if="!total" class="ms-2">Mailpit</span>
+					</a>
+					<div v-if="total" class="d-flex bg-white border rounded-start flex-fill position-relative">
 						<input type="text" class="form-control border-0" v-model.trim="search" placeholder="Search mailbox">
 						<span class="btn btn-link position-absolute end-0 text-muted" v-if="search" v-on:click="resetSearch"><i class="bi bi-x-circle"></i></span>
 					</div>
-					<button class="btn btn-outline-secondary" type="submit"><i class="bi bi-search"></i></button>
+					<button v-if="total" class="btn btn-outline-secondary" type="submit"><i class="bi bi-search"></i></button>
 				</div>
 			</form>
 		</div>
-		<div class="col-12 col-lg-5 text-end" v-if="!message && total">
+		<div class="col-12 col-lg-5 text-end mt-2 mt-lg-0" v-if="!message && total">
+			<button v-if="total" class="btn btn-outline-danger float-start d-md-none me-2" data-bs-toggle="modal" data-bs-target="#DeleteAllModal" title="Delete all messages">
+				<i class="bi bi-trash-fill"></i>
+			</button>
+
+			<button v-if="unread" class="btn btn-outline-primary float-start d-md-none" data-bs-toggle="modal" data-bs-target="#MarkAllReadModal" title="Mark all read">
+				<i class="bi bi-check2-square"></i>
+			</button>
+
 			<select v-model="limit" v-on:change="loadMessages"
-				class="form-select form-select-sm d-inline w-auto me-1" v-if="!searching">
+				class="form-select form-select-sm d-inline w-auto me-2" v-if="!searching">
 				<option value="25">25</option>
 				<option value="50">50</option>
 				<option value="100">100</option>
@@ -367,7 +380,7 @@ export default {
 				<small>
 					<b>{{ formatNumber(start + 1) }}-{{ formatNumber(start + items.length) }}</b> of <b>{{ formatNumber(total) }}</b>
 				</small>
-				<button class="btn btn-outline-secondary ms-3 me-1" :disabled="!canPrev" v-on:click="viewPrev"
+				<button class="btn btn-outline-secondary ms-2 me-1" :disabled="!canPrev" v-on:click="viewPrev"
 					v-if="!searching">
 					<i class="bi bi-caret-left-fill"></i>
 				</button>
