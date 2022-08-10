@@ -13,6 +13,14 @@
         img {
             width: 40px;
         }
+
+        @include media-breakpoint-down(md) {
+            padding: 0;
+
+            img {
+                width: 35px;
+            }
+        }
     }
 }
 
