@@ -18,6 +18,7 @@ import (
 var (
 	testTextEmail []byte
 	testMimeEmail []byte
+	testRuns      = 1000
 )
 
 func TestTextEmailInserts(t *testing.T) {
@@ -29,7 +30,7 @@ RepeatTest:
 
 	assertEqualStats(t, 0, 0)
 
-	for i := 0; i < 1000; i++ {
+	for i := 0; i < testRuns; i++ {
 		if _, err := Store(DefaultMailbox, testTextEmail); err != nil {
 			t.Log("error ", err)
 			t.Fail()
@@ -42,11 +43,11 @@ RepeatTest:
 		t.Fail()
 	}
 
-	assertEqual(t, count, 1000, "incorrect number of text emails stored")
+	assertEqual(t, count, testRuns, "incorrect number of text emails stored")
 
-	t.Logf("inserted 1,000 text emails in %s\n", time.Since(start))
+	t.Logf("inserted %d text emails in %s", testRuns, time.Since(start))
 
-	assertEqualStats(t, 1000, 1000)
+	assertEqualStats(t, testRuns, testRuns)
 
 	delStart := time.Now()
 	if err := DeleteAllMessages(DefaultMailbox); err != nil {
@@ -62,7 +63,7 @@ RepeatTest:
 
 	assertEqual(t, count, 0, "incorrect number of text emails deleted")
 
-	t.Logf("deleted 1,000 text emails in %s\n", time.Since(delStart))
+	t.Logf("deleted %d text emails in %s", testRuns, time.Since(delStart))
 
 	assertEqualStats(t, 0, 0)
 
@@ -85,7 +86,7 @@ RepeatTest:
 
 	assertEqualStats(t, 0, 0)
 
-	for i := 0; i < 1000; i++ {
+	for i := 0; i < testRuns; i++ {
 		if _, err := Store(DefaultMailbox, testMimeEmail); err != nil {
 			t.Log("error ", err)
 			t.Fail()
@@ -98,11 +99,11 @@ RepeatTest:
 		t.Fail()
 	}
 
-	assertEqual(t, count, 1000, "incorrect number of mime emails stored")
+	assertEqual(t, count, testRuns, "incorrect number of emails with mime attachments stored")
 
-	t.Logf("inserted 1,000 emails with mime attachments in %s\n", time.Since(start))
+	t.Logf("inserted %d emails with mime attachments in %s", testRuns, time.Since(start))
 
-	assertEqualStats(t, 1000, 1000)
+	assertEqualStats(t, testRuns, testRuns)
 
 	delStart := time.Now()
 	if err := DeleteAllMessages(DefaultMailbox); err != nil {
@@ -116,9 +117,9 @@ RepeatTest:
 		t.Fail()
 	}
 
-	assertEqual(t, count, 0, "incorrect number of mime emails deleted")
+	assertEqual(t, count, 0, "incorrect number of emails with mime attachments deleted")
 
-	t.Logf("deleted 1,000 mime emails in %s\n", time.Since(delStart))
+	t.Logf("deleted %d emails with mime attachments in %s", testRuns, time.Since(delStart))
 
 	assertEqualStats(t, 0, 0)
 
@@ -222,7 +223,7 @@ func TestSearch(t *testing.T) {
 	t.Log("Testing memory storage")
 
 RepeatTest:
-	for i := 0; i < 1000; i++ {
+	for i := 0; i < testRuns; i++ {
 		msg := enmime.Builder().
 			From(fmt.Sprintf("From %d", i), fmt.Sprintf("from-%d@example.com", i)).
 			Subject(fmt.Sprintf("Subject line %d end", i)).
@@ -248,7 +249,7 @@ RepeatTest:
 		}
 	}
 
-	for i := 1; i < 101; i++ {
+	for i := 1; i < 51; i++ {
 		// search a random something that will return a single result
 		searchIndx := rand.Intn(4) + 1
 		var search string
@@ -263,7 +264,7 @@ RepeatTest:
 			search = fmt.Sprintf("the email body %d jdsauk dwqmdqw", i)
 		}
 
-		summaries, err := Search(DefaultMailbox, search, 0, 200)
+		summaries, err := Search(DefaultMailbox, search, 0, 10)
 		if err != nil {
 			t.Log("error ", err)
 			t.Fail()
@@ -279,12 +280,12 @@ RepeatTest:
 	}
 
 	// search something that will return 200 rsults
-	summaries, err := Search(DefaultMailbox, "This is the email body", 0, 200)
+	summaries, err := Search(DefaultMailbox, "This is the email body", 0, 50)
 	if err != nil {
 		t.Log("error ", err)
 		t.Fail()
 	}
-	assertEqual(t, len(summaries), 200, "200 search results expected")
+	assertEqual(t, len(summaries), 50, "50 search results expected")
 
 	db.Close()
 

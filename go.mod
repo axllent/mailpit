@@ -8,6 +8,7 @@ require (
 	github.com/gorilla/websocket v1.5.0
 	github.com/jhillyerd/enmime v0.10.0
 	github.com/k3a/html2text v1.0.8
+	github.com/klauspost/compress v1.15.9
 	github.com/mhale/smtpd v0.8.0
 	github.com/ostafen/clover/v2 v2.0.0-alpha.2
 	github.com/sirupsen/logrus v1.9.0
@@ -35,7 +36,6 @@ require (
 	github.com/google/orderedcode v0.0.1 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/jaytaylor/html2text v0.0.0-20211105163654-bc68cce691ba // indirect
-	github.com/klauspost/compress v1.15.9 // indirect
 	github.com/kr/pretty v0.3.0 // indirect
 	github.com/mattn/go-runewidth v0.0.13 // indirect
 	github.com/olekukonko/tablewriter v0.0.5 // indirect

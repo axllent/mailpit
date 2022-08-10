@@ -56,11 +56,10 @@ func cleanString(str string) string {
 	return strings.ToLower(strings.Join(strings.Fields(strings.TrimSpace(str)), " "))
 }
 
-// Auto-prune runs every 5 minutes to automatically delete oldest messages
+// Auto-prune runs every minute to automatically delete oldest messages
 // if total is greater than the threshold
 func pruneCron() {
 	for {
-		// time.Sleep(5 * 60 * time.Second)
 		time.Sleep(60 * time.Second)
 		mailboxes, err := db.ListCollections()
 		if err != nil {
@@ -94,7 +93,7 @@ func pruneCron() {
 }
 
 // SanitizeMailboxName returns a clean mailbox name
-// allowing only `alphanumeric` characters and `-``
+// allowing only `alphanumeric` characters and `-“
 func sanitizeMailboxName(mailbox string) string {
 	re := regexp.MustCompile(`[^a-zA-Z0-9\-]`)
 

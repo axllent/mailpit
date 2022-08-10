@@ -17,7 +17,6 @@ type Message struct {
 	Bcc         []*mail.Address
 	Subject     string
 	Date        time.Time
-	Created     time.Time
 	Text        string
 	HTML        string
 	Size        int
