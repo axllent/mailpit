@@ -9,6 +9,7 @@ require (
 	github.com/jhillyerd/enmime v0.10.0
 	github.com/k3a/html2text v1.0.8
 	github.com/klauspost/compress v1.15.9
+	github.com/mattn/go-shellwords v1.0.12
 	github.com/mhale/smtpd v0.8.0
 	github.com/ostafen/clover/v2 v2.0.0-alpha.2
 	github.com/sirupsen/logrus v1.9.0
