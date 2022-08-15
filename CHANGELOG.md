@@ -3,6 +3,16 @@
 Notable changes to Mailpit will be documented in this file.
 
 
+## 0.1.5
+
+### Feature
+- Improved message search - any order & phrase quoting
+
+### UI
+- Change breakpoints for mobile view of messages
+- Resize iframes with viewport resize
+
+
 ## 0.1.4
 
 ### Feature
