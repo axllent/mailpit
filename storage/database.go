@@ -18,6 +18,7 @@ import (
 	"github.com/axllent/mailpit/server/websockets"
 	"github.com/jhillyerd/enmime"
 	"github.com/klauspost/compress/zstd"
+	"github.com/mattn/go-shellwords"
 	"github.com/ostafen/clover/v2"
 )
 
@@ -327,20 +328,57 @@ func List(mailbox string, start, limit int) ([]data.Summary, error) {
 }
 
 // Search returns a summary of items mathing a search. It searched the SearchText field.
-func Search(mailbox, search string, start, limit int) ([]data.Summary, error) {
+func Search(mailbox, s string, start, limit int) ([]data.Summary, error) {
 	mailbox = sanitizeMailboxName(mailbox)
 
-	sq := fmt.Sprintf("(?i)%s", cleanString(regexp.QuoteMeta(search)))
+	s = strings.ToLower(s)
+	s = strings.Replace(s, "'", `\'`, -1)
+	s = strings.Replace(s, "(", ``, -1)
+	s = strings.Replace(s, ")", ``, -1)
+	// add another quote if quotes are odd
+	quotes := strings.Count(s, `"`)
+	if quotes%2 != 0 {
+		s += `"`
+	}
+
+	p := shellwords.NewParser()
+	args, err := p.Parse(s)
+	if err != nil {
+		return nil, errors.New("Your search contains invalid characters")
+	}
+
+	results := []data.Summary{}
+	include := []string{}
+
+	for _, w := range args {
+		word := cleanString(w)
+		if word != "" {
+			include = append(include, fmt.Sprintf("%s", regexp.QuoteMeta(word)))
+		}
+	}
+
+	if len(include) == 0 {
+		return results, nil
+	}
+
+	var where clover.Criteria
+
+	for i, w := range include {
+		if i == 0 {
+			where = clover.Field("SearchText").Like(w)
+		} else {
+			where = where.And(clover.Field("SearchText").Like(w))
+		}
+	}
+
 	q, err := db.FindAll(clover.NewQuery(mailbox).
 		Skip(start).
 		Limit(limit).
 		Sort(clover.SortOption{Field: "Created", Direction: -1}).
-		Where(clover.Field("SearchText").Like(sq)))
+		Where(where))
 	if err != nil {
 		return nil, err
 	}
-
-	results := []data.Summary{}
 
 	for _, d := range q {
 		cs := &data.Summary{}

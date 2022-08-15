@@ -15,6 +15,7 @@ export default {
 			iframes: [], // for resizing
 		}
 	},
+
 	mounted() {
 		var self = this;
 
@@ -46,11 +47,29 @@ export default {
 			self.srcURI = 'api/' + self.mailbox + '/' + self.message.ID + '/source';
 		});
 	},
+	
+	unmounted: function() {
+		window.removeEventListener("resize", this.resizeIframes);
+	},
+
 	methods: {
 		resizeIframe: function(el) {
 			let i = el.target;
 			i.style.height = i.contentWindow.document.body.scrollHeight + 50 + 'px';
 		},
+
+		resizeIframes: function() {
+			let h = document.getElementById('preview-html');
+			if (h) {
+				h.style.height = h.contentWindow.document.body.scrollHeight + 50 + 'px';
+			}
+
+			let s = document.getElementById('message-src');
+			if (s) {
+				s.style.height = s.contentWindow.document.body.scrollHeight + 50 + 'px';
+			}
+		},
+
 		allAttachments: function(message){
 			let a = [];
 			for (let i in message.Attachments) {

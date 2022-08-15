@@ -259,9 +259,9 @@ RepeatTest:
 		case 2:
 			search = fmt.Sprintf("to-%d@example.com", i)
 		case 3:
-			search = fmt.Sprintf("Subject line %d end", i)
+			search = fmt.Sprintf("\"Subject line %d end\"", i)
 		default:
-			search = fmt.Sprintf("the email body %d jdsauk dwqmdqw", i)
+			search = fmt.Sprintf("\"the email body %d jdsauk dwqmdqw\"", i)
 		}
 
 		summaries, err := Search(DefaultMailbox, search, 0, 10)
