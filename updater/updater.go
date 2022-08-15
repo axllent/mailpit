@@ -178,7 +178,7 @@ func GithubUpdate(repo, appName, currentVersion string) (string, error) {
 	// get the running binary
 	oldExec, err := os.Executable()
 	if err != nil {
-		panic(err)
+		return "", err
 	}
 
 	if err = replaceFile(oldExec, newExec); err != nil {
