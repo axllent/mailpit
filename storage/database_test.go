@@ -159,9 +159,19 @@ RepeatTest:
 	assertEqual(t, msg.Attachments[0].FileName, "Sample PDF.pdf", "attachment filename does not match")
 	assertEqual(t, len(msg.Inline), 1, "incorrect number of inline attachments")
 	assertEqual(t, msg.Inline[0].FileName, "inline-image.jpg", "inline attachment filename does not match")
+
 	attachmentData, err := GetAttachmentPart(DefaultMailbox, id, msg.Attachments[0].PartID)
+	if err != nil {
+		t.Log("error ", err)
+		t.Fail()
+	}
 	assertEqual(t, len(attachmentData.Content), msg.Attachments[0].Size, "attachment size does not match")
+
 	inlineData, err := GetAttachmentPart(DefaultMailbox, id, msg.Inline[0].PartID)
+	if err != nil {
+		t.Log("error ", err)
+		t.Fail()
+	}
 	assertEqual(t, len(inlineData.Content), msg.Inline[0].Size, "inline attachment size does not match")
 
 	db.Close()
