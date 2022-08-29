@@ -39,6 +39,7 @@ export default {
 						anchorEl.setAttribute('target', '_blank');
 					}
 				}
+				self.resizeIframes();
 			}
 		}, 200);
 
