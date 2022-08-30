@@ -123,7 +123,7 @@ func init() {
 		config.DataFile = os.Getenv("MP_DATA_DIR")
 	}
 
-	rootCmd.Flags().StringVarP(&config.DataFile, "data", "d", config.DataFile, "Database file to store persistent data")
+	rootCmd.Flags().StringVarP(&config.DataFile, "db-file", "d", config.DataFile, "Database file to store persistent data")
 	rootCmd.Flags().StringVarP(&config.SMTPListen, "smtp", "s", config.SMTPListen, "SMTP bind interface and port")
 	rootCmd.Flags().StringVarP(&config.HTTPListen, "listen", "l", config.HTTPListen, "HTTP bind interface and port for UI")
 	rootCmd.Flags().IntVarP(&config.MaxMessages, "max", "m", config.MaxMessages, "Max number of messages to store")
@@ -148,4 +148,9 @@ func init() {
 	rootCmd.Flags().Lookup("ssl-cert").Deprecated = "use --ui-ssl-cert"
 	rootCmd.Flags().Lookup("ssl-key").Hidden = true
 	rootCmd.Flags().Lookup("ssl-key").Deprecated = "use --ui-ssl-key"
+
+	// deprecated 2022/08/30
+	rootCmd.Flags().StringVar(&config.DataFile, "data", config.DataFile, "Database file to store persistent data")
+	rootCmd.Flags().Lookup("data").Hidden = true
+	rootCmd.Flags().Lookup("data").Deprecated = "use --db-file"
 }
