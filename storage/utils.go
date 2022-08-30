@@ -1,7 +1,10 @@
 package storage
 
 import (
+	"context"
+	"database/sql"
 	"net/mail"
+	"os"
 	"regexp"
 	"strings"
 	"time"
@@ -11,7 +14,7 @@ import (
 	"github.com/axllent/mailpit/server/websockets"
 	"github.com/jhillyerd/enmime"
 	"github.com/k3a/html2text"
-	"github.com/ostafen/clover/v2"
+	"github.com/leporo/sqlf"
 )
 
 // Return a header field as a []*mail.Address, or "null" is not found/empty
@@ -47,55 +50,116 @@ func createSearchText(env *enmime.Envelope) string {
 	return d
 }
 
-// cleanString removed unwanted characters from stored search text and search queries
+// CleanString removes unwanted characters from stored search text and search queries
 func cleanString(str string) string {
 	// remove/replace new lines
 	re := regexp.MustCompile(`(\r?\n|\t|>|<|"|:|\,|;)`)
 	str = re.ReplaceAllString(str, " ")
+
 	// remove duplicate whitespace and trim
 	return strings.ToLower(strings.Join(strings.Fields(strings.TrimSpace(str)), " "))
 }
 
 // Auto-prune runs every minute to automatically delete oldest messages
 // if total is greater than the threshold
-func pruneCron() {
+func dbCron() {
 	for {
 		time.Sleep(60 * time.Second)
-		mailboxes, err := db.ListCollections()
-		if err != nil {
-			logger.Log().Errorf("[db] %s", err)
+		start := time.Now()
+
+		// check if database contains deleted data and has not beein in use
+		// for 5 minutes, if so VACUUM
+		currentTime := time.Now()
+		diff := currentTime.Sub(dbLastAction)
+		if dbDataDeleted && diff.Minutes() > 5 {
+			dbDataDeleted = false
+			_, err := db.Exec("VACUUM")
+			if err == nil {
+				elapsed := time.Since(start)
+				logger.Log().Debugf("[db] compressed idle database in %s", elapsed)
+			}
 			continue
 		}
 
-		for _, m := range mailboxes {
-			total, _ := db.Count(clover.NewQuery(m))
-			if total > config.MaxMessages {
-				limit := total - config.MaxMessages
-				if limit > 5000 {
-					limit = 5000
+		if config.MaxMessages > 0 {
+			q := sqlf.Select("ID").
+				From("mailbox").
+				OrderBy("Sort DESC").
+				Limit(5000).
+				Offset(config.MaxMessages)
+
+			ids := []string{}
+			if err := q.Query(nil, db, func(row *sql.Rows) {
+				var id string
+
+				if err := row.Scan(&id); err != nil {
+					logger.Log().Errorf("[db] %s", err.Error())
+					return
 				}
-				start := time.Now()
-				if err := db.Delete(clover.NewQuery(m).
-					Sort(clover.SortOption{Field: "Created", Direction: 1}).
-					Limit(limit)); err != nil {
-					logger.Log().Warnf("Error pruning %s: %s", m, err.Error())
-					continue
-				}
-				elapsed := time.Since(start)
-				logger.Log().Infof("Pruned %d messages from %s in %s", limit, m, elapsed)
-				_ = statsRefresh(m)
-				if !strings.HasSuffix(m, "_data") {
-					websockets.Broadcast("prune", nil)
+				ids = append(ids, id)
+
+			}); err != nil {
+				logger.Log().Errorf("[db] %s", err.Error())
+				continue
+			}
+
+			if len(ids) == 0 {
+				continue
+			}
+
+			tx, err := db.BeginTx(context.Background(), nil)
+			if err != nil {
+				logger.Log().Errorf("[db] %s", err.Error())
+				continue
+			}
+
+			args := make([]interface{}, len(ids))
+			for i, id := range ids {
+				args[i] = id
+			}
+
+			_, err = tx.Query(`DELETE FROM mailbox WHERE ID IN (?`+strings.Repeat(",?", len(ids)-1)+`)`, args...) // #nosec
+			if err != nil {
+				logger.Log().Errorf("[db] %s", err.Error())
+				continue
+			}
+
+			_, err = tx.Query(`DELETE FROM mailbox_data WHERE ID IN (?`+strings.Repeat(",?", len(ids)-1)+`)`, args...) // #nosec
+			if err != nil {
+				logger.Log().Errorf("[db] %s", err.Error())
+				continue
+			}
+
+			err = tx.Commit()
+
+			if err != nil {
+				logger.Log().Errorf(err.Error())
+				if err := tx.Rollback(); err != nil {
+					logger.Log().Errorf(err.Error())
 				}
 			}
+
+			dbDataDeleted = true
+
+			elapsed := time.Since(start)
+			logger.Log().Debugf("[db] auto-pruned %d messages in %s", len(ids), elapsed)
+
+			websockets.Broadcast("prune", nil)
 		}
 	}
 }
 
-// SanitizeMailboxName returns a clean mailbox name
-// allowing only `alphanumeric` characters and `-“
-func sanitizeMailboxName(mailbox string) string {
-	re := regexp.MustCompile(`[^a-zA-Z0-9\-]`)
+// IsFile returns whether a path is a file
+func isFile(path string) bool {
+	info, err := os.Stat(path)
+	if os.IsNotExist(err) || !info.Mode().IsRegular() {
+		return false
+	}
 
-	return re.ReplaceAllString(mailbox, "")
+	return true
+}
+
+// escPercentChar replaces `%` with `%%` for SQL searches
+func escPercentChar(s string) string {
+	return strings.ReplaceAll(s, "%", "%%")
 }

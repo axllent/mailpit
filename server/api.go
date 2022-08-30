@@ -20,12 +20,8 @@ type messagesResult struct {
 }
 
 // Return a list of available mailboxes
-func apiListMailboxes(w http.ResponseWriter, _ *http.Request) {
-	res, err := storage.ListMailboxes()
-	if err != nil {
-		httpError(w, err.Error())
-		return
-	}
+func apiMailboxStats(w http.ResponseWriter, _ *http.Request) {
+	res := storage.StatsGet()
 
 	bytes, _ := json.Marshal(res)
 	w.Header().Add("Content-Type", "application/json")
@@ -33,24 +29,15 @@ func apiListMailboxes(w http.ResponseWriter, _ *http.Request) {
 }
 
 func apiListMailbox(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-
-	mailbox := vars["mailbox"]
-
-	if !storage.MailboxExists(mailbox) {
-		fourOFour(w)
-		return
-	}
-
 	start, limit := getStartLimit(r)
 
-	messages, err := storage.List(mailbox, start, limit)
+	messages, err := storage.List(start, limit)
 	if err != nil {
 		httpError(w, err.Error())
 		return
 	}
 
-	stats := storage.StatsGet(mailbox)
+	stats := storage.StatsGet()
 
 	var res messagesResult
 
@@ -72,25 +59,17 @@ func apiSearchMailbox(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	vars := mux.Vars(r)
-	mailbox := vars["mailbox"]
-
-	if !storage.MailboxExists(mailbox) {
-		fourOFour(w)
-		return
-	}
-
 	// we will only return up to 200 results
 	start := 0
-	limit := 200
+	// limit := 200
 
-	messages, err := storage.Search(mailbox, search, start, limit)
+	messages, err := storage.Search(search)
 	if err != nil {
 		httpError(w, err.Error())
 		return
 	}
 
-	stats := storage.StatsGet(mailbox)
+	stats := storage.StatsGet()
 
 	var res messagesResult
 
@@ -109,10 +88,9 @@ func apiSearchMailbox(w http.ResponseWriter, r *http.Request) {
 func apiOpenMessage(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
-	mailbox := vars["mailbox"]
 	id := vars["id"]
 
-	msg, err := storage.GetMessage(mailbox, id)
+	msg, err := storage.GetMessage(id)
 	if err != nil {
 		httpError(w, err.Error())
 		return
@@ -127,11 +105,10 @@ func apiOpenMessage(w http.ResponseWriter, r *http.Request) {
 func apiDownloadAttachment(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
-	mailbox := vars["mailbox"]
 	id := vars["id"]
 	partID := vars["partID"]
 
-	a, err := storage.GetAttachmentPart(mailbox, id, partID)
+	a, err := storage.GetAttachmentPart(id, partID)
 	if err != nil {
 		httpError(w, err.Error())
 		return
@@ -150,12 +127,11 @@ func apiDownloadAttachment(w http.ResponseWriter, r *http.Request) {
 func apiDownloadSource(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
-	mailbox := vars["mailbox"]
 	id := vars["id"]
 
 	dl := r.FormValue("dl")
 
-	data, err := storage.GetMessageRaw(mailbox, id)
+	data, err := storage.GetMessageRaw(id)
 	if err != nil {
 		httpError(w, err.Error())
 		return
@@ -170,11 +146,7 @@ func apiDownloadSource(w http.ResponseWriter, r *http.Request) {
 
 // Delete all messages in the mailbox
 func apiDeleteAll(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-
-	mailbox := vars["mailbox"]
-
-	err := storage.DeleteAllMessages(mailbox)
+	err := storage.DeleteAllMessages()
 	if err != nil {
 		httpError(w, err.Error())
 		return
@@ -188,10 +160,9 @@ func apiDeleteAll(w http.ResponseWriter, r *http.Request) {
 func apiDeleteOne(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
-	mailbox := vars["mailbox"]
 	id := vars["id"]
 
-	err := storage.DeleteOneMessage(mailbox, id)
+	err := storage.DeleteOneMessage(id)
 	if err != nil {
 		httpError(w, err.Error())
 		return
@@ -205,10 +176,9 @@ func apiDeleteOne(w http.ResponseWriter, r *http.Request) {
 func apiUnreadOne(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
-	mailbox := vars["mailbox"]
 	id := vars["id"]
 
-	err := storage.UnreadMessage(mailbox, id)
+	err := storage.MarkUnread(id)
 	if err != nil {
 		httpError(w, err.Error())
 		return
@@ -220,11 +190,7 @@ func apiUnreadOne(w http.ResponseWriter, r *http.Request) {
 
 // Mark single message as unread
 func apiMarkAllRead(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-
-	mailbox := vars["mailbox"]
-
-	err := storage.MarkAllRead(mailbox)
+	err := storage.MarkAllRead()
 	if err != nil {
 		httpError(w, err.Error())
 		return

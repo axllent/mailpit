@@ -49,7 +49,7 @@ func (h *Hub) Run() {
 				close(client.send)
 			}
 		case message := <-h.Broadcast:
-			logger.Log().Debugf("Message received: %s", message)
+			// logger.Log().Debugf("[broadcast] %s", message)
 			for client := range h.Clients {
 				select {
 				case client.send <- message:

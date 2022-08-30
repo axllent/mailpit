@@ -5,8 +5,7 @@ import moment from 'moment'
 
 export default {
 	props: {
-		message: Object,
-		mailbox: Object,
+		message: Object
 	},
 	mixins: [commonMixins],
 	data() {
@@ -45,7 +44,7 @@ export default {
 
 		var tabEl = document.getElementById('nav-source-tab');
 		tabEl.addEventListener('shown.bs.tab', function (event) {
-			self.srcURI = 'api/' + self.mailbox + '/' + self.message.ID + '/source';
+			self.srcURI = 'api/' + self.message.ID + '/source';
 		});
 	},
 	
@@ -181,7 +180,7 @@ export default {
 			<div class="tab-pane fade" id="nav-mime" role="tabpanel" aria-labelledby="nav-mime-tab"
 				tabindex="0">
 				<div v-if="allAttachments(message)" v-for="part in allAttachments(message)" class="mime-part mb-2">
-					<a :href="'api/'+mailbox+'/'+message.ID+'/part/'+part.PartID" type="button"
+					<a :href="'api/'+message.ID+'/part/'+part.PartID" type="button"
 						class="btn btn-outline-secondary btn-sm me-2" target="_blank">
 						<i class="bi bi-file-arrow-down-fill"></i>
 						{{ part.FileName != '' ? part.FileName : '[ unknown ]' }}
