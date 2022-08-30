@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"regexp"
 
 	"github.com/tg123/go-htpasswd"
@@ -16,8 +17,8 @@ var (
 	// HTTPListen to listen on <interface>:<port>
 	HTTPListen = "0.0.0.0:8025"
 
-	// DataDir for mail (optional)
-	DataDir string
+	// DataFile for mail (optional)
+	DataFile string
 
 	// MaxMessages is the maximum number of messages a mailbox can have (auto-pruned every minute)
 	MaxMessages = 500
@@ -55,6 +56,10 @@ var (
 
 // VerifyConfig wil do some basic checking
 func VerifyConfig() error {
+	if DataFile != "" && isDir(DataFile) {
+		DataFile = filepath.Join(DataFile, "mailpit.db")
+	}
+
 	re := regexp.MustCompile(`^[a-zA-Z0-9\.\-]{3,}:\d{2,}$`)
 	if !re.MatchString(SMTPListen) {
 		return errors.New("SMTP bind should be in the format of <ip>:<port>")
@@ -126,6 +131,16 @@ func VerifyConfig() error {
 func isFile(path string) bool {
 	info, err := os.Stat(path)
 	if os.IsNotExist(err) || !info.Mode().IsRegular() {
+		return false
+	}
+
+	return true
+}
+
+// IsDir returns whether a path is a directory
+func isDir(path string) bool {
+	info, err := os.Stat(path)
+	if os.IsNotExist(err) || !info.IsDir() {
 		return false
 	}
 

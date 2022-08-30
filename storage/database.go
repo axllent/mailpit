@@ -2,44 +2,75 @@ package storage
 
 import (
 	"bytes"
+	"context"
+	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/mail"
 	"os"
 	"os/signal"
+	"path"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"syscall"
 	"time"
 
+	"github.com/GuiaBolso/darwin"
 	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/data"
 	"github.com/axllent/mailpit/logger"
 	"github.com/axllent/mailpit/server/websockets"
 	"github.com/jhillyerd/enmime"
 	"github.com/klauspost/compress/zstd"
+	"github.com/leporo/sqlf"
 	"github.com/mattn/go-shellwords"
-	"github.com/ostafen/clover/v2"
+	uuid "github.com/satori/go.uuid"
+
+	// sqlite (native) - https://gitlab.com/cznic/sqlite
+	_ "modernc.org/sqlite"
 )
 
 var (
-	db *clover.DB
+	db            *sql.DB
+	dbFile        string
+	dbIsTemp      bool
+	dbLastAction  time.Time
+	dbIsIdle      bool
+	dbDataDeleted bool
 
-	// DefaultMailbox allowing for potential exampnsion in the future
-	DefaultMailbox = "catchall"
+	// zstd compression encoder & decoder
+	dbEncoder, _ = zstd.NewWriter(nil)
+	dbDecoder, _ = zstd.NewReader(nil)
 
-	count       int
-	per100start = time.Now()
-
-	// zstd encoder & decoder
-	encoder, _ = zstd.NewWriter(nil)
-	decoder, _ = zstd.NewReader(nil)
+	dbMigrations = []darwin.Migration{
+		{
+			Version:     1.0,
+			Description: "Creating tables",
+			Script: `CREATE TABLE IF NOT EXISTS mailbox (
+				Sort INTEGER PRIMARY KEY AUTOINCREMENT,
+				ID TEXT NOT NULL,
+				Data BLOB,
+				Search TEXT,
+				Read INTEGER
+			);
+			CREATE INDEX IF NOT EXISTS idx_sort ON mailbox (Sort);
+			CREATE UNIQUE INDEX IF NOT EXISTS idx_id ON mailbox (ID);
+			CREATE INDEX IF NOT EXISTS idx_read ON mailbox (Read);
+			
+			CREATE TABLE IF NOT EXISTS mailbox_data (
+				ID TEXT KEY NOT NULL,
+				Email BLOB
+			);
+			CREATE UNIQUE INDEX IF NOT EXISTS idx_data_id ON mailbox_data (ID);`,
+		},
+	}
 )
 
-// CloverStore struct
-type CloverStore struct {
+// DBMailSummary struct for storing mail summary
+type DBMailSummary struct {
 	Created     time.Time
-	Read        bool
 	From        *mail.Address
 	To          []*mail.Address
 	Cc          []*mail.Address
@@ -48,210 +79,158 @@ type CloverStore struct {
 	Size        int
 	Inline      int
 	Attachments int
-	SearchText  string
 }
 
-// InitDB will initialise the database.
-// If config.DataDir is empty then it will be in memory.
+// InitDB will initialise the database
 func InitDB() error {
-	var err error
-	if config.DataDir != "" {
-		logger.Log().Infof("[db] initialising data storage: %s", config.DataDir)
-		db, err = clover.Open(config.DataDir)
-		if err != nil {
-			return err
-		}
+	p := config.DataFile
 
-		sigs := make(chan os.Signal, 1)
-		// catch all signals since not explicitly listing
-		// Program that will listen to the SIGINT and SIGTERM
-		// SIGINT will listen to CTRL-C.
-		// SIGTERM will be caught if kill command executed
-		signal.Notify(sigs, os.Interrupt, syscall.SIGTERM)
-		// method invoked upon seeing signal
-		go func() {
-			s := <-sigs
-			logger.Log().Infof("[db] got %s signal, saving persistent data & shutting down", s)
-			if err := db.Close(); err != nil {
-				logger.Log().Errorf("[db] %s", err.Error())
-			}
-
-			os.Exit(0)
-		}()
-
+	if p == "" {
+		// when no path is provided then we create a temporary file
+		// which will get deleted on Close(), SIGINT or SIGTERM
+		p = fmt.Sprintf("%s-%d.db", path.Join(os.TempDir(), "mailpit"), time.Now().UnixNano())
+		dbIsTemp = true
+		logger.Log().Debugf("[db] using temporary database: %s", p)
 	} else {
-		logger.Log().Debug("[db] initialising memory data storage")
-		db, err = clover.Open("", clover.InMemoryMode(true))
-		if err != nil {
-			return err
-		}
+		p = filepath.Clean(p)
 	}
 
-	// auto-prune
-	if config.MaxMessages > 0 {
-		go pruneCron()
-	}
+	logger.Log().Debugf("[db] opening database %s", p)
 
-	// create catch-all collection
-	return CreateMailbox(DefaultMailbox)
-}
+	var err error
 
-// ListMailboxes returns a slice of mailboxes (collections)
-func ListMailboxes() ([]data.MailboxSummary, error) {
-	mailboxes, err := db.ListCollections()
+	dsn := fmt.Sprintf("file:%s?cache=shared", p)
+
+	db, err = sql.Open("sqlite", dsn)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	results := []data.MailboxSummary{}
+	// prevent "database locked" errors
+	// @see https://github.com/mattn/go-sqlite3#faq
+	db.SetMaxOpenConns(1)
 
-	for _, m := range mailboxes {
-		// ignore *_data collections
-		if strings.HasSuffix(m, "_data") {
-			continue
-		}
-
-		stats := StatsGet(m)
-
-		mb := data.MailboxSummary{}
-		mb.Name = m
-		mb.Slug = m
-		mb.Total = stats.Total
-		mb.Unread = stats.Unread
-
-		if mb.Total > 0 {
-			q, err := db.FindFirst(
-				clover.NewQuery(m).Sort(clover.SortOption{Field: "Created", Direction: -1}),
-			)
-			if err != nil {
-				return nil, err
-			}
-			mb.LastMessage = q.Get("Created").(time.Time)
-		}
-
-		results = append(results, mb)
+	// create tables if necessary & apply migrations
+	if err := dbApplyMigrations(); err != nil {
+		return err
 	}
 
-	return results, nil
+	dbFile = p
+	dbLastAction = time.Now()
+
+	sigs := make(chan os.Signal, 1)
+	// catch all signals since not explicitly listing
+	// Program that will listen to the SIGINT and SIGTERM
+	// SIGINT will listen to CTRL-C.
+	// SIGTERM will be caught if kill command executed
+	signal.Notify(sigs, os.Interrupt, syscall.SIGTERM)
+	// method invoked upon seeing signal
+	go func() {
+		s := <-sigs
+		fmt.Printf("[db] got %s signal, shutting down\n", s)
+		Close()
+		os.Exit(0)
+	}()
+
+	// auto-prune & delete
+	go dbCron()
+
+	return nil
 }
 
-// MailboxExists is used to return whether a collection (aka: mailbox) exists
-func MailboxExists(name string) bool {
-	ok, err := db.HasCollection(name)
-	if err != nil {
-		return false
-	}
+// Create tables and apply migrations if required
+func dbApplyMigrations() error {
+	driver := darwin.NewGenericDriver(db, darwin.SqliteDialect{})
 
-	return ok
+	d := darwin.New(driver, dbMigrations, nil)
+
+	return d.Migrate()
 }
 
-// CreateMailbox will create a collection if it does not exist
-func CreateMailbox(mailbox string) error {
-	mailbox = sanitizeMailboxName(mailbox)
-
-	if !MailboxExists(mailbox) {
-		logger.Log().Infof("[db] creating mailbox: %s", mailbox)
-
-		if err := db.CreateCollection(mailbox); err != nil {
-			return err
-		}
-
-		// create Created index
-		if err := db.CreateIndex(mailbox, "Created"); err != nil {
-			return err
-		}
-
-		// create Read index
-		if err := db.CreateIndex(mailbox, "Read"); err != nil {
-			return err
-		}
-
-		// create separate collection for data
-		if err := db.CreateCollection(mailbox + "_data"); err != nil {
-			return err
-		}
-
-		// create Created index
-		if err := db.CreateIndex(mailbox+"_data", "Created"); err != nil {
-			return err
+// Close will close the database, and delete if a temporary table
+func Close() {
+	if db != nil {
+		if err := db.Close(); err != nil {
+			logger.Log().Warning("[db] error closing database, ignoring")
 		}
 	}
 
-	return statsRefresh(mailbox)
+	if dbIsTemp && isFile(dbFile) {
+		logger.Log().Debugf("[db] deleting temporary file %s", dbFile)
+		if err := os.Remove(dbFile); err != nil {
+			logger.Log().Errorf("[db] %s", err.Error())
+		}
+	}
 }
 
-// Store will store a message in the database and return the unique ID
-func Store(mailbox string, b []byte) (string, error) {
-	mailbox = sanitizeMailboxName(mailbox)
-
-	r := bytes.NewReader(b)
+// Store will save an email to the database tables
+func Store(body []byte) (string, error) {
 	// Parse message body with enmime.
-	env, err := enmime.ReadEnvelope(r)
+	env, err := enmime.ReadEnvelope(bytes.NewReader(body))
 	if err != nil {
-		return "", err
+		logger.Log().Warningf("[db] %s", err.Error())
+		return "", nil
 	}
 
 	var from *mail.Address
-	fromData := addressToSlice(env, "From")
-	if len(fromData) > 0 {
-		from = fromData[0]
+	fromJSON := addressToSlice(env, "From")
+	if len(fromJSON) > 0 {
+		from = fromJSON[0]
 	} else if env.GetHeader("From") != "" {
 		from = &mail.Address{Name: env.GetHeader("From")}
 	}
 
-	obj := CloverStore{
+	obj := DBMailSummary{
 		Created:     time.Now(),
 		From:        from,
 		To:          addressToSlice(env, "To"),
 		Cc:          addressToSlice(env, "Cc"),
 		Bcc:         addressToSlice(env, "Bcc"),
 		Subject:     env.GetHeader("Subject"),
-		Size:        len(b),
+		Size:        len(body),
 		Inline:      len(env.Inlines),
 		Attachments: len(env.Attachments),
-		SearchText:  createSearchText(env),
 	}
 
-	doc := clover.NewDocumentOf(obj)
+	// generate the search text
+	searchText := createSearchText(env)
 
-	id, err := db.InsertOne(mailbox, doc)
+	// generate unique ID
+	id := uuid.NewV4().String()
+
+	b, err := json.Marshal(obj)
+
+	// begin a transaction to ensure both the message
+	// and data are stored successfully
+	ctx := context.Background()
+	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
 		return "", err
 	}
 
-	statsAddNewMessage(mailbox)
+	// roll back if it fails
+	defer tx.Rollback()
 
-	// save the raw email in a separate collection
-	raw := clover.NewDocument()
-	raw.Set("_id", id)
-	raw.Set("Created", time.Now())
-
-	compressed := encoder.EncodeAll(b, make([]byte, 0, len(b)))
-	raw.Set("Email", string(compressed))
-
-	_, err = db.InsertOne(mailbox+"_data", raw)
-	if err != nil {
-		// delete the summary because the data insert failed
-		logger.Log().Debugf("[db] error inserting raw message, rolling back")
-		_ = DeleteOneMessage(mailbox, id)
-
-		return "", err
-	}
-
-	count++
-	if count%100 == 0 {
-		logger.Log().Infof("100 messages added in %s", time.Since(per100start))
-
-		per100start = time.Now()
-	}
-
-	d, err := db.FindById(DefaultMailbox, id)
+	// insert summary
+	_, err = tx.Exec("INSERT INTO mailbox(ID, Data, Search, Read) values(?,?,?, 0)", id, string(b), searchText)
 	if err != nil {
 		return "", err
 	}
 
+	// insert compressed raw message
+	compressed := dbEncoder.EncodeAll(body, make([]byte, 0, len(body)))
+	_, err = tx.Exec("INSERT INTO mailbox_data(ID, Email) values(?,?)", id, string(compressed))
+	if err != nil {
+		return "", err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return "", err
+	}
+
+	// return summary
 	c := &data.Summary{}
-	if err := d.Unmarshal(c); err != nil {
+	if err := json.Unmarshal(b, c); err != nil {
 		return "", err
 	}
 
@@ -259,83 +238,63 @@ func Store(mailbox string, b []byte) (string, error) {
 
 	websockets.Broadcast("new", c)
 
+	dbLastAction = time.Now()
+
 	return id, nil
 }
 
-// List returns a summary of messages.
-// For pertformance reasons we manually paginate over queries of 100 results
-// as clover's `Skip()` returns a subset of all results which is much slower.
-// @see https://github.com/ostafen/clover/issues/73
-func List(mailbox string, start, limit int) ([]data.Summary, error) {
-	mailbox = sanitizeMailboxName(mailbox)
-
-	var lastDoc *clover.Document
-	count := 0
-	startAddingAt := start + 1
-	adding := false
+// List returns a subset of messages from the mailbox,
+// sorted latest to oldest
+func List(start, limit int) ([]data.Summary, error) {
 	results := []data.Summary{}
 
-	for {
-		var instant time.Time
-		if lastDoc == nil {
-			instant = time.Now()
-		} else {
-			instant = lastDoc.Get("Created").(time.Time)
+	q := sqlf.From("mailbox").
+		Select(`ID, Data, Read`).
+		OrderBy("Sort DESC").
+		Limit(limit).
+		Offset(start)
+
+	if err := q.QueryAndClose(nil, db, func(row *sql.Rows) {
+		var id string
+		var summary string
+		var read int
+		em := data.Summary{}
+
+		if err := row.Scan(&id, &summary, &read); err != nil {
+			logger.Log().Error(err)
+			return
 		}
 
-		all, err := db.FindAll(
-			clover.NewQuery(mailbox).
-				Where(clover.Field("Created").Lt(instant)).
-				Sort(clover.SortOption{Field: "Created", Direction: -1}).
-				Limit(100),
-		)
+		err := json.Unmarshal([]byte(summary), &em)
 		if err != nil {
-			return nil, err
+			logger.Log().Error(err)
+			return
 		}
 
-		for _, d := range all {
-			count++
+		em.ID = id
+		em.Read = read == 1
 
-			if count == startAddingAt {
-				adding = true
-			}
+		results = append(results, em)
 
-			resultsLen := len(results)
-
-			if adding && resultsLen < limit {
-				cs := &data.Summary{}
-				if err := d.Unmarshal(cs); err != nil {
-					return nil, err
-				}
-				cs.ID = d.ObjectId()
-				results = append(results, *cs)
-			}
-		}
-
-		// we have enough resuts
-		if len(results) == limit {
-			return results, nil
-		}
-
-		if len(all) > 0 {
-			lastDoc = all[len(all)-1]
-		} else {
-			break
-		}
+	}); err != nil {
+		return results, err
 	}
+
+	dbLastAction = time.Now()
 
 	return results, nil
 }
 
-// Search returns a summary of items mathing a search. It searched the SearchText field.
-func Search(mailbox, s string, start, limit int) ([]data.Summary, error) {
-	mailbox = sanitizeMailboxName(mailbox)
+// Search will search a mailbox for search terms.
+// The search is broken up by segments (exact phrases can be quoted), and interprits specific terms such as:
+// is:read, is:unread, has:attachment, to:<term>, from:<term> & subject:<term>
+// Negative searches also also included by prefixing the search term with a `-` or `!`
+func Search(search string) ([]data.Summary, error) {
+	results := []data.Summary{}
+	start := time.Now()
 
-	s = strings.ToLower(s)
-	s = strings.Replace(s, "'", `\'`, -1)
-	s = strings.Replace(s, "(", ``, -1)
-	s = strings.Replace(s, ")", ``, -1)
-	// add another quote if quotes are odd
+	s := strings.ToLower(search)
+	// add another quote if missing closing quote
 	quotes := strings.Count(s, `"`)
 	if quotes%2 != 0 {
 		s += `"`
@@ -344,80 +303,126 @@ func Search(mailbox, s string, start, limit int) ([]data.Summary, error) {
 	p := shellwords.NewParser()
 	args, err := p.Parse(s)
 	if err != nil {
-		return nil, errors.New("Your search contains invalid characters")
+		// return errors.New("Your search contains invalid characters")
+		panic(err)
 	}
 
-	results := []data.Summary{}
-	include := []string{}
+	q := sqlf.From("mailbox").
+		Select(`ID, Data, read, 
+			json_extract(Data, '$.To') as ToJSON, 
+			json_extract(Data, '$.From') as FromJSON, 
+			json_extract(Data, '$.Subject') as Subject, 
+			json_extract(Data, '$.Attachments') as Attachments
+		`).
+		OrderBy("Sort DESC").
+		Limit(200)
 
 	for _, w := range args {
-		word := cleanString(w)
-		if word != "" {
-			include = append(include, fmt.Sprintf("%s", regexp.QuoteMeta(word)))
+		if cleanString(w) == "" {
+			continue
 		}
-	}
 
-	if len(include) == 0 {
-		return results, nil
-	}
+		exclude := false
+		if strings.HasPrefix(w, "-") || strings.HasPrefix(w, "!") {
+			exclude = true
+			w = w[1:]
+		}
 
-	var where clover.Criteria
-
-	for i, w := range include {
-		if i == 0 {
-			where = clover.Field("SearchText").Like(w)
+		if strings.HasPrefix(w, "to:") {
+			w = cleanString(w[3:])
+			if w != "" {
+				if exclude {
+					q.Where("ToJSON NOT LIKE ?", "%"+escPercentChar(w)+"%")
+				} else {
+					q.Where("ToJSON LIKE ?", "%"+escPercentChar(w)+"%")
+				}
+			}
+		} else if strings.HasPrefix(w, "from:") {
+			w = cleanString(w[5:])
+			if w != "" {
+				if exclude {
+					q.Where("FromJSON NOT LIKE ?", "%"+escPercentChar(w)+"%")
+				} else {
+					q.Where("FromJSON LIKE ?", "%"+escPercentChar(w)+"%")
+				}
+			}
+		} else if strings.HasPrefix(w, "subject:") {
+			w = cleanString(w[8:])
+			if w != "" {
+				if exclude {
+					q.Where("Subject NOT LIKE ?", "%"+escPercentChar(w)+"%")
+				} else {
+					q.Where("Subject LIKE ?", "%"+escPercentChar(w)+"%")
+				}
+			}
+		} else if w == "is:read" {
+			if exclude {
+				q.Where("Read = 0")
+			} else {
+				q.Where("Read = 1")
+			}
+		} else if w == "is:unread" {
+			if exclude {
+				q.Where("Read = 1")
+			} else {
+				q.Where("Read = 0")
+			}
+		} else if w == "has:attachment" || w == "has:attachments" {
+			if exclude {
+				q.Where("Attachments = 0")
+			} else {
+				q.Where("Attachments > 0")
+			}
 		} else {
-			where = where.And(clover.Field("SearchText").Like(w))
+			// search text
+			if exclude {
+				q.Where("search NOT LIKE ?", "%"+cleanString(escPercentChar(w))+"%")
+			} else {
+				q.Where("search LIKE ?", "%"+cleanString(escPercentChar(w))+"%")
+			}
 		}
 	}
 
-	q, err := db.FindAll(clover.NewQuery(mailbox).
-		Skip(start).
-		Limit(limit).
-		Sort(clover.SortOption{Field: "Created", Direction: -1}).
-		Where(where))
+	if err := q.QueryAndClose(nil, db, func(row *sql.Rows) {
+		var id string
+		var summary string
+		var read int
+		var ignore string
+		em := data.Summary{}
+
+		if err := row.Scan(&id, &summary, &read, &ignore, &ignore, &ignore, &ignore); err != nil {
+			logger.Log().Error(err)
+			return
+		}
+
+		err := json.Unmarshal([]byte(summary), &em)
+		if err != nil {
+			logger.Log().Error(err)
+			return
+		}
+
+		em.ID = id
+		em.Read = read == 1
+
+		results = append(results, em)
+	}); err != nil {
+		return results, err
+	}
+
+	elapsed := time.Since(start)
+
+	logger.Log().Debugf("[db] search for \"%s\" in %s", search, elapsed)
+
+	dbLastAction = time.Now()
+
+	return results, err
+}
+
+// GetMessage returns a data.Message generated from the mailbox_data collection.
+func GetMessage(id string) (*data.Message, error) {
+	raw, err := GetMessageRaw(id)
 	if err != nil {
 		return nil, err
-	}
-
-	for _, d := range q {
-		cs := &data.Summary{}
-		if err := d.Unmarshal(cs); err != nil {
-			return nil, err
-		}
-		cs.ID = d.ObjectId()
-		results = append(results, *cs)
-	}
-
-	return results, nil
-}
-
-// Count returns the total number of messages in a mailbox
-func Count(mailbox string) (int, error) {
-	mailbox = sanitizeMailboxName(mailbox)
-
-	return db.Count(clover.NewQuery(mailbox))
-}
-
-// CountUnread returns the unread number of messages in a mailbox
-func CountUnread(mailbox string) (int, error) {
-	mailbox = sanitizeMailboxName(mailbox)
-
-	return db.Count(
-		clover.NewQuery(mailbox).
-			Where(clover.Field("Read").IsFalse()),
-	)
-}
-
-// GetMessage returns a data.Message generated from the {mailbox}_data collection.
-// ID must be supplied as this is not stored within the CloverStore but rather the
-// *clover.Document
-func GetMessage(mailbox, id string) (*data.Message, error) {
-	mailbox = sanitizeMailboxName(mailbox)
-
-	raw, err := GetMessageRaw(mailbox, id)
-	if err != nil || raw == nil {
-		return nil, errors.New("message not found")
 	}
 
 	r := bytes.NewReader(raw)
@@ -476,26 +481,47 @@ func GetMessage(mailbox, id string) (*data.Message, error) {
 
 	obj.HTML = html
 
-	msg, err := db.FindById(mailbox, id)
-	if err == nil && !msg.Get("Read").(bool) {
-		updates := make(map[string]interface{})
-		updates["Read"] = true
-
-		if err := db.UpdateById(mailbox, id, updates); err != nil {
-			return nil, err
-		}
-
-		statsReadOneMessage(mailbox)
+	// mark message as read
+	if err := MarkRead(id); err != nil {
+		return &obj, err
 	}
+
+	dbLastAction = time.Now()
 
 	return &obj, nil
 }
 
-// GetAttachmentPart returns an *enmime.Part (attachment or inline) from a message
-func GetAttachmentPart(mailbox, id, partID string) (*enmime.Part, error) {
-	mailbox = sanitizeMailboxName(mailbox)
+// GetMessageRaw returns an []byte of the full message
+func GetMessageRaw(id string) ([]byte, error) {
+	var i string
+	var msg string
+	q := sqlf.From("mailbox_data").
+		Select(`ID`).To(&i).
+		Select(`Email`).To(&msg).
+		Where(`ID = ?`, id)
 
-	raw, err := GetMessageRaw(mailbox, id)
+	err := q.QueryRowAndClose(context.Background(), db)
+	if err != nil {
+		return nil, err
+	}
+
+	if i == "" {
+		return nil, errors.New("message not found")
+	}
+
+	raw, err := dbDecoder.DecodeAll([]byte(msg), nil)
+	if err != nil {
+		return nil, fmt.Errorf("error decompressing message: %s", err.Error())
+	}
+
+	dbLastAction = time.Now()
+
+	return raw, err
+}
+
+// GetAttachmentPart returns an *enmime.Part (attachment or inline) from a message
+func GetAttachmentPart(id, partID string) (*enmime.Part, error) {
+	raw, err := GetMessageRaw(id)
 	if err != nil {
 		return nil, err
 	}
@@ -525,137 +551,206 @@ func GetAttachmentPart(mailbox, id, partID string) (*enmime.Part, error) {
 		}
 	}
 
+	dbLastAction = time.Now()
+
 	return nil, errors.New("attachment not found")
 }
 
-// GetMessageRaw returns an []byte of the full message
-func GetMessageRaw(mailbox, id string) ([]byte, error) {
-	mailbox = sanitizeMailboxName(mailbox)
-
-	q, err := db.FindById(mailbox+"_data", id)
-	if err != nil {
-		return nil, err
+// MarkRead will mark a message as read
+func MarkRead(id string) error {
+	if !IsUnread(id) {
+		return nil
 	}
 
-	if q == nil {
-		return nil, errors.New("message not found")
+	_, err := sqlf.Update("mailbox").
+		Set("Read", 1).
+		Where("ID = ?", id).
+		ExecAndClose(context.Background(), db)
+
+	if err == nil {
+		logger.Log().Debugf("[db] marked message %s as read", id)
 	}
 
-	var raw []byte
-
-	if q.Has("Email") {
-		msg := q.Get("Email").(string)
-		raw, err = decoder.DecodeAll([]byte(msg), nil)
-		if err != nil {
-			return nil, fmt.Errorf("error decompressing message: %s", err.Error())
-		}
-	} else {
-		// deprecated 2022/08/10 - can be eventually removed
-		raw = []byte(q.Get("Data").(string))
-	}
-
-	return raw, err
+	return err
 }
 
-// UnreadMessage will delete all messages from a mailbox
-func UnreadMessage(mailbox, id string) error {
-	mailbox = sanitizeMailboxName(mailbox)
+// MarkAllRead will mark all messages as read
+func MarkAllRead() error {
+	var (
+		start = time.Now()
+		total = CountUnread()
+	)
 
-	updates := make(map[string]interface{})
-	updates["Read"] = false
+	_, err := sqlf.Update("mailbox").
+		Set("Read", 1).
+		ExecAndClose(context.Background(), db)
+	if err != nil {
+		return err
+	}
 
-	statsUnreadOneMessage(mailbox)
+	elapsed := time.Since(start)
+	logger.Log().Debugf("[db] marked %d messages as read in %s", total, elapsed)
 
-	return db.UpdateById(mailbox, id, updates)
+	dbLastAction = time.Now()
+
+	return nil
+}
+
+// MarkUnread will mark a message as unread
+func MarkUnread(id string) error {
+	if IsUnread(id) {
+		return nil
+	}
+
+	_, err := sqlf.Update("mailbox").
+		Set("Read", 0).
+		Where("ID = ?", id).
+		ExecAndClose(context.Background(), db)
+
+	if err == nil {
+		logger.Log().Debugf("[db] marked message %s as unread", id)
+	}
+
+	dbLastAction = time.Now()
+
+	return err
 }
 
 // DeleteOneMessage will delete a single message from a mailbox
-func DeleteOneMessage(mailbox, id string) error {
-	mailbox = sanitizeMailboxName(mailbox)
-
-	q, err := db.FindById(mailbox, id)
+func DeleteOneMessage(id string) error {
+	// begin a transaction to ensure both the message
+	// and data are deleted successfully
+	tx, err := db.BeginTx(context.Background(), nil)
 	if err != nil {
 		return err
 	}
 
-	unreadStatus := !q.Get("Read").(bool)
+	// roll back if it fails
+	defer tx.Rollback()
 
-	if err := db.DeleteById(mailbox, id); err != nil {
+	_, err = tx.Exec("DELETE FROM mailbox WHERE ID  = ?", id)
+	if err != nil {
 		return err
 	}
 
-	statsDeleteOneMessage(mailbox, unreadStatus)
+	_, err = tx.Exec("DELETE FROM mailbox_data WHERE ID  = ?", id)
+	if err != nil {
+		return err
+	}
 
-	return db.DeleteById(mailbox+"_data", id)
+	err = tx.Commit()
+
+	if err == nil {
+		logger.Log().Debugf("[db] deleted message %s", id)
+	}
+
+	dbLastAction = time.Now()
+	dbDataDeleted = true
+
+	return err
 }
 
 // DeleteAllMessages will delete all messages from a mailbox
-func DeleteAllMessages(mailbox string) error {
-	mailbox = sanitizeMailboxName(mailbox)
+func DeleteAllMessages() error {
+	var (
+		start = time.Now()
+		total int
+	)
 
-	totalStart := time.Now()
+	_ = sqlf.From("mailbox").
+		Select("COUNT(*)").To(&total).
+		QueryRowAndClose(nil, db)
 
-	totalMessages, err := db.Count(clover.NewQuery(mailbox))
+	// begin a transaction to ensure both the message
+	// summaries and data are deleted successfully
+	tx, err := db.BeginTx(context.Background(), nil)
 	if err != nil {
 		return err
 	}
 
-	for {
-		toDelete, err := db.Count(clover.NewQuery(mailbox))
-		if err != nil {
-			return err
-		}
-		if toDelete == 0 {
-			break
-		}
-		if err := db.Delete(clover.NewQuery(mailbox).Limit(2500)); err != nil {
-			return err
-		}
-		if err := db.Delete(clover.NewQuery(mailbox + "_data").Limit(2500)); err != nil {
-			return err
-		}
+	// roll back if it fails
+	defer tx.Rollback()
+
+	_, err = tx.Exec("DELETE FROM mailbox")
+	if err != nil {
+		return err
 	}
 
-	// resets stats for mailbox
-	_ = statsRefresh(mailbox)
+	_, err = tx.Exec("DELETE FROM mailbox_data")
+	if err != nil {
+		return err
+	}
 
-	elapsed := time.Since(totalStart)
-	logger.Log().Infof("Deleted %d messages from %s in %s", totalMessages, mailbox, elapsed)
+	if err := tx.Commit(); err != nil {
+		return err
+	}
 
-	return nil
+	_, err = db.Exec("VACUUM")
+	if err == nil {
+		elapsed := time.Since(start)
+		logger.Log().Debugf("[db] deleted %d messages in %s", total, elapsed)
+	}
+
+	dbLastAction = time.Now()
+	dbDataDeleted = false
+
+	return err
 }
 
-// MarkAllRead will mark every unread message in a mailbox as read
-func MarkAllRead(mailbox string) error {
-	mailbox = sanitizeMailboxName(mailbox)
+// StatsGet returns the total/unread statistics for a mailbox
+func StatsGet() data.MailboxStats {
+	var (
+		start  = time.Now()
+		total  = CountTotal()
+		unread = CountUnread()
+	)
 
-	totalStart := time.Now()
+	logger.Log().Debugf("[db] statistics calculated in %s", time.Since(start))
 
-	q, err := db.FindAll(clover.NewQuery(mailbox).
-		Where(clover.Field("Read").IsFalse()))
-	if err != nil {
-		return err
+	dbLastAction = time.Now()
+
+	return data.MailboxStats{
+		Total:  total,
+		Unread: unread,
 	}
+}
 
-	total := len(q)
+// CountTotal returns the number of emails in the database
+func CountTotal() int {
+	var total int
 
-	updates := make(map[string]interface{})
-	updates["Read"] = true
+	_ = sqlf.From("mailbox").
+		Select("COUNT(*)").To(&total).
+		QueryRowAndClose(nil, db)
 
-	for _, m := range q {
-		if err := db.UpdateById(mailbox, m.ObjectId(), updates); err != nil {
-			logger.Log().Error(err)
-			return err
-		}
-	}
+	return total
+}
 
-	if err := statsRefresh(mailbox); err != nil {
-		return err
-	}
+// CountUnread returns the number of emails in the database that are unread.
+// If an ID is supplied, then it is just limited to that message.
+func CountUnread() int {
+	var total int
 
-	elapsed := time.Since(totalStart)
+	q := sqlf.From("mailbox").
+		Select("COUNT(*)").To(&total).
+		Where("Read = ?", 0)
 
-	logger.Log().Debugf("[db] marked %d messages in %s as read in %s", total, mailbox, elapsed)
+	_ = q.QueryRowAndClose(nil, db)
 
-	return nil
+	return total
+}
+
+// IsUnread returns the number of emails in the database that are unread.
+// If an ID is supplied, then it is just limited to that message.
+func IsUnread(id string) bool {
+	var unread int
+
+	q := sqlf.From("mailbox").
+		Select("COUNT(*)").To(&unread).
+		Where("Read = ?", 0).
+		Where("ID = ?", id)
+
+	_ = q.QueryRowAndClose(nil, db)
+
+	return unread == 1
 }

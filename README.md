@@ -1,4 +1,4 @@
-# Mailpit
+# Mailpit - email testing for developers
 
 ![Tests](https://github.com/axllent/mailpit/actions/workflows/tests.yml/badge.svg)
 ![Build status](https://github.com/axllent/mailpit/actions/workflows/release-build.yml/badge.svg)
@@ -6,7 +6,7 @@
 ![CodeQL](https://github.com/axllent/mailpit/actions/workflows/codeql-analysis.yml/badge.svg)
 [![Go Report Card](https://goreportcard.com/badge/github.com/axllent/mailpit)](https://goreportcard.com/report/github.com/axllent/mailpit)
 
-Mailpit is an email testing tool for developers.
+Mailpit is a multi-platform email testing tool for developers.
 
 It acts as both an SMTP server, and provides a web interface to view all captured emails.
 
@@ -17,15 +17,15 @@ Mailpit is inspired by [MailHog](#why-rewrite-mailhog), but much, much faster.
 
 ## Features
 
-- Runs completely on a single binary
+- Runs entirely from a single binary, no installation required
 - SMTP server (default `0.0.0.0:1025`)
 - Web UI to view emails (HTML format, text, source and MIME attachments, default `0.0.0.0:8025`)
 - Real-time web UI updates using web sockets for new mail
 - Optional browser notifications for new mail (HTTPS only)
 - Configurable automatic email pruning (default keeps the most recent 500 emails)
-- Email storage either in memory or disk ([see wiki](https://github.com/axllent/mailpit/wiki/Email-storage))
+- Email storage either in a temporary or persistent database ([see wiki](https://github.com/axllent/mailpit/wiki/Email-storage))
 - Fast SMTP processing & storing - approximately 300-600 emails per second depending on CPU, network speed & email size
-- Can handle tens of thousands of emails
+- Can handle hundreds of thousands of emails
 - Optional SMTP with STARTTLS & SMTP authentication ([see wiki](https://github.com/axllent/mailpit/wiki/SMTP-with-STARTTLS-and-authentication))
 - Optional HTTPS for web UI ([see wiki](https://github.com/axllent/mailpit/wiki/HTTPS))
 - Optional basic authentication for web UI ([see wiki](https://github.com/axllent/mailpit/wiki/Basic-authentication))
@@ -34,7 +34,7 @@ Mailpit is inspired by [MailHog](#why-rewrite-mailhog), but much, much faster.
 
 ## Installation
 
-Download a pre-built binary in the [releases](https://github.com/axllent/mailpit/releases/latest). The `mailpit` can be placed in your `$PATH`, or simply run as `./mailpit`. See `mailpit -h` for options.
+Download a pre-built binary in the [releases](https://github.com/axllent/mailpit/releases/latest). The `mailpit` can be placed in your `$PATH`, or simply run as `./mailpit`. See `mailpit -h` for options, or see [the wiki](https://github.com/axllent/mailpit/wiki/Runtime-options) for additional information.
 
 To build Mailpit from source see [building from source](https://github.com/axllent/mailpit/wiki/Building-from-source).
 
