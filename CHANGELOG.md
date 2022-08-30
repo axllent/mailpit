@@ -3,6 +3,20 @@
 Notable changes to Mailpit will be documented in this file.
 
 
+## 1.0.0-beta1
+
+### BREAKING CHANGE
+
+This release includes a major backend storage change (SQLite) that will render any previously-saved messages useless. Please delete old data to free up space. For more information see https://github.com/axllent/mailpit/issues/10
+
+
+### Feature
+- Switch backend storage to use SQLite
+
+### UI
+- Resize preview iframe on load
+
+
 ## 0.1.5
 
 ### Feature
@@ -37,9 +51,6 @@ Notable changes to Mailpit will be documented in this file.
 - Minor UI tweaks
 - Update pagination values when new mail arrives when not on first page
 
-
-### Pull Requests
-- Merge pull request [#6](https://github.com/axllent/mailpit/issues/6) from KaptinLin/develop
 
 ## 0.1.2
 
@@ -130,5 +141,6 @@ Notable changes to Mailpit will be documented in this file.
 
 ### Feature
 - Unread statistics
+
 
 
