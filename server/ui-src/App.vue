@@ -11,7 +11,6 @@ export default {
 	data() {
 		return {
 			currentPath: window.location.hash,
-			mailbox: "catchall",
 			items: [],
 			limit: 50,
 			total: 0,
@@ -62,11 +61,11 @@ export default {
             let self = this;
             let params = {};
 
-            let uri = 'api/'+self.mailbox+'/messages';
+            let uri = 'api/messages';
             if (self.search) {
                 self.searching = true;
 				self.items = [];
-                uri = 'api/'+self.mailbox+'/search'
+                uri = 'api/search'
                 self.start = 0; // search is displayed on one page
                 params['query'] = self.search;
             } else {
@@ -131,7 +130,7 @@ export default {
 			let self = this;
             let params = {};
 
-            let uri = 'api/' +  self.mailbox + '/' + self.currentPath
+            let uri = 'api/' + self.currentPath
 			self.get(uri, params, function(response) {
 				for (let i in self.items) {
 					if (self.items[i].ID == self.currentPath) {
@@ -149,7 +148,7 @@ export default {
 						if (a.ContentID != '') {
 							d.HTML = d.HTML.replace(
 								new RegExp('cid:'+a.ContentID, 'g'), 
-								window.location.origin+'/api/'+self.mailbox+'/'+d.ID+'/part/'+a.PartID
+								window.location.origin+'/api/'+d.ID+'/part/'+a.PartID
 							);
 						}
 					}
@@ -161,7 +160,7 @@ export default {
 						if (a.ContentID != '') {
 							d.HTML = d.HTML.replace(
 								new RegExp('cid:'+a.ContentID, 'g'), 
-								window.location.origin+'/api/'+self.mailbox+'/'+d.ID+'/part/'+a.PartID
+								window.location.origin+'/api/'+d.ID+'/part/'+a.PartID
 							);
 						}
 					}
@@ -173,7 +172,7 @@ export default {
 
 		deleteAll: function() {
 			let self = this;
-			let uri = 'api/' +  self.mailbox + '/delete'
+			let uri = 'api/delete'
 			self.get(uri, false, function(response) {
 				self.reloadMessages();
 			});
@@ -184,7 +183,7 @@ export default {
 			if (!self.message) {
 				return false;
 			}
-			let uri = 'api/' +  self.mailbox + '/' + self.message.ID + '/delete'
+			let uri = 'api/' + self.message.ID + '/delete'
 			self.get(uri, false, function(response) {
 				window.location.hash = "";
 				self.scrollInPlace = true;
@@ -198,7 +197,7 @@ export default {
 			if (!self.message) {
 				return false;
 			}
-			let uri = 'api/' +  self.mailbox + '/' + self.message.ID + '/unread'
+			let uri = 'api/' + self.message.ID + '/unread'
 			self.get(uri, false, function(response) {
 				window.location.hash = "";
 				self.scrollInPlace = true;
@@ -208,7 +207,7 @@ export default {
 
 		markAllRead: function() {
 			let self = this;
-			let uri = 'api/' +  self.mailbox + '/read'
+			let uri = 'api/read'
 			self.get(uri, false, function(response) {
 				window.location.hash = "";
 				self.scrollInPlace = true;
@@ -219,7 +218,7 @@ export default {
 		// websocket connect
         connect: function () {
             let wsproto = location.protocol == 'https:' ? 'wss' : 'ws';
-            let ws = new WebSocket(wsproto + "://" + document.location.host + "/api/"+this.mailbox+"/events");
+            let ws = new WebSocket(wsproto + "://" + document.location.host + "/api/events");
             let self = this;
             ws.onmessage = function (e) {
 				let response = JSON.parse(e.data);
@@ -246,7 +245,6 @@ export default {
 					self.scrollInPlace = true;
 					self.loadMessages();
 				}
-
             }
 
             ws.onopen = function () {
@@ -337,7 +335,7 @@ export default {
 			<button class="btn btn-outline-secondary me-2" title="Mark unread" v-on:click="markUnread">
 				<i class="bi bi-envelope"></i> <span class="d-none d-md-inline">Mark unread</span>
 			</button>
-			<a :href="'api/' + mailbox + '/' + message.ID + '/source?dl=1'" class="btn btn-outline-secondary me-2 float-end" title="Download message">
+			<a :href="'api/' + message.ID + '/source?dl=1'" class="btn btn-outline-secondary me-2 float-end" title="Download message">
 				<i class="bi bi-file-arrow-down-fill"></i> <span class="d-none d-md-inline">Download</span>
 			</a>
 		</div>
@@ -393,7 +391,7 @@ export default {
 	<div class="row flex-fill" style="min-height:0">
 		<div class="d-none d-md-block col-lg-2 col-md-3 mh-100 position-relative" style="overflow-y: auto;">
 			<ul class="list-unstyled mt-3 mb-5">
-				<li v-if="isConnected" title="Messages will auto-load" class="mb-2">
+				<li v-if="isConnected" title="Messages will auto-load" class="mb-3">
 					<i class="bi bi-power text-success"></i>
 					Connected
 				</li>
@@ -406,7 +404,7 @@ export default {
 						<i class="bi bi-envelope me-1" v-if="isConnected"></i>
 						<i class="bi bi-arrow-clockwise me-1" v-else></i>
 						Inbox 
-						<span class="position-absolute mt-2 ms-4 start-100 translate-middle badge rounded-pill text-bg-secondary" title="Unread messages" v-if="unread">
+						<span style="margin-top: -5px; margin-left: 5px;" class="position-absolute badge rounded-pill text-bg-secondary" title="Unread messages" v-if="unread">
 							{{ formatNumber(unread) }}
 						</span>
 					</a>
@@ -484,7 +482,7 @@ export default {
 				</div>
 			</div>
 
-			<Message v-if="message" :message="message" :mailbox="mailbox"></Message>
+			<Message v-if="message" :message="message"></Message>
 		</div>
 		<div id="loading" v-if="loading">
 			<div class="d-flex justify-content-center align-items-center h-100">

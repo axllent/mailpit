@@ -19,7 +19,7 @@ func mailHandler(origin net.Addr, from string, to []string, data []byte) error {
 		return err
 	}
 
-	if _, err := storage.Store(storage.DefaultMailbox, data); err != nil {
+	if _, err := storage.Store(data); err != nil {
 		// Value with size 4800709 exceeded 1048576 limit
 		re := regexp.MustCompile(`(Value with size \d+ exceeded \d+ limit)`)
 		tooLarge := re.FindStringSubmatch(err.Error())

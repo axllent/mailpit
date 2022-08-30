@@ -22,6 +22,16 @@ Notable changes to Mailpit will be documented in this file.
 {{- if .CommitGroups -}}
 ## {{ .Tag.Name }}
 
+{{ if .NoteGroups -}}
+{{ range .NoteGroups -}}
+### {{ .Title }}
+{{ range .Notes }}
+{{ .Body }}
+{{ end }}
+{{ end }}
+{{ end -}}
+{{ end -}}
+
 {{ range .CommitGroups -}}
 ### {{ .Title }}
 {{ range .Commits -}}
@@ -35,14 +45,4 @@ Notable changes to Mailpit will be documented in this file.
 {{ range .MergeCommits -}}
 - {{ .Header }}
 {{ end }}
-{{ end -}}
-
-{{- if .NoteGroups -}}
-{{ range .NoteGroups -}}
-### {{ .Title }}
-{{ range .Notes }}
-{{ .Body }}
-{{ end }}
-{{ end -}}
-{{ end -}}
 {{ end -}}
