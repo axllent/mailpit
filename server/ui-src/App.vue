@@ -270,7 +270,7 @@ export default {
 				return message.To[i].Address;
 			}
 
-			return '[ Unknown ]';
+			return '[ Undisclosed recipients ]';
 		},
 
 		getRelativeCreated: function(message) {

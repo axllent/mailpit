@@ -110,10 +110,11 @@ export default {
 				<tr class="small">
 					<th>To</th>
 					<td class="privacy">
-						<span v-for="(t, i) in message.To">
+						<span v-if="message.To" v-for="(t, i) in message.To">
 							<template v-if="i > 0">,</template>
 							{{ t.Name + " <" + t.Address +">" }}
 						</span>
+						<span v-else>Undisclosed recipients</span>
 					</td>
 				</tr>
 				<tr v-if="message.Cc" class="small">
