@@ -34,7 +34,7 @@
     z-index: 1500;
 }
 
-.message.read:not(.active) {
+.message.read:not(.active):not(.selected) {
     color: $gray-500;
 }
 
@@ -73,6 +73,21 @@
 
 .list-group-item:first-child {
     border-top: 0;
+}
+
+.message.selected {
+    background: $primary;
+    color: #fff;
+
+    .text-muted {
+        color: #fff !important;
+    }
+
+    &.read {
+        b {
+            font-weight: normal;
+        }
+    }
 }
 
 body.blur {
