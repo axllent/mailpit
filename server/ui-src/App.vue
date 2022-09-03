@@ -433,10 +433,10 @@ export default {
 			<button class="btn btn-outline-secondary me-2" title="Mark unread" v-on:click="markUnread">
 				<i class="bi bi-eye-slash"></i> <span class="d-none d-md-inline">Mark unread</span>
 			</button>
-			<a class="btn btn-outline-secondary float-end" :class="messageNext ? '':'disabled'" :href="'#'+messageNext" title="View next message">
+			<a class="btn btn-outline-secondary float-end" :class="messageNext ? '':'disabled'" v-on:click="message=false" :href="'#'+messageNext" title="View next message">
 				<i class="bi bi-caret-right-fill"></i>
 			</a>
-			<a class="btn btn-outline-secondary ms-2 me-1 float-end" :class="messagePrev ? '': 'disabled'" :href="'#'+messagePrev" title="View previous message">
+			<a class="btn btn-outline-secondary ms-2 me-1 float-end" :class="messagePrev ? '': 'disabled'" v-on:click="message=false" :href="'#'+messagePrev" title="View previous message">
 				<i class="bi bi-caret-left-fill"></i>
 			</a>
 			<a :href="'api/' + message.ID + '/source?dl=1'" class="btn btn-outline-secondary me-2 float-end" title="Download message">
@@ -482,7 +482,7 @@ export default {
 				<small>
 					<b>{{ formatNumber(start + 1) }}-{{ formatNumber(start + items.length) }}</b> of <b>{{ formatNumber(total) }}</b>
 				</small>
-				<button class="btn btn-outline-secondary ms-2 me-1" :disabled="!canPrev" v-on:click="viewPrev" v-if="!searching"  :title="'View previous '+limit+' messages'">
+				<button class="btn btn-outline-secondary ms-2 me-1" :disabled="!canPrev" v-on:click="viewPrev" v-if="!searching" :title="'View previous '+limit+' messages'">
 					<i class="bi bi-caret-left-fill"></i>
 				</button>
 				<button class="btn btn-outline-secondary" :disabled="!canNext" v-on:click="viewNext" v-if="!searching" :title="'View next '+limit+' messages'">
