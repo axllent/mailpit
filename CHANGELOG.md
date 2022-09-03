@@ -3,12 +3,27 @@
 Notable changes to Mailpit will be documented in this file.
 
 
+## 1.0.0
+
+### Feature
+- Multiple message selection for group actions using shift/ctrl click
+- Search parser improvements
+
+### Feature
+- Search parser improvements
+
+### UI
+- Post data using 'application/json'
+- Display unknown recipients as as `Undisclosed recipients`
+- Update frontend modules & esbuild
+- Update frontend modules & esbuild
+
+
 ## 1.0.0-beta1
 
 ### BREAKING CHANGE
 
 This release includes a major backend storage change (SQLite) that will render any previously-saved messages useless. Please delete old data to free up space. For more information see https://github.com/axllent/mailpit/issues/10
-
 
 ### Feature
 - Switch backend storage to use SQLite
