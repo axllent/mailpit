@@ -23,7 +23,8 @@ export default {
 			scrollInPlace: false,
 			message: false,
 			notificationsSupported: false,
-			notificationsEnabled: false
+			notificationsEnabled: false,
+			selected: []
 		}
 	},
 	watch: {
@@ -60,6 +61,7 @@ export default {
 		loadMessages: function () {
             let self = this;
             let params = {};
+			this.selected = [];
 
             let uri = 'api/messages';
             if (self.search) {
@@ -128,10 +130,10 @@ export default {
 
 		openMessage: function(id) {
 			let self = this;
-            let params = {};
+			self.selected = [];
 
             let uri = 'api/' + self.currentPath
-			self.get(uri, params, function(response) {
+			self.get(uri, false, function(response) {
 				for (let i in self.items) {
 					if (self.items[i].ID == self.currentPath) {
 						if (!self.items[i].Read) {
@@ -192,6 +194,19 @@ export default {
 			});
 		},
 
+		deleteSelected: function() {
+			let self = this;
+			if (!self.selected.length) {
+				return false;
+			}
+			let uri = 'api/delete'
+			self.post(uri, {'ids': self.selected}, function(response) {
+				window.location.hash = "";
+				self.scrollInPlace = true;
+				self.loadMessages();
+			});
+		},
+
 		markUnread: function() {
 			let self = this;
 			if (!self.message) {
@@ -209,6 +224,32 @@ export default {
 			let self = this;
 			let uri = 'api/read'
 			self.get(uri, false, function(response) {
+				window.location.hash = "";
+				self.scrollInPlace = true;
+				self.loadMessages();
+			});
+		},
+
+		markSelectedRead: function() {
+			let self = this;
+			if (!self.selected.length) {
+				return false;
+			}
+			let uri = 'api/read'
+			self.post(uri, {'ids': self.selected}, function(response) {
+				window.location.hash = "";
+				self.scrollInPlace = true;
+				self.loadMessages();
+			});
+		},
+
+		markSelectedUnread: function() {
+			let self = this;
+			if (!self.selected.length) {
+				return false;
+			}
+			let uri = 'api/unread'
+			self.post(uri, {'ids': self.selected}, function(response) {
 				window.location.hash = "";
 				self.scrollInPlace = true;
 				self.loadMessages();
@@ -270,7 +311,7 @@ export default {
 				return message.To[i].Address;
 			}
 
-			return '[ Unknown ]';
+			return '[ Undisclosed recipients ]';
 		},
 
 		getRelativeCreated: function(message) {
@@ -310,8 +351,48 @@ export default {
 					}
 				});
 			}
-		}
+		},
 
+		toggleSelected: function(e, id) {
+			e.preventDefault();
+			
+			if (this.isSelected(id)) {
+				this.selected =  this.selected.filter(function(ele){ 
+					return ele != id; 
+				});
+			} else {
+				this.selected.push(id);
+			}
+		},
+
+		selectRange: function(e, id) {
+			e.preventDefault();
+
+			let selecting = false;
+			let lastSelected = this.selected.length > 0 && this.selected[this.selected.length - 1];
+
+			if (lastSelected === false) {
+				this.selected.push(id);
+				return;
+			}
+
+			for (let d of this.items) {
+				if (selecting) {
+					this.selected.push(d.ID);
+					if (d.ID == lastSelected || d.ID == id) {
+						// reached backwards select
+						break;
+					}
+				} else if (d.ID == id || d.ID == lastSelected) {
+					this.selected.push(d.ID);
+					selecting = true;
+				}
+			}
+		},
+
+		isSelected: function(id) {
+			return this.selected.indexOf(id) != -1;
+		}
 	}
 }
 </script>
@@ -333,7 +414,7 @@ export default {
 				<i class="bi bi-trash-fill"></i> <span class="d-none d-md-inline">Delete</span>
 			</button>
 			<button class="btn btn-outline-secondary me-2" title="Mark unread" v-on:click="markUnread">
-				<i class="bi bi-envelope"></i> <span class="d-none d-md-inline">Mark unread</span>
+				<i class="bi bi-eye-slash"></i> <span class="d-none d-md-inline">Mark unread</span>
 			</button>
 			<a :href="'api/' + message.ID + '/source?dl=1'" class="btn btn-outline-secondary me-2 float-end" title="Download message">
 				<i class="bi bi-file-arrow-down-fill"></i> <span class="d-none d-md-inline">Download</span>
@@ -409,18 +490,42 @@ export default {
 						</span>
 					</a>
 				</li>
-				<li class="my-3" v-if="unread">
+				<li class="my-3" v-if="unread && !selected.length">
 					<a href="#" data-bs-toggle="modal" data-bs-target="#MarkAllReadModal">
-						<i class="bi bi-check2-square"></i>
+						<i class="bi bi-eye-fill"></i>
 						Mark all read
 					</a>
 				</li>
-				<li class="my-3" v-if="total">
+				<li class="my-3" v-if="total && !selected.length">
 					<a href="#" data-bs-toggle="modal" data-bs-target="#DeleteAllModal">
 						<i class="bi bi-trash-fill me-1 text-danger"></i>
 						Delete all
 					</a>
 				</li>
+
+				<li class="my-3" v-if="selected.length > 0">
+					<b class="me-2">Selected {{selected.length}}</b>
+					<button class="btn btn-sm text-muted" v-on:click="selected=[]" title="Unselect messages"><i class="bi bi-x-circle"></i></button>
+				</li>
+				<li class="my-3 ms-2" v-if="unread && selected.length > 0">
+					<a href="#" v-on:click="markSelectedRead">
+						<i class="bi bi-eye-fill"></i>
+						Mark read
+					</a>
+				</li>
+				<li class="my-3 ms-2" v-if="selected.length > 0">
+					<a href="#" v-on:click="markSelectedUnread">
+						<i class="bi bi-eye-slash"></i>
+						Mark unread
+					</a>
+				</li>
+				<li class="my-3 ms-2" v-if="total && selected.length > 0">
+					<a href="#" v-on:click="deleteSelected">
+						<i class="bi bi-trash-fill me-1 text-danger"></i>
+						Delete
+					</a>
+				</li>
+
 				<li class="my-3" v-if="notificationsSupported && !notificationsEnabled">
 					<a href="#" data-bs-toggle="modal" data-bs-target="#EnableNotificationsModal" title="Enable browser notifications">
 						<i class="bi bi-bell"></i>
@@ -439,8 +544,10 @@ export default {
 		<div class="col-lg-10 col-md-9 mh-100 pe-0">
 			<div class="mh-100" style="overflow-y: auto;" :class="message ? 'd-none':''" id="message-page">
 				<div class="list-group" v-if="items.length">
-					<a v-for="message in items" :href="'#'+message.ID" class="row message d-flex small list-group-item list-group-item-action"
-						:class="message.Read ? 'read':''" XXXv-on:click="openMessage(message)">
+					<a v-for="message in items" :href="'#'+message.ID" 
+						v-on:click.ctrl="toggleSelected($event, message.ID)" v-on:click.shift="selectRange($event, message.ID)" 
+						class="row message d-flex small list-group-item list-group-item-action"
+						:class="message.Read ? 'read':'', isSelected(message.ID) ? 'selected':''">
 						<div class="col-lg-3">
 							<div class="d-lg-none float-end text-muted text-nowrap small">
 								<i class="bi bi-paperclip h6 me-1" v-if="message.Attachments"></i>
@@ -497,17 +604,17 @@ export default {
 	<div class="modal fade" id="DeleteAllModal" tabindex="-1" aria-labelledby="DeleteAllModalLabel" aria-hidden="true">
 		<div class="modal-dialog">
 			<div class="modal-content">
-			<div class="modal-header">
-				<h5 class="modal-title" id="DeleteAllModalLabel">Delete all messages?</h5>
-				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-			</div>
-			<div class="modal-body">
-				This will permanently delete {{ formatNumber(total) }} message<span v-if="total > 1">s</span>.
-			</div>
-			<div class="modal-footer">
-				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-				<button type="button" class="btn btn-danger" data-bs-dismiss="modal" v-on:click="deleteAll">Delete</button>
-			</div>
+				<div class="modal-header">
+					<h5 class="modal-title" id="DeleteAllModalLabel">Delete all messages?</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					This will permanently delete {{ formatNumber(total) }} message<span v-if="total > 1">s</span>.
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+					<button type="button" class="btn btn-danger" data-bs-dismiss="modal" v-on:click="deleteAll">Delete</button>
+				</div>
 			</div>
 		</div>
 	</div>
@@ -516,17 +623,17 @@ export default {
 	<div class="modal fade" id="MarkAllReadModal" tabindex="-1" aria-labelledby="MarkAllReadModalLabel" aria-hidden="true">
 		<div class="modal-dialog">
 			<div class="modal-content">
-			<div class="modal-header">
-				<h5 class="modal-title" id="MarkAllReadModalLabel">Mark all messages as read?</h5>
-				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-			</div>
-			<div class="modal-body">
-				This will mark {{ formatNumber(unread) }} message<span v-if="unread > 1">s</span> as read.
-			</div>
-			<div class="modal-footer">
-				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-				<button type="button" class="btn btn-primary" data-bs-dismiss="modal" v-on:click="markAllRead">Confirm</button>
-			</div>
+				<div class="modal-header">
+					<h5 class="modal-title" id="MarkAllReadModalLabel">Mark all messages as read?</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					This will mark {{ formatNumber(unread) }} message<span v-if="unread > 1">s</span> as read.
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+					<button type="button" class="btn btn-primary" data-bs-dismiss="modal" v-on:click="markAllRead">Confirm</button>
+				</div>
 			</div>
 		</div>
 	</div>
@@ -535,21 +642,21 @@ export default {
 	<div class="modal fade" id="EnableNotificationsModal" tabindex="-1" aria-labelledby="EnableNotificationsModalLabel" aria-hidden="true">
 		<div class="modal-dialog modal-lg">
 			<div class="modal-content">
-			<div class="modal-header">
-				<h5 class="modal-title" id="EnableNotificationsModalLabel">Enable browser notifications?</h5>
-				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-			</div>
-			<div class="modal-body">
-				<p class="h4">Get browser notifications when Mailpit receives a new mail?</p>
-				<p>
-					Note that your browser will ask you for confirmation when you click <code>enable notifications</code>,
-					and that you must have Mailpit open in a browser tab to be able to receive the notifications.
-				</p>
-			</div>
-			<div class="modal-footer">
-				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-				<button type="button" class="btn btn-primary" data-bs-dismiss="modal" v-on:click="requestNotifications">Enable notifications</button>
-			</div>
+				<div class="modal-header">
+					<h5 class="modal-title" id="EnableNotificationsModalLabel">Enable browser notifications?</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					<p class="h4">Get browser notifications when Mailpit receives a new mail?</p>
+					<p>
+						Note that your browser will ask you for confirmation when you click <code>enable notifications</code>,
+						and that you must have Mailpit open in a browser tab to be able to receive the notifications.
+					</p>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+					<button type="button" class="btn btn-primary" data-bs-dismiss="modal" v-on:click="requestNotifications">Enable notifications</button>
+				</div>
 			</div>
 		</div>
 	</div>

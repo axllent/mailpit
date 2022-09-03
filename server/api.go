@@ -28,7 +28,8 @@ func apiMailboxStats(w http.ResponseWriter, _ *http.Request) {
 	_, _ = w.Write(bytes)
 }
 
-func apiListMailbox(w http.ResponseWriter, r *http.Request) {
+// List messages
+func apiListMessages(w http.ResponseWriter, r *http.Request) {
 	start, limit := getStartLimit(r)
 
 	messages, err := storage.List(start, limit)
@@ -52,16 +53,13 @@ func apiListMailbox(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(bytes)
 }
 
-func apiSearchMailbox(w http.ResponseWriter, r *http.Request) {
+// Search all messages
+func apiSearchMessages(w http.ResponseWriter, r *http.Request) {
 	search := strings.TrimSpace(r.URL.Query().Get("query"))
 	if search == "" {
 		fourOFour(w)
 		return
 	}
-
-	// we will only return up to 200 results
-	start := 0
-	// limit := 200
 
 	messages, err := storage.Search(search)
 	if err != nil {
@@ -73,7 +71,7 @@ func apiSearchMailbox(w http.ResponseWriter, r *http.Request) {
 
 	var res messagesResult
 
-	res.Start = start
+	res.Start = 0
 	res.Items = messages
 	res.Count = len(messages)
 	res.Total = stats.Total
@@ -144,12 +142,37 @@ func apiDownloadSource(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(data)
 }
 
-// Delete all messages in the mailbox
+// Delete all messages
 func apiDeleteAll(w http.ResponseWriter, r *http.Request) {
 	err := storage.DeleteAllMessages()
 	if err != nil {
 		httpError(w, err.Error())
 		return
+	}
+
+	w.Header().Add("Content-Type", "text/plain")
+	_, _ = w.Write([]byte("ok"))
+}
+
+// Delete all selected messages
+func apiDeleteSelected(w http.ResponseWriter, r *http.Request) {
+	decoder := json.NewDecoder(r.Body)
+
+	var data struct {
+		IDs []string
+	}
+	err := decoder.Decode(&data)
+	if err != nil {
+		panic(err)
+	}
+
+	ids := data.IDs
+
+	for _, id := range ids {
+		if err := storage.DeleteOneMessage(id); err != nil {
+			httpError(w, err.Error())
+			return
+		}
 	}
 
 	w.Header().Add("Content-Type", "text/plain")
@@ -188,12 +211,62 @@ func apiUnreadOne(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write([]byte("ok"))
 }
 
-// Mark single message as unread
+// Mark all messages as read
 func apiMarkAllRead(w http.ResponseWriter, r *http.Request) {
 	err := storage.MarkAllRead()
 	if err != nil {
 		httpError(w, err.Error())
 		return
+	}
+
+	w.Header().Add("Content-Type", "text/plain")
+	_, _ = w.Write([]byte("ok"))
+}
+
+// Mark selected message as read
+func apiMarkSelectedRead(w http.ResponseWriter, r *http.Request) {
+	decoder := json.NewDecoder(r.Body)
+
+	var data struct {
+		IDs []string
+	}
+	err := decoder.Decode(&data)
+	if err != nil {
+		panic(err)
+	}
+
+	ids := data.IDs
+
+	for _, id := range ids {
+		if err := storage.MarkRead(id); err != nil {
+			httpError(w, err.Error())
+			return
+		}
+	}
+
+	w.Header().Add("Content-Type", "text/plain")
+	_, _ = w.Write([]byte("ok"))
+}
+
+// Mark selected message as unread
+func apiMarkSelectedUnread(w http.ResponseWriter, r *http.Request) {
+	decoder := json.NewDecoder(r.Body)
+
+	var data struct {
+		IDs []string
+	}
+	err := decoder.Decode(&data)
+	if err != nil {
+		panic(err)
+	}
+
+	ids := data.IDs
+
+	for _, id := range ids {
+		if err := storage.MarkUnread(id); err != nil {
+			httpError(w, err.Error())
+			return
+		}
 	}
 
 	w.Header().Add("Content-Type", "text/plain")

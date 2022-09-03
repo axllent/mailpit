@@ -27,7 +27,7 @@ Notable changes to Mailpit will be documented in this file.
 ### {{ .Title }}
 {{ range .Notes }}
 {{ .Body }}
-{{ end }}
+{{ end -}}
 {{ end }}
 {{ end -}}
 {{ end -}}
