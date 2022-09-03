@@ -96,12 +96,8 @@ const commonMixins = {
          */
         post: function (url, values, callback) {
             let self = this;
-            const params = new URLSearchParams();
-            for (const [key, value] of Object.entries(values)) {
-                params.append(key, value);
-            }
             self.loading++;
-            axios.post(url, params)
+            axios.post(url, values)
                 .then(callback)
                 .catch(self.handleError)
                 .then(function () {
