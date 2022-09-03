@@ -2,7 +2,6 @@
 
 Notable changes to Mailpit will be documented in this file.
 
-
 {{ if .Versions -}}
 {{ if .Unreleased.CommitGroups -}}
 ## [Unreleased]
@@ -38,11 +37,11 @@ Notable changes to Mailpit will be documented in this file.
 - {{ if .Scope }}**{{ .Scope }}:** {{ end }}{{ .Subject }}
 {{ end }}
 {{ end }}
-{{ end -}}
 
 {{- if .MergeCommits -}}
 ### Pull Requests
 {{ range .MergeCommits -}}
 - {{ .Header }}
+{{ end }}
 {{ end }}
 {{ end -}}
