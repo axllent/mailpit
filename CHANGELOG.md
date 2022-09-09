@@ -2,6 +2,12 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## 1.1.0
+
+### UI
+- HTML source & highlighting
+- Add previous/next message links
+
 
 ## 1.0.0
 
