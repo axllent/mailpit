@@ -140,8 +140,8 @@ export default {
 							<th>To</th>
 							<td class="privacy">
 								<span v-if="message.To" v-for="(t, i) in message.To">
-									<template v-if="i > 0">,</template>
-									{{ t.Name + " <" + t.Address +">" }}
+									<template v-if="i > 0">, </template>
+									<span class="text-nowrap">{{ t.Name + " <" + t.Address +">" }}</span>
 								</span>
 								<span v-else>Undisclosed recipients</span>
 							</td>
@@ -168,12 +168,16 @@ export default {
 							<th class="small">Subject</th>
 							<td><strong>{{ message.Subject }}</strong></td>
 						</tr>
+						<tr class="d-md-none">
+							<th class="small">Date</th>
+							<td>{{ messageDate(message.Date) }}</td>
+						</tr>
 					</tbody>
 				</table>
 			</div>
 			<div class="col-md-auto text-md-end mt-md-3">
-				<p class="text-muted small"><small>{{ messageDate(message.Date) }}</small></p>
-				<div class="dropdown" v-if="allAttachments(message)">
+				<p class="text-muted small d-none d-md-block"><small>{{ messageDate(message.Date) }}</small></p>
+				<div class="dropdown mt-2" v-if="allAttachments(message)">
 					<button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
 						Attachment<span v-if="allAttachments(message).length > 1">s</span>
 						({{ allAttachments(message).length }})
