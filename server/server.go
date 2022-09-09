@@ -43,7 +43,7 @@ func Listen() {
 	r.HandleFunc("/api/read", apiMarkAllRead).Methods("GET")
 	r.HandleFunc("/api/read", apiMarkSelectedRead).Methods("POST")
 	r.HandleFunc("/api/unread", apiMarkSelectedUnread).Methods("POST")
-	r.HandleFunc("/api/{id}/source", middleWareFunc(apiDownloadSource)).Methods("GET")
+	r.HandleFunc("/api/{id}/raw", middleWareFunc(apiDownloadRaw)).Methods("GET")
 	r.HandleFunc("/api/{id}/part/{partID}", middleWareFunc(apiDownloadAttachment)).Methods("GET")
 	r.HandleFunc("/api/{id}/delete", middleWareFunc(apiDeleteOne)).Methods("GET")
 	r.HandleFunc("/api/{id}/unread", middleWareFunc(apiUnreadOne)).Methods("GET")

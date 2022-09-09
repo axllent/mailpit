@@ -2,6 +2,12 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## 1.1.0
+
+### UI
+- HTML source & highlighting
+- Add previous/next message links
+
 
 ## 1.0.0
 
@@ -65,6 +71,9 @@ This release includes a major backend storage change (SQLite) that will render a
 - Add reset search button
 - Minor UI tweaks
 - Update pagination values when new mail arrives when not on first page
+
+### Pull Requests
+- Merge pull request [#6](https://github.com/axllent/mailpit/issues/6) from KaptinLin/develop
 
 
 ## 0.1.2
