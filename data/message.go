@@ -1,3 +1,4 @@
+// Package data contains the message & mailbox structs
 package data
 
 import (
@@ -19,6 +20,7 @@ type Message struct {
 	Date        time.Time
 	Text        string
 	HTML        string
+	HTMLSource  string
 	Size        int
 	Inline      []Attachment
 	Attachments []Attachment

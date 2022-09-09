@@ -12,6 +12,7 @@
     "bootstrap": "^5.2.0",
     "bootstrap-icons": "^1.9.1",
     "moment": "^2.29.4",
+    "prismjs": "^1.29.0",
     "vue": "^3.2.13"
   },
   "devDependencies": {

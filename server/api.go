@@ -121,8 +121,8 @@ func apiDownloadAttachment(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(a.Content)
 }
 
-// View the full email source as plain text
-func apiDownloadSource(w http.ResponseWriter, r *http.Request) {
+// Download the full email source as plain text
+func apiDownloadRaw(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
 	id := vars["id"]

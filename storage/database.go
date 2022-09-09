@@ -370,16 +370,17 @@ func GetMessage(id string) (*data.Message, error) {
 	date, _ := env.Date()
 
 	obj := data.Message{
-		ID:      id,
-		Read:    true,
-		From:    from,
-		Date:    date,
-		To:      addressToSlice(env, "To"),
-		Cc:      addressToSlice(env, "Cc"),
-		Bcc:     addressToSlice(env, "Bcc"),
-		Subject: env.GetHeader("Subject"),
-		Size:    len(raw),
-		Text:    env.Text,
+		ID:         id,
+		Read:       true,
+		From:       from,
+		Date:       date,
+		To:         addressToSlice(env, "To"),
+		Cc:         addressToSlice(env, "Cc"),
+		Bcc:        addressToSlice(env, "Bcc"),
+		Subject:    env.GetHeader("Subject"),
+		Size:       len(raw),
+		Text:       env.Text,
+		HTMLSource: env.HTML,
 	}
 
 	html := env.HTML
