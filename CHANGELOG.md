@@ -2,6 +2,12 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## 1.1.1
+
+### UI
+- Attachment icons and image thumbnails
+
+
 ## 1.1.0
 
 ### UI
