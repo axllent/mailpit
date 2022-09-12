@@ -90,7 +90,7 @@ func apiOpenMessage(w http.ResponseWriter, r *http.Request) {
 
 	msg, err := storage.GetMessage(id)
 	if err != nil {
-		httpError(w, err.Error())
+		httpError(w, "Message not found")
 		return
 	}
 

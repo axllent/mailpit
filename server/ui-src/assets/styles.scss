@@ -38,14 +38,14 @@
     color: $gray-500;
 }
 
-#nav-plain-text,
+#nav-plain-text .text-view,
 #nav-source {
     white-space: pre;
     font-family: Courier New, Courier, System, fixed-width;
     font-size: 0.85em;
 }
 
-#nav-plain-text {
+#nav-plain-text .text-view {
     white-space: pre-wrap;
 }
 
@@ -93,6 +93,46 @@
 body.blur {
     .privacy {
         filter: blur(3px);
+    }
+}
+
+.card.attachment {
+    color: $gray-800;
+
+    .icon {
+        position: absolute;
+        top: 18px;
+        left: 0;
+        right: 0;
+        font-size: 3.5rem;
+        text-align: center;
+        color: $gray-300;
+    }
+
+    .card-body {
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        overflow: hidden;
+        opacity: 0;
+    }
+
+    .card-footer {
+        background: $gray-300;
+
+        .bi {
+            font-size: 1.3em;
+            margin-left: -10px;
+        }
+    }
+
+    &:hover {
+        .card-body {
+            opacity: 1;
+            background: $gray-300;
+        }
     }
 }
 
