@@ -3,10 +3,15 @@
 import commonMixins from '../mixins.js';
 import moment from 'moment';
 import Prism from "prismjs";
+import Attachments from './Attachments.vue';
 
 export default {
 	props: {
 		message: Object
+	},
+
+	components: {
+		Attachments
 	},
 
 	mixins: [commonMixins],
@@ -96,21 +101,6 @@ export default {
 			}
 		},
 
-		allAttachments: function(message){
-			let a = [];
-			for (let i in message.Attachments) {
-				a.push(message.Attachments[i]);
-			}
-			for (let i in message.OtherParts) {
-				a.push(message.OtherParts[i]);
-			}
-			for (let i in message.Inline) {
-				a.push(message.Inline[i]);
-			}
-			
-			return a.length ? a : false;
-		},
-
 		messageDate: function(d) {
 			return moment(d).format('ddd, D MMM YYYY, h:mm a');
 		}
@@ -186,7 +176,7 @@ export default {
 						<li v-for="part in allAttachments(message)">
 							<a :href="'api/'+message.ID+'/part/'+part.PartID" type="button"
 								class="dropdown-item" target="_blank">
-								<i class="bi bi-file-arrow-down-fill"></i>
+								<i class="bi" :class="attachmentIcon(part)"></i>
 								{{ part.FileName != '' ? part.FileName : '[ unknown ]' }}
 								<small class="text-muted ms-2">{{ getFileSize(part.Size) }}</small>
 							</a>
@@ -218,6 +208,7 @@ export default {
 				<iframe target-blank="" class="tab-pane" id="preview-html" :srcdoc="message.HTML" v-on:load="resizeIframe"
 					seamless frameborder="0" style="width: 100%; height: 100%;">
 				</iframe>
+				<Attachments v-if="allAttachments(message).length" :message="message" :attachments="allAttachments(message)"></Attachments>
 			</div>
 			<div class="tab-pane fade" id="nav-html-source" role="tabpanel"
 				aria-labelledby="nav-html-source-tab" tabindex="0" v-if="message.HTMLSource">
@@ -225,7 +216,8 @@ export default {
 			</div>
 			<div class="tab-pane fade" id="nav-plain-text" role="tabpanel"
 				aria-labelledby="nav-plain-text-tab" tabindex="0" :class="message.HTML == '' ? 'show':''">
-				{{ message.Text }}
+				<div class="text-view">{{ message.Text }}</div>
+				<Attachments v-if="allAttachments(message).length" :message="message" :attachments="allAttachments(message)"></Attachments>
 			</div>
 			<div class="tab-pane fade" id="nav-raw" role="tabpanel" aria-labelledby="nav-raw-tab"
 				tabindex="0">
