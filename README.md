@@ -19,7 +19,7 @@ Mailpit is inspired by [MailHog](#why-rewrite-mailhog), but much, much faster.
 
 - Runs entirely from a single binary, no installation required
 - SMTP server (default `0.0.0.0:1025`)
-- Web UI to view emails (HTML format, text, source and MIME attachments, default `0.0.0.0:8025`)
+- Web UI to view emails (formatted HTML, highlighted HTML source, text, raw source and MIME attachments including image thumbnails)
 - Real-time web UI updates using web sockets for new mail
 - Optional browser notifications for new mail (HTTPS only)
 - Configurable automatic email pruning (default keeps the most recent 500 emails)
@@ -43,6 +43,8 @@ sudo bash < <(curl -sL https://raw.githubusercontent.com/axllent/mailpit/develop
 Or download a pre-built binary in the [releases](https://github.com/axllent/mailpit/releases/latest). The `mailpit` can be placed in your `$PATH`, or simply run as `./mailpit`. See `mailpit -h` for options, or see [the wiki](https://github.com/axllent/mailpit/wiki/Runtime-options) for additional information.
 
 To build Mailpit from source see [building from source](https://github.com/axllent/mailpit/wiki/Building-from-source).
+
+The Mailpit web UI listens by default on `http://0.0.0.0:8025`, and the SMTP port on `0.0.0.0:1025`.
 
 
 ### Configuring sendmail
