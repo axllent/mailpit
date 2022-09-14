@@ -19,9 +19,13 @@ func Log() *logrus.Logger {
 		log = logrus.New()
 		log.SetLevel(logrus.InfoLevel)
 		if config.VerboseLogging {
+			// verbose logging (debug)
 			log.SetLevel(logrus.DebugLevel)
-		}
-		if config.NoLogging {
+		} else if config.QuietLogging {
+			// show errors only
+			log.SetLevel(logrus.ErrorLevel)
+		} else if config.NoLogging {
+			// disable all logging (tests)
 			log.SetLevel(logrus.PanicLevel)
 		}
 
