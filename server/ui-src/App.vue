@@ -569,14 +569,13 @@ export default {
 				<div class="list-group" v-if="items.length">
 					<a v-for="message in items" :href="'#'+message.ID" 
 						v-on:click.ctrl="toggleSelected($event, message.ID)" v-on:click.shift="selectRange($event, message.ID)" 
-						class="row message d-flex small list-group-item list-group-item-action"
+						class="row message d-flex small list-group-item list-group-item-action border-start-0 border-end-0"
 						:class="message.Read ? 'read':'', isSelected(message.ID) ? 'selected':''">
 						<div class="col-lg-3">
 							<div class="d-lg-none float-end text-muted text-nowrap small">
 								<i class="bi bi-paperclip h6 me-1" v-if="message.Attachments"></i>
 								{{ getRelativeCreated(message) }}
 							</div>
-
 							<div class="text-truncate d-lg-none privacy">
 								<span v-if="message.From" :title="message.From.Address">{{ message.From.Name ? message.From.Name : message.From.Address }}</span>
 							</div> 
