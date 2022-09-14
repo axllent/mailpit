@@ -2,6 +2,12 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## 1.1.2
+
+### UI
+- Allow reverse proxy subdirectories
+
+
 ## 1.1.1
 
 ### UI
