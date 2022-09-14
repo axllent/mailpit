@@ -440,7 +440,7 @@ export default {
 			<a class="btn btn-outline-secondary ms-2 me-1 float-end" :class="messagePrev ? '': 'disabled'" :href="'#'+messagePrev" title="View previous message">
 				<i class="bi bi-caret-left-fill"></i>
 			</a>
-			<a :href="'api/' + message.ID + '/source?dl=1'" class="btn btn-outline-secondary me-2 float-end" title="Download message">
+			<a :href="'api/' + message.ID + '/raw?dl=1'" class="btn btn-outline-secondary me-2 float-end" title="Download message">
 				<i class="bi bi-file-arrow-down-fill"></i> <span class="d-none d-md-inline">Download</span>
 			</a>
 		</div>
