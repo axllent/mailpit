@@ -275,7 +275,9 @@ export default {
 		// websocket connect
         connect: function () {
             let wsproto = location.protocol == 'https:' ? 'wss' : 'ws';
-            let ws = new WebSocket(wsproto + "://" + document.location.host + "/api/events");
+            let ws = new WebSocket(
+				wsproto + "://" + document.location.host + document.location.pathname + "api/events"
+			);
             let self = this;
             ws.onmessage = function (e) {
 				let response = JSON.parse(e.data);
