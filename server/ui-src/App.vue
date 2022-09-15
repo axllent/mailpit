@@ -533,7 +533,7 @@ export default {
 						<i class="bi bi-envelope me-1" v-if="isConnected"></i>
 						<i class="bi bi-arrow-clockwise me-1" v-else></i>
 						Inbox 
-						<span style="margin-top: -5px; margin-left: 5px;" class="position-absolute badge rounded-pill text-bg-secondary" title="Unread messages" v-if="unread">
+						<span class="badge rounded-pill text-bg-primary ms-1" title="Unread messages" v-if="unread">
 							{{ formatNumber(unread) }}
 						</span>
 					</a>
