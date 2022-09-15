@@ -2,6 +2,20 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## 1.1.4
+
+### Feature
+- Add --quiet flag to display only errors
+
+### Security
+- Add restrictive HTTP Content-Security-Policy
+
+### UI
+- Minor UI color change & unread count position adjustment
+- Add favicon unread message counter
+- Remove left & right borders (message list)
+
+
 ## 1.1.3
 
 ### Fix
