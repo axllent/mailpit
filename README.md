@@ -19,7 +19,7 @@ Mailpit is inspired by [MailHog](#why-rewrite-mailhog), but much, much faster.
 
 - Runs entirely from a single binary, no installation required
 - SMTP server (default `0.0.0.0:1025`)
-- Web UI to view emails (HTML format, text, source and MIME attachments, default `0.0.0.0:8025`)
+- Web UI to view emails (formatted HTML, highlighted HTML source, text, raw source and MIME attachments including image thumbnails)
 - Real-time web UI updates using web sockets for new mail
 - Optional browser notifications for new mail (HTTPS only)
 - Configurable automatic email pruning (default keeps the most recent 500 emails)
@@ -44,6 +44,8 @@ Or download a pre-built binary in the [releases](https://github.com/axllent/mail
 
 To build Mailpit from source see [building from source](https://github.com/axllent/mailpit/wiki/Building-from-source).
 
+The Mailpit web UI listens by default on `http://0.0.0.0:8025`, and the SMTP port on `0.0.0.0:1025`.
+
 
 ### Configuring sendmail
 
@@ -65,6 +67,6 @@ You can build a Mailpit-specific sendmail binary from source (see [building from
 
 I had been using MailHog for a few years to intercept and test emails generated from several projects. MailHog has a number of severe performance issues, many of the modules are horribly out of date, and other than a few accepted MRs, it is not actively developed.
 
-Initially I started trying to upgrade a fork of MailHog (both the UI as well as the HTTP server & API), but soon discovered that it is (with all due respect) very poorly designed. It is over-engineered (split over 9 separate projects), has too many unnecessary features for my purpose, and performs exceptionally poorly when dealing with large lumbers of emails or processing any email with an attachment (a single email with a 3MB attachment can take over a minute). The API transmits a lot of duplicate and unnecessary data on every message request for all web calls, and there is no HTTP compression.
+Initially I started trying to upgrade a fork of MailHog (both the UI as well as the HTTP server & API), but soon discovered that it is (with all due respect) very poorly designed. It is over-engineered (split over 9 separate projects) and has too many unnecessary features for my purpose. It performs exceptionally poorly when dealing with large amounts of emails or processing any email with an attachment (a single email with a 3MB attachment can take over a minute to ingest). The API also transmits a lot of duplicate and unnecessary data on every message request for all web calls, and there is no HTTP compression.
 
 In order to improve it I felt it needed to be completely rewritten, and so Mailpit was born.

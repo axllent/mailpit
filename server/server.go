@@ -21,6 +21,8 @@ import (
 //go:embed ui
 var embeddedFS embed.FS
 
+var contentSecurityPolicy = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; frame-src 'self'; img-src * data: blob:; font-src 'self' data:; media-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self';"
+
 // Listen will start the httpd
 func Listen() {
 	serverRoot, err := fs.Sub(embeddedFS, "ui")
@@ -85,6 +87,9 @@ func (w gzipResponseWriter) Write(b []byte) (int, error) {
 // and gzip compression.
 func middleWareFunc(fn http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Referrer-Policy", "no-referrer")
+		w.Header().Set("Content-Security-Policy", contentSecurityPolicy)
+
 		if config.UIAuthFile != "" {
 			user, pass, ok := r.BasicAuth()
 
@@ -115,6 +120,8 @@ func middleWareFunc(fn http.HandlerFunc) http.HandlerFunc {
 // and gzip compression
 func middlewareHandler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Referrer-Policy", "no-referrer")
+		w.Header().Set("Content-Security-Policy", contentSecurityPolicy)
 
 		if config.UIAuthFile != "" {
 			user, pass, ok := r.BasicAuth()
@@ -143,6 +150,8 @@ func middlewareHandler(h http.Handler) http.Handler {
 
 // FourOFour returns a basic 404 message
 func fourOFour(w http.ResponseWriter) {
+	w.Header().Set("Referrer-Policy", "no-referrer")
+	w.Header().Set("Content-Security-Policy", contentSecurityPolicy)
 	w.WriteHeader(http.StatusNotFound)
 	w.Header().Set("Content-Type", "text/plain")
 	fmt.Fprint(w, "404 page not found")
@@ -150,6 +159,8 @@ func fourOFour(w http.ResponseWriter) {
 
 // HTTPError returns a basic error message (400 response)
 func httpError(w http.ResponseWriter, msg string) {
+	w.Header().Set("Referrer-Policy", "no-referrer")
+	w.Header().Set("Content-Security-Policy", contentSecurityPolicy)
 	w.WriteHeader(http.StatusBadRequest)
 	w.Header().Set("Content-Type", "text/plain")
 	fmt.Fprint(w, msg)

@@ -26,6 +26,9 @@ var (
 	// VerboseLogging for console output
 	VerboseLogging = false
 
+	// QuietLogging for console output (errors only)
+	QuietLogging = false
+
 	// NoLogging for tests
 	NoLogging = false
 

@@ -1,7 +1,8 @@
 <script>
-import commonMixins from './mixins.js'
+import commonMixins from './mixins.js';
 import Message from './templates/Message.vue';
-import moment from 'moment'
+import moment from 'moment';
+import Tinycon from 'tinycon';
 
 export default {
 	mixins: [commonMixins],
@@ -26,7 +27,8 @@ export default {
 			messageNext: false,
 			notificationsSupported: false,
 			notificationsEnabled: false,
-			selected: []
+			selected: [],
+			tcStatus: 0
 		}
 	},
 	watch: {
@@ -35,6 +37,17 @@ export default {
 				this.openMessage();
 			} else {
 				this.message = false;
+			}
+		},
+		unread(v, old) {
+			if (v == this.tcStatus) {
+				return;
+			}
+			this.tcStatus = v;
+			if (v == 0) {
+				Tinycon.reset();
+			} else {
+				Tinycon.setBubble(v);
 			}
 		}
 	},
@@ -55,6 +68,12 @@ export default {
 		this.notificationsSupported = 'https:' == document.location.protocol 
 			&& ("Notification" in window && Notification.permission !== "denied");
 		this.notificationsEnabled = this.notificationsSupported && Notification.permission == "granted";
+
+		Tinycon.setOptions({
+			height: 11,
+			background: '#dd0000',
+			fallback: false
+		});
 
 		this.connect();
 		this.loadMessages();
@@ -192,6 +211,7 @@ export default {
 			let self = this;
 			let uri = 'api/delete'
 			self.get(uri, false, function(response) {
+				window.location.hash = "";
 				self.reloadMessages();
 			});
 		},
@@ -206,7 +226,6 @@ export default {
 				window.location.hash = "";
 				self.scrollInPlace = true;
 				self.loadMessages();
-
 			});
 		},
 
@@ -388,6 +407,12 @@ export default {
 
 			let selecting = false;
 			let lastSelected = this.selected.length > 0 && this.selected[this.selected.length - 1];
+			if (lastSelected == id) {
+				this.selected =  this.selected.filter(function(ele){ 
+					return ele != id; 
+				});
+				return
+			}
 
 			if (lastSelected === false) {
 				this.selected.push(id);
@@ -508,7 +533,7 @@ export default {
 						<i class="bi bi-envelope me-1" v-if="isConnected"></i>
 						<i class="bi bi-arrow-clockwise me-1" v-else></i>
 						Inbox 
-						<span style="margin-top: -5px; margin-left: 5px;" class="position-absolute badge rounded-pill text-bg-secondary" title="Unread messages" v-if="unread">
+						<span class="badge rounded-pill text-bg-primary ms-1" title="Unread messages" v-if="unread">
 							{{ formatNumber(unread) }}
 						</span>
 					</a>
@@ -569,14 +594,13 @@ export default {
 				<div class="list-group" v-if="items.length">
 					<a v-for="message in items" :href="'#'+message.ID" 
 						v-on:click.ctrl="toggleSelected($event, message.ID)" v-on:click.shift="selectRange($event, message.ID)" 
-						class="row message d-flex small list-group-item list-group-item-action"
+						class="row message d-flex small list-group-item list-group-item-action border-start-0 border-end-0"
 						:class="message.Read ? 'read':'', isSelected(message.ID) ? 'selected':''">
 						<div class="col-lg-3">
 							<div class="d-lg-none float-end text-muted text-nowrap small">
 								<i class="bi bi-paperclip h6 me-1" v-if="message.Attachments"></i>
 								{{ getRelativeCreated(message) }}
 							</div>
-
 							<div class="text-truncate d-lg-none privacy">
 								<span v-if="message.From" :title="message.From.Address">{{ message.From.Name ? message.From.Name : message.From.Address }}</span>
 							</div> 
