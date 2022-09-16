@@ -2,6 +2,15 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## 1.1.5
+
+### Build
+- Switch to esbuild-sass-plugin
+
+### UI
+- Support for inline images using filenames instead of cid
+
+
 ## 1.1.4
 
 ### Feature

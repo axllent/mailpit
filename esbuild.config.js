@@ -1,6 +1,6 @@
 const { build } = require('esbuild')
 const pluginVue = require('esbuild-plugin-vue-next')
-const sassPlugin = require("esbuild-plugin-sass");
+const { sassPlugin } = require('esbuild-sass-plugin');
 
 const doWatch = process.env.WATCH == 'true' ? true : false;
 const doMinify = process.env.MINIFY == 'true' ? true : false;

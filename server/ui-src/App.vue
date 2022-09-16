@@ -173,6 +173,12 @@ export default {
 								new RegExp('cid:'+a.ContentID, 'g'), 
 								window.location.origin+'/api/'+d.ID+'/part/'+a.PartID
 							);
+						} else if (a.FileName.match(/^[a-zA-Z\_\-\.]+$/)) {
+							// some old email clients use the filename
+							d.HTML = d.HTML.replace(
+								new RegExp('src=(\'|")'+a.FileName+'(\'|")', 'g'), 
+								'src="'+window.location.origin+'/api/'+d.ID+'/part/'+a.PartID+'"'
+							);
 						}
 					}
 				}
@@ -184,6 +190,12 @@ export default {
 							d.HTML = d.HTML.replace(
 								new RegExp('cid:'+a.ContentID, 'g'), 
 								window.location.origin+'/api/'+d.ID+'/part/'+a.PartID
+							);
+						} else if (a.FileName.match(/^[a-zA-Z\_\-\.]+$/)) {
+							// some old email clients use the filename
+							d.HTML = d.HTML.replace(
+								new RegExp('src=(\'|")'+a.FileName+'(\'|")', 'g'), 
+								'src="'+window.location.origin+'/api/'+d.ID+'/part/'+a.PartID+'"'
 							);
 						}
 					}
@@ -421,13 +433,17 @@ export default {
 
 			for (let d of this.items) {
 				if (selecting) {
-					this.selected.push(d.ID);
+					if (!this.isSelected(d.ID)) {
+						this.selected.push(d.ID);
+					}
 					if (d.ID == lastSelected || d.ID == id) {
 						// reached backwards select
 						break;
 					}
 				} else if (d.ID == id || d.ID == lastSelected) {
-					this.selected.push(d.ID);
+					if (!this.isSelected(d.ID)) {
+						this.selected.push(d.ID);
+					}
 					selecting = true;
 				}
 			}
