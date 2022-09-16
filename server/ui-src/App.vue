@@ -173,6 +173,12 @@ export default {
 								new RegExp('cid:'+a.ContentID, 'g'), 
 								window.location.origin+'/api/'+d.ID+'/part/'+a.PartID
 							);
+						} else if (a.FileName.match(/^[a-zA-Z\_\-\.]+$/)) {
+							// some old email clients use the filename
+							d.HTML = d.HTML.replace(
+								new RegExp('src=(\'|")'+a.FileName+'(\'|")', 'g'), 
+								'src="'+window.location.origin+'/api/'+d.ID+'/part/'+a.PartID+'"'
+							);
 						}
 					}
 				}
@@ -184,6 +190,12 @@ export default {
 							d.HTML = d.HTML.replace(
 								new RegExp('cid:'+a.ContentID, 'g'), 
 								window.location.origin+'/api/'+d.ID+'/part/'+a.PartID
+							);
+						} else if (a.FileName.match(/^[a-zA-Z\_\-\.]+$/)) {
+							// some old email clients use the filename
+							d.HTML = d.HTML.replace(
+								new RegExp('src=(\'|")'+a.FileName+'(\'|")', 'g'), 
+								'src="'+window.location.origin+'/api/'+d.ID+'/part/'+a.PartID+'"'
 							);
 						}
 					}
