@@ -173,7 +173,8 @@ export default {
 								new RegExp('cid:'+a.ContentID, 'g'), 
 								window.location.origin+'/api/'+d.ID+'/part/'+a.PartID
 							);
-						} else if (a.FileName.match(/^[a-zA-Z\_\-\.]+$/)) {
+						}
+						if (a.FileName.match(/^[a-zA-Z0-9\_\-\.]+$/)) {
 							// some old email clients use the filename
 							d.HTML = d.HTML.replace(
 								new RegExp('src=(\'|")'+a.FileName+'(\'|")', 'g'), 
@@ -191,7 +192,8 @@ export default {
 								new RegExp('cid:'+a.ContentID, 'g'), 
 								window.location.origin+'/api/'+d.ID+'/part/'+a.PartID
 							);
-						} else if (a.FileName.match(/^[a-zA-Z\_\-\.]+$/)) {
+						}
+						if (a.FileName.match(/^[a-zA-Z0-9\_\-\.]+$/)) {
 							// some old email clients use the filename
 							d.HTML = d.HTML.replace(
 								new RegExp('src=(\'|")'+a.FileName+'(\'|")', 'g'), 
@@ -596,10 +598,14 @@ export default {
 						Enable alerts
 					</a>
 				</li>
-				<li class="mt-5 position-fixed bottom-0">
-					<a href="https://github.com/axllent/mailpit" target="_blank" class="text-muted w-100 d-block bg-white my-3">
+				<li class="mt-5 position-fixed bottom-0 bg-white py-2 text-muted">
+					<a href="https://github.com/axllent/mailpit" target="_blank" class="text-muted me-1">
 						<i class="bi bi-github"></i>
 						GitHub
+					</a>
+					/
+					<a href="https://github.com/axllent/mailpit/wiki" target="_blank" class="text-muted ms-1">
+						Docs
 					</a>
 				</li>
 			</ul>
