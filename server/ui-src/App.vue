@@ -433,13 +433,17 @@ export default {
 
 			for (let d of this.items) {
 				if (selecting) {
-					this.selected.push(d.ID);
+					if (!this.isSelected(d.ID)) {
+						this.selected.push(d.ID);
+					}
 					if (d.ID == lastSelected || d.ID == id) {
 						// reached backwards select
 						break;
 					}
 				} else if (d.ID == id || d.ID == lastSelected) {
-					this.selected.push(d.ID);
+					if (!this.isSelected(d.ID)) {
+						this.selected.push(d.ID);
+					}
 					selecting = true;
 				}
 			}
