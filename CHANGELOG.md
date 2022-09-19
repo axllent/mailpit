@@ -2,6 +2,15 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## 1.1.6
+
+### Fix
+- Workaround for Safari source matching bug blocking event listener
+
+### UI
+- Add documentation link (wiki)
+
+
 ## 1.1.5
 
 ### Build
