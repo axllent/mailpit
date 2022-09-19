@@ -75,8 +75,8 @@ export default {
 			fallback: false
 		});
 
-		this.connect();
 		this.loadMessages();
+		this.connect();
 	},
 	methods: {
 		loadMessages: function () {
