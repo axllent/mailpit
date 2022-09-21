@@ -5,7 +5,7 @@ Notable changes to Mailpit will be documented in this file.
 ## 1.1.7
 
 ### Fix
-- Normalize runing binary name detection (Windows)
+- Normalize running binary name detection (Windows)
 
 
 ## 1.1.6
