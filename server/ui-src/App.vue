@@ -305,6 +305,32 @@ export default {
 			});
 		},
 
+		// test of any selected emails are unread
+		selectedHasUnread: function() {
+			if (!this.selected.length) {
+				return false;
+			}
+			for (let i in this.items) {
+				if (this.isSelected(this.items[i].ID) && !this.items[i].Read) {
+					return true;
+				}
+			}
+			return false;
+		},
+		
+		// test of any selected emails are read
+		selectedHasRead: function() {
+			if (!this.selected.length) {
+				return false;
+			}
+			for (let i in this.items) {
+				if (this.isSelected(this.items[i].ID) && this.items[i].Read) {
+					return true;
+				}
+			}
+			return false;
+		},
+
 		// websocket connect
         connect: function () {
             let wsproto = location.protocol == 'https:' ? 'wss' : 'ws';
@@ -556,13 +582,13 @@ export default {
 						</span>
 					</a>
 				</li>
-				<li class="my-3" v-if="unread && !selected.length">
+				<li class="my-3" v-if="!message && unread && !selected.length">
 					<a href="#" data-bs-toggle="modal" data-bs-target="#MarkAllReadModal">
 						<i class="bi bi-eye-fill"></i>
 						Mark all read
 					</a>
 				</li>
-				<li class="my-3" v-if="total && !selected.length">
+				<li class="my-3" v-if="!message && total && !selected.length">
 					<a href="#" data-bs-toggle="modal" data-bs-target="#DeleteAllModal">
 						<i class="bi bi-trash-fill me-1 text-danger"></i>
 						Delete all
@@ -573,20 +599,20 @@ export default {
 					<b class="me-2">Selected {{selected.length}}</b>
 					<button class="btn btn-sm text-muted" v-on:click="selected=[]" title="Unselect messages"><i class="bi bi-x-circle"></i></button>
 				</li>
-				<li class="my-3 ms-2" v-if="unread && selected.length > 0">
+				<li class="my-3 ms-2" v-if="selected.length > 0 && selectedHasUnread()">
 					<a href="#" v-on:click="markSelectedRead">
 						<i class="bi bi-eye-fill"></i>
 						Mark read
 					</a>
 				</li>
-				<li class="my-3 ms-2" v-if="selected.length > 0">
+				<li class="my-3 ms-2" v-if="selected.length > 0 && selectedHasRead()">
 					<a href="#" v-on:click="markSelectedUnread">
 						<i class="bi bi-eye-slash"></i>
 						Mark unread
 					</a>
 				</li>
 				<li class="my-3 ms-2" v-if="total && selected.length > 0">
-					<a href="#" v-on:click="deleteSelected">
+					<a href="#" v-on:click="deleteMessages">
 						<i class="bi bi-trash-fill me-1 text-danger"></i>
 						Delete
 					</a>
