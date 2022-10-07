@@ -55,6 +55,9 @@ var (
 
 	// SMTPAuth used for euthentication
 	SMTPAuth *htpasswd.File
+
+	// ContentSecurityPolicy for HTTP server
+	ContentSecurityPolicy = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; frame-src 'self'; img-src * data: blob:; font-src 'self' data:; media-src 'self'; connect-src 'self' ws: wss:; object-src 'none'; base-uri 'self';"
 )
 
 // VerifyConfig wil do some basic checking

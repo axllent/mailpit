@@ -3,25 +3,22 @@ package server
 import (
 	"compress/gzip"
 	"embed"
-	"fmt"
 	"io"
 	"io/fs"
 	"log"
 	"net/http"
 	"os"
-	"strconv"
 	"strings"
 
 	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/logger"
+	"github.com/axllent/mailpit/server/apiv1"
 	"github.com/axllent/mailpit/server/websockets"
 	"github.com/gorilla/mux"
 )
 
 //go:embed ui
 var embeddedFS embed.FS
-
-var contentSecurityPolicy = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; frame-src 'self'; img-src * data: blob:; font-src 'self' data:; media-src 'self'; connect-src 'self' ws: wss:; object-src 'none'; base-uri 'self';"
 
 // Listen will start the httpd
 func Listen() {
@@ -35,22 +32,12 @@ func Listen() {
 
 	go websockets.MessageHub.Run()
 
-	r := mux.NewRouter()
-	r.HandleFunc("/api/stats", middleWareFunc(apiMailboxStats)).Methods("GET")
-	r.HandleFunc("/api/messages", middleWareFunc(apiListMessages)).Methods("GET")
-	r.HandleFunc("/api/search", middleWareFunc(apiSearchMessages)).Methods("GET")
-	r.HandleFunc("/api/delete", middleWareFunc(apiDeleteAll)).Methods("GET")
-	r.HandleFunc("/api/delete", middleWareFunc(apiDeleteSelected)).Methods("POST")
+	r := defaultRoutes()
+
+	// web UI websocket
 	r.HandleFunc("/api/events", apiWebsocket).Methods("GET")
-	r.HandleFunc("/api/read", apiMarkAllRead).Methods("GET")
-	r.HandleFunc("/api/read", apiMarkSelectedRead).Methods("POST")
-	r.HandleFunc("/api/unread", apiMarkSelectedUnread).Methods("POST")
-	r.HandleFunc("/api/{id}/raw", middleWareFunc(apiDownloadRaw)).Methods("GET")
-	r.HandleFunc("/api/{id}/part/{partID}", middleWareFunc(apiDownloadAttachment)).Methods("GET")
-	r.HandleFunc("/api/{id}/part/{partID}/thumb", middleWareFunc(apiAttachmentThumbnail)).Methods("GET")
-	r.HandleFunc("/api/{id}/delete", middleWareFunc(apiDeleteOne)).Methods("GET")
-	r.HandleFunc("/api/{id}/unread", middleWareFunc(apiUnreadOne)).Methods("GET")
-	r.HandleFunc("/api/{id}", middleWareFunc(apiOpenMessage)).Methods("GET")
+
+	// virtual filesystem for others
 	r.PathPrefix("/").Handler(middlewareHandler(http.FileServer(http.FS(serverRoot))))
 	http.Handle("/", r)
 
@@ -65,6 +52,22 @@ func Listen() {
 		logger.Log().Infof("[http] starting server on http://%s", config.HTTPListen)
 		log.Fatal(http.ListenAndServe(config.HTTPListen, nil))
 	}
+}
+
+func defaultRoutes() *mux.Router {
+	r := mux.NewRouter()
+
+	// API V1
+	r.HandleFunc("/api/v1/messages", middleWareFunc(apiv1.Messages)).Methods("GET")
+	r.HandleFunc("/api/v1/messages", middleWareFunc(apiv1.SetReadStatus)).Methods("PUT")
+	r.HandleFunc("/api/v1/messages", middleWareFunc(apiv1.DeleteMessages)).Methods("DELETE")
+	r.HandleFunc("/api/v1/search", middleWareFunc(apiv1.Search)).Methods("GET")
+	r.HandleFunc("/api/v1/message/{id}/raw", middleWareFunc(apiv1.DownloadRaw)).Methods("GET")
+	r.HandleFunc("/api/v1/message/{id}/part/{partID}", middleWareFunc(apiv1.DownloadAttachment)).Methods("GET")
+	r.HandleFunc("/api/v1/message/{id}/part/{partID}/thumb", middleWareFunc(apiv1.Thumbnail)).Methods("GET")
+	r.HandleFunc("/api/v1/message/{id}", middleWareFunc(apiv1.Message)).Methods("GET")
+
+	return r
 }
 
 // BasicAuthResponse returns an basic auth response to the browser
@@ -88,7 +91,7 @@ func (w gzipResponseWriter) Write(b []byte) (int, error) {
 func middleWareFunc(fn http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Referrer-Policy", "no-referrer")
-		w.Header().Set("Content-Security-Policy", contentSecurityPolicy)
+		w.Header().Set("Content-Security-Policy", config.ContentSecurityPolicy)
 
 		if config.UIAuthFile != "" {
 			user, pass, ok := r.BasicAuth()
@@ -121,7 +124,7 @@ func middleWareFunc(fn http.HandlerFunc) http.HandlerFunc {
 func middlewareHandler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Referrer-Policy", "no-referrer")
-		w.Header().Set("Content-Security-Policy", contentSecurityPolicy)
+		w.Header().Set("Content-Security-Policy", config.ContentSecurityPolicy)
 
 		if config.UIAuthFile != "" {
 			user, pass, ok := r.BasicAuth()
@@ -148,38 +151,7 @@ func middlewareHandler(h http.Handler) http.Handler {
 	})
 }
 
-// FourOFour returns a basic 404 message
-func fourOFour(w http.ResponseWriter) {
-	w.Header().Set("Referrer-Policy", "no-referrer")
-	w.Header().Set("Content-Security-Policy", contentSecurityPolicy)
-	w.WriteHeader(http.StatusNotFound)
-	w.Header().Set("Content-Type", "text/plain")
-	fmt.Fprint(w, "404 page not found")
-}
-
-// HTTPError returns a basic error message (400 response)
-func httpError(w http.ResponseWriter, msg string) {
-	w.Header().Set("Referrer-Policy", "no-referrer")
-	w.Header().Set("Content-Security-Policy", contentSecurityPolicy)
-	w.WriteHeader(http.StatusBadRequest)
-	w.Header().Set("Content-Type", "text/plain")
-	fmt.Fprint(w, msg)
-}
-
-// Get the start and limit based on query params. Defaults to 0, 50
-func getStartLimit(req *http.Request) (start int, limit int) {
-	start = 0
-	limit = 50
-
-	s := req.URL.Query().Get("start")
-	if n, err := strconv.Atoi(s); err == nil && n > 0 {
-		start = n
-	}
-
-	l := req.URL.Query().Get("limit")
-	if n, err := strconv.Atoi(l); err == nil && n > 0 {
-		limit = n
-	}
-
-	return start, limit
+// Websocket to broadcast changes
+func apiWebsocket(w http.ResponseWriter, r *http.Request) {
+	websockets.ServeWs(websockets.MessageHub, w, r)
 }

@@ -85,7 +85,7 @@ func TestMimeEmailInserts(t *testing.T) {
 
 	assertEqual(t, CountTotal(), 0, "incorrect number of mime emails deleted")
 
-	t.Logf("deleted %d mime emails in %s", testRuns, time.Since(delStart))
+	t.Logf("Deleted %d mime emails in %s", testRuns, time.Since(delStart))
 
 	assertEqualStats(t, 0, 0)
 }

@@ -2,6 +2,19 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## 1.2.0
+
+### Feature
+- Add REST API
+
+### Testing
+- Add API tests
+
+### UI
+- Changes to use new data API
+- Hide delete all / mark all read in message view
+
+
 ## 1.1.7
 
 ### Fix

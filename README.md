@@ -30,6 +30,7 @@ Mailpit is inspired by [MailHog](#why-rewrite-mailhog), but much, much faster.
 - Optional SMTP with STARTTLS & SMTP authentication ([see wiki](https://github.com/axllent/mailpit/wiki/SMTP-with-STARTTLS-and-authentication))
 - Optional HTTPS for web UI ([see wiki](https://github.com/axllent/mailpit/wiki/HTTPS))
 - Optional basic authentication for web UI ([see wiki](https://github.com/axllent/mailpit/wiki/Basic-authentication))
+- A simple REST API allowing ([see docs](docs/apiv1/README.md))
 - Multi-architecture [Docker images](https://github.com/axllent/mailpit/wiki/Docker-images)
 
 

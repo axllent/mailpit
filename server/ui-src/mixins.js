@@ -88,16 +88,16 @@ const commonMixins = {
 		},
 
 		/**
-		 * Axios Post request
+		 * Axios POST request
 		 *
 		 * @params string   url
-		 * @params array    array parameters Object/array
+		 * @params array    object/array values
 		 * @params function callback function
 		 */
-		post: function (url, values, callback) {
+		post: function (url, data, callback) {
 			let self = this;
 			self.loading++;
-			axios.post(url, values)
+			axios.post(url, data)
 				.then(callback)
 				.catch(self.handleError)
 				.then(function () {
@@ -112,13 +112,34 @@ const commonMixins = {
 		 * Axios DELETE request (REST only)
 		 *
 		 * @params string   url
-		 * @params array    array parameters Object/array
+		 * @params array    object/array values
 		 * @params function callback function
 		 */
-		delete: function (url, values, callback) {
+		delete: function (url, data, callback) {
 			let self = this;
 			self.loading++;
-			axios.delete(url, { data: values })
+			axios.delete(url, { data: data })
+				.then(callback)
+				.catch(self.handleError)
+				.then(function () {
+					// always executed
+					if (self.loading > 0) {
+						self.loading--;
+					}
+				});
+		},
+
+		/**
+		 * Axios PUT request (REST only)
+		 *
+		 * @params string   url
+		 * @params array    object/array values
+		 * @params function callback function
+		 */
+		put: function (url, data, callback) {
+			let self = this;
+			self.loading++;
+			axios.put(url, data)
 				.then(callback)
 				.catch(self.handleError)
 				.then(function () {
