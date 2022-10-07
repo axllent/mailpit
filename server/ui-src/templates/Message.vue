@@ -44,7 +44,7 @@ export default {
 		self.renderUI();
 		var tabEl = document.getElementById('nav-raw-tab');
 		tabEl.addEventListener('shown.bs.tab', function (event) {
-			self.srcURI = 'api/' + self.message.ID + '/raw';
+			self.srcURI = 'api/v1/message/' + self.message.ID + '/raw';
 		});
 	},
 	
@@ -174,7 +174,7 @@ export default {
 					</button>
 					<ul class="dropdown-menu">
 						<li v-for="part in allAttachments(message)">
-							<a :href="'api/'+message.ID+'/part/'+part.PartID" type="button"
+							<a :href="'api/v1/message/'+message.ID+'/part/'+part.PartID" type="button"
 								class="dropdown-item" target="_blank">
 								<i class="bi" :class="attachmentIcon(part)"></i>
 								{{ part.FileName != '' ? part.FileName : '[ unknown ]' }}
@@ -193,7 +193,7 @@ export default {
 					aria-selected="true" v-if="message.HTML">HTML</button>
 				<button class="nav-link" id="nav-html-source-tab" data-bs-toggle="tab"
 					data-bs-target="#nav-html-source" type="button" role="tab" aria-controls="nav-html-source"
-					aria-selected="false" v-if="message.HTMLSource">HTML Source</button>
+					aria-selected="false" v-if="message.HTML">HTML Source</button>
 				<button class="nav-link" id="nav-plain-text-tab" data-bs-toggle="tab"
 					data-bs-target="#nav-plain-text" type="button" role="tab" aria-controls="nav-plain-text"
 					aria-selected="false" :class="message.HTML == '' ? 'show':''">Text</button>
@@ -211,8 +211,8 @@ export default {
 				<Attachments v-if="allAttachments(message).length" :message="message" :attachments="allAttachments(message)"></Attachments>
 			</div>
 			<div class="tab-pane fade" id="nav-html-source" role="tabpanel"
-				aria-labelledby="nav-html-source-tab" tabindex="0" v-if="message.HTMLSource">
-				<pre><code class="language-html">{{ message.HTMLSource }}</code></pre>
+				aria-labelledby="nav-html-source-tab" tabindex="0" v-if="message.HTML">
+				<pre><code class="language-html">{{ message.HTML }}</code></pre>
 			</div>
 			<div class="tab-pane fade" id="nav-plain-text" role="tabpanel"
 				aria-labelledby="nav-plain-text-tab" tabindex="0" :class="message.HTML == '' ? 'show':''">

@@ -84,11 +84,11 @@ export default {
             let params = {};
 			this.selected = [];
 
-            let uri = 'api/messages';
+            let uri = 'api/v1/messages';
             if (self.search) {
                 self.searching = true;
 				self.items = [];
-                uri = 'api/search'
+                uri = 'api/v1/search'
                 self.start = 0; // search is displayed on one page
                 params['query'] = self.search;
             } else {
@@ -104,7 +104,12 @@ export default {
 				self.unread = response.data.unread;
 				self.count = response.data.count;
 				self.start = response.data.start;
-				self.items = response.data.items;
+				self.items = response.data.messages;
+
+				if (self.items == 0 && self.start > 0) {
+					self.start = 0;
+					return self.loadMessages();
+				}
 
 				if (!self.scrollInPlace) {
 					let mp = document.getElementById('message-page');
@@ -153,7 +158,7 @@ export default {
 			let self = this;
 			self.selected = [];
 
-            let uri = 'api/' + self.currentPath
+            let uri = 'api/v1/message/' + self.currentPath
 			self.get(uri, false, function(response) {
 				for (let i in self.items) {
 					if (self.items[i].ID == self.currentPath) {
@@ -171,14 +176,14 @@ export default {
 						if (a.ContentID != '') {
 							d.HTML = d.HTML.replace(
 								new RegExp('cid:'+a.ContentID, 'g'), 
-								window.location.origin+'/api/'+d.ID+'/part/'+a.PartID
+								window.location.origin+'/api/v1/message/'+d.ID+'/part/'+a.PartID
 							);
 						}
 						if (a.FileName.match(/^[a-zA-Z0-9\_\-\.]+$/)) {
 							// some old email clients use the filename
 							d.HTML = d.HTML.replace(
 								new RegExp('src=(\'|")'+a.FileName+'(\'|")', 'g'), 
-								'src="'+window.location.origin+'/api/'+d.ID+'/part/'+a.PartID+'"'
+								'src="'+window.location.origin+'/api/v1/message/'+d.ID+'/part/'+a.PartID+'"'
 							);
 						}
 					}
@@ -190,14 +195,14 @@ export default {
 						if (a.ContentID != '') {
 							d.HTML = d.HTML.replace(
 								new RegExp('cid:'+a.ContentID, 'g'), 
-								window.location.origin+'/api/'+d.ID+'/part/'+a.PartID
+								window.location.origin+'/api/v1/message/'+d.ID+'/part/'+a.PartID
 							);
 						}
 						if (a.FileName.match(/^[a-zA-Z0-9\_\-\.]+$/)) {
 							// some old email clients use the filename
 							d.HTML = d.HTML.replace(
 								new RegExp('src=(\'|")'+a.FileName+'(\'|")', 'g'), 
-								'src="'+window.location.origin+'/api/'+d.ID+'/part/'+a.PartID+'"'
+								'src="'+window.location.origin+'/api/v1/message/'+d.ID+'/part/'+a.PartID+'"'
 							);
 						}
 					}
@@ -221,38 +226,32 @@ export default {
 			});
 		},
 
+		// universal handler to delete current or selected messages
+		deleteMessages: function() {
+			let ids = [];
+			let self = this;
+			if (self.message) {
+				ids.push(self.message.ID);
+			} else {
+				ids = JSON.parse(JSON.stringify(self.selected));
+			}
+			if (!ids.length) {
+				return false;
+			}
+			let uri = 'api/v1/messages';
+			self.delete(uri, {'ids': ids}, function(response) {
+				window.location.hash = "";
+				self.scrollInPlace = true;
+				self.loadMessages();
+			});
+		},
+
 		deleteAll: function() {
 			let self = this;
-			let uri = 'api/delete'
-			self.get(uri, false, function(response) {
+			let uri = 'api/v1/messages';
+			self.delete(uri, false, function(response) {
 				window.location.hash = "";
 				self.reloadMessages();
-			});
-		},
-
-		deleteOne: function() {
-			let self = this;
-			if (!self.message) {
-				return false;
-			}
-			let uri = 'api/' + self.message.ID + '/delete'
-			self.get(uri, false, function(response) {
-				window.location.hash = "";
-				self.scrollInPlace = true;
-				self.loadMessages();
-			});
-		},
-
-		deleteSelected: function() {
-			let self = this;
-			if (!self.selected.length) {
-				return false;
-			}
-			let uri = 'api/delete'
-			self.post(uri, {'ids': self.selected}, function(response) {
-				window.location.hash = "";
-				self.scrollInPlace = true;
-				self.loadMessages();
 			});
 		},
 
@@ -261,8 +260,8 @@ export default {
 			if (!self.message) {
 				return false;
 			}
-			let uri = 'api/' + self.message.ID + '/unread'
-			self.get(uri, false, function(response) {
+			let uri = 'api/v1/messages';
+			self.put(uri, {'read': false, 'ids': [self.message.ID]}, function(response) {
 				window.location.hash = "";
 				self.scrollInPlace = true;
 				self.loadMessages();
@@ -271,8 +270,8 @@ export default {
 
 		markAllRead: function() {
 			let self = this;
-			let uri = 'api/read'
-			self.get(uri, false, function(response) {
+			let uri = 'api/v1/messages'
+			self.put(uri, {'read': true}, function(response) {
 				window.location.hash = "";
 				self.scrollInPlace = true;
 				self.loadMessages();
@@ -284,8 +283,8 @@ export default {
 			if (!self.selected.length) {
 				return false;
 			}
-			let uri = 'api/read'
-			self.post(uri, {'ids': self.selected}, function(response) {
+			let uri = 'api/v1/messages';
+			self.put(uri, {'read': true, 'ids': self.selected}, function(response) {
 				window.location.hash = "";
 				self.scrollInPlace = true;
 				self.loadMessages();
@@ -297,8 +296,8 @@ export default {
 			if (!self.selected.length) {
 				return false;
 			}
-			let uri = 'api/unread'
-			self.post(uri, {'ids': self.selected}, function(response) {
+			let uri = 'api/v1/messages';
+			self.put(uri, {'read': false, 'ids': self.selected}, function(response) {
 				window.location.hash = "";
 				self.scrollInPlace = true;
 				self.loadMessages();
@@ -357,7 +356,8 @@ export default {
 					}
 	                self.total++;
 					self.unread++;
-					self.browserNotify("New mail from: " + response.Data.From.Address, response.Data.Subject);
+					let from = response.Data.From != null ? response.Data.From.Address : '[unknown]';
+					self.browserNotify("New mail from: " + from, response.Data.Subject);
                 } else if (response.Type == "prune") {
 					// messages have been deleted, reload messages to adjust
 					self.scrollInPlace = true;
@@ -497,11 +497,11 @@ export default {
 			<a class="btn btn-outline-secondary me-4 px-3" href="#" v-on:click="message=false" title="Return to messages">
 				<i class="bi bi-arrow-return-left"></i>
 			</a>
-			<button class="btn btn-outline-secondary me-2" title="Delete message" v-on:click="deleteOne">
-				<i class="bi bi-trash-fill"></i> <span class="d-none d-md-inline">Delete</span>
-			</button>
 			<button class="btn btn-outline-secondary me-2" title="Mark unread" v-on:click="markUnread">
 				<i class="bi bi-eye-slash"></i> <span class="d-none d-md-inline">Mark unread</span>
+			</button>
+			<button class="btn btn-outline-secondary me-2" title="Delete message" v-on:click="deleteMessages">
+				<i class="bi bi-trash-fill"></i> <span class="d-none d-md-inline">Delete</span>
 			</button>
 			<a class="btn btn-outline-secondary float-end" :class="messageNext ? '':'disabled'" :href="'#'+messageNext" title="View next message">
 				<i class="bi bi-caret-right-fill"></i>
@@ -509,7 +509,7 @@ export default {
 			<a class="btn btn-outline-secondary ms-2 me-1 float-end" :class="messagePrev ? '': 'disabled'" :href="'#'+messagePrev" title="View previous message">
 				<i class="bi bi-caret-left-fill"></i>
 			</a>
-			<a :href="'api/' + message.ID + '/raw?dl=1'" class="btn btn-outline-secondary me-2 float-end" title="Download message">
+			<a :href="'api/v1/' + message.ID + '/raw?dl=1'" class="btn btn-outline-secondary me-2 float-end" title="Download message">
 				<i class="bi bi-file-arrow-down-fill"></i> <span class="d-none d-md-inline">Download</span>
 			</a>
 		</div>
