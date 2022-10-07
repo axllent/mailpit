@@ -370,17 +370,16 @@ func GetMessage(id string) (*data.Message, error) {
 	date, _ := env.Date()
 
 	obj := data.Message{
-		ID:         id,
-		Read:       true,
-		From:       from,
-		Date:       date,
-		To:         addressToSlice(env, "To"),
-		Cc:         addressToSlice(env, "Cc"),
-		Bcc:        addressToSlice(env, "Bcc"),
-		Subject:    env.GetHeader("Subject"),
-		Size:       len(raw),
-		Text:       env.Text,
-		HTMLSource: env.HTML,
+		ID:      id,
+		Read:    true,
+		From:    from,
+		Date:    date,
+		To:      addressToSlice(env, "To"),
+		Cc:      addressToSlice(env, "Cc"),
+		Bcc:     addressToSlice(env, "Bcc"),
+		Subject: env.GetHeader("Subject"),
+		Size:    len(raw),
+		Text:    env.Text,
 	}
 
 	html := env.HTML
@@ -388,6 +387,7 @@ func GetMessage(id string) (*data.Message, error) {
 	// strip base tags
 	var re = regexp.MustCompile(`(?U)<base .*>`)
 	html = re.ReplaceAllString(html, "")
+	obj.HTML = html
 
 	for _, i := range env.Inlines {
 		if i.FileName != "" || i.ContentID != "" {
@@ -406,8 +406,6 @@ func GetMessage(id string) (*data.Message, error) {
 			obj.Attachments = append(obj.Attachments, data.AttachmentSummary(a))
 		}
 	}
-
-	obj.HTML = html
 
 	// mark message as read
 	if err := MarkRead(id); err != nil {
@@ -511,6 +509,7 @@ func MarkAllRead() error {
 
 	_, err := sqlf.Update("mailbox").
 		Set("Read", 1).
+		Where("Read = ?", 0).
 		ExecAndClose(context.Background(), db)
 	if err != nil {
 		return err
@@ -518,6 +517,29 @@ func MarkAllRead() error {
 
 	elapsed := time.Since(start)
 	logger.Log().Debugf("[db] marked %d messages as read in %s", total, elapsed)
+
+	dbLastAction = time.Now()
+
+	return nil
+}
+
+// MarkAllUnread will mark all messages as unread
+func MarkAllUnread() error {
+	var (
+		start = time.Now()
+		total = CountRead()
+	)
+
+	_, err := sqlf.Update("mailbox").
+		Set("Read", 0).
+		Where("Read = ?", 1).
+		ExecAndClose(context.Background(), db)
+	if err != nil {
+		return err
+	}
+
+	elapsed := time.Since(start)
+	logger.Log().Debugf("[db] marked %d messages as unread in %s", total, elapsed)
 
 	dbLastAction = time.Now()
 
@@ -655,13 +677,25 @@ func CountTotal() int {
 }
 
 // CountUnread returns the number of emails in the database that are unread.
-// If an ID is supplied, then it is just limited to that message.
 func CountUnread() int {
 	var total int
 
 	q := sqlf.From("mailbox").
 		Select("COUNT(*)").To(&total).
 		Where("Read = ?", 0)
+
+	_ = q.QueryRowAndClose(nil, db)
+
+	return total
+}
+
+// CountRead returns the number of emails in the database that are read.
+func CountRead() int {
+	var total int
+
+	q := sqlf.From("mailbox").
+		Select("COUNT(*)").To(&total).
+		Where("Read = ?", 1)
 
 	_ = q.QueryRowAndClose(nil, db)
 

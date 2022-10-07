@@ -1,4 +1,4 @@
-package server
+package apiv1
 
 import (
 	"bufio"
@@ -22,8 +22,8 @@ var (
 	thumbHeight = 120
 )
 
-// Attachment thumbnail (images only)
-func apiAttachmentThumbnail(w http.ResponseWriter, r *http.Request) {
+// Thumbnail returns a thumbnail image for an attachment (images only)
+func Thumbnail(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
 	id := vars["id"]
