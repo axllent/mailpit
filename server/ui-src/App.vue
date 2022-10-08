@@ -482,7 +482,8 @@ export default {
 			return this.selected.indexOf(id) != -1;
 		},
 
-		loadInfo: function() {
+		loadInfo: function(e) {
+			e.preventDefault();
 			let self = this;
 			self.get('api/v1/info', false, function(response) {
 				self.appInfo = response.data;
