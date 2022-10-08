@@ -2,6 +2,13 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## 1.2.1
+
+### UI
+- Update frontend modules
+- Add about app modal with version update notification
+
+
 ## 1.2.0
 
 ### Feature

@@ -95,6 +95,8 @@ func InitDB() error {
 		p = filepath.Clean(p)
 	}
 
+	config.DataFile = p
+
 	logger.Log().Debugf("[db] opening database %s", p)
 
 	var err error

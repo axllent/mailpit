@@ -1,4 +1,6 @@
-import axios from 'axios'
+import axios from 'axios';
+import { Modal } from 'bootstrap';
+
 
 // FakeModal is used to return a fake Bootstrap modal
 // if the ID returns nothing
@@ -31,7 +33,7 @@ const commonMixins = {
 				// The request was made and the server responded with a status code
 				// that falls out of the range of 2xx
 				if (error.response.data.Error) {
-					alert(error.response.data.Error)
+					alert(error.response.data.Error);
 				} else {
 					alert(error.response.data);
 				}
@@ -50,7 +52,7 @@ const commonMixins = {
 		modal: function (id) {
 			let e = document.getElementById(id);
 			if (e) {
-				return bootstrap.Modal.getOrCreateInstance(e);
+				return Modal.getOrCreateInstance(e);
 			}
 			// in case there are open/close actions
 			return new FakeModal();
@@ -209,4 +211,4 @@ const commonMixins = {
 }
 
 
-export default commonMixins 
+export default commonMixins

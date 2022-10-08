@@ -28,7 +28,8 @@ export default {
 			notificationsSupported: false,
 			notificationsEnabled: false,
 			selected: [],
-			tcStatus: 0
+			tcStatus: 0,
+			appInfo : false,
 		}
 	},
 	watch: {
@@ -421,7 +422,7 @@ export default {
 			else if (Notification.permission !== "denied") {
 				let self = this;
 				Notification.requestPermission().then(function (permission) {
-				// If the user accepts, let's create a notification
+					// if the user accepts, let's create a notification
 					if (permission === "granted") {
 						self.browserNotify("Notifications enabled", "You will receive notifications when new mails are received.");
 						self.notificationsEnabled = true;
@@ -479,6 +480,15 @@ export default {
 
 		isSelected: function(id) {
 			return this.selected.indexOf(id) != -1;
+		},
+
+		loadInfo: function(e) {
+			e.preventDefault();
+			let self = this;
+			self.get('api/v1/info', false, function(response) {
+				self.appInfo = response.data;
+				self.modal('AppInfoModal').show();
+			});
 		}
 	}
 }
@@ -625,13 +635,9 @@ export default {
 					</a>
 				</li>
 				<li class="mt-5 position-fixed bottom-0 bg-white py-2 text-muted">
-					<a href="https://github.com/axllent/mailpit" target="_blank" class="text-muted me-1">
-						<i class="bi bi-github"></i>
-						GitHub
-					</a>
-					/
-					<a href="https://github.com/axllent/mailpit/wiki" target="_blank" class="text-muted ms-1">
-						Docs
+					<a href="#" class="text-muted" v-on:click="loadInfo">
+						<i class="bi bi-info-circle-fill"></i>
+						About
 					</a>
 				</li>
 			</ul>
@@ -756,4 +762,59 @@ export default {
 		</div>
 	</div>
 
+	<!-- Modal -->
+	<div class="modal fade" id="AppInfoModal" tabindex="-1" aria-labelledby="AppInfoModalLabel" aria-hidden="true">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header" v-if="appInfo">
+					<h5 class="modal-title" id="AppInfoModalLabel">
+						Mailpit
+						<code>({{ appInfo.Version }})</code>
+					</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					<a class="btn btn-warning d-block mb-3" v-if="appInfo.Version != appInfo.LatestVersion"
+						:href="'https://github.com/axllent/mailpit/releases/tag/'+appInfo.LatestVersion">
+						A new version of Mailpit ({{ appInfo.LatestVersion }}) is available.
+					</a>
+
+					<div class="row g-3">
+						<div class="col-sm-6">
+							<a class="btn btn-primary w-100" href="https://github.com/axllent/mailpit" target="_blank">
+								<i class="bi bi-github"></i>
+								Github
+								<i class="bi bi-box-arrow-up-right"></i>
+							</a>
+						</div>
+						<div class="col-sm-6">
+							<a class="btn btn-primary w-100" href="https://github.com/axllent/mailpit/wiki" target="_blank">
+								Documentation
+								<i class="bi bi-box-arrow-up-right"></i>
+							</a>
+						</div>
+						<div class="col-sm-6">
+							<div class="card border-secondary text-center">
+								<div class="card-header">Database size</div>
+								<div class="card-body text-secondary">
+									<h5 class="card-title">{{ getFileSize(appInfo.DatabaseSize) }} </h5>
+								</div>
+							</div>
+						</div>
+						<div class="col-sm-6">
+							<div class="card border-secondary text-center">
+								<div class="card-header">RAM usage</div>
+								<div class="card-body text-secondary">
+									<h5 class="card-title">{{ getFileSize(appInfo.Memory) }} </h5>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+				</div>
+			</div>
+		</div>
+	</div>
 </template>

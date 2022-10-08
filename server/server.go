@@ -66,6 +66,7 @@ func defaultRoutes() *mux.Router {
 	r.HandleFunc("/api/v1/message/{id}/part/{partID}", middleWareFunc(apiv1.DownloadAttachment)).Methods("GET")
 	r.HandleFunc("/api/v1/message/{id}/part/{partID}/thumb", middleWareFunc(apiv1.Thumbnail)).Methods("GET")
 	r.HandleFunc("/api/v1/message/{id}", middleWareFunc(apiv1.Message)).Methods("GET")
+	r.HandleFunc("/api/v1/info", middleWareFunc(apiv1.AppInfo)).Methods("GET")
 
 	return r
 }

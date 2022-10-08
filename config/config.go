@@ -58,6 +58,15 @@ var (
 
 	// ContentSecurityPolicy for HTTP server
 	ContentSecurityPolicy = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; frame-src 'self'; img-src * data: blob:; font-src 'self' data:; media-src 'self'; connect-src 'self' ws: wss:; object-src 'none'; base-uri 'self';"
+
+	// Version is the default application version, updated on release
+	Version = "dev"
+
+	// Repo on Github for updater
+	Repo = "axllent/mailpit"
+
+	// RepoBinaryName on Github for updater
+	RepoBinaryName = "mailpit"
 )
 
 // VerifyConfig wil do some basic checking

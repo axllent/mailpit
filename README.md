@@ -12,7 +12,7 @@ It acts as both an SMTP server, and provides a web interface to view all capture
 
 Mailpit is inspired by [MailHog](#why-rewrite-mailhog), but much, much faster.
 
-![Mailpit](https://raw.githubusercontent.com/axllent/mailpit/develop/screenshot.png)
+![Mailpit](https://raw.githubusercontent.com/axllent/mailpit/develop/docs/screenshot.png)
 
 
 ## Features
