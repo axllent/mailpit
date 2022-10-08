@@ -22,15 +22,6 @@ type MessagesResult struct {
 	Messages []data.Summary `json:"messages"`
 }
 
-// // Mailbox returns an message overview (stats)
-// func Mailbox(w http.ResponseWriter, _ *http.Request) {
-// 	res := storage.StatsGet()
-
-// 	bytes, _ := json.Marshal(res)
-// 	w.Header().Add("Content-Type", "application/json")
-// 	_, _ = w.Write(bytes)
-// }
-
 // Messages returns a paginated list of messages
 func Messages(w http.ResponseWriter, r *http.Request) {
 	start, limit := getStartLimit(r)
@@ -170,34 +161,6 @@ func DeleteMessages(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", "text/plain")
 	_, _ = w.Write([]byte("ok"))
 }
-
-// // DeleteMessage (method: DELETE) deletes a single message
-// func DeleteMessage(w http.ResponseWriter, r *http.Request) {
-// 	vars := mux.Vars(r)
-
-// 	id := vars["id"]
-
-// 	err := storage.DeleteOneMessage(id)
-// 	if err != nil {
-// 		httpError(w, err.Error())
-// 		return
-// 	}
-
-// 	w.Header().Add("Content-Type", "text/plain")
-// 	_, _ = w.Write([]byte("ok"))
-// }
-
-// SetAllRead (GET) will update all messages as read
-// func SetAllRead(w http.ResponseWriter, r *http.Request) {
-// 	err := storage.MarkAllRead()
-// 	if err != nil {
-// 		httpError(w, err.Error())
-// 		return
-// 	}
-
-// 	w.Header().Add("Content-Type", "text/plain")
-// 	_, _ = w.Write([]byte("ok"))
-// }
 
 // SetReadStatus (method: PUT) will update the status to Read/Unread for all provided IDs
 func SetReadStatus(w http.ResponseWriter, r *http.Request) {

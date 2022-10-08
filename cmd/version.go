@@ -5,19 +5,9 @@ import (
 	"os"
 	"runtime"
 
+	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/updater"
 	"github.com/spf13/cobra"
-)
-
-var (
-	// Version is the default application version, updated on release
-	Version = "dev"
-
-	// Repo on Github for updater
-	Repo = "axllent/mailpit"
-
-	// RepoBinaryName on Github for updater
-	RepoBinaryName = "mailpit"
 )
 
 // versionCmd represents the version command
@@ -36,10 +26,10 @@ var versionCmd = &cobra.Command{
 		}
 
 		fmt.Printf("%s %s compiled with %s on %s/%s\n",
-			os.Args[0], Version, runtime.Version(), runtime.GOOS, runtime.GOARCH)
+			os.Args[0], config.Version, runtime.Version(), runtime.GOOS, runtime.GOARCH)
 
-		latest, _, _, err := updater.GithubLatest(Repo, RepoBinaryName)
-		if err == nil && updater.GreaterThan(latest, Version) {
+		latest, _, _, err := updater.GithubLatest(config.Repo, config.RepoBinaryName)
+		if err == nil && updater.GreaterThan(latest, config.Version) {
 			fmt.Printf(
 				"\nUpdate available: %s\nRun `%s version -u` to update (requires read/write access to install directory).\n",
 				latest,
@@ -59,7 +49,7 @@ func init() {
 }
 
 func updateApp() error {
-	rel, err := updater.GithubUpdate(Repo, RepoBinaryName, Version)
+	rel, err := updater.GithubUpdate(config.Repo, config.RepoBinaryName, config.Version)
 	if err != nil {
 		return err
 	}
