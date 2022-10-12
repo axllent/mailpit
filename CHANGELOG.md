@@ -4,8 +4,14 @@ Notable changes to Mailpit will be documented in this file.
 
 ## 1.2.2
 
+### API
+- Add API endpoint to return message headers
+
 ### Libs
 - Update go modules
+
+### Testing
+- Add API test for raw & message headers
 
 
 ## 1.2.1
