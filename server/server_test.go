@@ -54,15 +54,24 @@ func Test_APIv1(t *testing.T) {
 	}
 
 	// read first 10
-	t.Log("Read first 10 messages")
+	t.Log("Read first 10 messages including raw & headers")
 	putIDS := []string{}
 	for indx, msg := range m.Messages {
 		if indx == 10 {
 			break
 		}
 
-		_, err := clientGet(ts.URL + "/api/v1/message/" + msg.ID)
-		if err != nil {
+		if _, err := clientGet(ts.URL + "/api/v1/message/" + msg.ID); err != nil {
+			t.Errorf(err.Error())
+		}
+
+		// test RAW
+		if _, err := clientGet(ts.URL + "/api/v1/message/" + msg.ID + "/raw"); err != nil {
+			t.Errorf(err.Error())
+		}
+
+		// test headers
+		if _, err := clientGet(ts.URL + "/api/v1/message/" + msg.ID + "/headers"); err != nil {
 			t.Errorf(err.Error())
 		}
 
