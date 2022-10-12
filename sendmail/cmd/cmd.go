@@ -8,12 +8,12 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/mail"
 	"net/smtp"
 	"os"
 	"os/user"
 
+	"github.com/axllent/mailpit/logger"
 	flag "github.com/spf13/pflag"
 )
 
@@ -80,6 +80,6 @@ func Run() {
 	err = smtp.SendMail(smtpAddr, nil, fromAddr, recip, body)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "error sending mail")
-		log.Fatal(err)
+		logger.Log().Fatal(err)
 	}
 }

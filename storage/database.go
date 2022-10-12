@@ -19,7 +19,6 @@ import (
 
 	"github.com/GuiaBolso/darwin"
 	"github.com/axllent/mailpit/config"
-	"github.com/axllent/mailpit/data"
 	"github.com/axllent/mailpit/logger"
 	"github.com/axllent/mailpit/server/websockets"
 	"github.com/jhillyerd/enmime"
@@ -231,7 +230,7 @@ func Store(body []byte) (string, error) {
 	}
 
 	// return summary
-	c := &data.Summary{}
+	c := &Summary{}
 	if err := json.Unmarshal(b, c); err != nil {
 		return "", err
 	}
@@ -247,8 +246,8 @@ func Store(body []byte) (string, error) {
 
 // List returns a subset of messages from the mailbox,
 // sorted latest to oldest
-func List(start, limit int) ([]data.Summary, error) {
-	results := []data.Summary{}
+func List(start, limit int) ([]Summary, error) {
+	results := []Summary{}
 
 	q := sqlf.From("mailbox").
 		Select(`ID, Data, Read`).
@@ -260,7 +259,7 @@ func List(start, limit int) ([]data.Summary, error) {
 		var id string
 		var summary string
 		var read int
-		em := data.Summary{}
+		em := Summary{}
 
 		if err := row.Scan(&id, &summary, &read); err != nil {
 			logger.Log().Error(err)
@@ -291,8 +290,8 @@ func List(start, limit int) ([]data.Summary, error) {
 // The search is broken up by segments (exact phrases can be quoted), and interprits specific terms such as:
 // is:read, is:unread, has:attachment, to:<term>, from:<term> & subject:<term>
 // Negative searches also also included by prefixing the search term with a `-` or `!`
-func Search(search string) ([]data.Summary, error) {
-	results := []data.Summary{}
+func Search(search string) ([]Summary, error) {
+	results := []Summary{}
 	start := time.Now()
 
 	s := strings.ToLower(search)
@@ -305,8 +304,7 @@ func Search(search string) ([]data.Summary, error) {
 	p := shellwords.NewParser()
 	args, err := p.Parse(s)
 	if err != nil {
-		// return errors.New("Your search contains invalid characters")
-		panic(err)
+		return results, errors.New("Your search contains invalid characters")
 	}
 
 	// generate the SQL based on arguments
@@ -317,7 +315,7 @@ func Search(search string) ([]data.Summary, error) {
 		var summary string
 		var read int
 		var ignore string
-		em := data.Summary{}
+		em := Summary{}
 
 		if err := row.Scan(&id, &summary, &read, &ignore, &ignore, &ignore, &ignore); err != nil {
 			logger.Log().Error(err)
@@ -348,7 +346,7 @@ func Search(search string) ([]data.Summary, error) {
 }
 
 // GetMessage returns a data.Message generated from the mailbox_data collection.
-func GetMessage(id string) (*data.Message, error) {
+func GetMessage(id string) (*Message, error) {
 	raw, err := GetMessageRaw(id)
 	if err != nil {
 		return nil, err
@@ -371,7 +369,7 @@ func GetMessage(id string) (*data.Message, error) {
 
 	date, _ := env.Date()
 
-	obj := data.Message{
+	obj := Message{
 		ID:      id,
 		Read:    true,
 		From:    from,
@@ -384,28 +382,26 @@ func GetMessage(id string) (*data.Message, error) {
 		Text:    env.Text,
 	}
 
-	html := env.HTML
-
 	// strip base tags
 	var re = regexp.MustCompile(`(?U)<base .*>`)
-	html = re.ReplaceAllString(html, "")
+	html := re.ReplaceAllString(env.HTML, "")
 	obj.HTML = html
 
 	for _, i := range env.Inlines {
 		if i.FileName != "" || i.ContentID != "" {
-			obj.Inline = append(obj.Inline, data.AttachmentSummary(i))
+			obj.Inline = append(obj.Inline, AttachmentSummary(i))
 		}
 	}
 
 	for _, i := range env.OtherParts {
 		if i.FileName != "" || i.ContentID != "" {
-			obj.Inline = append(obj.Inline, data.AttachmentSummary(i))
+			obj.Inline = append(obj.Inline, AttachmentSummary(i))
 		}
 	}
 
 	for _, a := range env.Attachments {
 		if a.FileName != "" || a.ContentID != "" {
-			obj.Attachments = append(obj.Attachments, data.AttachmentSummary(a))
+			obj.Attachments = append(obj.Attachments, AttachmentSummary(a))
 		}
 	}
 
@@ -650,7 +646,7 @@ func DeleteAllMessages() error {
 }
 
 // StatsGet returns the total/unread statistics for a mailbox
-func StatsGet() data.MailboxStats {
+func StatsGet() MailboxStats {
 	var (
 		start  = time.Now()
 		total  = CountTotal()
@@ -661,7 +657,7 @@ func StatsGet() data.MailboxStats {
 
 	dbLastAction = time.Now()
 
-	return data.MailboxStats{
+	return MailboxStats{
 		Total:  total,
 		Unread: unread,
 	}
