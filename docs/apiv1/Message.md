@@ -1,5 +1,7 @@
 # Message
 
+## Message summary
+
 Returns a JSON summary of the message and attachments.
 
 **URL** : `api/v1/message/<ID>`
