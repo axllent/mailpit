@@ -7,7 +7,6 @@ package websockets
 import (
 	"encoding/json"
 
-	"github.com/axllent/mailpit/data"
 	"github.com/axllent/mailpit/logger"
 )
 
@@ -25,6 +24,12 @@ type Hub struct {
 
 	// Unregister requests from clients.
 	unregister chan *Client
+}
+
+// WebsocketNotification struct for responses
+type WebsocketNotification struct {
+	Type string
+	Data interface{}
 }
 
 // NewHub returns a new hub configuration
@@ -68,7 +73,7 @@ func Broadcast(t string, msg interface{}) {
 		return
 	}
 
-	w := data.WebsocketNotification{}
+	w := WebsocketNotification{}
 	w.Type = t
 	w.Data = msg
 	b, err := json.Marshal(w)

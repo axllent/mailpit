@@ -1,5 +1,4 @@
-// Package data contains the message & mailbox structs
-package data
+package storage
 
 import (
 	"net/mail"
@@ -46,6 +45,12 @@ type Summary struct {
 	Created     time.Time
 	Size        int
 	Attachments int
+}
+
+// MailboxStats struct for quick mailbox total/read lookups
+type MailboxStats struct {
+	Total  int
+	Unread int
 }
 
 // AttachmentSummary returns a summary of the attachment without any binary data
