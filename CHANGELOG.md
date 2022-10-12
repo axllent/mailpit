@@ -2,6 +2,12 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## 1.2.2
+
+### Libs
+- Update go modules
+
+
 ## 1.2.1
 
 ### UI
