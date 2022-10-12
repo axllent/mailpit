@@ -4,25 +4,25 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/mail"
 	"strconv"
 	"strings"
 
 	"github.com/axllent/mailpit/config"
-	"github.com/axllent/mailpit/data"
 	"github.com/axllent/mailpit/storage"
 	"github.com/gorilla/mux"
 )
 
 // MessagesResult struct
 type MessagesResult struct {
-	Total    int            `json:"total"`
-	Unread   int            `json:"unread"`
-	Count    int            `json:"count"`
-	Start    int            `json:"start"`
-	Messages []data.Summary `json:"messages"`
+	Total    int               `json:"total"`
+	Unread   int               `json:"unread"`
+	Count    int               `json:"count"`
+	Start    int               `json:"start"`
+	Messages []storage.Summary `json:"messages"`
 }
 
-// Messages returns a paginated list of messages
+// Messages returns a paginated list of messages as JSON
 func Messages(w http.ResponseWriter, r *http.Request) {
 	start, limit := getStartLimit(r)
 
@@ -47,7 +47,7 @@ func Messages(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(bytes)
 }
 
-// Search returns a max of 200 of the latest messages
+// Search returns up to 200 of the latest messages as JSON
 func Search(w http.ResponseWriter, r *http.Request) {
 	search := strings.TrimSpace(r.URL.Query().Get("query"))
 	if search == "" {
@@ -76,7 +76,7 @@ func Search(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(bytes)
 }
 
-// Message (method: GET) returns a *data.Message
+// Message (method: GET) returns the *data.Message as JSON
 func Message(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
@@ -113,6 +113,32 @@ func DownloadAttachment(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", a.ContentType)
 	w.Header().Set("Content-Disposition", "filename=\""+fileName+"\"")
 	_, _ = w.Write(a.Content)
+}
+
+// Headers (method: GET) returns the message headers as JSON
+func Headers(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+
+	id := vars["id"]
+
+	data, err := storage.GetMessageRaw(id)
+	if err != nil {
+		httpError(w, err.Error())
+		return
+	}
+
+	reader := strings.NewReader(string(data))
+	m, err := mail.ReadMessage(reader)
+	if err != nil {
+		httpError(w, err.Error())
+		return
+	}
+
+	headers := m.Header
+	bytes, _ := json.Marshal(headers)
+
+	w.Header().Add("Content-Type", "application/json")
+	_, _ = w.Write(bytes)
 }
 
 // DownloadRaw (method: GET) returns the full email source as plain text

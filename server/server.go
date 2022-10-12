@@ -62,9 +62,10 @@ func defaultRoutes() *mux.Router {
 	r.HandleFunc("/api/v1/messages", middleWareFunc(apiv1.SetReadStatus)).Methods("PUT")
 	r.HandleFunc("/api/v1/messages", middleWareFunc(apiv1.DeleteMessages)).Methods("DELETE")
 	r.HandleFunc("/api/v1/search", middleWareFunc(apiv1.Search)).Methods("GET")
-	r.HandleFunc("/api/v1/message/{id}/raw", middleWareFunc(apiv1.DownloadRaw)).Methods("GET")
 	r.HandleFunc("/api/v1/message/{id}/part/{partID}", middleWareFunc(apiv1.DownloadAttachment)).Methods("GET")
 	r.HandleFunc("/api/v1/message/{id}/part/{partID}/thumb", middleWareFunc(apiv1.Thumbnail)).Methods("GET")
+	r.HandleFunc("/api/v1/message/{id}/raw", middleWareFunc(apiv1.DownloadRaw)).Methods("GET")
+	r.HandleFunc("/api/v1/message/{id}/headers", middleWareFunc(apiv1.Headers)).Methods("GET")
 	r.HandleFunc("/api/v1/message/{id}", middleWareFunc(apiv1.Message)).Methods("GET")
 	r.HandleFunc("/api/v1/info", middleWareFunc(apiv1.AppInfo)).Methods("GET")
 

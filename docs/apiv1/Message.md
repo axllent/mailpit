@@ -1,6 +1,6 @@
 # Message
 
-Returns a summary of the message and attachments.
+Returns a JSON summary of the message and attachments.
 
 **URL** : `api/v1/message/<ID>`
 
@@ -69,6 +69,39 @@ Returns a summary of the message and attachments.
 **Method** : `GET`
 
 Returns the attachment using the MIME type provided by the attachment `ContentType`.
+
+---
+## Headers
+
+**URL** : `api/v1/message/<ID>/headers`
+
+**Method** : `GET`
+
+Returns all message headers as a JSON array.
+Each unique header key contains an array of one or more values (email headers can be listed multiple times.)
+
+```json
+{
+  "Content-Type": [
+    "multipart/related; type=\"multipart/alternative\"; boundary=\"----=_NextPart_000_0013_01C6A60C.47EEAB80\""
+  ],
+  "Date": [
+    "Wed, 12 Jul 2006 23:38:30 +1200"
+  ],
+  "Delivered-To": [
+    "user@example.com",
+    "user-alias@example.com"
+  ],
+  "From": [
+    "\"User Name\" \\u003remote@example.com\\u003e"
+  ],
+  "Message-Id": [
+    "\\u003c001701c6a5a7$b3205580$0201010a@HomeOfficeSM\\u003e"
+  ],
+....
+}
+```
+
 
 ---
 ## Raw (source) email
