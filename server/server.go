@@ -5,7 +5,6 @@ import (
 	"embed"
 	"io"
 	"io/fs"
-	"log"
 	"net/http"
 	"os"
 	"strings"
@@ -47,10 +46,10 @@ func Listen() {
 
 	if config.UISSLCert != "" && config.UISSLKey != "" {
 		logger.Log().Infof("[http] starting secure server on https://%s", config.HTTPListen)
-		log.Fatal(http.ListenAndServeTLS(config.HTTPListen, config.UISSLCert, config.UISSLKey, nil))
+		logger.Log().Fatal(http.ListenAndServeTLS(config.HTTPListen, config.UISSLCert, config.UISSLKey, nil))
 	} else {
 		logger.Log().Infof("[http] starting server on http://%s", config.HTTPListen)
-		log.Fatal(http.ListenAndServe(config.HTTPListen, nil))
+		logger.Log().Fatal(http.ListenAndServe(config.HTTPListen, nil))
 	}
 }
 

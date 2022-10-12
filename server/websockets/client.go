@@ -5,11 +5,11 @@
 package websockets
 
 import (
-	"log"
 	"net/http"
 	"time"
 
 	"github.com/axllent/mailpit/config"
+	"github.com/axllent/mailpit/logger"
 	"github.com/gorilla/websocket"
 )
 
@@ -117,7 +117,7 @@ func ServeWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
 
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		log.Println(err)
+		logger.Log().Error(err)
 		return
 	}
 
