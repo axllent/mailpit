@@ -180,7 +180,7 @@ func TestSearch(t *testing.T) {
 			search = fmt.Sprintf("\"the email body %d jdsauk dwqmdqw\"", i)
 		}
 
-		summaries, err := Search(search)
+		summaries, err := Search(search, 0, 100)
 		if err != nil {
 			t.Log("error ", err)
 			t.Fail()
@@ -196,7 +196,7 @@ func TestSearch(t *testing.T) {
 	}
 
 	// search something that will return 200 rsults
-	summaries, err := Search("This is the email body")
+	summaries, err := Search("This is the email body", 0, testRuns)
 	if err != nil {
 		t.Log("error ", err)
 		t.Fail()

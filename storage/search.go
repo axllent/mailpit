@@ -8,7 +8,11 @@ import (
 )
 
 // SearchParser returns the SQL syntax for the database search based on the search arguments
-func searchParser(args []string) *sqlf.Stmt {
+func searchParser(args []string, start, limit int) *sqlf.Stmt {
+	if limit == 0 {
+		limit = 50
+	}
+
 	q := sqlf.From("mailbox").
 		Select(`ID, Data, read, 
 			json_extract(Data, '$.To') as ToJSON, 
@@ -17,7 +21,12 @@ func searchParser(args []string) *sqlf.Stmt {
 			json_extract(Data, '$.Attachments') as Attachments
 		`).
 		OrderBy("Sort DESC").
-		Limit(200)
+		Limit(limit).
+		Offset(start)
+
+	if limit > 0 {
+		q = q.Limit(limit)
+	}
 
 	for _, w := range args {
 		if cleanString(w) == "" {
