@@ -1,3 +1,4 @@
+// Package storage handles all database actions
 package storage
 
 import (
@@ -290,9 +291,9 @@ func List(start, limit int) ([]Summary, error) {
 // The search is broken up by segments (exact phrases can be quoted), and interprits specific terms such as:
 // is:read, is:unread, has:attachment, to:<term>, from:<term> & subject:<term>
 // Negative searches also also included by prefixing the search term with a `-` or `!`
-func Search(search string) ([]Summary, error) {
+func Search(search string, start, limit int) ([]Summary, error) {
 	results := []Summary{}
-	start := time.Now()
+	tsStart := time.Now()
 
 	s := strings.ToLower(search)
 	// add another quote if missing closing quote
@@ -308,7 +309,7 @@ func Search(search string) ([]Summary, error) {
 	}
 
 	// generate the SQL based on arguments
-	q := searchParser(args)
+	q := searchParser(args, start, limit)
 
 	if err := q.QueryAndClose(nil, db, func(row *sql.Rows) {
 		var id string
@@ -336,7 +337,7 @@ func Search(search string) ([]Summary, error) {
 		return results, err
 	}
 
-	elapsed := time.Since(start)
+	elapsed := time.Since(tsStart)
 
 	logger.Log().Debugf("[db] search for \"%s\" in %s", search, elapsed)
 
@@ -648,12 +649,9 @@ func DeleteAllMessages() error {
 // StatsGet returns the total/unread statistics for a mailbox
 func StatsGet() MailboxStats {
 	var (
-		start  = time.Now()
 		total  = CountTotal()
 		unread = CountUnread()
 	)
-
-	logger.Log().Debugf("[db] statistics calculated in %s", time.Since(start))
 
 	dbLastAction = time.Now()
 

@@ -55,7 +55,9 @@ func Search(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	messages, err := storage.Search(search)
+	start, limit := getStartLimit(r)
+
+	messages, err := storage.Search(search, start, limit)
 	if err != nil {
 		httpError(w, err.Error())
 		return

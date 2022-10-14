@@ -29,7 +29,8 @@ export default {
 			notificationsEnabled: false,
 			selected: [],
 			tcStatus: 0,
-			appInfo : false,
+			appInfo: false,
+			lastLoaded: false,
 		}
 	},
 	watch: {
@@ -54,11 +55,11 @@ export default {
 	},
 	computed: {
 		canPrev: function () {
-            return this.start > 0;
-        },
-        canNext: function () {
-            return this.total > (this.start + this.count);
-        }
+			return this.start > 0;
+		},
+		canNext: function () {
+			return this.total > (this.start + this.count);
+		}
 	},
 	mounted() {
 		this.currentPath = window.location.hash.slice(1);
@@ -66,7 +67,7 @@ export default {
 			this.currentPath = window.location.hash.slice(1);
 		});
 
-		this.notificationsSupported = 'https:' == document.location.protocol 
+		this.notificationsSupported = 'https:' == document.location.protocol
 			&& ("Notification" in window && Notification.permission !== "denied");
 		this.notificationsEnabled = this.notificationsSupported && Notification.permission == "granted";
 
@@ -76,31 +77,40 @@ export default {
 			fallback: false
 		});
 
-		this.loadMessages();
 		this.connect();
+		this.loadMessages();
 	},
 	methods: {
 		loadMessages: function () {
-            let self = this;
-            let params = {};
+
+			let now = Date.now()
+			// prevent double loading when websocket connects
+			if (this.lastLoaded && now - this.lastLoaded < 250) {
+				return;
+			}
+			this.lastLoaded = now;
+
+			let self = this;
+			let params = {};
 			this.selected = [];
 
-            let uri = 'api/v1/messages';
-            if (self.search) {
-                self.searching = true;
+			let uri = 'api/v1/messages';
+			if (self.search) {
+				self.searching = true;
 				self.items = [];
-                uri = 'api/v1/search'
-                self.start = 0; // search is displayed on one page
-                params['query'] = self.search;
-            } else {
+				uri = 'api/v1/search'
+				self.start = 0; // search is displayed on one page
+				params['query'] = self.search;
+				params['limit'] = 200;
+			} else {
 				self.searching = false;
-                params['limit'] = self.limit;
-                if (self.start > 0) {
-                    params['start'] = self.start;
-                }
-            }
+				params['limit'] = self.limit;
+				if (self.start > 0) {
+					params['start'] = self.start;
+				}
+			}
 
-			self.get(uri, params, function(response){
+			self.get(uri, params, function (response) {
 				self.total = response.data.total;
 				self.unread = response.data.unread;
 				self.count = response.data.count;
@@ -121,46 +131,46 @@ export default {
 
 				self.scrollInPlace = false
 			});
-        },
+		},
 
-		doSearch: function(e) {
+		doSearch: function (e) {
 			e.preventDefault();
 			this.loadMessages();
 		},
 
-		resetSearch: function(e) {
+		resetSearch: function (e) {
 			e.preventDefault();
 			this.search = '';
 			this.scrollInPlace = true;
 			this.loadMessages();
 		},
 
-		reloadMessages: function() {
+		reloadMessages: function () {
 			this.search = "";
-            this.start = 0;
+			this.start = 0;
 			this.loadMessages();
 		},
 
 		viewNext: function () {
-            this.start = parseInt(this.start, 10) + parseInt(this.limit, 10);
-            this.loadMessages();
-        },
+			this.start = parseInt(this.start, 10) + parseInt(this.limit, 10);
+			this.loadMessages();
+		},
 
-        viewPrev: function () {
-            let s = this.start - this.limit;
-            if (s < 0) {
-                s = 0;
-            }
-            this.start = s;
-            this.loadMessages();
-        },
+		viewPrev: function () {
+			let s = this.start - this.limit;
+			if (s < 0) {
+				s = 0;
+			}
+			this.start = s;
+			this.loadMessages();
+		},
 
-		openMessage: function(id) {
+		openMessage: function (id) {
 			let self = this;
 			self.selected = [];
 
-            let uri = 'api/v1/message/' + self.currentPath
-			self.get(uri, false, function(response) {
+			let uri = 'api/v1/message/' + self.currentPath
+			self.get(uri, false, function (response) {
 				for (let i in self.items) {
 					if (self.items[i].ID == self.currentPath) {
 						if (!self.items[i].Read) {
@@ -176,15 +186,15 @@ export default {
 						let a = d.Inline[i];
 						if (a.ContentID != '') {
 							d.HTML = d.HTML.replace(
-								new RegExp('cid:'+a.ContentID, 'g'), 
-								window.location.origin+'/api/v1/message/'+d.ID+'/part/'+a.PartID
+								new RegExp('cid:' + a.ContentID, 'g'),
+								window.location.origin + '/api/v1/message/' + d.ID + '/part/' + a.PartID
 							);
 						}
 						if (a.FileName.match(/^[a-zA-Z0-9\_\-\.]+$/)) {
 							// some old email clients use the filename
 							d.HTML = d.HTML.replace(
-								new RegExp('src=(\'|")'+a.FileName+'(\'|")', 'g'), 
-								'src="'+window.location.origin+'/api/v1/message/'+d.ID+'/part/'+a.PartID+'"'
+								new RegExp('src=(\'|")' + a.FileName + '(\'|")', 'g'),
+								'src="' + window.location.origin + '/api/v1/message/' + d.ID + '/part/' + a.PartID + '"'
 							);
 						}
 					}
@@ -195,15 +205,15 @@ export default {
 						let a = d.Attachments[i];
 						if (a.ContentID != '') {
 							d.HTML = d.HTML.replace(
-								new RegExp('cid:'+a.ContentID, 'g'), 
-								window.location.origin+'/api/v1/message/'+d.ID+'/part/'+a.PartID
+								new RegExp('cid:' + a.ContentID, 'g'),
+								window.location.origin + '/api/v1/message/' + d.ID + '/part/' + a.PartID
 							);
 						}
 						if (a.FileName.match(/^[a-zA-Z0-9\_\-\.]+$/)) {
 							// some old email clients use the filename
 							d.HTML = d.HTML.replace(
-								new RegExp('src=(\'|")'+a.FileName+'(\'|")', 'g'), 
-								'src="'+window.location.origin+'/api/v1/message/'+d.ID+'/part/'+a.PartID+'"'
+								new RegExp('src=(\'|")' + a.FileName + '(\'|")', 'g'),
+								'src="' + window.location.origin + '/api/v1/message/' + d.ID + '/part/' + a.PartID + '"'
 							);
 						}
 					}
@@ -228,7 +238,7 @@ export default {
 		},
 
 		// universal handler to delete current or selected messages
-		deleteMessages: function() {
+		deleteMessages: function () {
 			let ids = [];
 			let self = this;
 			if (self.message) {
@@ -240,65 +250,65 @@ export default {
 				return false;
 			}
 			let uri = 'api/v1/messages';
-			self.delete(uri, {'ids': ids}, function(response) {
+			self.delete(uri, { 'ids': ids }, function (response) {
 				window.location.hash = "";
 				self.scrollInPlace = true;
 				self.loadMessages();
 			});
 		},
 
-		deleteAll: function() {
+		deleteAll: function () {
 			let self = this;
 			let uri = 'api/v1/messages';
-			self.delete(uri, false, function(response) {
+			self.delete(uri, false, function (response) {
 				window.location.hash = "";
 				self.reloadMessages();
 			});
 		},
 
-		markUnread: function() {
+		markUnread: function () {
 			let self = this;
 			if (!self.message) {
 				return false;
 			}
 			let uri = 'api/v1/messages';
-			self.put(uri, {'read': false, 'ids': [self.message.ID]}, function(response) {
+			self.put(uri, { 'read': false, 'ids': [self.message.ID] }, function (response) {
 				window.location.hash = "";
 				self.scrollInPlace = true;
 				self.loadMessages();
 			});
 		},
 
-		markAllRead: function() {
+		markAllRead: function () {
 			let self = this;
 			let uri = 'api/v1/messages'
-			self.put(uri, {'read': true}, function(response) {
+			self.put(uri, { 'read': true }, function (response) {
 				window.location.hash = "";
 				self.scrollInPlace = true;
 				self.loadMessages();
 			});
 		},
 
-		markSelectedRead: function() {
+		markSelectedRead: function () {
 			let self = this;
 			if (!self.selected.length) {
 				return false;
 			}
 			let uri = 'api/v1/messages';
-			self.put(uri, {'read': true, 'ids': self.selected}, function(response) {
+			self.put(uri, { 'read': true, 'ids': self.selected }, function (response) {
 				window.location.hash = "";
 				self.scrollInPlace = true;
 				self.loadMessages();
 			});
 		},
 
-		markSelectedUnread: function() {
+		markSelectedUnread: function () {
 			let self = this;
 			if (!self.selected.length) {
 				return false;
 			}
 			let uri = 'api/v1/messages';
-			self.put(uri, {'read': false, 'ids': self.selected}, function(response) {
+			self.put(uri, { 'read': false, 'ids': self.selected }, function (response) {
 				window.location.hash = "";
 				self.scrollInPlace = true;
 				self.loadMessages();
@@ -306,7 +316,7 @@ export default {
 		},
 
 		// test of any selected emails are unread
-		selectedHasUnread: function() {
+		selectedHasUnread: function () {
 			if (!this.selected.length) {
 				return false;
 			}
@@ -317,9 +327,9 @@ export default {
 			}
 			return false;
 		},
-		
+
 		// test of any selected emails are read
-		selectedHasRead: function() {
+		selectedHasRead: function () {
 			if (!this.selected.length) {
 				return false;
 			}
@@ -332,13 +342,13 @@ export default {
 		},
 
 		// websocket connect
-        connect: function () {
-            let wsproto = location.protocol == 'https:' ? 'wss' : 'ws';
-            let ws = new WebSocket(
+		connect: function () {
+			let wsproto = location.protocol == 'https:' ? 'wss' : 'ws';
+			let ws = new WebSocket(
 				wsproto + "://" + document.location.host + document.location.pathname + "api/events"
 			);
-            let self = this;
-            ws.onmessage = function (e) {
+			let self = this;
+			ws.onmessage = function (e) {
 				let response = JSON.parse(e.data);
 				if (!response) {
 					return;
@@ -346,7 +356,7 @@ export default {
 				// new messages
 				if (response.Type == "new" && response.Data) {
 					if (!self.searching) {
-                		if (self.start < 1) {
+						if (self.start < 1) {
 							self.items.unshift(response.Data);
 							if (self.items.length > self.limit) {
 								self.items.pop();
@@ -355,36 +365,36 @@ export default {
 							self.start++;
 						}
 					}
-	                self.total++;
+					self.total++;
 					self.unread++;
 					let from = response.Data.From != null ? response.Data.From.Address : '[unknown]';
 					self.browserNotify("New mail from: " + from, response.Data.Subject);
-                } else if (response.Type == "prune") {
+				} else if (response.Type == "prune") {
 					// messages have been deleted, reload messages to adjust
 					self.scrollInPlace = true;
 					self.loadMessages();
 				}
-            }
+			}
 
-            ws.onopen = function () {
-                self.isConnected = true;
+			ws.onopen = function () {
+				self.isConnected = true;
 				self.loadMessages();
-            }
+			}
 
-            ws.onclose = function (e) {
-                self.isConnected = false;
-				
+			ws.onclose = function (e) {
+				self.isConnected = false;
+
 				setTimeout(function () {
 					self.connect(); // reconnect
 				}, 1000);
-            }
+			}
 
-            ws.onerror = function (err) {
-                ws.close();
-            }
-        },
+			ws.onerror = function (err) {
+				ws.close();
+			}
+		},
 
-		getPrimaryEmailTo: function(message) {
+		getPrimaryEmailTo: function (message) {
 			for (let i in message.To) {
 				return message.To[i].Address;
 			}
@@ -392,12 +402,12 @@ export default {
 			return '[ Undisclosed recipients ]';
 		},
 
-		getRelativeCreated: function(message) {
-            let d = new Date(message.Created)
-            return moment(d).fromNow().toString();
-        },
+		getRelativeCreated: function (message) {
+			let d = new Date(message.Created)
+			return moment(d).fromNow().toString();
+		},
 
-		browserNotify: function(title, message) {
+		browserNotify: function (title, message) {
 			if (!("Notification" in window)) {
 				return;
 			}
@@ -412,7 +422,7 @@ export default {
 			}
 		},
 
-		requestNotifications: function() {
+		requestNotifications: function () {
 			// check if the browser supports notifications
 			if (!("Notification" in window)) {
 				alert("This browser does not support desktop notification");
@@ -431,26 +441,26 @@ export default {
 			}
 		},
 
-		toggleSelected: function(e, id) {
+		toggleSelected: function (e, id) {
 			e.preventDefault();
-			
+
 			if (this.isSelected(id)) {
-				this.selected =  this.selected.filter(function(ele){ 
-					return ele != id; 
+				this.selected = this.selected.filter(function (ele) {
+					return ele != id;
 				});
 			} else {
 				this.selected.push(id);
 			}
 		},
 
-		selectRange: function(e, id) {
+		selectRange: function (e, id) {
 			e.preventDefault();
 
 			let selecting = false;
 			let lastSelected = this.selected.length > 0 && this.selected[this.selected.length - 1];
 			if (lastSelected == id) {
-				this.selected =  this.selected.filter(function(ele){ 
-					return ele != id; 
+				this.selected = this.selected.filter(function (ele) {
+					return ele != id;
 				});
 				return
 			}
@@ -478,14 +488,14 @@ export default {
 			}
 		},
 
-		isSelected: function(id) {
+		isSelected: function (id) {
 			return this.selected.indexOf(id) != -1;
 		},
 
-		loadInfo: function(e) {
+		loadInfo: function (e) {
 			e.preventDefault();
 			let self = this;
-			self.get('api/v1/info', false, function(response) {
+			self.get('api/v1/info', false, function (response) {
 				self.appInfo = response.data;
 				self.modal('AppInfoModal').show();
 			});
@@ -502,9 +512,10 @@ export default {
 				<span class="ms-2">Mailpit</span>
 			</a>
 		</div>
-		
+
 		<div class="col col-md-9 col-lg-10" v-if="message">
-			<a class="btn btn-outline-secondary me-4 px-3" href="#" v-on:click="message=false" title="Return to messages">
+			<a class="btn btn-outline-secondary me-4 px-3" href="#" v-on:click="message=false"
+				title="Return to messages">
 				<i class="bi bi-arrow-return-left"></i>
 			</a>
 			<button class="btn btn-outline-secondary me-2" title="Mark unread" v-on:click="markUnread">
@@ -513,13 +524,16 @@ export default {
 			<button class="btn btn-outline-secondary me-2" title="Delete message" v-on:click="deleteMessages">
 				<i class="bi bi-trash-fill"></i> <span class="d-none d-md-inline">Delete</span>
 			</button>
-			<a class="btn btn-outline-secondary float-end" :class="messageNext ? '':'disabled'" :href="'#'+messageNext" title="View next message">
+			<a class="btn btn-outline-secondary float-end" :class="messageNext ? '':'disabled'" :href="'#'+messageNext"
+				title="View next message">
 				<i class="bi bi-caret-right-fill"></i>
 			</a>
-			<a class="btn btn-outline-secondary ms-2 me-1 float-end" :class="messagePrev ? '': 'disabled'" :href="'#'+messagePrev" title="View previous message">
+			<a class="btn btn-outline-secondary ms-2 me-1 float-end" :class="messagePrev ? '': 'disabled'"
+				:href="'#'+messagePrev" title="View previous message">
 				<i class="bi bi-caret-left-fill"></i>
 			</a>
-			<a :href="'api/v1/' + message.ID + '/raw?dl=1'" class="btn btn-outline-secondary me-2 float-end" title="Download message">
+			<a :href="'api/v1/' + message.ID + '/raw?dl=1'" class="btn btn-outline-secondary me-2 float-end"
+				title="Download message">
 				<i class="bi bi-file-arrow-down-fill"></i> <span class="d-none d-md-inline">Download</span>
 			</a>
 		</div>
@@ -532,24 +546,29 @@ export default {
 						<span v-if="!total" class="ms-2">Mailpit</span>
 					</a>
 					<div v-if="total" class="d-flex bg-white border rounded-start flex-fill position-relative">
-						<input type="text" class="form-control border-0" v-model.trim="search" placeholder="Search mailbox">
-						<span class="btn btn-link position-absolute end-0 text-muted" v-if="search" v-on:click="resetSearch"><i class="bi bi-x-circle"></i></span>
+						<input type="text" class="form-control border-0" v-model.trim="search"
+							placeholder="Search mailbox">
+						<span class="btn btn-link position-absolute end-0 text-muted" v-if="search"
+							v-on:click="resetSearch"><i class="bi bi-x-circle"></i></span>
 					</div>
-					<button v-if="total" class="btn btn-outline-secondary" type="submit"><i class="bi bi-search"></i></button>
+					<button v-if="total" class="btn btn-outline-secondary" type="submit"><i
+							class="bi bi-search"></i></button>
 				</div>
 			</form>
 		</div>
 		<div class="col-12 col-lg-5 text-end mt-2 mt-lg-0" v-if="!message && total">
-			<button v-if="total" class="btn btn-outline-danger float-start d-md-none me-2" data-bs-toggle="modal" data-bs-target="#DeleteAllModal" title="Delete all messages">
+			<button v-if="total" class="btn btn-outline-danger float-start d-md-none me-2" data-bs-toggle="modal"
+				data-bs-target="#DeleteAllModal" title="Delete all messages">
 				<i class="bi bi-trash-fill"></i>
 			</button>
 
-			<button v-if="unread" class="btn btn-outline-primary float-start d-md-none" data-bs-toggle="modal" data-bs-target="#MarkAllReadModal" title="Mark all read">
+			<button v-if="unread" class="btn btn-outline-primary float-start d-md-none" data-bs-toggle="modal"
+				data-bs-target="#MarkAllReadModal" title="Mark all read">
 				<i class="bi bi-check2-square"></i>
 			</button>
 
-			<select v-model="limit" v-on:change="loadMessages"
-				class="form-select form-select-sm d-inline w-auto me-2" v-if="!searching">
+			<select v-model="limit" v-on:change="loadMessages" class="form-select form-select-sm d-inline w-auto me-2"
+				v-if="!searching">
 				<option value="25">25</option>
 				<option value="50">50</option>
 				<option value="100">100</option>
@@ -560,12 +579,15 @@ export default {
 			</span>
 			<span v-else>
 				<small>
-					<b>{{ formatNumber(start + 1) }}-{{ formatNumber(start + items.length) }}</b> of <b>{{ formatNumber(total) }}</b>
+					<b>{{ formatNumber(start + 1) }}-{{ formatNumber(start + items.length) }}</b> of <b>{{
+					formatNumber(total) }}</b>
 				</small>
-				<button class="btn btn-outline-secondary ms-2 me-1" :disabled="!canPrev" v-on:click="viewPrev" v-if="!searching" :title="'View previous '+limit+' messages'">
+				<button class="btn btn-outline-secondary ms-2 me-1" :disabled="!canPrev" v-on:click="viewPrev"
+					v-if="!searching" :title="'View previous '+limit+' messages'">
 					<i class="bi bi-caret-left-fill"></i>
 				</button>
-				<button class="btn btn-outline-secondary" :disabled="!canNext" v-on:click="viewNext" v-if="!searching" :title="'View next '+limit+' messages'">
+				<button class="btn btn-outline-secondary" :disabled="!canNext" v-on:click="viewNext" v-if="!searching"
+					:title="'View next '+limit+' messages'">
 					<i class="bi bi-caret-right-fill"></i>
 				</button>
 			</span>
@@ -586,7 +608,7 @@ export default {
 					<a class="position-relative ps-0" href="#" v-on:click="reloadMessages">
 						<i class="bi bi-envelope me-1" v-if="isConnected"></i>
 						<i class="bi bi-arrow-clockwise me-1" v-else></i>
-						Inbox 
+						Inbox
 						<span class="badge rounded-pill text-bg-primary ms-1" title="Unread messages" v-if="unread">
 							{{ formatNumber(unread) }}
 						</span>
@@ -607,7 +629,8 @@ export default {
 
 				<li class="my-3" v-if="selected.length > 0">
 					<b class="me-2">Selected {{selected.length}}</b>
-					<button class="btn btn-sm text-muted" v-on:click="selected=[]" title="Unselect messages"><i class="bi bi-x-circle"></i></button>
+					<button class="btn btn-sm text-muted" v-on:click="selected=[]" title="Unselect messages"><i
+							class="bi bi-x-circle"></i></button>
 				</li>
 				<li class="my-3 ms-2" v-if="selected.length > 0 && selectedHasUnread()">
 					<a href="#" v-on:click="markSelectedRead">
@@ -629,7 +652,8 @@ export default {
 				</li>
 
 				<li class="my-3" v-if="notificationsSupported && !notificationsEnabled">
-					<a href="#" data-bs-toggle="modal" data-bs-target="#EnableNotificationsModal" title="Enable browser notifications">
+					<a href="#" data-bs-toggle="modal" data-bs-target="#EnableNotificationsModal"
+						title="Enable browser notifications">
 						<i class="bi bi-bell"></i>
 						Enable alerts
 					</a>
@@ -646,8 +670,9 @@ export default {
 		<div class="col-lg-10 col-md-9 mh-100 pe-0">
 			<div class="mh-100" style="overflow-y: auto;" :class="message ? 'd-none':''" id="message-page">
 				<div class="list-group" v-if="items.length">
-					<a v-for="message in items" :href="'#'+message.ID" 
-						v-on:click.ctrl="toggleSelected($event, message.ID)" v-on:click.shift="selectRange($event, message.ID)" 
+					<a v-for="message in items" :href="'#'+message.ID"
+						v-on:click.ctrl="toggleSelected($event, message.ID)"
+						v-on:click.shift="selectRange($event, message.ID)"
 						class="row message d-flex small list-group-item list-group-item-action border-start-0 border-end-0"
 						:class="message.Read ? 'read':'', isSelected(message.ID) ? 'selected':''">
 						<div class="col-lg-3">
@@ -656,10 +681,12 @@ export default {
 								{{ getRelativeCreated(message) }}
 							</div>
 							<div class="text-truncate d-lg-none privacy">
-								<span v-if="message.From" :title="message.From.Address">{{ message.From.Name ? message.From.Name : message.From.Address }}</span>
-							</div> 
+								<span v-if="message.From" :title="message.From.Address">{{ message.From.Name ?
+								message.From.Name : message.From.Address }}</span>
+							</div>
 							<div class="text-truncate d-none d-lg-block privacy">
-								<b v-if="message.From" :title="message.From.Address">{{ message.From.Name ? message.From.Name : message.From.Address }}</b>
+								<b v-if="message.From" :title="message.From.Address">{{ message.From.Name ?
+								message.From.Name : message.From.Address }}</b>
 							</div>
 							<div class="d-none d-lg-block text-truncate text-muted small privacy">
 								{{ getPrimaryEmailTo(message) }}
@@ -714,14 +741,16 @@ export default {
 				</div>
 				<div class="modal-footer">
 					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-					<button type="button" class="btn btn-danger" data-bs-dismiss="modal" v-on:click="deleteAll">Delete</button>
+					<button type="button" class="btn btn-danger" data-bs-dismiss="modal"
+						v-on:click="deleteAll">Delete</button>
 				</div>
 			</div>
 		</div>
 	</div>
 
 	<!-- Modal -->
-	<div class="modal fade" id="MarkAllReadModal" tabindex="-1" aria-labelledby="MarkAllReadModalLabel" aria-hidden="true">
+	<div class="modal fade" id="MarkAllReadModal" tabindex="-1" aria-labelledby="MarkAllReadModalLabel"
+		aria-hidden="true">
 		<div class="modal-dialog">
 			<div class="modal-content">
 				<div class="modal-header">
@@ -733,14 +762,16 @@ export default {
 				</div>
 				<div class="modal-footer">
 					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-					<button type="button" class="btn btn-primary" data-bs-dismiss="modal" v-on:click="markAllRead">Confirm</button>
+					<button type="button" class="btn btn-primary" data-bs-dismiss="modal"
+						v-on:click="markAllRead">Confirm</button>
 				</div>
 			</div>
 		</div>
 	</div>
 
 	<!-- Modal -->
-	<div class="modal fade" id="EnableNotificationsModal" tabindex="-1" aria-labelledby="EnableNotificationsModalLabel" aria-hidden="true">
+	<div class="modal fade" id="EnableNotificationsModal" tabindex="-1" aria-labelledby="EnableNotificationsModalLabel"
+		aria-hidden="true">
 		<div class="modal-dialog modal-lg">
 			<div class="modal-content">
 				<div class="modal-header">
@@ -750,13 +781,15 @@ export default {
 				<div class="modal-body">
 					<p class="h4">Get browser notifications when Mailpit receives a new mail?</p>
 					<p>
-						Note that your browser will ask you for confirmation when you click <code>enable notifications</code>,
+						Note that your browser will ask you for confirmation when you click
+						<code>enable notifications</code>,
 						and that you must have Mailpit open in a browser tab to be able to receive the notifications.
 					</p>
 				</div>
 				<div class="modal-footer">
 					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-					<button type="button" class="btn btn-primary" data-bs-dismiss="modal" v-on:click="requestNotifications">Enable notifications</button>
+					<button type="button" class="btn btn-primary" data-bs-dismiss="modal"
+						v-on:click="requestNotifications">Enable notifications</button>
 				</div>
 			</div>
 		</div>
@@ -788,7 +821,8 @@ export default {
 							</a>
 						</div>
 						<div class="col-sm-6">
-							<a class="btn btn-primary w-100" href="https://github.com/axllent/mailpit/wiki" target="_blank">
+							<a class="btn btn-primary w-100" href="https://github.com/axllent/mailpit/wiki"
+								target="_blank">
 								Documentation
 								<i class="bi bi-box-arrow-up-right"></i>
 							</a>

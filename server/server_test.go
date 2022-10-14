@@ -181,7 +181,9 @@ func assertSearchEqual(t *testing.T, uri, query string, count int) {
 	t.Logf("Test search: %s", query)
 	m := apiv1.MessagesResult{}
 
-	data, err := clientGet(uri + "?query=" + url.QueryEscape(query))
+	limit := fmt.Sprintf("%d", count)
+
+	data, err := clientGet(uri + "?query=" + url.QueryEscape(query) + "&limit=" + limit)
 	if err != nil {
 		t.Errorf(err.Error())
 		return

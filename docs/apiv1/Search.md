@@ -10,9 +10,11 @@ Matching messages are returned in the order of latest received to oldest.
 
 ## Query parameters
 
-| Parameter | Type   | Required | Description  |
-|-----------|--------|----------|--------------|
-| query     | string | true     | Search query |
+| Parameter | Type    | Required | Description                |
+|-----------|---------|----------|----------------------------|
+| query     | string  | true     | Search query               |
+| limit     | integer | false    | Limit results (default 50) |
+| start     | integer | false    | Pagination offset          |
 
 
 ## Response
