@@ -2,6 +2,12 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## 1.2.4
+
+### Bugfix
+- Fix mail download link
+
+
 ## 1.2.3
 
 ### API
