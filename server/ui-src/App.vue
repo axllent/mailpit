@@ -532,7 +532,7 @@ export default {
 				:href="'#'+messagePrev" title="View previous message">
 				<i class="bi bi-caret-left-fill"></i>
 			</a>
-			<a :href="'api/v1/' + message.ID + '/raw?dl=1'" class="btn btn-outline-secondary me-2 float-end"
+			<a :href="'api/v1/message/' + message.ID + '/raw?dl=1'" class="btn btn-outline-secondary me-2 float-end"
 				title="Download message">
 				<i class="bi bi-file-arrow-down-fill"></i> <span class="d-none d-md-inline">Download</span>
 			</a>
