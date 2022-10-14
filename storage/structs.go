@@ -22,6 +22,7 @@ type Message struct {
 	Size        int
 	Inline      []Attachment
 	Attachments []Attachment
+	Headers     map[string]string
 }
 
 // Attachment struct for inline and attachments

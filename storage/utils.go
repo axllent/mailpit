@@ -24,6 +24,16 @@ func addressToSlice(env *enmime.Envelope, key string) []*mail.Address {
 	return data
 }
 
+// Return the headers as a mail.Header
+func headersToMap(env *enmime.Envelope) map[string]string {
+	headers := make(map[string]string)
+	hkeys := env.GetHeaderKeys()
+	for _, hkey := range hkeys {
+		headers[hkey] = env.GetHeader(hkey)
+	}
+	return headers
+}
+
 // Generate the search text based on some header fields (to, from, subject etc)
 // and either the stripped HTML body (if exists) or text body
 func createSearchText(env *enmime.Envelope) string {

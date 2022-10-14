@@ -381,6 +381,7 @@ func GetMessage(id string) (*Message, error) {
 		Subject: env.GetHeader("Subject"),
 		Size:    len(raw),
 		Text:    env.Text,
+		Headers: headersToMap(env),
 	}
 
 	// strip base tags
