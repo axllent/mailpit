@@ -2,6 +2,15 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## 1.2.3
+
+### API
+- Add limit and start parameters to search
+
+### UI
+- Prevent double message index request on websocket connect
+
+
 ## 1.2.2
 
 ### API
