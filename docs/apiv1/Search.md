@@ -4,7 +4,7 @@
 
 **Method** : `GET`
 
-The search returns up to 200 of the most recent matches, and does not support pagination or limits.
+The search returns the most recent matches (default 50).
 Matching messages are returned in the order of latest received to oldest.
 
 
@@ -62,8 +62,8 @@ Matching messages are returned in the order of latest received to oldest.
 
 - `total` - Total messages in mailbox (all messages, not search)
 - `unread` - Total unread messages in mailbox (all messages, not search)
-- `count` - Number of messages returned in request (up to 200 for search)
-- `start` - Always 0 (offset in search is unsupported)
+- `count` - Number of messages returned in request
+- `start` - The offset (default `0`) for pagination
 - `From` - Singular Name & Address, or null if none
 - `To`, `CC`, `BCC` - Array of Name & Address, or null if none
 - `Size` - Total size of raw email in bytes
