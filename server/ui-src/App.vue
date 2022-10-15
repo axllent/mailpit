@@ -537,7 +537,7 @@ export default {
 			</a>
 		</div>
 
-		<div class="col col-md-9 col-lg-5 LOL" v-if="!message">
+		<div class="col col-md-9 col-lg-5" v-if="!message">
 			<form v-on:submit="doSearch">
 				<div class="input-group">
 					<a class="navbar-brand d-md-none" href="#" v-on:click="reloadMessages">
