@@ -2,6 +2,15 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## 1.2.5
+
+### UI
+- Broadcast "delete all" action to reload all connected clients
+- Load first page if paginated list returns 0 results
+- Theme changes
+- Bump build action to use node 18
+
+
 ## 1.2.4
 
 ### Bugfix
