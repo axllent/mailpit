@@ -595,7 +595,7 @@ export default {
 	<div class="row flex-fill" style="min-height:0">
 		<div class="d-none d-md-block col-lg-2 col-md-3 mh-100 position-relative" style="overflow-y: auto;">
 			<ul class="list-unstyled mt-3 mb-5">
-				<li v-if="isConnected" title="Messages will auto-load" class="mb-3">
+				<li v-if="isConnected" title="Messages will auto-load" class="mb-3 text-muted">
 					<i class="bi bi-power text-success"></i>
 					Connected
 				</li>

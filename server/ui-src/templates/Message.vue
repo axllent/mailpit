@@ -168,7 +168,7 @@ export default {
 			<div class="col-md-auto text-md-end mt-md-3">
 				<p class="text-muted small d-none d-md-block"><small>{{ messageDate(message.Date) }}</small></p>
 				<div class="dropdown mt-2" v-if="allAttachments(message)">
-					<button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown"
+					<button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown"
 						aria-expanded="false">
 						Attachment<span v-if="allAttachments(message).length > 1">s</span>
 						({{ allAttachments(message).length }})
