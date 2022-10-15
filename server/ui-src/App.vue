@@ -505,34 +505,33 @@ export default {
 </script>
 
 <template>
-	<div class="navbar navbar-expand-lg navbar-light row flex-shrink-0 bg-light shadow-sm">
+	<div class="navbar navbar-expand-lg navbar-dark row flex-shrink-0 bg-primary text-white">
 		<div class="col-lg-2 col-md-3 d-none d-md-block">
-			<a class="navbar-brand" href="#" v-on:click="reloadMessages">
+			<a class="navbar-brand text-white" href="#" v-on:click="reloadMessages">
 				<img src="mailpit.svg" alt="Mailpit">
 				<span class="ms-2">Mailpit</span>
 			</a>
 		</div>
 
 		<div class="col col-md-9 col-lg-10" v-if="message">
-			<a class="btn btn-outline-secondary me-4 px-3" href="#" v-on:click="message=false"
-				title="Return to messages">
+			<a class="btn btn-outline-light me-4 px-3" href="#" v-on:click="message=false" title="Return to messages">
 				<i class="bi bi-arrow-return-left"></i>
 			</a>
-			<button class="btn btn-outline-secondary me-2" title="Mark unread" v-on:click="markUnread">
+			<button class="btn btn-outline-light me-2" title="Mark unread" v-on:click="markUnread">
 				<i class="bi bi-eye-slash"></i> <span class="d-none d-md-inline">Mark unread</span>
 			</button>
-			<button class="btn btn-outline-secondary me-2" title="Delete message" v-on:click="deleteMessages">
+			<button class="btn btn-outline-light me-2" title="Delete message" v-on:click="deleteMessages">
 				<i class="bi bi-trash-fill"></i> <span class="d-none d-md-inline">Delete</span>
 			</button>
-			<a class="btn btn-outline-secondary float-end" :class="messageNext ? '':'disabled'" :href="'#'+messageNext"
+			<a class="btn btn-outline-light float-end" :class="messageNext ? '':'disabled'" :href="'#'+messageNext"
 				title="View next message">
 				<i class="bi bi-caret-right-fill"></i>
 			</a>
-			<a class="btn btn-outline-secondary ms-2 me-1 float-end" :class="messagePrev ? '': 'disabled'"
+			<a class="btn btn-outline-light ms-2 me-1 float-end" :class="messagePrev ? '': 'disabled'"
 				:href="'#'+messagePrev" title="View previous message">
 				<i class="bi bi-caret-left-fill"></i>
 			</a>
-			<a :href="'api/v1/message/' + message.ID + '/raw?dl=1'" class="btn btn-outline-secondary me-2 float-end"
+			<a :href="'api/v1/message/' + message.ID + '/raw?dl=1'" class="btn btn-outline-light me-2 float-end"
 				title="Download message">
 				<i class="bi bi-file-arrow-down-fill"></i> <span class="d-none d-md-inline">Download</span>
 			</a>
@@ -551,7 +550,7 @@ export default {
 						<span class="btn btn-link position-absolute end-0 text-muted" v-if="search"
 							v-on:click="resetSearch"><i class="bi bi-x-circle"></i></span>
 					</div>
-					<button v-if="total" class="btn btn-outline-secondary" type="submit"><i
+					<button v-if="total" class="btn btn-outline-light" type="submit"><i
 							class="bi bi-search"></i></button>
 				</div>
 			</form>
@@ -562,7 +561,7 @@ export default {
 				<i class="bi bi-trash-fill"></i>
 			</button>
 
-			<button v-if="unread" class="btn btn-outline-primary float-start d-md-none" data-bs-toggle="modal"
+			<button v-if="unread" class="btn btn-outline-light float-start d-md-none" data-bs-toggle="modal"
 				data-bs-target="#MarkAllReadModal" title="Mark all read">
 				<i class="bi bi-check2-square"></i>
 			</button>
@@ -579,14 +578,14 @@ export default {
 			</span>
 			<span v-else>
 				<small>
-					<b>{{ formatNumber(start + 1) }}-{{ formatNumber(start + items.length) }}</b> of <b>{{
-					formatNumber(total) }}</b>
+					{{ formatNumber(start + 1) }}-{{ formatNumber(start + items.length) }} <small>of</small> {{
+					formatNumber(total) }}
 				</small>
-				<button class="btn btn-outline-secondary ms-2 me-1" :disabled="!canPrev" v-on:click="viewPrev"
+				<button class="btn btn-outline-light ms-2 me-1" :disabled="!canPrev" v-on:click="viewPrev"
 					v-if="!searching" :title="'View previous '+limit+' messages'">
 					<i class="bi bi-caret-left-fill"></i>
 				</button>
-				<button class="btn btn-outline-secondary" :disabled="!canNext" v-on:click="viewNext" v-if="!searching"
+				<button class="btn btn-outline-light" :disabled="!canNext" v-on:click="viewNext" v-if="!searching"
 					:title="'View next '+limit+' messages'">
 					<i class="bi bi-caret-right-fill"></i>
 				</button>
@@ -669,7 +668,7 @@ export default {
 
 		<div class="col-lg-10 col-md-9 mh-100 pe-0">
 			<div class="mh-100" style="overflow-y: auto;" :class="message ? 'd-none':''" id="message-page">
-				<div class="list-group" v-if="items.length">
+				<div class="list-group my-2" v-if="items.length">
 					<a v-for="message in items" :href="'#'+message.ID"
 						v-on:click.ctrl="toggleSelected($event, message.ID)"
 						v-on:click.shift="selectRange($event, message.ID)"
@@ -740,7 +739,7 @@ export default {
 					This will permanently delete {{ formatNumber(total) }} message<span v-if="total > 1">s</span>.
 				</div>
 				<div class="modal-footer">
-					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+					<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
 					<button type="button" class="btn btn-danger" data-bs-dismiss="modal"
 						v-on:click="deleteAll">Delete</button>
 				</div>
@@ -761,8 +760,8 @@ export default {
 					This will mark {{ formatNumber(unread) }} message<span v-if="unread > 1">s</span> as read.
 				</div>
 				<div class="modal-footer">
-					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-					<button type="button" class="btn btn-primary" data-bs-dismiss="modal"
+					<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+					<button type="button" class="btn btn-success" data-bs-dismiss="modal"
 						v-on:click="markAllRead">Confirm</button>
 				</div>
 			</div>

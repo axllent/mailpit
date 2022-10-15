@@ -9,6 +9,7 @@
 
     .navbar-brand {
         color: #2d4a5d;
+        transition: all 0.2s;
 
         img {
             width: 40px;
@@ -20,6 +21,19 @@
             img {
                 width: 35px;
             }
+        }
+    }
+}
+
+.navbar-brand {
+    span {
+        opacity: 0.8;
+        transition: all 0.5s;
+    }
+
+    &:hover {
+        span {
+            opacity: 1;
         }
     }
 }

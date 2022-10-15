@@ -28,7 +28,7 @@ export default {
 			handler(newQuestion) {
 				let self = this;
 				// delay 100ms to select first tab and add HTML highlighting (prev/next)
-				window.setTimeout(function() {
+				window.setTimeout(function () {
 					self.renderUI();
 				}, 100)
 			},
@@ -47,20 +47,20 @@ export default {
 			self.srcURI = 'api/v1/message/' + self.message.ID + '/raw';
 		});
 	},
-	
-	unmounted: function() {
+
+	unmounted: function () {
 		window.removeEventListener("resize", this.resizeIframes);
 	},
 
 	methods: {
-		renderUI: function() {
+		renderUI: function () {
 			let self = this;
 			// click the first non-disabled tab
 			document.querySelector('#nav-tab button:not([disabled])').click();
 			document.activeElement.blur(); // blur focus
 			document.getElementById('message-view').scrollTop = 0;
 
-			window.setTimeout(function(){
+			window.setTimeout(function () {
 				let p = document.getElementById('preview-html');
 
 				if (p) {
@@ -83,13 +83,13 @@ export default {
 			window.Prism.manual = true;
 			Prism.highlightAll();
 		},
-		
-		resizeIframe: function(el) {
+
+		resizeIframe: function (el) {
 			let i = el.target;
 			i.style.height = i.contentWindow.document.body.scrollHeight + 50 + 'px';
 		},
 
-		resizeIframes: function() {
+		resizeIframes: function () {
 			let h = document.getElementById('preview-html');
 			if (h) {
 				h.style.height = h.contentWindow.document.body.scrollHeight + 50 + 'px';
@@ -101,7 +101,7 @@ export default {
 			}
 		},
 
-		messageDate: function(d) {
+		messageDate: function (d) {
 			return moment(d).format('ddd, D MMM YYYY, h:mm a');
 		}
 	}
@@ -168,7 +168,8 @@ export default {
 			<div class="col-md-auto text-md-end mt-md-3">
 				<p class="text-muted small d-none d-md-block"><small>{{ messageDate(message.Date) }}</small></p>
 				<div class="dropdown mt-2" v-if="allAttachments(message)">
-					<button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+					<button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown"
+						aria-expanded="false">
 						Attachment<span v-if="allAttachments(message).length > 1">s</span>
 						({{ allAttachments(message).length }})
 					</button>
@@ -188,41 +189,40 @@ export default {
 
 		<nav>
 			<div class="nav nav-tabs my-3" id="nav-tab" role="tablist">
-				<button class="nav-link" id="nav-html-tab" data-bs-toggle="tab"
-					data-bs-target="#nav-html" type="button" role="tab" aria-controls="nav-html"
-					aria-selected="true" v-if="message.HTML">HTML</button>
-				<button class="nav-link" id="nav-html-source-tab" data-bs-toggle="tab"
-					data-bs-target="#nav-html-source" type="button" role="tab" aria-controls="nav-html-source"
-					aria-selected="false" v-if="message.HTML">HTML Source</button>
-				<button class="nav-link" id="nav-plain-text-tab" data-bs-toggle="tab"
-					data-bs-target="#nav-plain-text" type="button" role="tab" aria-controls="nav-plain-text"
-					aria-selected="false" :class="message.HTML == '' ? 'show':''">Text</button>
-				<button class="nav-link" id="nav-raw-tab" data-bs-toggle="tab"
-					data-bs-target="#nav-raw" type="button" role="tab" aria-controls="nav-raw"
-					aria-selected="false">Raw</button>
+				<button class="nav-link" id="nav-html-tab" data-bs-toggle="tab" data-bs-target="#nav-html" type="button"
+					role="tab" aria-controls="nav-html" aria-selected="true" v-if="message.HTML">HTML</button>
+				<button class="nav-link" id="nav-html-source-tab" data-bs-toggle="tab" data-bs-target="#nav-html-source"
+					type="button" role="tab" aria-controls="nav-html-source" aria-selected="false"
+					v-if="message.HTML">HTML Source</button>
+				<button class="nav-link" id="nav-plain-text-tab" data-bs-toggle="tab" data-bs-target="#nav-plain-text"
+					type="button" role="tab" aria-controls="nav-plain-text" aria-selected="false"
+					:class="message.HTML == '' ? 'show':''">Text</button>
+				<button class="nav-link" id="nav-raw-tab" data-bs-toggle="tab" data-bs-target="#nav-raw" type="button"
+					role="tab" aria-controls="nav-raw" aria-selected="false">Raw</button>
 			</div>
 		</nav>
 		<div class="tab-content mb-5" id="nav-tabContent">
 			<div v-if="message.HTML != ''" class="tab-pane fade show" id="nav-html" role="tabpanel"
 				aria-labelledby="nav-html-tab" tabindex="0">
-				<iframe target-blank="" class="tab-pane" id="preview-html" :srcdoc="message.HTML" v-on:load="resizeIframe"
-					seamless frameborder="0" style="width: 100%; height: 100%;">
+				<iframe target-blank="" class="tab-pane" id="preview-html" :srcdoc="message.HTML"
+					v-on:load="resizeIframe" seamless frameborder="0" style="width: 100%; height: 100%;">
 				</iframe>
-				<Attachments v-if="allAttachments(message).length" :message="message" :attachments="allAttachments(message)"></Attachments>
+				<Attachments v-if="allAttachments(message).length" :message="message"
+					:attachments="allAttachments(message)"></Attachments>
 			</div>
-			<div class="tab-pane fade" id="nav-html-source" role="tabpanel"
-				aria-labelledby="nav-html-source-tab" tabindex="0" v-if="message.HTML">
+			<div class="tab-pane fade" id="nav-html-source" role="tabpanel" aria-labelledby="nav-html-source-tab"
+				tabindex="0" v-if="message.HTML">
 				<pre><code class="language-html">{{ message.HTML }}</code></pre>
 			</div>
-			<div class="tab-pane fade" id="nav-plain-text" role="tabpanel"
-				aria-labelledby="nav-plain-text-tab" tabindex="0" :class="message.HTML == '' ? 'show':''">
+			<div class="tab-pane fade" id="nav-plain-text" role="tabpanel" aria-labelledby="nav-plain-text-tab"
+				tabindex="0" :class="message.HTML == '' ? 'show':''">
 				<div class="text-view">{{ message.Text }}</div>
-				<Attachments v-if="allAttachments(message).length" :message="message" :attachments="allAttachments(message)"></Attachments>
+				<Attachments v-if="allAttachments(message).length" :message="message"
+					:attachments="allAttachments(message)"></Attachments>
 			</div>
-			<div class="tab-pane fade" id="nav-raw" role="tabpanel" aria-labelledby="nav-raw-tab"
-				tabindex="0">
-				<iframe v-if="srcURI" :src="srcURI" v-on:load="resizeIframe"
-					seamless frameborder="0" style="width: 100%; height: 300px;" id="message-src"></iframe>
+			<div class="tab-pane fade" id="nav-raw" role="tabpanel" aria-labelledby="nav-raw-tab" tabindex="0">
+				<iframe v-if="srcURI" :src="srcURI" v-on:load="resizeIframe" seamless frameborder="0"
+					style="width: 100%; height: 300px;" id="message-src"></iframe>
 			</div>
 		</div>
 	</div>
