@@ -90,11 +90,10 @@
 }
 
 .message.selected {
-    background: $primary;
-    color: #fff;
+    background: $gray-300;
 
     .text-muted {
-        color: #fff !important;
+        color: $body-color !important;
     }
 
     &.read {
