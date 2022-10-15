@@ -26,6 +26,11 @@ func AppInfo(w http.ResponseWriter, r *http.Request) {
 	info := appVersion{}
 	info.Version = config.Version
 
+	var m runtime.MemStats
+	runtime.ReadMemStats(&m)
+
+	info.Memory = m.Sys - m.HeapReleased
+
 	latest, _, _, err := updater.GithubLatest(config.Repo, config.RepoBinaryName)
 	if err == nil {
 		info.LatestVersion = latest
@@ -39,11 +44,6 @@ func AppInfo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	info.Messages = storage.CountTotal()
-
-	var m runtime.MemStats
-	runtime.ReadMemStats(&m)
-
-	info.Memory = m.Sys - m.HeapReleased
 
 	bytes, _ := json.Marshal(info)
 
