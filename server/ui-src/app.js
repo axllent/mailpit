@@ -5,4 +5,4 @@ import "./assets/styles.scss";
 import "../../node_modules/bootstrap-icons/font/bootstrap-icons.scss";
 import "bootstrap";
 
-createApp(App).mount('#app')
+createApp(App).mount('#app');

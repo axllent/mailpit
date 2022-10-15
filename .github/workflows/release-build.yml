@@ -23,6 +23,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
+    # @TODO: replace deprecated action with ${{ github.ref_name }}
     - name: Get tag
       id: tag
       uses: dawidd6/action-get-tag@v1
@@ -30,8 +31,9 @@ jobs:
     # build the assets
     - uses: actions/setup-node@v3
       with:
-        node-version: 16
+        node-version: 18
         cache: 'npm'
+    - run: echo "Building assets for ${{ github.ref_name }}"
     - run: npm install
     - run: npm run package
 
@@ -46,4 +48,5 @@ jobs:
         asset_name: mailpit-${{ matrix.goos }}-${{ matrix.goarch }}
         extra_files: LICENSE README.md
         md5sum: false
+        overwrite: true
         ldflags: -w -X "github.com/axllent/mailpit/config.Version=${{ steps.tag.outputs.tag }}"

@@ -643,6 +643,8 @@ func DeleteAllMessages() error {
 	dbLastAction = time.Now()
 	dbDataDeleted = false
 
+	websockets.Broadcast("prune", nil)
+
 	return err
 }
 
