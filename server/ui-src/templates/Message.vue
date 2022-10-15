@@ -35,7 +35,6 @@ export default {
 			// force eager callback execution
 			immediate: true
 		}
-
 	},
 
 	mounted() {

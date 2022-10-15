@@ -12,7 +12,7 @@ FakeModal.prototype.show = function () { alert('open fake modal') }
 const commonMixins = {
 	data() {
 		return {
-			loading: 0,
+			loading: 0
 		}
 	},
 
@@ -211,4 +211,4 @@ const commonMixins = {
 }
 
 
-export default commonMixins
+export default commonMixins;

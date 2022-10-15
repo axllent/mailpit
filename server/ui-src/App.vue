@@ -6,9 +6,11 @@ import Tinycon from 'tinycon';
 
 export default {
 	mixins: [commonMixins],
+
 	components: {
 		Message
 	},
+
 	data() {
 		return {
 			currentPath: window.location.hash,
@@ -30,9 +32,10 @@ export default {
 			selected: [],
 			tcStatus: 0,
 			appInfo: false,
-			lastLoaded: false,
+			lastLoaded: false
 		}
 	},
+
 	watch: {
 		currentPath(v, old) {
 			if (v && v.match(/^[a-z0-9]+-[a-z0-9]+-[a-z0-9]+-[a-z0-9]+-[a-z0-9]+$/)) {
@@ -53,6 +56,7 @@ export default {
 			}
 		}
 	},
+
 	computed: {
 		canPrev: function () {
 			return this.start > 0;
@@ -61,6 +65,7 @@ export default {
 			return this.total > (this.start + this.count);
 		}
 	},
+
 	mounted() {
 		this.currentPath = window.location.hash.slice(1);
 		window.addEventListener('hashchange', () => {
@@ -80,9 +85,9 @@ export default {
 		this.connect();
 		this.loadMessages();
 	},
+
 	methods: {
 		loadMessages: function () {
-
 			let now = Date.now()
 			// prevent double loading when UI loads & websocket connects
 			if (this.lastLoaded && now - this.lastLoaded < 250) {
