@@ -84,11 +84,13 @@ export default {
 		loadMessages: function () {
 
 			let now = Date.now()
-			// prevent double loading when websocket connects
+			// prevent double loading when UI loads & websocket connects
 			if (this.lastLoaded && now - this.lastLoaded < 250) {
 				return;
 			}
-			this.lastLoaded = now;
+			if (this.start == 0) {
+				this.lastLoaded = now;
+			}
 
 			let self = this;
 			let params = {};
@@ -117,7 +119,8 @@ export default {
 				self.start = response.data.start;
 				self.items = response.data.messages;
 
-				if (self.count == 0 && self.start > 0) {
+				// if pagination > 0 && results == 0 reload first page (prune)
+				if (response.data.count == 0 && response.data.start > 0) {
 					self.start = 0;
 					return self.loadMessages();
 				}
@@ -129,7 +132,7 @@ export default {
 					}
 				}
 
-				self.scrollInPlace = false
+				self.scrollInPlace = false;
 			});
 		},
 
@@ -462,7 +465,7 @@ export default {
 				this.selected = this.selected.filter(function (ele) {
 					return ele != id;
 				});
-				return
+				return;
 			}
 
 			if (lastSelected === false) {
