@@ -559,12 +559,12 @@ export default {
 			</form>
 		</div>
 		<div class="col-12 col-lg-5 text-end mt-2 mt-lg-0" v-if="!message && total">
-			<button v-if="total" class="btn btn-outline-danger float-start d-md-none me-2" data-bs-toggle="modal"
+			<button v-if="total" class="btn btn-danger float-start d-md-none me-2" data-bs-toggle="modal"
 				data-bs-target="#DeleteAllModal" title="Delete all messages">
 				<i class="bi bi-trash-fill"></i>
 			</button>
 
-			<button v-if="unread" class="btn btn-outline-light float-start d-md-none" data-bs-toggle="modal"
+			<button v-if="unread" class="btn btn-light float-start d-md-none" data-bs-toggle="modal"
 				data-bs-target="#MarkAllReadModal" title="Mark all read">
 				<i class="bi bi-check2-square"></i>
 			</button>
