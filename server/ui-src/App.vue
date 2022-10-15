@@ -117,7 +117,7 @@ export default {
 				self.start = response.data.start;
 				self.items = response.data.messages;
 
-				if (self.items == 0 && self.start > 0) {
+				if (self.count == 0 && self.start > 0) {
 					self.start = 0;
 					return self.loadMessages();
 				}
