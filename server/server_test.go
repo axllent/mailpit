@@ -160,7 +160,7 @@ func setup() {
 }
 
 func assertStatsEqual(t *testing.T, uri string, unread, total int) {
-	m := apiv1.MessagesResult{}
+	m := apiv1.MessagesSummary{}
 
 	data, err := clientGet(uri)
 	if err != nil {
@@ -179,7 +179,7 @@ func assertStatsEqual(t *testing.T, uri string, unread, total int) {
 
 func assertSearchEqual(t *testing.T, uri, query string, count int) {
 	t.Logf("Test search: %s", query)
-	m := apiv1.MessagesResult{}
+	m := apiv1.MessagesSummary{}
 
 	limit := fmt.Sprintf("%d", count)
 
@@ -226,8 +226,8 @@ func insertEmailData(t *testing.T) {
 
 }
 
-func fetchMessages(url string) (apiv1.MessagesResult, error) {
-	m := apiv1.MessagesResult{}
+func fetchMessages(url string) (apiv1.MessagesSummary, error) {
+	m := apiv1.MessagesSummary{}
 
 	data, err := clientGet(url)
 	if err != nil {

@@ -33,8 +33,8 @@ type Attachment struct {
 	Size        int
 }
 
-// Summary struct for frontend messages
-type Summary struct {
+// MessageSummary struct for frontend messages
+type MessageSummary struct {
 	ID          string
 	Read        bool
 	From        *mail.Address
