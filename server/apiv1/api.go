@@ -13,17 +13,8 @@ import (
 	"github.com/gorilla/mux"
 )
 
-// MessagesResult struct
-type MessagesResult struct {
-	Total    int               `json:"total"`
-	Unread   int               `json:"unread"`
-	Count    int               `json:"count"`
-	Start    int               `json:"start"`
-	Messages []storage.Summary `json:"messages"`
-}
-
-// Messages returns a paginated list of messages as JSON
-func Messages(w http.ResponseWriter, r *http.Request) {
+// GetMessages returns a paginated list of messages as JSON
+func GetMessages(w http.ResponseWriter, r *http.Request) {
 	start, limit := getStartLimit(r)
 
 	messages, err := storage.List(start, limit)
@@ -34,7 +25,7 @@ func Messages(w http.ResponseWriter, r *http.Request) {
 
 	stats := storage.StatsGet()
 
-	var res MessagesResult
+	var res MessagesSummary
 
 	res.Start = start
 	res.Messages = messages
@@ -65,7 +56,7 @@ func Search(w http.ResponseWriter, r *http.Request) {
 
 	stats := storage.StatsGet()
 
-	var res MessagesResult
+	var res MessagesSummary
 
 	res.Start = 0
 	res.Messages = messages
@@ -78,8 +69,8 @@ func Search(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(bytes)
 }
 
-// Message (method: GET) returns the *data.Message as JSON
-func Message(w http.ResponseWriter, r *http.Request) {
+// GetMessage (method: GET) returns the *data.Message as JSON
+func GetMessage(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
 	id := vars["id"]

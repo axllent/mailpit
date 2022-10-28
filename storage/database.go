@@ -230,8 +230,7 @@ func Store(body []byte) (string, error) {
 		return "", err
 	}
 
-	// return summary
-	c := &Summary{}
+	c := &MessageSummary{}
 	if err := json.Unmarshal(b, c); err != nil {
 		return "", err
 	}
@@ -247,8 +246,8 @@ func Store(body []byte) (string, error) {
 
 // List returns a subset of messages from the mailbox,
 // sorted latest to oldest
-func List(start, limit int) ([]Summary, error) {
-	results := []Summary{}
+func List(start, limit int) ([]MessageSummary, error) {
+	results := []MessageSummary{}
 
 	q := sqlf.From("mailbox").
 		Select(`ID, Data, Read`).
@@ -260,7 +259,7 @@ func List(start, limit int) ([]Summary, error) {
 		var id string
 		var summary string
 		var read int
-		em := Summary{}
+		em := MessageSummary{}
 
 		if err := row.Scan(&id, &summary, &read); err != nil {
 			logger.Log().Error(err)
@@ -291,8 +290,8 @@ func List(start, limit int) ([]Summary, error) {
 // The search is broken up by segments (exact phrases can be quoted), and interprits specific terms such as:
 // is:read, is:unread, has:attachment, to:<term>, from:<term> & subject:<term>
 // Negative searches also also included by prefixing the search term with a `-` or `!`
-func Search(search string, start, limit int) ([]Summary, error) {
-	results := []Summary{}
+func Search(search string, start, limit int) ([]MessageSummary, error) {
+	results := []MessageSummary{}
 	tsStart := time.Now()
 
 	s := strings.ToLower(search)
@@ -316,7 +315,7 @@ func Search(search string, start, limit int) ([]Summary, error) {
 		var summary string
 		var read int
 		var ignore string
-		em := Summary{}
+		em := MessageSummary{}
 
 		if err := row.Scan(&id, &summary, &read, &ignore, &ignore, &ignore, &ignore); err != nil {
 			logger.Log().Error(err)

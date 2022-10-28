@@ -10,10 +10,6 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v3
 
-    - name: Get tag
-      id: tag
-      uses: dawidd6/action-get-tag@v1
-
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v2
 
@@ -32,6 +28,6 @@ jobs:
         context: .
         platforms: linux/386,linux/amd64,linux/arm,linux/arm64
         build-args: |
-          "VERSION=${{ steps.tag.outputs.tag }}"
+          "VERSION=${{ github.ref_name }}"
         push: true
-        tags: axllent/mailpit:latest,axllent/mailpit:${{ steps.tag.outputs.tag }}
+        tags: axllent/mailpit:latest,axllent/mailpit:${{ github.ref_name }}
