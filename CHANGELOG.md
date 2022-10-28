@@ -2,6 +2,16 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## v1.2.6
+
+### API
+- Provide structs of API v1 responses for use in client code
+
+### Libs
+- Update go modules
+- Update node modules
+
+
 ## 1.2.5
 
 ### UI
