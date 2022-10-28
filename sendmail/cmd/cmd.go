@@ -13,7 +13,7 @@ import (
 	"os"
 	"os/user"
 
-	"github.com/axllent/mailpit/logger"
+	"github.com/axllent/mailpit/utils/logger"
 	flag "github.com/spf13/pflag"
 )
 

@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/axllent/mailpit/config"
-	"github.com/axllent/mailpit/logger"
+	"github.com/axllent/mailpit/utils/logger"
 	"github.com/gorilla/websocket"
 )
 

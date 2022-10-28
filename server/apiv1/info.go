@@ -8,7 +8,7 @@ import (
 
 	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/storage"
-	"github.com/axllent/mailpit/updater"
+	"github.com/axllent/mailpit/utils/updater"
 )
 
 type appVersion struct {

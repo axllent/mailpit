@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/axllent/mailpit/config"
-	"github.com/axllent/mailpit/logger"
 	"github.com/axllent/mailpit/server/websockets"
+	"github.com/axllent/mailpit/utils/logger"
 	"github.com/jhillyerd/enmime"
 	"github.com/k3a/html2text"
 	"github.com/leporo/sqlf"

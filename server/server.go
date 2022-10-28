@@ -10,9 +10,9 @@ import (
 	"strings"
 
 	"github.com/axllent/mailpit/config"
-	"github.com/axllent/mailpit/logger"
 	"github.com/axllent/mailpit/server/apiv1"
 	"github.com/axllent/mailpit/server/websockets"
+	"github.com/axllent/mailpit/utils/logger"
 	"github.com/gorilla/mux"
 )
 
