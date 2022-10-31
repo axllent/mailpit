@@ -3,9 +3,11 @@ package config
 import (
 	"errors"
 	"fmt"
+	"net/url"
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 
 	"github.com/tg123/go-htpasswd"
 )
@@ -43,6 +45,9 @@ var (
 
 	// UIAuth used for euthentication
 	UIAuth *htpasswd.File
+
+	// Webroot to define the base path for the UI and API
+	Webroot = "/"
 
 	// SMTPSSLCert file
 	SMTPSSLCert string
@@ -138,6 +143,16 @@ func VerifyConfig() error {
 		}
 		SMTPAuth = a
 	}
+
+	if strings.Contains(Webroot, " ") {
+		return fmt.Errorf("Webroot cannot contain spaces (%s)", Webroot)
+	}
+
+	s, err := url.JoinPath("/", Webroot, "/")
+	if err != nil {
+		return err
+	}
+	Webroot = s
 
 	return nil
 }

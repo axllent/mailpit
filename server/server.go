@@ -34,10 +34,17 @@ func Listen() {
 	r := defaultRoutes()
 
 	// web UI websocket
-	r.HandleFunc("/api/events", apiWebsocket).Methods("GET")
+	r.HandleFunc(config.Webroot+"api/events", apiWebsocket).Methods("GET")
 
 	// virtual filesystem for others
-	r.PathPrefix("/").Handler(middlewareHandler(http.FileServer(http.FS(serverRoot))))
+	r.PathPrefix(config.Webroot).Handler(middlewareHandler(http.StripPrefix(config.Webroot, http.FileServer(http.FS(serverRoot)))))
+
+	// redirect to webroot if no trailing slash
+	if config.Webroot != "/" {
+		redir := strings.TrimRight(config.Webroot, "/")
+		r.HandleFunc(redir, middleWareFunc(addSlashToWebroot)).Methods("GET")
+	}
+
 	http.Handle("/", r)
 
 	if config.UIAuthFile != "" {
@@ -45,10 +52,10 @@ func Listen() {
 	}
 
 	if config.UISSLCert != "" && config.UISSLKey != "" {
-		logger.Log().Infof("[http] starting secure server on https://%s", config.HTTPListen)
+		logger.Log().Infof("[http] starting secure server on https://%s%s", config.HTTPListen, config.Webroot)
 		logger.Log().Fatal(http.ListenAndServeTLS(config.HTTPListen, config.UISSLCert, config.UISSLKey, nil))
 	} else {
-		logger.Log().Infof("[http] starting server on http://%s", config.HTTPListen)
+		logger.Log().Infof("[http] starting server on http://%s%s", config.HTTPListen, config.Webroot)
 		logger.Log().Fatal(http.ListenAndServe(config.HTTPListen, nil))
 	}
 }
@@ -57,16 +64,16 @@ func defaultRoutes() *mux.Router {
 	r := mux.NewRouter()
 
 	// API V1
-	r.HandleFunc("/api/v1/messages", middleWareFunc(apiv1.GetMessages)).Methods("GET")
-	r.HandleFunc("/api/v1/messages", middleWareFunc(apiv1.SetReadStatus)).Methods("PUT")
-	r.HandleFunc("/api/v1/messages", middleWareFunc(apiv1.DeleteMessages)).Methods("DELETE")
-	r.HandleFunc("/api/v1/search", middleWareFunc(apiv1.Search)).Methods("GET")
-	r.HandleFunc("/api/v1/message/{id}/part/{partID}", middleWareFunc(apiv1.DownloadAttachment)).Methods("GET")
-	r.HandleFunc("/api/v1/message/{id}/part/{partID}/thumb", middleWareFunc(apiv1.Thumbnail)).Methods("GET")
-	r.HandleFunc("/api/v1/message/{id}/raw", middleWareFunc(apiv1.DownloadRaw)).Methods("GET")
-	r.HandleFunc("/api/v1/message/{id}/headers", middleWareFunc(apiv1.Headers)).Methods("GET")
-	r.HandleFunc("/api/v1/message/{id}", middleWareFunc(apiv1.GetMessage)).Methods("GET")
-	r.HandleFunc("/api/v1/info", middleWareFunc(apiv1.AppInfo)).Methods("GET")
+	r.HandleFunc(config.Webroot+"api/v1/messages", middleWareFunc(apiv1.GetMessages)).Methods("GET")
+	r.HandleFunc(config.Webroot+"api/v1/messages", middleWareFunc(apiv1.SetReadStatus)).Methods("PUT")
+	r.HandleFunc(config.Webroot+"api/v1/messages", middleWareFunc(apiv1.DeleteMessages)).Methods("DELETE")
+	r.HandleFunc(config.Webroot+"api/v1/search", middleWareFunc(apiv1.Search)).Methods("GET")
+	r.HandleFunc(config.Webroot+"api/v1/message/{id}/part/{partID}", middleWareFunc(apiv1.DownloadAttachment)).Methods("GET")
+	r.HandleFunc(config.Webroot+"api/v1/message/{id}/part/{partID}/thumb", middleWareFunc(apiv1.Thumbnail)).Methods("GET")
+	r.HandleFunc(config.Webroot+"api/v1/message/{id}/raw", middleWareFunc(apiv1.DownloadRaw)).Methods("GET")
+	r.HandleFunc(config.Webroot+"api/v1/message/{id}/headers", middleWareFunc(apiv1.Headers)).Methods("GET")
+	r.HandleFunc(config.Webroot+"api/v1/message/{id}", middleWareFunc(apiv1.GetMessage)).Methods("GET")
+	r.HandleFunc(config.Webroot+"api/v1/info", middleWareFunc(apiv1.AppInfo)).Methods("GET")
 
 	return r
 }
@@ -150,6 +157,11 @@ func middlewareHandler(h http.Handler) http.Handler {
 		defer gz.Close()
 		h.ServeHTTP(gzipResponseWriter{Writer: gz, ResponseWriter: w}, r)
 	})
+}
+
+// Redirect to webroot
+func addSlashToWebroot(w http.ResponseWriter, r *http.Request) {
+	http.Redirect(w, r, config.Webroot, http.StatusFound)
 }
 
 // Websocket to broadcast changes
