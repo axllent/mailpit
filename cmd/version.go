@@ -6,7 +6,7 @@ import (
 	"runtime"
 
 	"github.com/axllent/mailpit/config"
-	"github.com/axllent/mailpit/updater"
+	"github.com/axllent/mailpit/utils/updater"
 	"github.com/spf13/cobra"
 )
 

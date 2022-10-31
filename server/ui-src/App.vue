@@ -195,14 +195,14 @@ export default {
 						if (a.ContentID != '') {
 							d.HTML = d.HTML.replace(
 								new RegExp('cid:' + a.ContentID, 'g'),
-								window.location.origin + '/api/v1/message/' + d.ID + '/part/' + a.PartID
+								window.location.origin + window.location.pathname + 'api/v1/message/' + d.ID + '/part/' + a.PartID
 							);
 						}
 						if (a.FileName.match(/^[a-zA-Z0-9\_\-\.]+$/)) {
 							// some old email clients use the filename
 							d.HTML = d.HTML.replace(
 								new RegExp('src=(\'|")' + a.FileName + '(\'|")', 'g'),
-								'src="' + window.location.origin + '/api/v1/message/' + d.ID + '/part/' + a.PartID + '"'
+								'src="' + window.location.origin + window.location.pathname + 'api/v1/message/' + d.ID + '/part/' + a.PartID + '"'
 							);
 						}
 					}
@@ -214,14 +214,14 @@ export default {
 						if (a.ContentID != '') {
 							d.HTML = d.HTML.replace(
 								new RegExp('cid:' + a.ContentID, 'g'),
-								window.location.origin + '/api/v1/message/' + d.ID + '/part/' + a.PartID
+								window.location.origin + window.location.pathname + 'api/v1/message/' + d.ID + '/part/' + a.PartID
 							);
 						}
 						if (a.FileName.match(/^[a-zA-Z0-9\_\-\.]+$/)) {
 							// some old email clients use the filename
 							d.HTML = d.HTML.replace(
 								new RegExp('src=(\'|")' + a.FileName + '(\'|")', 'g'),
-								'src="' + window.location.origin + '/api/v1/message/' + d.ID + '/part/' + a.PartID + '"'
+								'src="' + window.location.origin + window.location.pathname + 'api/v1/message/' + d.ID + '/part/' + a.PartID + '"'
 							);
 						}
 					}
@@ -522,7 +522,7 @@ export default {
 		</div>
 
 		<div class="col col-md-9 col-lg-10" v-if="message">
-			<a class="btn btn-outline-light me-4 px-3" href="#" v-on:click="message=false" title="Return to messages">
+			<a class="btn btn-outline-light me-4 px-3" href="#" v-on:click="message = false" title="Return to messages">
 				<i class="bi bi-arrow-return-left"></i>
 			</a>
 			<button class="btn btn-outline-light me-2" title="Mark unread" v-on:click="markUnread">
@@ -531,12 +531,12 @@ export default {
 			<button class="btn btn-outline-light me-2" title="Delete message" v-on:click="deleteMessages">
 				<i class="bi bi-trash-fill"></i> <span class="d-none d-md-inline">Delete</span>
 			</button>
-			<a class="btn btn-outline-light float-end" :class="messageNext ? '':'disabled'" :href="'#'+messageNext"
+			<a class="btn btn-outline-light float-end" :class="messageNext ? '' : 'disabled'" :href="'#' + messageNext"
 				title="View next message">
 				<i class="bi bi-caret-right-fill"></i>
 			</a>
-			<a class="btn btn-outline-light ms-2 me-1 float-end" :class="messagePrev ? '': 'disabled'"
-				:href="'#'+messagePrev" title="View previous message">
+			<a class="btn btn-outline-light ms-2 me-1 float-end" :class="messagePrev ? '' : 'disabled'"
+				:href="'#' + messagePrev" title="View previous message">
 				<i class="bi bi-caret-left-fill"></i>
 			</a>
 			<a :href="'api/v1/message/' + message.ID + '/raw?dl=1'" class="btn btn-outline-light me-2 float-end"
@@ -587,14 +587,15 @@ export default {
 			<span v-else>
 				<small>
 					{{ formatNumber(start + 1) }}-{{ formatNumber(start + items.length) }} <small>of</small> {{
-					formatNumber(total) }}
+							formatNumber(total)
+					}}
 				</small>
 				<button class="btn btn-outline-light ms-2 me-1" :disabled="!canPrev" v-on:click="viewPrev"
-					v-if="!searching" :title="'View previous '+limit+' messages'">
+					v-if="!searching" :title="'View previous ' + limit + ' messages'">
 					<i class="bi bi-caret-left-fill"></i>
 				</button>
 				<button class="btn btn-outline-light" :disabled="!canNext" v-on:click="viewNext" v-if="!searching"
-					:title="'View next '+limit+' messages'">
+					:title="'View next ' + limit + ' messages'">
 					<i class="bi bi-caret-right-fill"></i>
 				</button>
 			</span>
@@ -635,8 +636,8 @@ export default {
 				</li>
 
 				<li class="my-3" v-if="selected.length > 0">
-					<b class="me-2">Selected {{selected.length}}</b>
-					<button class="btn btn-sm text-muted" v-on:click="selected=[]" title="Unselect messages"><i
+					<b class="me-2">Selected {{ selected.length }}</b>
+					<button class="btn btn-sm text-muted" v-on:click="selected = []" title="Unselect messages"><i
 							class="bi bi-x-circle"></i></button>
 				</li>
 				<li class="my-3 ms-2" v-if="selected.length > 0 && selectedHasUnread()">
@@ -675,13 +676,13 @@ export default {
 		</div>
 
 		<div class="col-lg-10 col-md-9 mh-100 pe-0">
-			<div class="mh-100" style="overflow-y: auto;" :class="message ? 'd-none':''" id="message-page">
+			<div class="mh-100" style="overflow-y: auto;" :class="message ? 'd-none' : ''" id="message-page">
 				<div class="list-group my-2" v-if="items.length">
-					<a v-for="message in items" :href="'#'+message.ID"
+					<a v-for="message in items" :href="'#' + message.ID"
 						v-on:click.ctrl="toggleSelected($event, message.ID)"
 						v-on:click.shift="selectRange($event, message.ID)"
 						class="row message d-flex small list-group-item list-group-item-action border-start-0 border-end-0"
-						:class="message.Read ? 'read':'', isSelected(message.ID) ? 'selected':''">
+						:class="message.Read ? 'read' : '', isSelected(message.ID) ? 'selected' : ''">
 						<div class="col-lg-3">
 							<div class="d-lg-none float-end text-muted text-nowrap small">
 								<i class="bi bi-paperclip h6 me-1" v-if="message.Attachments"></i>
@@ -689,16 +690,18 @@ export default {
 							</div>
 							<div class="text-truncate d-lg-none privacy">
 								<span v-if="message.From" :title="message.From.Address">{{ message.From.Name ?
-								message.From.Name : message.From.Address }}</span>
+										message.From.Name : message.From.Address
+								}}</span>
 							</div>
 							<div class="text-truncate d-none d-lg-block privacy">
 								<b v-if="message.From" :title="message.From.Address">{{ message.From.Name ?
-								message.From.Name : message.From.Address }}</b>
+										message.From.Name : message.From.Address
+								}}</b>
 							</div>
 							<div class="d-none d-lg-block text-truncate text-muted small privacy">
 								{{ getPrimaryEmailTo(message) }}
 								<span v-if="message.To && message.To.length > 1">
-									[+{{message.To.length - 1}}]
+									[+{{ message.To.length - 1 }}]
 								</span>
 							</div>
 						</div>
@@ -815,7 +818,7 @@ export default {
 				</div>
 				<div class="modal-body">
 					<a class="btn btn-warning d-block mb-3" v-if="appInfo.Version != appInfo.LatestVersion"
-						:href="'https://github.com/axllent/mailpit/releases/tag/'+appInfo.LatestVersion">
+						:href="'https://github.com/axllent/mailpit/releases/tag/' + appInfo.LatestVersion">
 						A new version of Mailpit ({{ appInfo.LatestVersion }}) is available.
 					</a>
 

@@ -2,6 +2,12 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## v1.2.7
+
+### Feature
+- Allow custom webroot
+
+
 ## v1.2.6
 
 ### API

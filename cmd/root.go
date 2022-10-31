@@ -6,10 +6,10 @@ import (
 	"strconv"
 
 	"github.com/axllent/mailpit/config"
-	"github.com/axllent/mailpit/logger"
 	"github.com/axllent/mailpit/server"
 	"github.com/axllent/mailpit/smtpd"
 	"github.com/axllent/mailpit/storage"
+	"github.com/axllent/mailpit/utils/logger"
 	"github.com/spf13/cobra"
 )
 
@@ -103,6 +103,9 @@ func init() {
 	if len(os.Getenv("MP_SMTP_SSL_KEY")) > 0 {
 		config.SMTPSSLKey = os.Getenv("MP_SMTP_SSL_KEY")
 	}
+	if len(os.Getenv("MP_WEBROOT")) > 0 {
+		config.Webroot = os.Getenv("MP_WEBROOT")
+	}
 
 	// deprecated 2022/08/06
 	if len(os.Getenv("MP_AUTH_FILE")) > 0 {
@@ -127,6 +130,7 @@ func init() {
 	rootCmd.Flags().StringVarP(&config.SMTPListen, "smtp", "s", config.SMTPListen, "SMTP bind interface and port")
 	rootCmd.Flags().StringVarP(&config.HTTPListen, "listen", "l", config.HTTPListen, "HTTP bind interface and port for UI")
 	rootCmd.Flags().IntVarP(&config.MaxMessages, "max", "m", config.MaxMessages, "Max number of messages to store")
+	rootCmd.Flags().StringVar(&config.Webroot, "webroot", config.Webroot, "Set the webroot for web UI & API")
 
 	rootCmd.Flags().StringVar(&config.UIAuthFile, "ui-auth-file", config.UIAuthFile, "A password file for web UI authentication")
 	rootCmd.Flags().StringVar(&config.UISSLCert, "ui-ssl-cert", config.UISSLCert, "SSL certificate for web UI - requires ui-ssl-key")
