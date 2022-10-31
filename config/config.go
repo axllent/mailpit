@@ -3,8 +3,8 @@ package config
 import (
 	"errors"
 	"fmt"
-	"net/url"
 	"os"
+	"path"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -148,10 +148,7 @@ func VerifyConfig() error {
 		return fmt.Errorf("Webroot cannot contain spaces (%s)", Webroot)
 	}
 
-	s, err := url.JoinPath("/", Webroot, "/")
-	if err != nil {
-		return err
-	}
+	s := path.Join("/", Webroot, "/")
 	Webroot = s
 
 	return nil
