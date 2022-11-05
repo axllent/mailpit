@@ -19,7 +19,10 @@ import (
 
 // Return a header field as a []*mail.Address, or "null" is not found/empty
 func addressToSlice(env *enmime.Envelope, key string) []*mail.Address {
-	data, _ := env.AddressList(key)
+	data, err := env.AddressList(key)
+	if err != nil {
+		return []*mail.Address{}
+	}
 
 	return data
 }

@@ -128,29 +128,27 @@ export default {
 						<tr class="small">
 							<th>To</th>
 							<td class="privacy">
-								<span v-if="message.To" v-for="(t, i) in message.To">
+								<span v-if="message.To && message.To.length" v-for="(t, i) in message.To">
 									<template v-if="i > 0">, </template>
-									<span class="text-nowrap">{{ t.Name + " <" + t.Address +">" }}</span>
-								</span>
-								<span v-else>Undisclosed recipients</span>
+									<span class="text-nowrap">{{ t.Name + " <" + t.Address + ">" }}</span>
+									</span>
+									<span v-else>Undisclosed recipients</span>
 							</td>
 						</tr>
-						<tr v-if="message.Cc" class="small">
+						<tr v-if="message.Cc && message.Cc.length" class="small">
 							<th>CC</th>
 							<td class="privacy">
 								<span v-for="(t, i) in message.Cc">
 									<template v-if="i > 0">,</template>
-									{{ t.Name + " <" + t.Address +">" }}
-								</span>
+									{{ t.Name + " <" + t.Address + ">" }} </span>
 							</td>
 						</tr>
-						<tr v-if="message.Bcc" class="small">
-							<th>CC</th>
+						<tr v-if="message.Bcc && message.Bcc.length" class="small">
+							<th>BCC</th>
 							<td class="privacy">
 								<span v-for="(t, i) in message.Bcc">
 									<template v-if="i > 0">,</template>
-									{{ t.Name + " <" + t.Address +">" }}
-								</span>
+									{{ t.Name + " <" + t.Address + ">" }} </span>
 							</td>
 						</tr>
 						<tr>
@@ -174,7 +172,7 @@ export default {
 					</button>
 					<ul class="dropdown-menu">
 						<li v-for="part in allAttachments(message)">
-							<a :href="'api/v1/message/'+message.ID+'/part/'+part.PartID" type="button"
+							<a :href="'api/v1/message/' + message.ID + '/part/' + part.PartID" type="button"
 								class="dropdown-item" target="_blank">
 								<i class="bi" :class="attachmentIcon(part)"></i>
 								{{ part.FileName != '' ? part.FileName : '[ unknown ]' }}
@@ -195,7 +193,7 @@ export default {
 					v-if="message.HTML">HTML Source</button>
 				<button class="nav-link" id="nav-plain-text-tab" data-bs-toggle="tab" data-bs-target="#nav-plain-text"
 					type="button" role="tab" aria-controls="nav-plain-text" aria-selected="false"
-					:class="message.HTML == '' ? 'show':''">Text</button>
+					:class="message.HTML == '' ? 'show' : ''">Text</button>
 				<button class="nav-link" id="nav-raw-tab" data-bs-toggle="tab" data-bs-target="#nav-raw" type="button"
 					role="tab" aria-controls="nav-raw" aria-selected="false">Raw</button>
 			</div>
@@ -214,7 +212,7 @@ export default {
 				<pre><code class="language-html">{{ message.HTML }}</code></pre>
 			</div>
 			<div class="tab-pane fade" id="nav-plain-text" role="tabpanel" aria-labelledby="nav-plain-text-tab"
-				tabindex="0" :class="message.HTML == '' ? 'show':''">
+				tabindex="0" :class="message.HTML == '' ? 'show' : ''">
 				<div class="text-view">{{ message.Text }}</div>
 				<Attachments v-if="allAttachments(message).length" :message="message"
 					:attachments="allAttachments(message)"></Attachments>

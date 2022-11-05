@@ -47,7 +47,7 @@ Matching messages are returned in the order of latest received to oldest.
           "Address": "accounts@example.com"
         }
       ],
-      "Bcc": null,
+      "Bcc": [],
       "Subject": "Test email",
       "Created": "2022-10-03T21:35:32.228605299+13:00",
       "Size": 6144,
@@ -65,5 +65,5 @@ Matching messages are returned in the order of latest received to oldest.
 - `count` - Number of messages returned in request
 - `start` - The offset (default `0`) for pagination
 - `From` - Singular Name & Address, or null if none
-- `To`, `CC`, `BCC` - Array of Name & Address, or null if none
+- `To`, `CC`, `BCC` - Array of Name & Address
 - `Size` - Total size of raw email in bytes

@@ -386,6 +386,8 @@ func GetMessage(id string) (*Message, error) {
 	var re = regexp.MustCompile(`(?U)<base .*>`)
 	html := re.ReplaceAllString(env.HTML, "")
 	obj.HTML = html
+	obj.Inline = []Attachment{}
+	obj.Attachments = []Attachment{}
 
 	for _, i := range env.Inlines {
 		if i.FileName != "" || i.ContentID != "" {
