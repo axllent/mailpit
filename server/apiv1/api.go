@@ -120,7 +120,7 @@ func Headers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	reader := strings.NewReader(string(data))
+	reader := bytes.NewReader(data)
 	m, err := mail.ReadMessage(reader)
 	if err != nil {
 		httpError(w, err.Error())
