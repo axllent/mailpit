@@ -2,6 +2,15 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## v1.2.8
+
+### Bugfix
+- Return empty arrays rather than null for message To, CC, BCC, Inlines & Attachments
+
+### Feature
+- Message tags and auto-tagging
+
+
 ## v1.2.7
 
 ### Feature
