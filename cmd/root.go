@@ -85,6 +85,9 @@ func init() {
 	if len(os.Getenv("MP_MAX_MESSAGES")) > 0 {
 		config.MaxMessages, _ = strconv.Atoi(os.Getenv("MP_MAX_MESSAGES"))
 	}
+	if len(os.Getenv("MP_TAG")) > 0 {
+		config.SMTPCLITags = os.Getenv("MP_TAG")
+	}
 	if len(os.Getenv("MP_UI_AUTH_FILE")) > 0 {
 		config.UIAuthFile = os.Getenv("MP_UI_AUTH_FILE")
 	}
