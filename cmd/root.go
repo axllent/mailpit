@@ -85,6 +85,9 @@ func init() {
 	if len(os.Getenv("MP_MAX_MESSAGES")) > 0 {
 		config.MaxMessages, _ = strconv.Atoi(os.Getenv("MP_MAX_MESSAGES"))
 	}
+	if len(os.Getenv("MP_TAG")) > 0 {
+		config.SMTPCLITags = os.Getenv("MP_TAG")
+	}
 	if len(os.Getenv("MP_UI_AUTH_FILE")) > 0 {
 		config.UIAuthFile = os.Getenv("MP_UI_AUTH_FILE")
 	}
@@ -139,6 +142,7 @@ func init() {
 	rootCmd.Flags().StringVar(&config.SMTPAuthFile, "smtp-auth-file", config.SMTPAuthFile, "A password file for SMTP authentication")
 	rootCmd.Flags().StringVar(&config.SMTPSSLCert, "smtp-ssl-cert", config.SMTPSSLCert, "SSL certificate for SMTP - requires smtp-ssl-key")
 	rootCmd.Flags().StringVar(&config.SMTPSSLKey, "smtp-ssl-key", config.SMTPSSLKey, "SSL key for SMTP - requires smtp-ssl-cert")
+	rootCmd.Flags().StringVarP(&config.SMTPCLITags, "tag", "t", "", "Tag new messages matching filters")
 
 	rootCmd.Flags().BoolVarP(&config.QuietLogging, "quiet", "q", false, "Quiet logging (errors only)")
 	rootCmd.Flags().BoolVarP(&config.VerboseLogging, "verbose", "v", false, "Verbose logging")

@@ -11,6 +11,7 @@
     "axios": "^0.27.2",
     "bootstrap": "^5.2.0",
     "bootstrap-icons": "^1.9.1",
+    "bootstrap5-tags": "^1.4.41",
     "moment": "^2.29.4",
     "prismjs": "^1.29.0",
     "tinycon": "^0.6.8",

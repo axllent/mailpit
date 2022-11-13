@@ -14,6 +14,7 @@ type MessagesSummary struct {
 	Unread   int              `json:"unread"`
 	Count    int              `json:"count"`
 	Start    int              `json:"start"`
+	Tags     []string         `json:"tags"`
 	Messages []MessageSummary `json:"messages"`
 }
 

@@ -19,7 +19,10 @@ import (
 
 // Return a header field as a []*mail.Address, or "null" is not found/empty
 func addressToSlice(env *enmime.Envelope, key string) []*mail.Address {
-	data, _ := env.AddressList(key)
+	data, err := env.AddressList(key)
+	if err != nil || data == nil {
+		return []*mail.Address{}
+	}
 
 	return data
 }
@@ -157,6 +160,17 @@ func isFile(path string) bool {
 	}
 
 	return true
+}
+
+func inArray(k string, arr []string) bool {
+	k = strings.ToLower(k)
+	for _, v := range arr {
+		if strings.ToLower(v) == k {
+			return true
+		}
+	}
+
+	return false
 }
 
 // escPercentChar replaces `%` with `%%` for SQL searches

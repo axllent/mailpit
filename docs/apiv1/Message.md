@@ -26,8 +26,8 @@ Returns a JSON summary of the message and attachments.
       "Address": "jane@example.com"
     }
   ],
-  "Cc": null,
-  "Bcc": null,
+  "Cc": [],
+  "Bcc": [],
   "Subject": "Message subject",
   "Date": "2016-09-07T16:46:00+13:00",
   "Text": "Plain text MIME part of the email",
@@ -57,7 +57,7 @@ Returns a JSON summary of the message and attachments.
 
 - `Read` - always true (message marked read on open)
 - `From` - Name & Address, or null
-- `To`, `CC`, `BCC` - Array of Names & Address, or null
+- `To`, `CC`, `BCC` - Array of Names & Address
 - `Date` - Parsed email local date & time from headers
 - `Size` - Total size of raw email
 - `Inline`, `Attachments` - Array of attachments and inline images.

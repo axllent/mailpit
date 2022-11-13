@@ -1,17 +1,19 @@
 
 <script>
 import commonMixins from '../mixins.js';
-import moment from 'moment';
 import Prism from "prismjs";
 import Attachments from './Attachments.vue';
+import MessageTags from './MessageTags.vue';
 
 export default {
 	props: {
-		message: Object
+		message: Object,
+		existingTags: Array
 	},
 
 	components: {
-		Attachments
+		Attachments,
+		MessageTags
 	},
 
 	mixins: [commonMixins],
@@ -20,6 +22,7 @@ export default {
 		return {
 			srcURI: false,
 			iframes: [], // for resizing
+			tagComponent: false, // to force rerendering of component
 		}
 	},
 
@@ -27,10 +30,12 @@ export default {
 		message: {
 			handler(newQuestion) {
 				let self = this;
-				// delay 100ms to select first tab and add HTML highlighting (prev/next)
-				window.setTimeout(function () {
+				self.tagComponent = false;
+				// delay to select first tab and add HTML highlighting (prev/next)
+				self.$nextTick(function () {
 					self.renderUI();
-				}, 100)
+					self.tagComponent = true;
+				});
 			},
 			// force eager callback execution
 			immediate: true
@@ -39,12 +44,14 @@ export default {
 
 	mounted() {
 		let self = this;
+		self.tagComponent = false;
 		window.addEventListener("resize", self.resizeIframes);
 		self.renderUI();
 		var tabEl = document.getElementById('nav-raw-tab');
 		tabEl.addEventListener('shown.bs.tab', function (event) {
 			self.srcURI = 'api/v1/message/' + self.message.ID + '/raw';
 		});
+		self.tagComponent = true;
 	},
 
 	unmounted: function () {
@@ -59,9 +66,9 @@ export default {
 			document.activeElement.blur(); // blur focus
 			document.getElementById('message-view').scrollTop = 0;
 
-			window.setTimeout(function () {
+			// delay until vue has rendered
+			self.$nextTick(function () {
 				let p = document.getElementById('preview-html');
-
 				if (p) {
 					// make links open in new window
 					let anchorEls = p.contentWindow.document.body.querySelectorAll('a');
@@ -75,7 +82,7 @@ export default {
 					}
 					self.resizeIframes();
 				}
-			}, 200);
+			});
 
 			// html highlighting
 			window.Prism = window.Prism || {};
@@ -98,10 +105,6 @@ export default {
 			if (s) {
 				s.style.height = s.contentWindow.document.body.scrollHeight + 50 + 'px';
 			}
-		},
-
-		messageDate: function (d) {
-			return moment(d).format('ddd, D MMM YYYY, h:mm a');
 		}
 	}
 }
@@ -128,53 +131,55 @@ export default {
 						<tr class="small">
 							<th>To</th>
 							<td class="privacy">
-								<span v-if="message.To" v-for="(t, i) in message.To">
+								<span v-if="message.To && message.To.length" v-for="(t, i) in message.To">
 									<template v-if="i > 0">, </template>
-									<span class="text-nowrap">{{ t.Name + " <" + t.Address +">" }}</span>
-								</span>
-								<span v-else>Undisclosed recipients</span>
+									<span class="text-nowrap">{{ t.Name + " <" + t.Address + ">" }}</span>
+									</span>
+									<span v-else>Undisclosed recipients</span>
 							</td>
 						</tr>
-						<tr v-if="message.Cc" class="small">
+						<tr v-if="message.Cc && message.Cc.length" class="small">
 							<th>CC</th>
 							<td class="privacy">
 								<span v-for="(t, i) in message.Cc">
 									<template v-if="i > 0">,</template>
-									{{ t.Name + " <" + t.Address +">" }}
-								</span>
+									{{ t.Name + " <" + t.Address + ">" }} </span>
 							</td>
 						</tr>
-						<tr v-if="message.Bcc" class="small">
-							<th>CC</th>
+						<tr v-if="message.Bcc && message.Bcc.length" class="small">
+							<th>BCC</th>
 							<td class="privacy">
 								<span v-for="(t, i) in message.Bcc">
 									<template v-if="i > 0">,</template>
-									{{ t.Name + " <" + t.Address +">" }}
-								</span>
+									{{ t.Name + " <" + t.Address + ">" }} </span>
 							</td>
 						</tr>
 						<tr>
 							<th class="small">Subject</th>
 							<td><strong>{{ message.Subject }}</strong></td>
 						</tr>
-						<tr class="d-md-none">
+						<tr class="d-md-none small">
 							<th class="small">Date</th>
 							<td>{{ messageDate(message.Date) }}</td>
 						</tr>
+						<MessageTags :message="message" :existingTags="existingTags"
+							@load-messages="$emit('loadMessages')" v-if="tagComponent">
+						</MessageTags>
 					</tbody>
 				</table>
 			</div>
 			<div class="col-md-auto text-md-end mt-md-3">
-				<p class="text-muted small d-none d-md-block"><small>{{ messageDate(message.Date) }}</small></p>
-				<div class="dropdown mt-2" v-if="allAttachments(message)">
-					<button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown"
+				<!-- <p class="text-muted small d-none d-md-block mb-2"><small>{{ messageDate(message.Date) }}</small></p>
+				<p class="text-muted small d-none d-md-block"><small>Size: {{ getFileSize(message.Size) }}</small></p> -->
+				<div class="dropdown mt-2 mt-md-0" v-if="allAttachments(message)">
+					<button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown"
 						aria-expanded="false">
 						Attachment<span v-if="allAttachments(message).length > 1">s</span>
 						({{ allAttachments(message).length }})
 					</button>
 					<ul class="dropdown-menu">
 						<li v-for="part in allAttachments(message)">
-							<a :href="'api/v1/message/'+message.ID+'/part/'+part.PartID" type="button"
+							<a :href="'api/v1/message/' + message.ID + '/part/' + part.PartID" type="button"
 								class="dropdown-item" target="_blank">
 								<i class="bi" :class="attachmentIcon(part)"></i>
 								{{ part.FileName != '' ? part.FileName : '[ unknown ]' }}
@@ -195,7 +200,7 @@ export default {
 					v-if="message.HTML">HTML Source</button>
 				<button class="nav-link" id="nav-plain-text-tab" data-bs-toggle="tab" data-bs-target="#nav-plain-text"
 					type="button" role="tab" aria-controls="nav-plain-text" aria-selected="false"
-					:class="message.HTML == '' ? 'show':''">Text</button>
+					:class="message.HTML == '' ? 'show' : ''">Text</button>
 				<button class="nav-link" id="nav-raw-tab" data-bs-toggle="tab" data-bs-target="#nav-raw" type="button"
 					role="tab" aria-controls="nav-raw" aria-selected="false">Raw</button>
 			</div>
@@ -214,7 +219,7 @@ export default {
 				<pre><code class="language-html">{{ message.HTML }}</code></pre>
 			</div>
 			<div class="tab-pane fade" id="nav-plain-text" role="tabpanel" aria-labelledby="nav-plain-text-tab"
-				tabindex="0" :class="message.HTML == '' ? 'show':''">
+				tabindex="0" :class="message.HTML == '' ? 'show' : ''">
 				<div class="text-view">{{ message.Text }}</div>
 				<Attachments v-if="allAttachments(message).length" :message="message"
 					:attachments="allAttachments(message)"></Attachments>

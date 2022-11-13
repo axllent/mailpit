@@ -21,6 +21,7 @@ Mailpit is inspired by [MailHog](#why-rewrite-mailhog), but much, much faster.
 - SMTP server (default `0.0.0.0:1025`)
 - Web UI to view emails (formatted HTML, highlighted HTML source, text, raw source and MIME attachments including image thumbnails)
 - Advanced mail search ([see wiki](https://github.com/axllent/mailpit/wiki/Mail-search))
+- Message tagging ([see wiki](https://github.com/axllent/mailpit/wiki/Tagging))
 - Real-time web UI updates using web sockets for new mail
 - Optional browser notifications for new mail (HTTPS only)
 - Configurable automatic email pruning (default keeps the most recent 500 emails)
@@ -30,7 +31,7 @@ Mailpit is inspired by [MailHog](#why-rewrite-mailhog), but much, much faster.
 - Optional SMTP with STARTTLS & SMTP authentication ([see wiki](https://github.com/axllent/mailpit/wiki/SMTP-with-STARTTLS-and-authentication))
 - Optional HTTPS for web UI ([see wiki](https://github.com/axllent/mailpit/wiki/HTTPS))
 - Optional basic authentication for web UI ([see wiki](https://github.com/axllent/mailpit/wiki/Basic-authentication))
-- A simple REST API allowing ([see docs](docs/apiv1/README.md))
+- A simple REST API ([see docs](docs/apiv1/README.md))
 - Multi-architecture [Docker images](https://github.com/axllent/mailpit/wiki/Docker-images)
 
 
@@ -42,7 +43,7 @@ Linux & Mac users can install it directly to `/usr/local/bin/mailpit` with:
 sudo bash < <(curl -sL https://raw.githubusercontent.com/axllent/mailpit/develop/install.sh)
 ```
 
-Or download a pre-built binary in the [releases](https://github.com/axllent/mailpit/releases/latest). The `mailpit` can be placed in your `$PATH`, or simply run as `./mailpit`. See `mailpit -h` for options, or see [the wiki](https://github.com/axllent/mailpit/wiki/Runtime-options) for additional information.
+Or download a static binary from the [releases](https://github.com/axllent/mailpit/releases/latest). The `mailpit` binary can be placed in your `$PATH`, or simply run as `./mailpit`. See `mailpit -h` for options, or see [the wiki](https://github.com/axllent/mailpit/wiki/Runtime-options) for additional information.
 
 To build Mailpit from source see [building from source](https://github.com/axllent/mailpit/wiki/Building-from-source).
 

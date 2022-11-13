@@ -51,7 +51,7 @@ List messages in the mailbox. Messages are returned in the order of latest recei
           "Address": "accounts@example.com"
         }
       ],
-      "Bcc": null,
+      "Bcc": [],
       "Subject": "Message subject",
       "Created": "2022-10-03T21:35:32.228605299+13:00",
       "Size": 6144,
@@ -70,7 +70,7 @@ List messages in the mailbox. Messages are returned in the order of latest recei
 - `start` - The offset (default `0`) for pagination
 - `Read` - The read/unread status of the message
 - `From` - Name & Address, or null if none
-- `To`, `CC`, `BCC` - Array of Names & Address, or null if none
+- `To`, `CC`, `BCC` - Array of Names & Address
 - `Created` - Local date & time the message was received
 - `Size` - Total size of raw email in bytes
 

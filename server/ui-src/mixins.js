@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { Modal } from 'bootstrap';
+import moment from 'moment';
 
 
 // FakeModal is used to return a fake Bootstrap modal
@@ -24,6 +25,10 @@ const commonMixins = {
 
 		formatNumber: function (nr) {
 			return new Intl.NumberFormat().format(nr);
+		},
+
+		messageDate: function (d) {
+			return moment(d).format('ddd, D MMM YYYY, h:mm a');
 		},
 
 		// Ajax error message

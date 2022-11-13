@@ -17,6 +17,7 @@ type Message struct {
 	Bcc         []*mail.Address
 	Subject     string
 	Date        time.Time
+	Tags        []string
 	Text        string
 	HTML        string
 	Size        int
@@ -43,6 +44,7 @@ type MessageSummary struct {
 	Bcc         []*mail.Address
 	Subject     string
 	Created     time.Time
+	Tags        []string
 	Size        int
 	Attachments int
 }
@@ -51,6 +53,7 @@ type MessageSummary struct {
 type MailboxStats struct {
 	Total  int
 	Unread int
+	Tags   []string
 }
 
 // AttachmentSummary returns a summary of the attachment without any binary data

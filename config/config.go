@@ -3,12 +3,13 @@ package config
 import (
 	"errors"
 	"fmt"
-	"net/url"
 	"os"
+	"path"
 	"path/filepath"
 	"regexp"
 	"strings"
 
+	"github.com/mattn/go-shellwords"
 	"github.com/tg123/go-htpasswd"
 )
 
@@ -61,6 +62,15 @@ var (
 	// SMTPAuth used for euthentication
 	SMTPAuth *htpasswd.File
 
+	// SMTPCLITags is used to map the CLI args
+	SMTPCLITags string
+
+	// TagRegexp is the allowed tag characters
+	TagRegexp = regexp.MustCompile(`^([a-zA-Z0-9\-\ \_]){3,}$`)
+
+	// SMTPTags are expressions to apply tags to new mail
+	SMTPTags []Tag
+
 	// ContentSecurityPolicy for HTTP server
 	ContentSecurityPolicy = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; frame-src 'self'; img-src * data: blob:; font-src 'self' data:; media-src 'self'; connect-src 'self' ws: wss:; object-src 'none'; base-uri 'self';"
 
@@ -73,6 +83,12 @@ var (
 	// RepoBinaryName on Github for updater
 	RepoBinaryName = "mailpit"
 )
+
+// Tag struct
+type Tag struct {
+	Tag   string
+	Match string
+}
 
 // VerifyConfig wil do some basic checking
 func VerifyConfig() error {
@@ -148,11 +164,37 @@ func VerifyConfig() error {
 		return fmt.Errorf("Webroot cannot contain spaces (%s)", Webroot)
 	}
 
-	s, err := url.JoinPath("/", Webroot, "/")
-	if err != nil {
-		return err
-	}
+	s := path.Join("/", Webroot, "/")
 	Webroot = s
+
+	SMTPTags = []Tag{}
+
+	p := shellwords.NewParser()
+
+	if SMTPCLITags != "" {
+		args, err := p.Parse(SMTPCLITags)
+		if err != nil {
+			return fmt.Errorf("Error parsing tags (%s)", err)
+		}
+
+		for _, a := range args {
+			t := strings.Split(a, "=")
+			if len(t) > 1 {
+				tag := strings.TrimSpace(t[0])
+				if !TagRegexp.MatchString(tag) || len(tag) == 0 {
+					return fmt.Errorf("Invalid tag (%s) - can only contain spaces, letters, numbers, - & _", tag)
+				}
+				match := strings.TrimSpace(strings.ToLower(strings.Join(t[1:], "=")))
+				if len(match) == 0 {
+					return fmt.Errorf("Invalid tag match (%s) - no search detected", tag)
+				}
+				SMTPTags = append(SMTPTags, Tag{Tag: tag, Match: match})
+			} else {
+				return fmt.Errorf("Error parsing tags (%s)", a)
+			}
+		}
+
+	}
 
 	return nil
 }
