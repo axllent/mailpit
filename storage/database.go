@@ -14,6 +14,7 @@ import (
 	"path"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strings"
 	"syscall"
 	"time"
@@ -64,6 +65,12 @@ var (
 				Email BLOB
 			);
 			CREATE UNIQUE INDEX IF NOT EXISTS idx_data_id ON mailbox_data (ID);`,
+		},
+		{
+			Version:     1.1,
+			Description: "Create tags column",
+			Script: `ALTER TABLE mailbox ADD COLUMN Tags Text  NOT NULL DEFAULT '[]';
+			CREATE INDEX IF NOT EXISTS idx_tags ON mailbox (Tags);`,
 		},
 	}
 )
@@ -200,7 +207,17 @@ func Store(body []byte) (string, error) {
 	// generate unique ID
 	id := uuid.NewV4().String()
 
-	b, err := json.Marshal(obj)
+	summaryJSON, err := json.Marshal(obj)
+	if err != nil {
+		return "", err
+	}
+
+	tagData := findTags(&body)
+
+	tagJSON, err := json.Marshal(tagData)
+	if err != nil {
+		return "", err
+	}
 
 	// begin a transaction to ensure both the message
 	// and data are stored successfully
@@ -213,8 +230,8 @@ func Store(body []byte) (string, error) {
 	// roll back if it fails
 	defer tx.Rollback()
 
-	// insert summary
-	_, err = tx.Exec("INSERT INTO mailbox(ID, Data, Search, Read) values(?,?,?, 0)", id, string(b), searchText)
+	// insert mail summary data
+	_, err = tx.Exec("INSERT INTO mailbox(ID, Data, Search, Tags, Read) values(?,?,?,?,0)", id, string(summaryJSON), searchText, string(tagJSON))
 	if err != nil {
 		return "", err
 	}
@@ -231,9 +248,11 @@ func Store(body []byte) (string, error) {
 	}
 
 	c := &MessageSummary{}
-	if err := json.Unmarshal(b, c); err != nil {
+	if err := json.Unmarshal(summaryJSON, c); err != nil {
 		return "", err
 	}
+
+	c.Tags = tagData
 
 	c.ID = id
 
@@ -250,7 +269,7 @@ func List(start, limit int) ([]MessageSummary, error) {
 	results := []MessageSummary{}
 
 	q := sqlf.From("mailbox").
-		Select(`ID, Data, Read`).
+		Select(`ID, Data, Tags, Read`).
 		OrderBy("Sort DESC").
 		Limit(limit).
 		Offset(start)
@@ -258,16 +277,21 @@ func List(start, limit int) ([]MessageSummary, error) {
 	if err := q.QueryAndClose(nil, db, func(row *sql.Rows) {
 		var id string
 		var summary string
+		var tags string
 		var read int
 		em := MessageSummary{}
 
-		if err := row.Scan(&id, &summary, &read); err != nil {
+		if err := row.Scan(&id, &summary, &tags, &read); err != nil {
 			logger.Log().Error(err)
 			return
 		}
 
-		err := json.Unmarshal([]byte(summary), &em)
-		if err != nil {
+		if err := json.Unmarshal([]byte(summary), &em); err != nil {
+			logger.Log().Error(err)
+			return
+		}
+
+		if err := json.Unmarshal([]byte(tags), &em.Tags); err != nil {
 			logger.Log().Error(err)
 			return
 		}
@@ -313,17 +337,22 @@ func Search(search string, start, limit int) ([]MessageSummary, error) {
 	if err := q.QueryAndClose(nil, db, func(row *sql.Rows) {
 		var id string
 		var summary string
+		var tags string
 		var read int
 		var ignore string
 		em := MessageSummary{}
 
-		if err := row.Scan(&id, &summary, &read, &ignore, &ignore, &ignore, &ignore); err != nil {
+		if err := row.Scan(&id, &summary, &tags, &read, &ignore, &ignore, &ignore, &ignore); err != nil {
 			logger.Log().Error(err)
 			return
 		}
 
-		err := json.Unmarshal([]byte(summary), &em)
-		if err != nil {
+		if err := json.Unmarshal([]byte(summary), &em); err != nil {
+			logger.Log().Error(err)
+			return
+		}
+
+		if err := json.Unmarshal([]byte(tags), &em.Tags); err != nil {
 			logger.Log().Error(err)
 			return
 		}
@@ -378,6 +407,7 @@ func GetMessage(id string) (*Message, error) {
 		Cc:      addressToSlice(env, "Cc"),
 		Bcc:     addressToSlice(env, "Bcc"),
 		Subject: env.GetHeader("Subject"),
+		Tags:    getMessageTags(id),
 		Size:    len(raw),
 		Text:    env.Text,
 	}
@@ -658,9 +688,42 @@ func StatsGet() MailboxStats {
 
 	dbLastAction = time.Now()
 
+	q := sqlf.From("mailbox").
+		Select(`DISTINCT Tags`).
+		Where("Tags != ?", "[]")
+
+	var tags = []string{}
+
+	if err := q.QueryAndClose(nil, db, func(row *sql.Rows) {
+		var tagData string
+		t := []string{}
+
+		if err := row.Scan(&tagData); err != nil {
+			logger.Log().Error(err)
+			return
+		}
+
+		if err := json.Unmarshal([]byte(tagData), &t); err != nil {
+			logger.Log().Error(err)
+			return
+		}
+
+		for _, tag := range t {
+			if !inArray(tag, tags) {
+				tags = append(tags, tag)
+			}
+		}
+
+	}); err != nil {
+		logger.Log().Error(err)
+	}
+
+	sort.Strings(tags)
+
 	return MailboxStats{
 		Total:  total,
 		Unread: unread,
+		Tags:   tags,
 	}
 }
 

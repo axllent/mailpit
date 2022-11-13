@@ -1,6 +1,7 @@
 <script>
 import commonMixins from './mixins.js';
 import Message from './templates/Message.vue';
+import MessageSummary from './templates/MessageSummary.vue';
 import moment from 'moment';
 import Tinycon from 'tinycon';
 
@@ -8,7 +9,8 @@ export default {
 	mixins: [commonMixins],
 
 	components: {
-		Message
+		Message,
+		MessageSummary
 	},
 
 	data() {
@@ -20,6 +22,8 @@ export default {
 			unread: 0,
 			start: 0,
 			count: 0,
+			tags: [],
+			existingTags: [], // to pass onto components
 			search: "",
 			searching: false,
 			isConnected: false,
@@ -99,7 +103,7 @@ export default {
 
 			let self = this;
 			let params = {};
-			this.selected = [];
+			self.selected = [];
 
 			let uri = 'api/v1/messages';
 			if (self.search) {
@@ -123,7 +127,10 @@ export default {
 				self.count = response.data.count;
 				self.start = response.data.start;
 				self.items = response.data.messages;
-
+				self.tags = response.data.tags;
+				if (!self.existingTags.length) {
+					self.existingTags = JSON.parse(JSON.stringify(self.tags));
+				}
 				// if pagination > 0 && results == 0 reload first page (prune)
 				if (response.data.count == 0 && response.data.start > 0) {
 					self.start = 0;
@@ -143,6 +150,16 @@ export default {
 
 		doSearch: function (e) {
 			e.preventDefault();
+			this.loadMessages();
+		},
+
+		tagSearch: function (e, tag) {
+			e.preventDefault();
+			if (tag.match(/ /)) {
+				tag = '"' + tag + '"';
+			}
+			this.search = 'tag:' + tag;
+			window.location.hash = "";
 			this.loadMessages();
 		},
 
@@ -176,9 +193,11 @@ export default {
 		openMessage: function (id) {
 			let self = this;
 			self.selected = [];
+			self.existingTags = JSON.parse(JSON.stringify(self.tags));
 
 			let uri = 'api/v1/message/' + self.currentPath
 			self.get(uri, false, function (response) {
+
 				for (let i in self.items) {
 					if (self.items[i].ID == self.currentPath) {
 						if (!self.items[i].Read) {
@@ -375,6 +394,14 @@ export default {
 					}
 					self.total++;
 					self.unread++;
+
+					for (let i in response.Data.Tags) {
+						if (self.tags.indexOf(response.Data.Tags[i]) < 0) {
+							self.tags.push(response.Data.Tags[i]);
+							self.tags.sort();
+						}
+					}
+
 					let from = response.Data.From != null ? response.Data.From.Address : '[unknown]';
 					self.browserNotify("New mail from: " + from, response.Data.Subject);
 				} else if (response.Type == "prune") {
@@ -500,6 +527,15 @@ export default {
 			return this.selected.indexOf(id) != -1;
 		},
 
+		inSearch: function (tag) {
+			tag = tag.toLowerCase();
+			if (tag.match(/ /)) {
+				tag = '"' + tag + '"';
+			}
+
+			return this.search.toLowerCase().indexOf('tag:' + tag) > -1;
+		},
+
 		loadInfo: function (e) {
 			e.preventDefault();
 			let self = this;
@@ -522,7 +558,8 @@ export default {
 		</div>
 
 		<div class="col col-md-9 col-lg-10" v-if="message">
-			<a class="btn btn-outline-light me-4 px-3" href="#" v-on:click="message = false" title="Return to messages">
+			<a class="btn btn-outline-light me-4 px-3 d-md-none" href="#" v-on:click="message = false"
+				title="Return to messages">
 				<i class="bi bi-arrow-return-left"></i>
 			</a>
 			<button class="btn btn-outline-light me-2" title="Mark unread" v-on:click="markUnread">
@@ -552,7 +589,7 @@ export default {
 						<img src="mailpit.svg" alt="Mailpit">
 						<span v-if="!total" class="ms-2">Mailpit</span>
 					</a>
-					<div v-if="total" class="d-flex bg-white border rounded-start flex-fill position-relative">
+					<div v-if="total" class="ms-md-2 d-flex bg-white border rounded-start flex-fill position-relative">
 						<input type="text" class="form-control border-0" v-model.trim="search"
 							placeholder="Search mailbox">
 						<span class="btn btn-link position-absolute end-0 text-muted" v-if="search"
@@ -586,9 +623,8 @@ export default {
 			</span>
 			<span v-else>
 				<small>
-					{{ formatNumber(start + 1) }}-{{ formatNumber(start + items.length) }} <small>of</small> {{
-							formatNumber(total)
-					}}
+					{{ formatNumber(start + 1) }}-{{ formatNumber(start + items.length) }} <small>of</small>
+					{{ formatNumber(total) }}
 				</small>
 				<button class="btn btn-outline-light ms-2 me-1" :disabled="!canPrev" v-on:click="viewPrev"
 					v-if="!searching" :title="'View previous ' + limit + ' messages'">
@@ -602,77 +638,85 @@ export default {
 		</div>
 	</div>
 	<div class="row flex-fill" style="min-height:0">
-		<div class="d-none d-md-block col-lg-2 col-md-3 mh-100 position-relative" style="overflow-y: auto;">
-			<ul class="list-unstyled mt-3 mb-5">
-				<li v-if="isConnected" title="Messages will auto-load" class="mb-3 text-muted">
-					<i class="bi bi-power text-success"></i>
-					Connected
-				</li>
-				<li v-else title="You need to manually refresh your mailbox" class="mb-3">
-					<i class="bi bi-power text-danger"></i>
-					Disconnected
-				</li>
-				<li class="mb-5">
-					<a class="position-relative ps-0" href="#" v-on:click="reloadMessages">
-						<i class="bi bi-envelope me-1" v-if="isConnected"></i>
-						<i class="bi bi-arrow-clockwise me-1" v-else></i>
-						Inbox
-						<span class="badge rounded-pill text-bg-primary ms-1" title="Unread messages" v-if="unread">
-							{{ formatNumber(unread) }}
-						</span>
-					</a>
-				</li>
-				<li class="my-3" v-if="!message && unread && !selected.length">
-					<a href="#" data-bs-toggle="modal" data-bs-target="#MarkAllReadModal">
+		<div class="d-none d-md-block col-lg-2 col-md-3 mh-100 position-relative"
+			style="overflow-y: auto; overflow-x: hidden;">
+
+			<div class="list-group my-2">
+				<a href="#" v-on:click="message ? message = false : reloadMessages()"
+					class="list-group-item list-group-item-action" :class="!searching && !message ? 'active' : ''">
+					<template v-if="isConnected">
+						<i class="bi bi-envelope-fill me-1" v-if="!searching && !message"></i>
+						<i class="bi bi-arrow-return-left" v-else></i>
+					</template>
+					<i class="bi bi-arrow-clockwise me-1" v-else></i>
+					<span v-if="message" class="ms-1">Return</span>
+					<span v-else class="ms-1">Inbox</span>
+					<span class="badge rounded-pill ms-1 float-end text-bg-secondary" title="Unread messages">
+						{{ formatNumber(unread) }}
+					</span>
+				</a>
+
+				<template v-if="!message && !selected.length">
+					<button class="list-group-item list-group-item-action" data-bs-toggle="modal"
+						data-bs-target="#MarkAllReadModal" :disabled="!unread || searching">
 						<i class="bi bi-eye-fill"></i>
 						Mark all read
-					</a>
-				</li>
-				<li class="my-3" v-if="!message && total && !selected.length">
-					<a href="#" data-bs-toggle="modal" data-bs-target="#DeleteAllModal">
+					</button>
+
+					<button class="list-group-item list-group-item-action" data-bs-toggle="modal"
+						data-bs-target="#DeleteAllModal" :disabled="!total || searching">
 						<i class="bi bi-trash-fill me-1 text-danger"></i>
 						Delete all
-					</a>
-				</li>
-
-				<li class="my-3" v-if="selected.length > 0">
-					<b class="me-2">Selected {{ selected.length }}</b>
-					<button class="btn btn-sm text-muted" v-on:click="selected = []" title="Unselect messages"><i
-							class="bi bi-x-circle"></i></button>
-				</li>
-				<li class="my-3 ms-2" v-if="selected.length > 0 && selectedHasUnread()">
-					<a href="#" v-on:click="markSelectedRead">
-						<i class="bi bi-eye-fill"></i>
-						Mark read
-					</a>
-				</li>
-				<li class="my-3 ms-2" v-if="selected.length > 0 && selectedHasRead()">
-					<a href="#" v-on:click="markSelectedUnread">
-						<i class="bi bi-eye-slash"></i>
-						Mark unread
-					</a>
-				</li>
-				<li class="my-3 ms-2" v-if="total && selected.length > 0">
-					<a href="#" v-on:click="deleteMessages">
-						<i class="bi bi-trash-fill me-1 text-danger"></i>
-						Delete
-					</a>
-				</li>
-
-				<li class="my-3" v-if="notificationsSupported && !notificationsEnabled">
-					<a href="#" data-bs-toggle="modal" data-bs-target="#EnableNotificationsModal"
-						title="Enable browser notifications">
+					</button>
+					<button class="list-group-item list-group-item-action" data-bs-toggle="modal"
+						data-bs-target="#EnableNotificationsModal"
+						v-if="isConnected && notificationsSupported && !notificationsEnabled">
 						<i class="bi bi-bell"></i>
 						Enable alerts
-					</a>
-				</li>
-				<li class="mt-5 position-fixed bottom-0 bg-white py-2 text-muted">
-					<a href="#" class="text-muted" v-on:click="loadInfo">
-						<i class="bi bi-info-circle-fill"></i>
-						About
-					</a>
-				</li>
-			</ul>
+					</button>
+				</template>
+				<template v-if="!message && selected.length">
+					<button class="list-group-item list-group-item-action" :disabled="!selectedHasUnread()"
+						v-on:click="markSelectedRead">
+						<i class="bi bi-eye-fill"></i>
+						Mark selected read
+					</button>
+					<button class="list-group-item list-group-item-action" :disabled="!selectedHasRead()"
+						v-on:click="markSelectedUnread">
+						<i class="bi bi-eye-slash"></i>
+						Mark selected unread
+					</button>
+					<button class="list-group-item list-group-item-action" v-on:click="deleteMessages">
+						<i class="bi bi-trash-fill me-1 text-danger"></i>
+						Delete selected
+					</button>
+					<button class="list-group-item list-group-item-action" v-on:click="selected = []">
+						<i class="bi bi-x-circle me-1"></i>
+						Cancel selection
+					</button>
+				</template>
+			</div>
+
+			<template v-if="!selected.length && tags.length && !message">
+				<h6 class="mt-4 text-muted"><small>Tags</small></h6>
+				<div class="list-group mt-2 mb-5">
+					<button class="list-group-item list-group-item-action" v-for="tag in tags"
+						v-on:click="tagSearch($event, tag)" :class="inSearch(tag) ? 'active' : ''">
+						<i class="bi bi-tag-fill" v-if="inSearch(tag)"></i>
+						<i class="bi bi-tag" v-else></i>
+						{{ tag }}
+					</button>
+				</div>
+			</template>
+
+			<MessageSummary v-if="message" :message="message"></MessageSummary>
+
+			<div class="position-fixed bottom-0 bg-white py-2 text-muted w-100">
+				<a href="#" class="text-muted" v-on:click="loadInfo">
+					<i class="bi bi-info-circle-fill"></i>
+					About
+				</a>
+			</div>
 		</div>
 
 		<div class="col-lg-10 col-md-9 mh-100 pe-0">
@@ -706,6 +750,10 @@ export default {
 							</div>
 						</div>
 						<div class="col-lg-6 mt-2 mt-lg-0">
+							<span class="badge text-bg-secondary me-1" v-for="t in message.Tags"
+								:title="'Filter messages tagged with ' + t" v-on:click="tagSearch($event, t)">
+								{{ t }}
+							</span>
 							<b>{{ message.Subject != "" ? message.Subject : "[ no subject ]" }}</b>
 						</div>
 						<div class="d-none d-lg-block col-1 small text-end text-muted">
@@ -727,7 +775,8 @@ export default {
 				</div>
 			</div>
 
-			<Message v-if="message" :message="message"></Message>
+			<Message v-if="message" :message="message" :existingTags="existingTags" @load-messages="loadMessages">
+			</Message>
 		</div>
 		<div id="loading" v-if="loading">
 			<div class="d-flex justify-content-center align-items-center h-100">
@@ -797,8 +846,8 @@ export default {
 					</p>
 				</div>
 				<div class="modal-footer">
-					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-					<button type="button" class="btn btn-primary" data-bs-dismiss="modal"
+					<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+					<button type="button" class="btn btn-success" data-bs-dismiss="modal"
 						v-on:click="requestNotifications">Enable notifications</button>
 				</div>
 			</div>

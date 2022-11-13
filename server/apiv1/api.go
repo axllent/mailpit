@@ -1,6 +1,7 @@
 package apiv1
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -32,6 +33,7 @@ func GetMessages(w http.ResponseWriter, r *http.Request) {
 	res.Count = len(messages)
 	res.Total = stats.Total
 	res.Unread = stats.Unread
+	res.Tags = stats.Tags
 
 	bytes, _ := json.Marshal(res)
 	w.Header().Add("Content-Type", "application/json")
@@ -63,6 +65,7 @@ func Search(w http.ResponseWriter, r *http.Request) {
 	res.Count = len(messages)
 	res.Total = stats.Total
 	res.Unread = stats.Unread
+	res.Tags = stats.Tags
 
 	bytes, _ := json.Marshal(res)
 	w.Header().Add("Content-Type", "application/json")
@@ -226,6 +229,36 @@ func SetReadStatus(w http.ResponseWriter, r *http.Request) {
 					httpError(w, err.Error())
 					return
 				}
+			}
+		}
+	}
+
+	w.Header().Add("Content-Type", "text/plain")
+	_, _ = w.Write([]byte("ok"))
+}
+
+// SetTags (method: PUT) will set the tags for all provided IDs
+func SetTags(w http.ResponseWriter, r *http.Request) {
+	decoder := json.NewDecoder(r.Body)
+
+	var data struct {
+		Tags []string
+		IDs  []string
+	}
+
+	err := decoder.Decode(&data)
+	if err != nil {
+		httpError(w, err.Error())
+		return
+	}
+
+	ids := data.IDs
+
+	if len(ids) > 0 {
+		for _, id := range ids {
+			if err := storage.SetTags(id, data.Tags); err != nil {
+				httpError(w, err.Error())
+				return
 			}
 		}
 	}

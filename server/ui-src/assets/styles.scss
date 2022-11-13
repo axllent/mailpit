@@ -85,7 +85,7 @@
     min-height: 300px;
 }
 
-.list-group-item:first-child {
+.list-group-item.message:first-child {
     border-top: 0;
 }
 
@@ -146,6 +146,23 @@ body.blur {
             opacity: 1;
             background: $gray-300;
         }
+    }
+}
+
+// .tag.active {
+//     font-weight: bold;
+// }
+
+.form-select.tag-selector {
+    display: none;
+}
+
+.form-control.dropdown {
+    padding: 0;
+    border: 0;
+
+    input {
+        font-size: 0.875em;
     }
 }
 

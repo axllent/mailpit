@@ -14,7 +14,7 @@ func searchParser(args []string, start, limit int) *sqlf.Stmt {
 	}
 
 	q := sqlf.From("mailbox").
-		Select(`ID, Data, read, 
+		Select(`ID, Data, Tags, Read, 
 			json_extract(Data, '$.To') as ToJSON, 
 			json_extract(Data, '$.From') as FromJSON, 
 			json_extract(Data, '$.Subject') as Subject, 
@@ -70,6 +70,15 @@ func searchParser(args []string, start, limit int) *sqlf.Stmt {
 					q.Where("Subject NOT LIKE ?", "%"+escPercentChar(w)+"%")
 				} else {
 					q.Where("Subject LIKE ?", "%"+escPercentChar(w)+"%")
+				}
+			}
+		} else if strings.HasPrefix(w, "tag:") {
+			w = cleanString(w[4:])
+			if w != "" {
+				if exclude {
+					q.Where("Tags NOT LIKE ?", "%\""+escPercentChar(w)+"\"%")
+				} else {
+					q.Where("Tags LIKE ?", "%\""+escPercentChar(w)+"\"%")
 				}
 			}
 		} else if w == "is:read" {
