@@ -66,8 +66,8 @@ export default {
 			document.activeElement.blur(); // blur focus
 			document.getElementById('message-view').scrollTop = 0;
 
-			// delay until vue has rendered
-			self.$nextTick(function () {
+			// delay 0.2s until vue has rendered the iframe content
+			window.setTimeout(function () {
 				let p = document.getElementById('preview-html');
 				if (p) {
 					// make links open in new window
@@ -82,7 +82,7 @@ export default {
 					}
 					self.resizeIframes();
 				}
-			});
+			}, 200);
 
 			// html highlighting
 			window.Prism = window.Prism || {};
