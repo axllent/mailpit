@@ -2,6 +2,12 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## v1.2.9
+
+### Bugfix
+- Delay 200ms to set `target="_blank"` for all rendered email links
+
+
 ## v1.2.8
 
 ### Bugfix
