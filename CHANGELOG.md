@@ -2,6 +2,16 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## v1.3.0
+
+### Build
+- Remove duplicate bootstrap CSS
+
+### Libs
+- Update go modules
+- Update node modules
+
+
 ## v1.2.9
 
 ### Bugfix
