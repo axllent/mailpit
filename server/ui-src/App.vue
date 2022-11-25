@@ -619,7 +619,7 @@ export default {
 				<option value="200">200</option>
 			</select>
 			<span v-if="searching">
-				<b>{{ formatNumber(items.length) }} results</b>
+				<b>{{ formatNumber(items.length) }} result<template v-if="items.length != 1">s</template></b>
 			</span>
 			<span v-else>
 				<small>
