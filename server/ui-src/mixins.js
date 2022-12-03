@@ -63,16 +63,6 @@ const commonMixins = {
 			return new FakeModal();
 		},
 
-		// generic modal get/set function
-		offcanvas: function (id) {
-			var e = document.getElementById(id);
-			if (e) {
-				return bootstrap.Offcanvas.getOrCreateInstance(e);
-			}
-			// in case there are open/close actions
-			return new FakeModal();
-		},
-
 		/**
 		 * Axios GET request
 		 *
