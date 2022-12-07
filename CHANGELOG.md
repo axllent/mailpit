@@ -2,6 +2,18 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## v1.3.1
+
+### Bugfix
+- Append trailing slash to custom webroot for UI & API
+
+### Libs
+- Upgrade esbuild & axios
+
+### UI
+- Rename "results" to "result" when singular message returned
+
+
 ## v1.3.0
 
 ### Build

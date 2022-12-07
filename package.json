@@ -8,7 +8,7 @@
     "package": "MINIFY=true node esbuild.config.js"
   },
   "dependencies": {
-    "axios": "^0.27.2",
+    "axios": "^1.2.1",
     "bootstrap": "^5.2.0",
     "bootstrap-icons": "^1.9.1",
     "bootstrap5-tags": "^1.4.41",
@@ -20,7 +20,7 @@
   "devDependencies": {
     "@popperjs/core": "^2.11.5",
     "@vue/compiler-sfc": "^3.2.37",
-    "esbuild": "^0.14.50",
+    "esbuild": "^0.16.1",
     "esbuild-plugin-vue-next": "^0.1.4",
     "esbuild-sass-plugin": "^2.3.2"
   }

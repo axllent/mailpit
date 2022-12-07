@@ -160,11 +160,12 @@ func VerifyConfig() error {
 		SMTPAuth = a
 	}
 
-	if strings.Contains(Webroot, " ") {
-		return fmt.Errorf("Webroot cannot contain spaces (%s)", Webroot)
+	validWebrootRe := regexp.MustCompile(`[^0-9a-zA-Z\/-]`)
+	if validWebrootRe.MatchString(Webroot) {
+		return fmt.Errorf("Invalid characters in Webroot (%s). Valid chars: a-z, A-Z, 0-9, - and /", Webroot)
 	}
 
-	s := path.Join("/", Webroot, "/")
+	s := strings.TrimRight(path.Join("/", Webroot, "/"), "/") + "/"
 	Webroot = s
 
 	SMTPTags = []Tag{}
