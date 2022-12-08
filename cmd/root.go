@@ -142,7 +142,7 @@ func init() {
 	rootCmd.Flags().StringVar(&config.SMTPAuthFile, "smtp-auth-file", config.SMTPAuthFile, "A password file for SMTP authentication")
 	rootCmd.Flags().StringVar(&config.SMTPSSLCert, "smtp-ssl-cert", config.SMTPSSLCert, "SSL certificate for SMTP - requires smtp-ssl-key")
 	rootCmd.Flags().StringVar(&config.SMTPSSLKey, "smtp-ssl-key", config.SMTPSSLKey, "SSL key for SMTP - requires smtp-ssl-cert")
-	rootCmd.Flags().StringVarP(&config.SMTPCLITags, "tag", "t", "", "Tag new messages matching filters")
+	rootCmd.Flags().StringVarP(&config.SMTPCLITags, "tag", "t", config.SMTPSSLKey, "Tag new messages matching filters")
 
 	rootCmd.Flags().BoolVarP(&config.QuietLogging, "quiet", "q", false, "Quiet logging (errors only)")
 	rootCmd.Flags().BoolVarP(&config.VerboseLogging, "verbose", "v", false, "Verbose logging")
