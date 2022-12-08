@@ -26,7 +26,8 @@ jobs:
       uses: docker/build-push-action@v3
       with:
         context: .
-        platforms: linux/386,linux/amd64,linux/arm,linux/arm64
+        # platforms: linux/386,linux/amd64,linux/arm,linux/arm64
+        platforms: linux/386,linux/amd64,linux/arm64
         build-args: |
           "VERSION=${{ github.ref_name }}"
         push: true

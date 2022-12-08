@@ -2,6 +2,12 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## v1.3.2
+
+### Build
+- Temporarily disable arm (32) Docker build
+
+
 ## v1.3.1
 
 ### Bugfix
