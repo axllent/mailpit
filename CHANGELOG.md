@@ -2,6 +2,12 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## v1.3.3
+
+### Bugfix
+- Allow tags to be set from MP_TAG environment
+
+
 ## v1.3.2
 
 ### Build
