@@ -117,7 +117,7 @@ func VerifyConfig() error {
 	}
 
 	if UISSLCert != "" && UISSLKey == "" || UISSLCert == "" && UISSLKey != "" {
-		return errors.New("you must provide both a UI SSL certificate and a key")
+		return errors.New("You must provide both a UI SSL certificate and a key")
 	}
 
 	if UISSLCert != "" {
@@ -131,7 +131,7 @@ func VerifyConfig() error {
 	}
 
 	if SMTPSSLCert != "" && SMTPSSLKey == "" || SMTPSSLCert == "" && SMTPSSLKey != "" {
-		return errors.New("you must provide both an SMTP SSL certificate and a key")
+		return errors.New("You must provide both an SMTP SSL certificate and a key")
 	}
 
 	if SMTPSSLCert != "" {
