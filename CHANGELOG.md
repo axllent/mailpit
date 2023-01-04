@@ -2,6 +2,12 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## v1.3.5
+
+### Bugfix
+- Include HTML link text in search data
+
+
 ## v1.3.4
 
 ### Bugfix
