@@ -2,6 +2,16 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## v1.3.6
+
+### Bugfix
+- Correctly index missing 'From' header in database
+
+### Libs
+- Update node modules
+- Update go modules
+
+
 ## v1.3.5
 
 ### Bugfix
