@@ -181,7 +181,7 @@ func Store(body []byte) (string, error) {
 		return "", nil
 	}
 
-	var from *mail.Address
+	from := &mail.Address{}
 	fromJSON := addressToSlice(env, "From")
 	if len(fromJSON) > 0 {
 		from = fromJSON[0]
