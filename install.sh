@@ -7,7 +7,7 @@ set -e
 
 VERSION=$(curl --silent --location --max-time "${TIMEOUT}" "https://api.github.com/repos/${GH_REPO}/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
 if [ $? -ne 0 ]; then
-    echo -ne "\nThere was an error trying to check what is the latest version of ssbak.\nPlease try again later.\n"
+    echo -ne "\nThere was an error trying to check what is the latest version of Mailpit.\nPlease try again later.\n"
     exit 1
 fi
 
