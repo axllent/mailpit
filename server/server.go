@@ -3,17 +3,18 @@ package server
 import (
 	"compress/gzip"
 	"embed"
+	"github.com/axllent/mailpit/config"
+	"github.com/axllent/mailpit/server/apiv1"
+	"github.com/axllent/mailpit/server/handlers"
+	"github.com/axllent/mailpit/server/websockets"
+	"github.com/axllent/mailpit/utils/logger"
+	"github.com/gorilla/mux"
 	"io"
 	"io/fs"
 	"net/http"
 	"os"
 	"strings"
-
-	"github.com/axllent/mailpit/config"
-	"github.com/axllent/mailpit/server/apiv1"
-	"github.com/axllent/mailpit/server/websockets"
-	"github.com/axllent/mailpit/utils/logger"
-	"github.com/gorilla/mux"
+	"sync/atomic"
 )
 
 //go:embed ui
@@ -21,6 +22,9 @@ var embeddedFS embed.FS
 
 // Listen will start the httpd
 func Listen() {
+	isReady := &atomic.Value{}
+	isReady.Store(false)
+
 	serverRoot, err := fs.Sub(embeddedFS, "ui")
 	if err != nil {
 		logger.Log().Errorf("[http] %s", err)
@@ -32,6 +36,10 @@ func Listen() {
 	go websockets.MessageHub.Run()
 
 	r := defaultRoutes()
+
+	// kubernetes probes
+	r.HandleFunc("/livez", handlers.HealthzHandler)
+	r.HandleFunc("/readyz", handlers.ReadyzHandler(isReady))
 
 	// web UI websocket
 	r.HandleFunc(config.Webroot+"api/events", apiWebsocket).Methods("GET")
@@ -51,6 +59,9 @@ func Listen() {
 		logger.Log().Info("[http] enabling web UI basic authentication")
 	}
 
+	// Mark the application here as ready
+	isReady.Store(true)
+
 	if config.UISSLCert != "" && config.UISSLKey != "" {
 		logger.Log().Infof("[http] starting secure server on https://%s%s", config.HTTPListen, config.Webroot)
 		logger.Log().Fatal(http.ListenAndServeTLS(config.HTTPListen, config.UISSLCert, config.UISSLKey, nil))
@@ -58,6 +69,7 @@ func Listen() {
 		logger.Log().Infof("[http] starting server on http://%s%s", config.HTTPListen, config.Webroot)
 		logger.Log().Fatal(http.ListenAndServe(config.HTTPListen, nil))
 	}
+
 }
 
 func defaultRoutes() *mux.Router {
