@@ -3,9 +3,9 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "build": "node esbuild.config.js",
-    "watch": "WATCH=true node esbuild.config.js",
-    "package": "MINIFY=true node esbuild.config.js"
+    "build": "node esbuild.config.mjs",
+    "watch": "WATCH=true node esbuild.config.mjs",
+    "package": "MINIFY=true node esbuild.config.mjs"
   },
   "dependencies": {
     "axios": "^1.2.1",
@@ -20,7 +20,7 @@
   "devDependencies": {
     "@popperjs/core": "^2.11.5",
     "@vue/compiler-sfc": "^3.2.37",
-    "esbuild": "^0.16.1",
+    "esbuild": "^0.17.5",
     "esbuild-plugin-vue-next": "^0.1.4",
     "esbuild-sass-plugin": "^2.3.2"
   }

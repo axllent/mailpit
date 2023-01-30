@@ -1,14 +1,13 @@
-const { build } = require('esbuild')
-const pluginVue = require('esbuild-plugin-vue-next')
-const { sassPlugin } = require('esbuild-sass-plugin');
+import * as esbuild from 'esbuild'
+import pluginVue from 'esbuild-plugin-vue-next'
+import { sassPlugin } from 'esbuild-sass-plugin'
 
 const doWatch = process.env.WATCH == 'true' ? true : false;
 const doMinify = process.env.MINIFY == 'true' ? true : false;
 
-build({
+const ctx = await esbuild.context({
     entryPoints: ["server/ui-src/app.js"],
     bundle: true,
-    watch: doWatch,
     minify: doMinify,
     sourcemap: false,
     outfile: "server/ui/dist/app.js",
@@ -20,3 +19,10 @@ build({
     },
     logLevel: "info"
 })
+
+if (doWatch) {
+    await ctx.watch()
+} else {
+    await ctx.rebuild()
+    ctx.dispose()
+}
