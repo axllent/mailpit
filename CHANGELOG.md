@@ -2,6 +2,15 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## v1.3.7
+
+### Feature
+- Add Kubernetes API health (livez/readyz) endpoints
+
+### Libs
+- Upgrade to esbuild 0.17.5
+
+
 ## v1.3.6
 
 ### Bugfix
