@@ -37,7 +37,7 @@ Mailpit is inspired by [MailHog](#why-rewrite-mailhog), but much, much faster.
 
 ## Installation
 
-The Mailpit web UI listens by default on http://0.0.0.0:8025, and the SMTP port on 0.0.0.0:1025.
+The Mailpit web UI listens by default on `http://0.0.0.0:8025`, and the SMTP port on `0.0.0.0:1025`.
 
 Mailpit runs as a single binary and can be installed in different ways:
 
