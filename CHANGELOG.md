@@ -2,6 +2,15 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## v1.3.8
+
+### Bugfix
+- Restore notification icon
+
+### UI
+- Compress SVG icons
+
+
 ## v1.3.7
 
 ### Feature

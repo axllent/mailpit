@@ -451,7 +451,7 @@ export default {
 				let b = message.Subject;
 				let options = {
 					body: message,
-					icon: 'mailpit.png'
+					icon: 'notification.png'
 				}
 				new Notification(title, options);
 			}
@@ -733,12 +733,14 @@ export default {
 								{{ getRelativeCreated(message) }}
 							</div>
 							<div class="text-truncate d-lg-none privacy">
-								<span v-if="message.From" :title="message.From.Address">{{ message.From.Name ?
+								<span v-if="message.From" :title="message.From.Address">{{
+									message.From.Name ?
 										message.From.Name : message.From.Address
 								}}</span>
 							</div>
 							<div class="text-truncate d-none d-lg-block privacy">
-								<b v-if="message.From" :title="message.From.Address">{{ message.From.Name ?
+								<b v-if="message.From" :title="message.From.Address">{{
+									message.From.Name ?
 										message.From.Name : message.From.Address
 								}}</b>
 							</div>

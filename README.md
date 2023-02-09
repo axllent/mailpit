@@ -37,17 +37,33 @@ Mailpit is inspired by [MailHog](#why-rewrite-mailhog), but much, much faster.
 
 ## Installation
 
+The Mailpit web UI listens by default on `http://0.0.0.0:8025`, and the SMTP port on `0.0.0.0:1025`.
+
+Mailpit runs as a single binary and can be installed in different ways:
+
+### Install via Brew (Mac)
+
+Add the repository to your taps with `brew tap axllent/apps`, and then install Mailpit with `brew install mailpit`.
+
+### Install via bash script (Linux & Mac)
+
 Linux & Mac users can install it directly to `/usr/local/bin/mailpit` with:
 
 ```bash
 sudo bash < <(curl -sL https://raw.githubusercontent.com/axllent/mailpit/develop/install.sh)
 ```
 
-Or download a static binary from the [releases](https://github.com/axllent/mailpit/releases/latest). The `mailpit` binary can be placed in your `$PATH`, or simply run as `./mailpit`. See `mailpit -h` for options, or see [the wiki](https://github.com/axllent/mailpit/wiki/Runtime-options) for additional information.
+### Download static binary (Windows, Linux and Mac)
+
+Static binaries can always be found on the [releases](https://github.com/axllent/mailpit/releases/latest). The `mailpit` binary can extracted and copied to your `$PATH`, or simply run as `./mailpit`.
+
+### Docker
+
+See [Docker instructions](https://github.com/axllent/mailpit/wiki/Docker-images).
+
+### Compile from source
 
 To build Mailpit from source see [building from source](https://github.com/axllent/mailpit/wiki/Building-from-source).
-
-The Mailpit web UI listens by default on `http://0.0.0.0:8025`, and the SMTP port on `0.0.0.0:1025`.
 
 
 ### Configuring sendmail
