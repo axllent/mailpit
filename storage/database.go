@@ -342,7 +342,7 @@ func Search(search string, start, limit int) ([]MessageSummary, error) {
 		var ignore string
 		em := MessageSummary{}
 
-		if err := row.Scan(&id, &summary, &tags, &read, &ignore, &ignore, &ignore, &ignore); err != nil {
+		if err := row.Scan(&id, &summary, &tags, &read, &ignore, &ignore, &ignore, &ignore, &ignore, &ignore); err != nil {
 			logger.Log().Error(err)
 			return
 		}

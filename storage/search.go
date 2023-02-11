@@ -14,10 +14,12 @@ func searchParser(args []string, start, limit int) *sqlf.Stmt {
 	}
 
 	q := sqlf.From("mailbox").
-		Select(`ID, Data, Tags, Read, 
-			json_extract(Data, '$.To') as ToJSON, 
-			json_extract(Data, '$.From') as FromJSON, 
-			json_extract(Data, '$.Subject') as Subject, 
+		Select(`ID, Data, Tags, Read,
+			json_extract(Data, '$.To') as ToJSON,
+			json_extract(Data, '$.From') as FromJSON,
+			json_extract(Data, '$.Cc') as CcJSON,
+			json_extract(Data, '$.Bcc') as BccJSON,
+			json_extract(Data, '$.Subject') as Subject,
 			json_extract(Data, '$.Attachments') as Attachments
 		`).
 		OrderBy("Sort DESC").
@@ -61,6 +63,24 @@ func searchParser(args []string, start, limit int) *sqlf.Stmt {
 					q.Where("FromJSON NOT LIKE ?", "%"+escPercentChar(w)+"%")
 				} else {
 					q.Where("FromJSON LIKE ?", "%"+escPercentChar(w)+"%")
+				}
+			}
+		} else if strings.HasPrefix(w, "cc:") {
+			w = cleanString(w[3:])
+			if w != "" {
+				if exclude {
+					q.Where("CcJSON NOT LIKE ?", "%"+escPercentChar(w)+"%")
+				} else {
+					q.Where("CcJSON LIKE ?", "%"+escPercentChar(w)+"%")
+				}
+			}
+		} else if strings.HasPrefix(w, "bcc:") {
+			w = cleanString(w[4:])
+			if w != "" {
+				if exclude {
+					q.Where("BccJSON NOT LIKE ?", "%"+escPercentChar(w)+"%")
+				} else {
+					q.Where("BccJSON LIKE ?", "%"+escPercentChar(w)+"%")
 				}
 			}
 		} else if strings.HasPrefix(w, "subject:") {
