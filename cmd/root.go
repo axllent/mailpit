@@ -7,7 +7,7 @@ import (
 
 	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/server"
-	"github.com/axllent/mailpit/smtpd"
+	"github.com/axllent/mailpit/server/smtpd"
 	"github.com/axllent/mailpit/storage"
 	"github.com/axllent/mailpit/utils/logger"
 	"github.com/spf13/cobra"
