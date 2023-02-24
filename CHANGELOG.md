@@ -2,6 +2,22 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## v1.3.9
+
+### Feature
+- Add Cc and Bcc search filters
+
+### Libs
+- Update node modules
+- Update Go modules
+
+### Pull Requests
+- Merge pull request [#44](https://github.com/axllent/mailpit/issues/44) from axllent/dependabot/github_actions/wangyoucao577/go-release-action-1.36
+- Merge pull request [#43](https://github.com/axllent/mailpit/issues/43) from axllent/dependabot/github_actions/docker/build-push-action-4
+- Merge pull request [#55](https://github.com/axllent/mailpit/issues/55) from axllent/dependabot/go_modules/golang.org/x/image-0.5.0
+- Merge pull request [#42](https://github.com/axllent/mailpit/issues/42) from shizunge/dependabot
+
+
 ## v1.3.8
 
 ### Bugfix
