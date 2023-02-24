@@ -23,7 +23,7 @@ jobs:
         password: ${{ secrets.DOCKER_ACCESS_TOKEN }}
 
     - name: Build and push
-      uses: docker/build-push-action@v3
+      uses: docker/build-push-action@v4
       with:
         context: .
         # platforms: linux/386,linux/amd64,linux/arm,linux/arm64
