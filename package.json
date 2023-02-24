@@ -15,7 +15,7 @@
     "moment": "^2.29.4",
     "prismjs": "^1.29.0",
     "tinycon": "^0.6.8",
-    "vue": "^3.2.13"
+    "vue": "^3.2.47"
   },
   "devDependencies": {
     "@popperjs/core": "^2.11.5",
