@@ -19,7 +19,7 @@ require (
 	github.com/spf13/cobra v1.6.1
 	github.com/spf13/pflag v1.0.5
 	github.com/tg123/go-htpasswd v1.2.0
-	modernc.org/sqlite v1.20.2
+	modernc.org/sqlite v1.20.4
 )
 
 require (
