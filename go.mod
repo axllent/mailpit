@@ -10,7 +10,7 @@ require (
 	github.com/gorilla/websocket v1.5.0
 	github.com/jhillyerd/enmime v0.10.1
 	github.com/k3a/html2text v1.1.0
-	github.com/klauspost/compress v1.15.14
+	github.com/klauspost/compress v1.15.15
 	github.com/leporo/sqlf v1.3.0
 	github.com/mattn/go-shellwords v1.0.12
 	github.com/mhale/smtpd v0.8.0
