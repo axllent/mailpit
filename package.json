@@ -22,6 +22,6 @@
     "@vue/compiler-sfc": "^3.2.37",
     "esbuild": "^0.17.5",
     "esbuild-plugin-vue-next": "^0.1.4",
-    "esbuild-sass-plugin": "^2.3.2"
+    "esbuild-sass-plugin": "^2.6.0"
   }
 }
