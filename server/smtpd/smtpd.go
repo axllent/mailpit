@@ -43,7 +43,7 @@ func authHandler(remoteAddr net.Addr, mechanism string, username []byte, passwor
 
 func authHandlerAny(remoteAddr net.Addr, mechanism string, username []byte, password []byte, shared []byte) (bool, error) {
 	// Allow any username and password
-	logger.Log().Debugf("[smtp] Allow login with username %q and password %q", string(username), string(password))
+	logger.Log().Debugf("[smtp] Allow login with username %q and password omitted", string(username))
 	return true, nil
 }
 
