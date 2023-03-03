@@ -41,6 +41,12 @@ func authHandler(remoteAddr net.Addr, mechanism string, username []byte, passwor
 	return config.SMTPAuth.Match(string(username), string(password)), nil
 }
 
+func authHandlerAny(remoteAddr net.Addr, mechanism string, username []byte, password []byte, shared []byte) (bool, error) {
+	// Allow any username and password
+	logger.Log().Debugf("[smtp] Allow login with username %q and password %q", string(username), string(password))
+	return true, nil
+}
+
 // Listen starts the SMTPD server
 func Listen() error {
 	if config.SMTPSSLCert != "" {
@@ -65,9 +71,15 @@ func listenAndServe(addr string, handler smtpd.Handler, authHandler smtpd.AuthHa
 		AuthRequired: false,
 	}
 
+	if config.AllowLoginsInsecure {
+		srv.AuthMechs = map[string]bool{"LOGIN": true, "PLAIN": true}
+	}
+
 	if config.SMTPAuthFile != "" {
 		srv.AuthHandler = authHandler
 		srv.AuthRequired = true
+	} else if config.AllowLoginsAny {
+		srv.AuthHandler = authHandlerAny
 	}
 
 	if config.SMTPSSLCert != "" {

@@ -147,6 +147,9 @@ func init() {
 	rootCmd.Flags().BoolVarP(&config.QuietLogging, "quiet", "q", false, "Quiet logging (errors only)")
 	rootCmd.Flags().BoolVarP(&config.VerboseLogging, "verbose", "v", false, "Verbose logging")
 
+	rootCmd.Flags().BoolVarP(&config.AllowLoginsInsecure, "allow-logins-insecure", "", false, "Allow PLAIN and LOGIN authentication without TLS")
+	rootCmd.Flags().BoolVarP(&config.AllowLoginsAny, "allow-logins-any", "", false, "Allow any username and password, if no smtp-auth-file provided")
+
 	// deprecated 2022/08/06
 	rootCmd.Flags().StringVarP(&config.UIAuthFile, "auth-file", "a", config.UIAuthFile, "A password file for web UI authentication")
 	rootCmd.Flags().StringVar(&config.UISSLCert, "ssl-cert", config.UISSLCert, "SSL certificate - requires ssl-key")

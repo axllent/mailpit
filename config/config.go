@@ -82,6 +82,10 @@ var (
 
 	// RepoBinaryName on Github for updater
 	RepoBinaryName = "mailpit"
+
+	// Allow the SMTP server to accept incompliant logins
+	AllowLoginsInsecure = false
+	AllowLoginsAny = false
 )
 
 // Tag struct
