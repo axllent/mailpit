@@ -17,8 +17,8 @@ func searchParser(args []string, start, limit int) *sqlf.Stmt {
 		Select(`ID, Data, Tags, Read,
 			json_extract(Data, '$.To') as ToJSON,
 			json_extract(Data, '$.From') as FromJSON,
-			json_extract(Data, '$.Cc') as CcJSON,
-			json_extract(Data, '$.Bcc') as BccJSON,
+			IFNULL(json_extract(Data, '$.Cc'), '{}') as CcJSON,
+			IFNULL(json_extract(Data, '$.Bcc'), '{}') as BccJSON,
 			json_extract(Data, '$.Subject') as Subject,
 			json_extract(Data, '$.Attachments') as Attachments
 		`).

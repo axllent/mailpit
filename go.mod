@@ -8,9 +8,9 @@ require (
 	github.com/disintegration/imaging v1.6.2
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/websocket v1.5.0
-	github.com/jhillyerd/enmime v0.10.1
+	github.com/jhillyerd/enmime v0.11.0
 	github.com/k3a/html2text v1.1.0
-	github.com/klauspost/compress v1.15.15
+	github.com/klauspost/compress v1.16.0
 	github.com/leporo/sqlf v1.3.0
 	github.com/mattn/go-shellwords v1.0.12
 	github.com/mhale/smtpd v0.8.0
@@ -20,7 +20,7 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/tg123/go-htpasswd v1.2.1
 	golang.org/x/text v0.7.0
-	modernc.org/sqlite v1.20.4
+	modernc.org/sqlite v1.21.0
 )
 
 require (
