@@ -2,6 +2,15 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## v1.3.10
+
+### Bugfix
+- Fix search with existing emails
+
+### Libs
+- Update node modules
+
+
 ## v1.3.9
 
 ### Feature
