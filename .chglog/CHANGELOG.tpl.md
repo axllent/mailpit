@@ -19,7 +19,7 @@ Notable changes to Mailpit will be documented in this file.
 
 {{ range .Versions }} 
 {{- if .CommitGroups -}}
-## {{ .Tag.Name }}
+## [{{ .Tag.Name }}]
 
 {{ if .NoteGroups -}}
 {{ range .NoteGroups -}}

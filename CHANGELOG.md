@@ -2,7 +2,16 @@
 
 Notable changes to Mailpit will be documented in this file.
 
-## v1.3.10
+## [v1.3.11]
+
+### Docker
+- Expose default ports (1025/tcp 8025/tcp)
+
+### Feature
+- Expand custom webroot path to include a-z A-Z 0-9 _ . - and /
+
+
+## [v1.3.10]
 
 ### Bugfix
 - Fix search with existing emails
@@ -11,7 +20,7 @@ Notable changes to Mailpit will be documented in this file.
 - Update node modules
 
 
-## v1.3.9
+## [v1.3.9]
 
 ### Feature
 - Add Cc and Bcc search filters
@@ -27,7 +36,7 @@ Notable changes to Mailpit will be documented in this file.
 - Merge pull request [#42](https://github.com/axllent/mailpit/issues/42) from shizunge/dependabot
 
 
-## v1.3.8
+## [v1.3.8]
 
 ### Bugfix
 - Restore notification icon
@@ -36,7 +45,7 @@ Notable changes to Mailpit will be documented in this file.
 - Compress SVG icons
 
 
-## v1.3.7
+## [v1.3.7]
 
 ### Feature
 - Add Kubernetes API health (livez/readyz) endpoints
@@ -45,7 +54,7 @@ Notable changes to Mailpit will be documented in this file.
 - Upgrade to esbuild 0.17.5
 
 
-## v1.3.6
+## [v1.3.6]
 
 ### Bugfix
 - Correctly index missing 'From' header in database
@@ -55,31 +64,31 @@ Notable changes to Mailpit will be documented in this file.
 - Update go modules
 
 
-## v1.3.5
+## [v1.3.5]
 
 ### Bugfix
 - Include HTML link text in search data
 
 
-## v1.3.4
+## [v1.3.4]
 
 ### Bugfix
 - Allow tags to be set from MP_TAG environment
 
 
-## v1.3.3
+## [v1.3.3]
 
 ### Bugfix
 - Allow tags to be set from MP_TAG environment
 
 
-## v1.3.2
+## [v1.3.2]
 
 ### Build
 - Temporarily disable arm (32) Docker build
 
 
-## v1.3.1
+## [v1.3.1]
 
 ### Bugfix
 - Append trailing slash to custom webroot for UI & API
@@ -91,7 +100,7 @@ Notable changes to Mailpit will be documented in this file.
 - Rename "results" to "result" when singular message returned
 
 
-## v1.3.0
+## [v1.3.0]
 
 ### Build
 - Remove duplicate bootstrap CSS
@@ -101,13 +110,13 @@ Notable changes to Mailpit will be documented in this file.
 - Update node modules
 
 
-## v1.2.9
+## [v1.2.9]
 
 ### Bugfix
 - Delay 200ms to set `target="_blank"` for all rendered email links
 
 
-## v1.2.8
+## [v1.2.8]
 
 ### Bugfix
 - Return empty arrays rather than null for message To, CC, BCC, Inlines & Attachments
@@ -116,13 +125,13 @@ Notable changes to Mailpit will be documented in this file.
 - Message tags and auto-tagging
 
 
-## v1.2.7
+## [v1.2.7]
 
 ### Feature
 - Allow custom webroot
 
 
-## v1.2.6
+## [v1.2.6]
 
 ### API
 - Provide structs of API v1 responses for use in client code
@@ -132,7 +141,7 @@ Notable changes to Mailpit will be documented in this file.
 - Update node modules
 
 
-## 1.2.5
+## [1.2.5]
 
 ### UI
 - Broadcast "delete all" action to reload all connected clients
@@ -141,13 +150,13 @@ Notable changes to Mailpit will be documented in this file.
 - Bump build action to use node 18
 
 
-## 1.2.4
+## [1.2.4]
 
 ### Bugfix
 - Fix mail download link
 
 
-## 1.2.3
+## [1.2.3]
 
 ### API
 - Add limit and start parameters to search
@@ -156,7 +165,7 @@ Notable changes to Mailpit will be documented in this file.
 - Prevent double message index request on websocket connect
 
 
-## 1.2.2
+## [1.2.2]
 
 ### API
 - Add API endpoint to return message headers
@@ -168,14 +177,14 @@ Notable changes to Mailpit will be documented in this file.
 - Add API test for raw & message headers
 
 
-## 1.2.1
+## [1.2.1]
 
 ### UI
 - Update frontend modules
 - Add about app modal with version update notification
 
 
-## 1.2.0
+## [1.2.0]
 
 ### Feature
 - Add REST API
@@ -188,13 +197,13 @@ Notable changes to Mailpit will be documented in this file.
 - Hide delete all / mark all read in message view
 
 
-## 1.1.7
+## [1.1.7]
 
 ### Fix
 - Normalize running binary name detection (Windows)
 
 
-## 1.1.6
+## [1.1.6]
 
 ### Fix
 - Workaround for Safari source matching bug blocking event listener
@@ -203,7 +212,7 @@ Notable changes to Mailpit will be documented in this file.
 - Add documentation link (wiki)
 
 
-## 1.1.5
+## [1.1.5]
 
 ### Build
 - Switch to esbuild-sass-plugin
@@ -212,7 +221,7 @@ Notable changes to Mailpit will be documented in this file.
 - Support for inline images using filenames instead of cid
 
 
-## 1.1.4
+## [1.1.4]
 
 ### Feature
 - Add --quiet flag to display only errors
@@ -226,32 +235,32 @@ Notable changes to Mailpit will be documented in this file.
 - Remove left & right borders (message list)
 
 
-## 1.1.3
+## [1.1.3]
 
 ### Fix
 - Update message download link
 
 
-## 1.1.2
+## [1.1.2]
 
 ### UI
 - Allow reverse proxy subdirectories
 
 
-## 1.1.1
+## [1.1.1]
 
 ### UI
 - Attachment icons and image thumbnails
 
 
-## 1.1.0
+## [1.1.0]
 
 ### UI
 - HTML source & highlighting
 - Add previous/next message links
 
 
-## 1.0.0
+## [1.0.0]
 
 ### Feature
 - Multiple message selection for group actions using shift/ctrl click
@@ -267,7 +276,7 @@ Notable changes to Mailpit will be documented in this file.
 - Update frontend modules & esbuild
 
 
-## 1.0.0-beta1
+## [1.0.0-beta1]
 
 ### BREAKING CHANGE
 
@@ -280,7 +289,7 @@ This release includes a major backend storage change (SQLite) that will render a
 - Resize preview iframe on load
 
 
-## 0.1.5
+## [0.1.5]
 
 ### Feature
 - Improved message search - any order & phrase quoting
@@ -290,7 +299,7 @@ This release includes a major backend storage change (SQLite) that will render a
 - Resize iframes with viewport resize
 
 
-## 0.1.4
+## [0.1.4]
 
 ### Feature
 - Email compression in storage
@@ -303,7 +312,7 @@ This release includes a major backend storage change (SQLite) that will render a
 - Mobile compatibility improvements & functionality
 
 
-## 0.1.3
+## [0.1.3]
 
 ### Feature
 - Mark all messages as read
@@ -318,7 +327,7 @@ This release includes a major backend storage change (SQLite) that will render a
 - Merge pull request [#6](https://github.com/axllent/mailpit/issues/6) from KaptinLin/develop
 
 
-## 0.1.2
+## [0.1.2]
 
 ### Feature
 - Optional browser notifications (HTTPS only)
@@ -329,19 +338,19 @@ This release includes a major backend storage change (SQLite) that will render a
 - Use strconv.Atoi() for safe string to int conversions
 
 
-## 0.1.1
+## [0.1.1]
 
 ### Bugfix
 - Fix env variable for MP_UI_SSL_KEY
 
 
-## 0.1.0
+## [0.1.0]
 
 ### Feature
 - SMTP STARTTLS & SMTP authentication support
 
 
-## 0.0.9
+## [0.0.9]
 
 ### Bugfix
 - Include read status in search results
@@ -353,7 +362,7 @@ This release includes a major backend storage change (SQLite) that will render a
 - Memory & physical database tests
 
 
-## 0.0.8
+## [0.0.8]
 
 ### Bugfix
 - Fix total/unread count after failed message inserts
@@ -362,25 +371,25 @@ This release includes a major backend storage change (SQLite) that will render a
 - Add project links to help in CLI
 
 
-## 0.0.7
+## [0.0.7]
 
 ### Bugfix
 - Command flag should be `--auth-file`
 
 
-## 0.0.6
+## [0.0.6]
 
 ### Bugfix
 - Disable CGO when building multi-arch binaries
 
 
-## 0.0.5
+## [0.0.5]
 
 ### Feature
 - Basic authentication support
 
 
-## 0.0.4
+## [0.0.4]
 
 ### Bugfix
 - Update to clover-v2.0.0-alpha.2 to fix sorting
@@ -397,13 +406,13 @@ This release includes a major backend storage change (SQLite) that will render a
 - cater for messages without From email address
 
 
-## 0.0.3
+## [0.0.3]
 
 ### Bugfix
 - Update to clover-v2.0.0-alpha.2 to fix sorting
 
 
-## 0.0.2
+## [0.0.2]
 
 ### Feature
 - Unread statistics

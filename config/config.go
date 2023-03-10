@@ -160,9 +160,9 @@ func VerifyConfig() error {
 		SMTPAuth = a
 	}
 
-	validWebrootRe := regexp.MustCompile(`[^0-9a-zA-Z\/-]`)
+	validWebrootRe := regexp.MustCompile(`[^0-9a-zA-Z\/\-\_\.]`)
 	if validWebrootRe.MatchString(Webroot) {
-		return fmt.Errorf("Invalid characters in Webroot (%s). Valid chars: a-z, A-Z, 0-9, - and /", Webroot)
+		return fmt.Errorf("Invalid characters in Webroot (%s). Valid chars include: [a-z A-Z 0-9 _ . - /]", Webroot)
 	}
 
 	s := strings.TrimRight(path.Join("/", Webroot, "/"), "/") + "/"
