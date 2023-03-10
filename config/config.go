@@ -1,3 +1,4 @@
+// Package config handles the application configuration
 package config
 
 import (
@@ -25,6 +26,9 @@ var (
 
 	// MaxMessages is the maximum number of messages a mailbox can have (auto-pruned every minute)
 	MaxMessages = 500
+
+	// UseMessageDates sets the Created date using the message date, not the delivered date
+	UseMessageDates bool
 
 	// VerboseLogging for console output
 	VerboseLogging = false

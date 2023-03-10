@@ -1,9 +1,11 @@
+// Package cmd is the main application
 package cmd
 
 import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/server"
@@ -109,20 +111,26 @@ func init() {
 	if len(os.Getenv("MP_WEBROOT")) > 0 {
 		config.Webroot = os.Getenv("MP_WEBROOT")
 	}
+	if len(os.Getenv("MP_USE_MESSAGE_DATES")) > 0 {
+		v := strings.ToLower(os.Getenv("MP_USE_MESSAGE_DATES"))
+		config.UseMessageDates = v != "0" && v != "false" && v != "yes"
+	}
 
 	// deprecated 2022/08/06
 	if len(os.Getenv("MP_AUTH_FILE")) > 0 {
+		fmt.Println("MP_AUTH_FILE has been deprecated, use MP_UI_AUTH_FILE")
 		config.UIAuthFile = os.Getenv("MP_AUTH_FILE")
 	}
 	// deprecated 2022/08/06
 	if len(os.Getenv("MP_SSL_CERT")) > 0 {
+		fmt.Println("MP_SSL_CERT has been deprecated, use MP_UI_SSL_CERT")
 		config.UISSLCert = os.Getenv("MP_SSL_CERT")
 	}
 	// deprecated 2022/08/06
 	if len(os.Getenv("MP_SSL_KEY")) > 0 {
+		fmt.Println("MP_SSL_KEY has been deprecated, use MP_UI_SSL_KEY")
 		config.UISSLKey = os.Getenv("MP_SSL_KEY")
 	}
-
 	// deprecated 2022/08/28
 	if len(os.Getenv("MP_DATA_DIR")) > 0 {
 		fmt.Println("MP_DATA_DIR has been deprecated, use MP_DATA_FILE")
@@ -134,6 +142,7 @@ func init() {
 	rootCmd.Flags().StringVarP(&config.HTTPListen, "listen", "l", config.HTTPListen, "HTTP bind interface and port for UI")
 	rootCmd.Flags().IntVarP(&config.MaxMessages, "max", "m", config.MaxMessages, "Max number of messages to store")
 	rootCmd.Flags().StringVar(&config.Webroot, "webroot", config.Webroot, "Set the webroot for web UI & API")
+	rootCmd.Flags().BoolVar(&config.UseMessageDates, "use-message-dates", false, "Use message dates as the received dates")
 
 	rootCmd.Flags().StringVar(&config.UIAuthFile, "ui-auth-file", config.UIAuthFile, "A password file for web UI authentication")
 	rootCmd.Flags().StringVar(&config.UISSLCert, "ui-ssl-cert", config.UISSLCert, "SSL certificate for web UI - requires ui-ssl-key")

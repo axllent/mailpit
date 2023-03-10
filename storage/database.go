@@ -201,6 +201,13 @@ func Store(body []byte) (string, error) {
 		Attachments: len(env.Attachments),
 	}
 
+	// use message date instead of created date
+	if config.UseMessageDates {
+		if mDate, err := env.Date(); err == nil {
+			obj.Created = mDate
+		}
+	}
+
 	// generate the search text
 	searchText := createSearchText(env)
 
