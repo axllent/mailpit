@@ -74,28 +74,11 @@ func init() {
 	rootCmd.PersistentFlags().BoolP("help", "h", false, "This help")
 	rootCmd.PersistentFlags().Lookup("help").Hidden = true
 
-	initConfigFromEnv()
+	// load and warn deprecated ENV vars
+	initDeprecatedConfigFromEnv()
 
-	// deprecated 2022/08/06
-	if len(os.Getenv("MP_AUTH_FILE")) > 0 {
-		fmt.Println("MP_AUTH_FILE has been deprecated, use MP_UI_AUTH_FILE")
-		config.UIAuthFile = os.Getenv("MP_AUTH_FILE")
-	}
-	// deprecated 2022/08/06
-	if len(os.Getenv("MP_SSL_CERT")) > 0 {
-		fmt.Println("MP_SSL_CERT has been deprecated, use MP_UI_SSL_CERT")
-		config.UISSLCert = os.Getenv("MP_SSL_CERT")
-	}
-	// deprecated 2022/08/06
-	if len(os.Getenv("MP_SSL_KEY")) > 0 {
-		fmt.Println("MP_SSL_KEY has been deprecated, use MP_UI_SSL_KEY")
-		config.UISSLKey = os.Getenv("MP_SSL_KEY")
-	}
-	// deprecated 2022/08/28
-	if len(os.Getenv("MP_DATA_DIR")) > 0 {
-		fmt.Println("MP_DATA_DIR has been deprecated, use MP_DATA_FILE")
-		config.DataFile = os.Getenv("MP_DATA_DIR")
-	}
+	// load ENV vars
+	initConfigFromEnv()
 
 	rootCmd.Flags().StringVarP(&config.DataFile, "db-file", "d", config.DataFile, "Database file to store persistent data")
 	rootCmd.Flags().StringVarP(&config.SMTPListen, "smtp", "s", config.SMTPListen, "SMTP bind interface and port")
@@ -105,34 +88,48 @@ func init() {
 	rootCmd.Flags().BoolVar(&config.UseMessageDates, "use-message-dates", false, "Use message dates as the received dates")
 
 	rootCmd.Flags().StringVar(&config.UIAuthFile, "ui-auth-file", config.UIAuthFile, "A password file for web UI authentication")
-	rootCmd.Flags().StringVar(&config.UISSLCert, "ui-ssl-cert", config.UISSLCert, "SSL certificate for web UI - requires ui-ssl-key")
-	rootCmd.Flags().StringVar(&config.UISSLKey, "ui-ssl-key", config.UISSLKey, "SSL key for web UI - requires ui-ssl-cert")
+	rootCmd.Flags().StringVar(&config.UITLSCert, "ui-tls-cert", config.UITLSCert, "TLS certificate for web UI (HTTPS) - requires ui-tls-key")
+	rootCmd.Flags().StringVar(&config.UITLSKey, "ui-tls-key", config.UITLSKey, "TLS key for web UI (HTTPS) - requires ui-tls-cert")
 
 	rootCmd.Flags().StringVar(&config.SMTPAuthFile, "smtp-auth-file", config.SMTPAuthFile, "A password file for SMTP authentication")
 	rootCmd.Flags().BoolVar(&config.SMTPAuthAcceptAny, "smtp-auth-accept-any", false, "Accept any SMTP username and password, including none")
-	rootCmd.Flags().StringVar(&config.SMTPSSLCert, "smtp-ssl-cert", config.SMTPSSLCert, "SSL certificate for SMTP - requires smtp-ssl-key")
-	rootCmd.Flags().StringVar(&config.SMTPSSLKey, "smtp-ssl-key", config.SMTPSSLKey, "SSL key for SMTP - requires smtp-ssl-cert")
+	rootCmd.Flags().StringVar(&config.SMTPTLSCert, "smtp-tls-cert", config.SMTPTLSCert, "TLS certificate for SMTP (STARTTLS) - requires smtp-tls-key")
+	rootCmd.Flags().StringVar(&config.SMTPTLSKey, "smtp-tls-key", config.SMTPTLSKey, "TLS key for SMTP (STARTTLS) - requires smtp-tls-cert")
 	rootCmd.Flags().BoolVar(&config.SMTPAuthAllowInsecure, "smtp-auth-allow-insecure", false, "Enable insecure PLAIN & LOGIN authentication")
 	rootCmd.Flags().StringVarP(&config.SMTPCLITags, "tag", "t", config.SMTPCLITags, "Tag new messages matching filters")
 
 	rootCmd.Flags().BoolVarP(&config.QuietLogging, "quiet", "q", false, "Quiet logging (errors only)")
 	rootCmd.Flags().BoolVarP(&config.VerboseLogging, "verbose", "v", false, "Verbose logging")
 
-	// deprecated 2022/08/06
+	// deprecated flags 2022/08/06
 	rootCmd.Flags().StringVarP(&config.UIAuthFile, "auth-file", "a", config.UIAuthFile, "A password file for web UI authentication")
-	rootCmd.Flags().StringVar(&config.UISSLCert, "ssl-cert", config.UISSLCert, "SSL certificate - requires ssl-key")
-	rootCmd.Flags().StringVar(&config.UISSLKey, "ssl-key", config.UISSLKey, "SSL key - requires ssl-cert")
+	rootCmd.Flags().StringVar(&config.UITLSCert, "ssl-cert", config.UITLSCert, "SSL certificate - requires ssl-key")
+	rootCmd.Flags().StringVar(&config.UITLSKey, "ssl-key", config.UITLSKey, "SSL key - requires ssl-cert")
 	rootCmd.Flags().Lookup("auth-file").Hidden = true
 	rootCmd.Flags().Lookup("auth-file").Deprecated = "use --ui-auth-file"
 	rootCmd.Flags().Lookup("ssl-cert").Hidden = true
-	rootCmd.Flags().Lookup("ssl-cert").Deprecated = "use --ui-ssl-cert"
+	rootCmd.Flags().Lookup("ssl-cert").Deprecated = "use --ui-tls-cert"
 	rootCmd.Flags().Lookup("ssl-key").Hidden = true
-	rootCmd.Flags().Lookup("ssl-key").Deprecated = "use --ui-ssl-key"
+	rootCmd.Flags().Lookup("ssl-key").Deprecated = "use --ui-tls-key"
 
-	// deprecated 2022/08/30
+	// deprecated flags 2022/08/30
 	rootCmd.Flags().StringVar(&config.DataFile, "data", config.DataFile, "Database file to store persistent data")
 	rootCmd.Flags().Lookup("data").Hidden = true
 	rootCmd.Flags().Lookup("data").Deprecated = "use --db-file"
+
+	// deprecated flags 2023/03/12
+	rootCmd.Flags().StringVar(&config.UITLSCert, "ui-ssl-cert", config.UITLSCert, "SSL certificate for web UI - requires ui-ssl-key")
+	rootCmd.Flags().StringVar(&config.UITLSKey, "ui-ssl-key", config.UITLSKey, "SSL key for web UI - requires ui-ssl-cert")
+	rootCmd.Flags().StringVar(&config.SMTPTLSCert, "smtp-ssl-cert", config.SMTPTLSCert, "SSL certificate for SMTP - requires smtp-ssl-key")
+	rootCmd.Flags().StringVar(&config.SMTPTLSKey, "smtp-ssl-key", config.SMTPTLSKey, "SSL key for SMTP - requires smtp-ssl-cert")
+	rootCmd.Flags().Lookup("ui-ssl-cert").Hidden = true
+	rootCmd.Flags().Lookup("ui-ssl-cert").Deprecated = "use --ui-tls-cert"
+	rootCmd.Flags().Lookup("ui-ssl-key").Hidden = true
+	rootCmd.Flags().Lookup("ui-ssl-key").Deprecated = "use --ui-tls-key"
+	rootCmd.Flags().Lookup("smtp-ssl-cert").Hidden = true
+	rootCmd.Flags().Lookup("smtp-ssl-cert").Deprecated = "use --smtp-tls-cert"
+	rootCmd.Flags().Lookup("smtp-ssl-key").Hidden = true
+	rootCmd.Flags().Lookup("smtp-ssl-key").Deprecated = "use --smtp-tls-key"
 }
 
 // Load settings from environment
@@ -158,22 +155,22 @@ func initConfigFromEnv() {
 	if len(os.Getenv("MP_UI_AUTH_FILE")) > 0 {
 		config.UIAuthFile = os.Getenv("MP_UI_AUTH_FILE")
 	}
-	if len(os.Getenv("MP_UI_SSL_CERT")) > 0 {
-		config.UISSLCert = os.Getenv("MP_UI_SSL_CERT")
+	if len(os.Getenv("MP_UI_TLS_CERT")) > 0 {
+		config.UITLSCert = os.Getenv("MP_UI_TLS_CERT")
 	}
-	if len(os.Getenv("MP_UI_SSL_KEY")) > 0 {
-		config.UISSLKey = os.Getenv("MP_UI_SSL_KEY")
+	if len(os.Getenv("MP_UI_TLS_KEY")) > 0 {
+		config.UITLSKey = os.Getenv("MP_UI_TLS_KEY")
 	}
 
 	// SMTP
 	if len(os.Getenv("MP_SMTP_AUTH_FILE")) > 0 {
 		config.SMTPAuthFile = os.Getenv("MP_SMTP_AUTH_FILE")
 	}
-	if len(os.Getenv("MP_SMTP_SSL_CERT")) > 0 {
-		config.SMTPSSLCert = os.Getenv("MP_SMTP_SSL_CERT")
+	if len(os.Getenv("MP_SMTP_TLS_CERT")) > 0 {
+		config.SMTPTLSCert = os.Getenv("MP_SMTP_TLS_CERT")
 	}
-	if len(os.Getenv("MP_SMTP_SSL_KEY")) > 0 {
-		config.SMTPSSLKey = os.Getenv("MP_SMTP_SSL_KEY")
+	if len(os.Getenv("MP_SMTP_TLS_KEY")) > 0 {
+		config.SMTPTLSKey = os.Getenv("MP_SMTP_TLS_KEY")
 	}
 	if getEnabledFromEnv("MP_SMTP_AUTH_ACCEPT_ANY") {
 		config.SMTPAuthAcceptAny = true
@@ -199,6 +196,48 @@ func initConfigFromEnv() {
 	}
 }
 
+// load deprecated settings from environment and warn
+func initDeprecatedConfigFromEnv() {
+	// deprecated 2022/08/06
+	if len(os.Getenv("MP_AUTH_FILE")) > 0 {
+		fmt.Println("ENV MP_AUTH_FILE has been deprecated, use MP_UI_AUTH_FILE")
+		config.UIAuthFile = os.Getenv("MP_AUTH_FILE")
+	}
+	// deprecated 2022/08/06
+	if len(os.Getenv("MP_SSL_CERT")) > 0 {
+		fmt.Println("ENV MP_SSL_CERT has been deprecated, use MP_UI_TLS_CERT")
+		config.UITLSCert = os.Getenv("MP_SSL_CERT")
+	}
+	// deprecated 2022/08/06
+	if len(os.Getenv("MP_SSL_KEY")) > 0 {
+		fmt.Println("ENV MP_SSL_KEY has been deprecated, use MP_UI_TLS_KEY")
+		config.UITLSKey = os.Getenv("MP_TLS_KEY")
+	}
+	// deprecated 2022/08/28
+	if len(os.Getenv("MP_DATA_DIR")) > 0 {
+		fmt.Println("ENV MP_DATA_DIR has been deprecated, use MP_DATA_FILE")
+		config.DataFile = os.Getenv("MP_DATA_DIR")
+	}
+	// deprecated 2023/03/12
+	if len(os.Getenv("MP_UI_SSL_CERT")) > 0 {
+		fmt.Println("ENV MP_UI_SSL_CERT has been deprecated, use MP_UI_TLS_CERT")
+		config.UITLSCert = os.Getenv("MP_UI_SSL_CERT")
+	}
+	if len(os.Getenv("MP_UI_SSL_KEY")) > 0 {
+		fmt.Println("ENV MP_UI_SSL_KEY has been deprecated, use MP_UI_TLS_KEY")
+		config.UITLSKey = os.Getenv("MP_UI_SSL_KEY")
+	}
+	if len(os.Getenv("MP_SMTP_SSL_CERT")) > 0 {
+		fmt.Println("ENV MP_SMTP_CERT has been deprecated, use MP_SMTP_TLS_CERT")
+		config.SMTPTLSCert = os.Getenv("MP_SMTP_SSL_CERT")
+	}
+	if len(os.Getenv("MP_SMTP_SSL_KEY")) > 0 {
+		fmt.Println("ENV MP_SMTP_KEY has been deprecated, use MP_SMTP_TLS_KEY")
+		config.SMTPTLSKey = os.Getenv("MP_SMTP_SMTP_KEY")
+	}
+}
+
+// Wrapper to get a boolean from an environment variable
 func getEnabledFromEnv(k string) bool {
 	if len(os.Getenv(k)) > 0 {
 		v := strings.ToLower(os.Getenv(k))

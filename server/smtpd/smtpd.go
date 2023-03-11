@@ -1,3 +1,4 @@
+// Package smtpd is the SMTP daemon
 package smtpd
 
 import (
@@ -98,8 +99,8 @@ func listenAndServe(addr string, handler smtpd.Handler, authHandler smtpd.AuthHa
 		srv.AuthHandler = authHandlerAny
 	}
 
-	if config.SMTPSSLCert != "" {
-		if err := srv.ConfigureTLS(config.SMTPSSLCert, config.SMTPSSLKey); err != nil {
+	if config.SMTPTLSCert != "" {
+		if err := srv.ConfigureTLS(config.SMTPTLSCert, config.SMTPTLSKey); err != nil {
 			return err
 		}
 	}

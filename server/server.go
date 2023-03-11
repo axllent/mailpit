@@ -3,18 +3,19 @@ package server
 import (
 	"compress/gzip"
 	"embed"
-	"github.com/axllent/mailpit/config"
-	"github.com/axllent/mailpit/server/apiv1"
-	"github.com/axllent/mailpit/server/handlers"
-	"github.com/axllent/mailpit/server/websockets"
-	"github.com/axllent/mailpit/utils/logger"
-	"github.com/gorilla/mux"
 	"io"
 	"io/fs"
 	"net/http"
 	"os"
 	"strings"
 	"sync/atomic"
+
+	"github.com/axllent/mailpit/config"
+	"github.com/axllent/mailpit/server/apiv1"
+	"github.com/axllent/mailpit/server/handlers"
+	"github.com/axllent/mailpit/server/websockets"
+	"github.com/axllent/mailpit/utils/logger"
+	"github.com/gorilla/mux"
 )
 
 //go:embed ui
@@ -62,9 +63,9 @@ func Listen() {
 	// Mark the application here as ready
 	isReady.Store(true)
 
-	if config.UISSLCert != "" && config.UISSLKey != "" {
+	if config.UITLSCert != "" && config.UITLSKey != "" {
 		logger.Log().Infof("[http] starting secure server on https://%s%s", config.HTTPListen, config.Webroot)
-		logger.Log().Fatal(http.ListenAndServeTLS(config.HTTPListen, config.UISSLCert, config.UISSLKey, nil))
+		logger.Log().Fatal(http.ListenAndServeTLS(config.HTTPListen, config.UITLSCert, config.UITLSKey, nil))
 	} else {
 		logger.Log().Infof("[http] starting server on http://%s%s", config.HTTPListen, config.Webroot)
 		logger.Log().Fatal(http.ListenAndServe(config.HTTPListen, nil))
