@@ -74,47 +74,7 @@ func init() {
 	rootCmd.PersistentFlags().BoolP("help", "h", false, "This help")
 	rootCmd.PersistentFlags().Lookup("help").Hidden = true
 
-	// defaults from envars if provided
-	if len(os.Getenv("MP_DATA_FILE")) > 0 {
-		config.DataFile = os.Getenv("MP_DATA_FILE")
-	}
-	if len(os.Getenv("MP_SMTP_BIND_ADDR")) > 0 {
-		config.SMTPListen = os.Getenv("MP_SMTP_BIND_ADDR")
-	}
-	if len(os.Getenv("MP_UI_BIND_ADDR")) > 0 {
-		config.HTTPListen = os.Getenv("MP_UI_BIND_ADDR")
-	}
-	if len(os.Getenv("MP_MAX_MESSAGES")) > 0 {
-		config.MaxMessages, _ = strconv.Atoi(os.Getenv("MP_MAX_MESSAGES"))
-	}
-	if len(os.Getenv("MP_TAG")) > 0 {
-		config.SMTPCLITags = os.Getenv("MP_TAG")
-	}
-	if len(os.Getenv("MP_UI_AUTH_FILE")) > 0 {
-		config.UIAuthFile = os.Getenv("MP_UI_AUTH_FILE")
-	}
-	if len(os.Getenv("MP_UI_SSL_CERT")) > 0 {
-		config.UISSLCert = os.Getenv("MP_UI_SSL_CERT")
-	}
-	if len(os.Getenv("MP_UI_SSL_KEY")) > 0 {
-		config.UISSLKey = os.Getenv("MP_UI_SSL_KEY")
-	}
-	if len(os.Getenv("MP_SMTP_AUTH_FILE")) > 0 {
-		config.SMTPAuthFile = os.Getenv("MP_SMTP_AUTH_FILE")
-	}
-	if len(os.Getenv("MP_SMTP_SSL_CERT")) > 0 {
-		config.SMTPSSLCert = os.Getenv("MP_SMTP_SSL_CERT")
-	}
-	if len(os.Getenv("MP_SMTP_SSL_KEY")) > 0 {
-		config.SMTPSSLKey = os.Getenv("MP_SMTP_SSL_KEY")
-	}
-	if len(os.Getenv("MP_WEBROOT")) > 0 {
-		config.Webroot = os.Getenv("MP_WEBROOT")
-	}
-	if len(os.Getenv("MP_USE_MESSAGE_DATES")) > 0 {
-		v := strings.ToLower(os.Getenv("MP_USE_MESSAGE_DATES"))
-		config.UseMessageDates = v != "0" && v != "false" && v != "yes"
-	}
+	initConfigFromEnv()
 
 	// deprecated 2022/08/06
 	if len(os.Getenv("MP_AUTH_FILE")) > 0 {
@@ -149,8 +109,10 @@ func init() {
 	rootCmd.Flags().StringVar(&config.UISSLKey, "ui-ssl-key", config.UISSLKey, "SSL key for web UI - requires ui-ssl-cert")
 
 	rootCmd.Flags().StringVar(&config.SMTPAuthFile, "smtp-auth-file", config.SMTPAuthFile, "A password file for SMTP authentication")
+	rootCmd.Flags().BoolVar(&config.SMTPAuthAcceptAny, "smtp-auth-accept-any", false, "Accept any SMTP username and password, including none")
 	rootCmd.Flags().StringVar(&config.SMTPSSLCert, "smtp-ssl-cert", config.SMTPSSLCert, "SSL certificate for SMTP - requires smtp-ssl-key")
 	rootCmd.Flags().StringVar(&config.SMTPSSLKey, "smtp-ssl-key", config.SMTPSSLKey, "SSL key for SMTP - requires smtp-ssl-cert")
+	rootCmd.Flags().BoolVar(&config.SMTPAuthAllowInsecure, "smtp-auth-allow-insecure", false, "Enable insecure PLAIN & LOGIN authentication")
 	rootCmd.Flags().StringVarP(&config.SMTPCLITags, "tag", "t", config.SMTPCLITags, "Tag new messages matching filters")
 
 	rootCmd.Flags().BoolVarP(&config.QuietLogging, "quiet", "q", false, "Quiet logging (errors only)")
@@ -171,4 +133,77 @@ func init() {
 	rootCmd.Flags().StringVar(&config.DataFile, "data", config.DataFile, "Database file to store persistent data")
 	rootCmd.Flags().Lookup("data").Hidden = true
 	rootCmd.Flags().Lookup("data").Deprecated = "use --db-file"
+}
+
+// Load settings from environment
+func initConfigFromEnv() {
+	// defaults from envars if provided
+	if len(os.Getenv("MP_DATA_FILE")) > 0 {
+		config.DataFile = os.Getenv("MP_DATA_FILE")
+	}
+	if len(os.Getenv("MP_SMTP_BIND_ADDR")) > 0 {
+		config.SMTPListen = os.Getenv("MP_SMTP_BIND_ADDR")
+	}
+	if len(os.Getenv("MP_UI_BIND_ADDR")) > 0 {
+		config.HTTPListen = os.Getenv("MP_UI_BIND_ADDR")
+	}
+	if len(os.Getenv("MP_MAX_MESSAGES")) > 0 {
+		config.MaxMessages, _ = strconv.Atoi(os.Getenv("MP_MAX_MESSAGES"))
+	}
+	if len(os.Getenv("MP_TAG")) > 0 {
+		config.SMTPCLITags = os.Getenv("MP_TAG")
+	}
+
+	// UI
+	if len(os.Getenv("MP_UI_AUTH_FILE")) > 0 {
+		config.UIAuthFile = os.Getenv("MP_UI_AUTH_FILE")
+	}
+	if len(os.Getenv("MP_UI_SSL_CERT")) > 0 {
+		config.UISSLCert = os.Getenv("MP_UI_SSL_CERT")
+	}
+	if len(os.Getenv("MP_UI_SSL_KEY")) > 0 {
+		config.UISSLKey = os.Getenv("MP_UI_SSL_KEY")
+	}
+
+	// SMTP
+	if len(os.Getenv("MP_SMTP_AUTH_FILE")) > 0 {
+		config.SMTPAuthFile = os.Getenv("MP_SMTP_AUTH_FILE")
+	}
+	if len(os.Getenv("MP_SMTP_SSL_CERT")) > 0 {
+		config.SMTPSSLCert = os.Getenv("MP_SMTP_SSL_CERT")
+	}
+	if len(os.Getenv("MP_SMTP_SSL_KEY")) > 0 {
+		config.SMTPSSLKey = os.Getenv("MP_SMTP_SSL_KEY")
+	}
+	if getEnabledFromEnv("MP_SMTP_AUTH_ACCEPT_ANY") {
+		config.SMTPAuthAcceptAny = true
+	}
+	if getEnabledFromEnv("MP_SMTP_AUTH_ALLOW_INSECURE") {
+		config.SMTPAuthAllowInsecure = true
+	}
+
+	if len(os.Getenv("MP_WEBROOT")) > 0 {
+		config.Webroot = os.Getenv("MP_WEBROOT")
+	}
+	if getEnabledFromEnv("MP_USE_MESSAGE_DATES") {
+		config.UseMessageDates = true
+	}
+	if getEnabledFromEnv("MP_USE_MESSAGE_DATES") {
+		config.UseMessageDates = true
+	}
+	if getEnabledFromEnv("MP_QUIET") {
+		config.QuietLogging = true
+	}
+	if getEnabledFromEnv("MP_VERBOSE") {
+		config.VerboseLogging = true
+	}
+}
+
+func getEnabledFromEnv(k string) bool {
+	if len(os.Getenv(k)) > 0 {
+		v := strings.ToLower(os.Getenv(k))
+		return v == "1" || v == "true" || v == "yes"
+	}
+
+	return false
 }

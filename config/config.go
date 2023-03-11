@@ -66,6 +66,12 @@ var (
 	// SMTPAuth used for euthentication
 	SMTPAuth *htpasswd.File
 
+	// SMTPAuthAllowInsecure allows PLAIN & LOGIN unencrypted authentication
+	SMTPAuthAllowInsecure bool
+
+	// SMTPAuthAcceptAny accepts any username/password including none
+	SMTPAuthAcceptAny bool
+
 	// SMTPCLITags is used to map the CLI args
 	SMTPCLITags string
 
@@ -153,8 +159,8 @@ func VerifyConfig() error {
 			return fmt.Errorf("SMTP password file not found: %s", SMTPAuthFile)
 		}
 
-		if SMTPSSLCert == "" {
-			return errors.New("SMTP authentication requires SMTP encryption")
+		if SMTPAuthAcceptAny {
+			return errors.New("SMTP authentication can either use --smtp-auth-file or --smtp-auth-accept-any")
 		}
 
 		a, err := htpasswd.New(SMTPAuthFile, htpasswd.DefaultSystems, nil)
@@ -162,6 +168,10 @@ func VerifyConfig() error {
 			return err
 		}
 		SMTPAuth = a
+	}
+
+	if SMTPSSLCert == "" && (SMTPAuthFile != "" || SMTPAuthAcceptAny) && !SMTPAuthAllowInsecure {
+		return errors.New("SMTP authentication requires SSL encryption, run with `--smtp-auth-allow-insecure` to allow insecure authentication")
 	}
 
 	validWebrootRe := regexp.MustCompile(`[^0-9a-zA-Z\/\-\_\.]`)
