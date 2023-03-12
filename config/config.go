@@ -1,3 +1,4 @@
+// Package config handles the application configuration
 package config
 
 import (
@@ -26,6 +27,9 @@ var (
 	// MaxMessages is the maximum number of messages a mailbox can have (auto-pruned every minute)
 	MaxMessages = 500
 
+	// UseMessageDates sets the Created date using the message date, not the delivered date
+	UseMessageDates bool
+
 	// VerboseLogging for console output
 	VerboseLogging = false
 
@@ -35,11 +39,11 @@ var (
 	// NoLogging for tests
 	NoLogging = false
 
-	// UISSLCert file
-	UISSLCert string
+	// UITLSCert file
+	UITLSCert string
 
-	// UISSLKey file
-	UISSLKey string
+	// UITLSKey file
+	UITLSKey string
 
 	// UIAuthFile for basic authentication
 	UIAuthFile string
@@ -50,17 +54,23 @@ var (
 	// Webroot to define the base path for the UI and API
 	Webroot = "/"
 
-	// SMTPSSLCert file
-	SMTPSSLCert string
+	// SMTPTLSCert file
+	SMTPTLSCert string
 
-	// SMTPSSLKey file
-	SMTPSSLKey string
+	// SMTPTLSKey file
+	SMTPTLSKey string
 
 	// SMTPAuthFile for SMTP authentication
 	SMTPAuthFile string
 
 	// SMTPAuth used for euthentication
 	SMTPAuth *htpasswd.File
+
+	// SMTPAuthAllowInsecure allows PLAIN & LOGIN unencrypted authentication
+	SMTPAuthAllowInsecure bool
+
+	// SMTPAuthAcceptAny accepts any username/password including none
+	SMTPAuthAcceptAny bool
 
 	// SMTPCLITags is used to map the CLI args
 	SMTPCLITags string
@@ -116,31 +126,31 @@ func VerifyConfig() error {
 		UIAuth = a
 	}
 
-	if UISSLCert != "" && UISSLKey == "" || UISSLCert == "" && UISSLKey != "" {
-		return errors.New("You must provide both a UI SSL certificate and a key")
+	if UITLSCert != "" && UITLSKey == "" || UITLSCert == "" && UITLSKey != "" {
+		return errors.New("You must provide both a UI TLS certificate and a key")
 	}
 
-	if UISSLCert != "" {
-		if !isFile(UISSLCert) {
-			return fmt.Errorf("SSL certificate not found: %s", UISSLCert)
+	if UITLSCert != "" {
+		if !isFile(UITLSCert) {
+			return fmt.Errorf("TLS certificate not found: %s", UITLSCert)
 		}
 
-		if !isFile(UISSLKey) {
-			return fmt.Errorf("SSL key not found: %s", UISSLKey)
+		if !isFile(UITLSKey) {
+			return fmt.Errorf("TLS key not found: %s", UITLSKey)
 		}
 	}
 
-	if SMTPSSLCert != "" && SMTPSSLKey == "" || SMTPSSLCert == "" && SMTPSSLKey != "" {
-		return errors.New("You must provide both an SMTP SSL certificate and a key")
+	if SMTPTLSCert != "" && SMTPTLSKey == "" || SMTPTLSCert == "" && SMTPTLSKey != "" {
+		return errors.New("You must provide both an SMTP TLS certificate and a key")
 	}
 
-	if SMTPSSLCert != "" {
-		if !isFile(SMTPSSLCert) {
-			return fmt.Errorf("SMTP SSL certificate not found: %s", SMTPSSLCert)
+	if SMTPTLSCert != "" {
+		if !isFile(SMTPTLSCert) {
+			return fmt.Errorf("SMTP TLS certificate not found: %s", SMTPTLSCert)
 		}
 
-		if !isFile(SMTPSSLKey) {
-			return fmt.Errorf("SMTP SSL key not found: %s", SMTPSSLKey)
+		if !isFile(SMTPTLSKey) {
+			return fmt.Errorf("SMTP TLS key not found: %s", SMTPTLSKey)
 		}
 	}
 
@@ -149,8 +159,8 @@ func VerifyConfig() error {
 			return fmt.Errorf("SMTP password file not found: %s", SMTPAuthFile)
 		}
 
-		if SMTPSSLCert == "" {
-			return errors.New("SMTP authentication requires SMTP encryption")
+		if SMTPAuthAcceptAny {
+			return errors.New("SMTP authentication can either use --smtp-auth-file or --smtp-auth-accept-any")
 		}
 
 		a, err := htpasswd.New(SMTPAuthFile, htpasswd.DefaultSystems, nil)
@@ -158,6 +168,10 @@ func VerifyConfig() error {
 			return err
 		}
 		SMTPAuth = a
+	}
+
+	if SMTPTLSCert == "" && (SMTPAuthFile != "" || SMTPAuthAcceptAny) && !SMTPAuthAllowInsecure {
+		return errors.New("SMTP authentication requires TLS encryption, run with `--smtp-auth-allow-insecure` to allow insecure authentication")
 	}
 
 	validWebrootRe := regexp.MustCompile(`[^0-9a-zA-Z\/\-\_\.]`)

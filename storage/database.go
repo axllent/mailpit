@@ -201,6 +201,13 @@ func Store(body []byte) (string, error) {
 		Attachments: len(env.Attachments),
 	}
 
+	// use message date instead of created date
+	if config.UseMessageDates {
+		if mDate, err := env.Date(); err == nil {
+			obj.Created = mDate
+		}
+	}
+
 	// generate the search text
 	searchText := createSearchText(env)
 
@@ -374,7 +381,8 @@ func Search(search string, start, limit int) ([]MessageSummary, error) {
 	return results, err
 }
 
-// GetMessage returns a data.Message generated from the mailbox_data collection.
+// GetMessage returns a Message generated from the mailbox_data collection.
+// If the message lacks a date header, then the received datetime is used.
 func GetMessage(id string) (*Message, error) {
 	raw, err := GetMessageRaw(id)
 	if err != nil {
@@ -396,7 +404,35 @@ func GetMessage(id string) (*Message, error) {
 		from = &mail.Address{Name: env.GetHeader("From")}
 	}
 
-	date, _ := env.Date()
+	date, err := env.Date()
+	if err != nil {
+		// return received datetime when message does not contain a date header
+		q := sqlf.From("mailbox").
+			Select(`Data`).
+			OrderBy("Sort DESC").
+			Where(`ID = ?`, id)
+
+		if err := q.QueryAndClose(nil, db, func(row *sql.Rows) {
+			var summary string
+			em := MessageSummary{}
+
+			if err := row.Scan(&summary); err != nil {
+				logger.Log().Error(err)
+				return
+			}
+
+			if err := json.Unmarshal([]byte(summary), &em); err != nil {
+				logger.Log().Error(err)
+				return
+			}
+
+			logger.Log().Debugf("[db] %s does not contain a date header, using received datetime", id)
+
+			date = em.Created
+		}); err != nil {
+			logger.Log().Error(err)
+		}
+	}
 
 	obj := Message{
 		ID:      id,
