@@ -2,6 +2,17 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.4.0]
+
+### API
+- Return received datetime when message does not contain a date header
+
+### Feature
+- Rename SSL to TLS, add deprecation warnings to flags & ENV variables referring to SSL
+- Options to support auth without STARTTLS, and accept any login
+- Option to use message dates as received dates (new messages only)
+
+
 ## [v1.3.11]
 
 ### Docker
