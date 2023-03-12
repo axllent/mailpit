@@ -6,7 +6,7 @@
 ![CodeQL](https://github.com/axllent/mailpit/actions/workflows/codeql-analysis.yml/badge.svg)
 [![Go Report Card](https://goreportcard.com/badge/github.com/axllent/mailpit)](https://goreportcard.com/report/github.com/axllent/mailpit)
 
-Mailpit is a multi-platform email testing tool for developers.
+Mailpit is a multi-platform email testing tool 7 API for developers.
 
 It acts as both an SMTP server, and provides a web interface to view all captured emails.
 
@@ -27,8 +27,8 @@ Mailpit is inspired by [MailHog](#why-rewrite-mailhog), but much, much faster.
 - Configurable automatic email pruning (default keeps the most recent 500 emails)
 - Email storage either in a temporary or persistent database ([see wiki](https://github.com/axllent/mailpit/wiki/Email-storage))
 - Fast SMTP processing & storing - approximately 70-100 emails per second depending on CPU, network speed & email size
-- Can handle hundreds of thousands of emails
-- Optional SMTP with STARTTLS & SMTP authentication ([see wiki](https://github.com/axllent/mailpit/wiki/SMTP-with-STARTTLS-and-authentication))
+- Can handle tens of thousands of emails
+- Optional SMTP with STARTTLS & SMTP authentication, including an "accept anything" mode ([see wiki](https://github.com/axllent/mailpit/wiki/SMTP-with-STARTTLS-and-authentication))
 - Optional HTTPS for web UI ([see wiki](https://github.com/axllent/mailpit/wiki/HTTPS))
 - Optional basic authentication for web UI ([see wiki](https://github.com/axllent/mailpit/wiki/Basic-authentication))
 - A simple REST API ([see docs](docs/apiv1/README.md))

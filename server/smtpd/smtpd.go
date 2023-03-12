@@ -1,3 +1,4 @@
+// Package smtpd is the SMTP daemon
 package smtpd
 
 import (
@@ -5,6 +6,7 @@ import (
 	"net"
 	"net/mail"
 	"regexp"
+	"strings"
 
 	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/storage"
@@ -33,21 +35,40 @@ func mailHandler(origin net.Addr, from string, to []string, data []byte) error {
 	}
 
 	subject := msg.Header.Get("Subject")
-	logger.Log().Debugf("[smtp] received mail from %s for %s with subject %s", from, to[0], subject)
+	logger.Log().Debugf("[smtp] received (%s) from:%s to:%s subject:%q", cleanIP(origin), from, to[0], subject)
 	return nil
 }
 
 func authHandler(remoteAddr net.Addr, mechanism string, username []byte, password []byte, shared []byte) (bool, error) {
-	return config.SMTPAuth.Match(string(username), string(password)), nil
+	allow := config.SMTPAuth.Match(string(username), string(password))
+	if allow {
+		logger.Log().Debugf("[smtp] allow %s login:%q from:%s", mechanism, string(username), cleanIP(remoteAddr))
+	} else {
+		logger.Log().Warnf("[smtp] deny %s login:%q from:%s", mechanism, string(username), cleanIP(remoteAddr))
+	}
+	return allow, nil
+}
+
+// Allow any username and password
+func authHandlerAny(remoteAddr net.Addr, mechanism string, username []byte, password []byte, shared []byte) (bool, error) {
+	logger.Log().Debugf("[smtp] allow %s login %q from %s", mechanism, string(username), cleanIP(remoteAddr))
+	return true, nil
 }
 
 // Listen starts the SMTPD server
 func Listen() error {
-	if config.SMTPSSLCert != "" {
-		logger.Log().Info("[smtp] enabling TLS")
-	}
-	if config.SMTPAuthFile != "" {
-		logger.Log().Info("[smtp] enabling authentication")
+	if config.SMTPAuthAllowInsecure {
+		if config.SMTPAuthFile != "" {
+			logger.Log().Infof("[smtp] enabling login auth via %s (insecure)", config.SMTPAuthFile)
+		} else if config.SMTPAuthAcceptAny {
+			logger.Log().Info("[smtp] enabling all auth (insecure)")
+		}
+	} else {
+		if config.SMTPAuthFile != "" {
+			logger.Log().Infof("[smtp] enabling login auth via %s (TLS)", config.SMTPAuthFile)
+		} else if config.SMTPAuthAcceptAny {
+			logger.Log().Info("[smtp] enabling any auth (TLS)")
+		}
 	}
 
 	logger.Log().Infof("[smtp] starting on %s", config.SMTPListen)
@@ -65,17 +86,30 @@ func listenAndServe(addr string, handler smtpd.Handler, authHandler smtpd.AuthHa
 		AuthRequired: false,
 	}
 
-	if config.SMTPAuthFile != "" {
-		srv.AuthHandler = authHandler
-		srv.AuthRequired = true
+	if config.SMTPAuthAllowInsecure {
+		srv.AuthMechs = map[string]bool{"CRAM-MD5": false, "PLAIN": true, "LOGIN": true}
 	}
 
-	if config.SMTPSSLCert != "" {
-		err := srv.ConfigureTLS(config.SMTPSSLCert, config.SMTPSSLKey)
-		if err != nil {
+	if config.SMTPAuthFile != "" {
+		srv.AuthMechs = map[string]bool{"CRAM-MD5": false, "PLAIN": true, "LOGIN": true}
+		srv.AuthHandler = authHandler
+		srv.AuthRequired = true
+	} else if config.SMTPAuthAcceptAny {
+		srv.AuthMechs = map[string]bool{"CRAM-MD5": false, "PLAIN": true, "LOGIN": true}
+		srv.AuthHandler = authHandlerAny
+	}
+
+	if config.SMTPTLSCert != "" {
+		if err := srv.ConfigureTLS(config.SMTPTLSCert, config.SMTPTLSKey); err != nil {
 			return err
 		}
 	}
 
 	return srv.ListenAndServe()
+}
+
+func cleanIP(i net.Addr) string {
+	parts := strings.Split(i.String(), ":")
+
+	return parts[0]
 }
