@@ -6,7 +6,7 @@
 ![CodeQL](https://github.com/axllent/mailpit/actions/workflows/codeql-analysis.yml/badge.svg)
 [![Go Report Card](https://goreportcard.com/badge/github.com/axllent/mailpit)](https://goreportcard.com/report/github.com/axllent/mailpit)
 
-Mailpit is a multi-platform email testing tool / API for developers.
+Mailpit is a multi-platform email testing tool & API for developers.
 
 It acts as both an SMTP server, and provides a web interface to view all captured emails.
 
