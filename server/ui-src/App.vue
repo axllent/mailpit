@@ -542,6 +542,14 @@ export default {
 				self.appInfo = response.data;
 				self.modal('AppInfoModal').show();
 			});
+		},
+
+		downloadMessageBody: function (str, ext) {
+			let dl = document.createElement('a');
+			dl.href = "data:text/plain," + encodeURIComponent(str);
+			dl.target = '_blank';
+			dl.download = this.message.ID + '.' + ext;
+			dl.click();
 		}
 	}
 }
@@ -575,10 +583,49 @@ export default {
 				:href="'#' + messagePrev" title="View previous message">
 				<i class="bi bi-caret-left-fill"></i>
 			</a>
-			<a :href="'api/v1/message/' + message.ID + '/raw?dl=1'" class="btn btn-outline-light me-2 float-end"
-				title="Download message">
-				<i class="bi bi-file-arrow-down-fill"></i> <span class="d-none d-md-inline">Download</span>
-			</a>
+			<div class="dropdown float-end" id="DownloadBtn">
+				<button type="button" class="btn btn-outline-light dropdown-toggle" data-bs-toggle="dropdown"
+					aria-expanded="false">
+					<i class="bi bi-file-arrow-down-fill"></i>
+					<span class="d-none d-md-inline ms-1">Download</span>
+				</button>
+				<ul class="dropdown-menu dropdown-menu-end">
+					<li>
+						<a :href="'api/v1/message/' + message.ID + '/raw?dl=1'" class="dropdown-item"
+							title="Message source including headers, body and attachments">
+							Raw message
+						</a>
+					</li>
+					<li v-if="message.HTML">
+						<button v-on:click="downloadMessageBody(message.HTML, 'html')" class="dropdown-item">
+							HTML body
+						</button>
+					</li>
+					<li v-if="message.Text">
+						<button v-on:click="downloadMessageBody(message.Text, 'txt')" class="dropdown-item">
+							Text body
+						</button>
+					</li>
+					<li v-if="allAttachments(message).length">
+						<hr class="dropdown-divider">
+					</li>
+					<li v-for="part in allAttachments(message)">
+						<a :href="'api/v1/message/' + message.ID + '/part/' + part.PartID" type="button"
+							class="row m-0 dropdown-item d-flex" target="_blank"
+							:title="part.FileName != '' ? part.FileName : '[ unknown ]'" style="min-width: 350px">
+							<div class="col-auto p-0 pe-1">
+								<i class="bi" :class="attachmentIcon(part)"></i>
+							</div>
+							<div class="col text-truncate p-0 pe-1">
+								{{ part.FileName != '' ? part.FileName : '[ unknown ]' }}
+							</div>
+							<div class="col-auto text-muted small p-0">
+								{{ getFileSize(part.Size) }}
+							</div>
+						</a>
+					</li>
+				</ul>
+			</div>
 		</div>
 
 		<div class="col col-md-9 col-lg-5" v-if="!message">
@@ -617,6 +664,7 @@ export default {
 				<option value="100">100</option>
 				<option value="200">200</option>
 			</select>
+
 			<span v-if="searching">
 				<b>{{ formatNumber(items.length) }} result<template v-if="items.length != 1">s</template></b>
 			</span>
@@ -678,16 +726,16 @@ export default {
 					<button class="list-group-item list-group-item-action" :disabled="!selectedHasUnread()"
 						v-on:click="markSelectedRead">
 						<i class="bi bi-eye-fill"></i>
-						Mark selected read
+						Mark read
 					</button>
 					<button class="list-group-item list-group-item-action" :disabled="!selectedHasRead()"
 						v-on:click="markSelectedUnread">
 						<i class="bi bi-eye-slash"></i>
-						Mark selected unread
+						Mark unread
 					</button>
 					<button class="list-group-item list-group-item-action" v-on:click="deleteMessages">
 						<i class="bi bi-trash-fill me-1 text-danger"></i>
-						Delete selected
+						Delete
 					</button>
 					<button class="list-group-item list-group-item-action" v-on:click="selected = []">
 						<i class="bi bi-x-circle me-1"></i>

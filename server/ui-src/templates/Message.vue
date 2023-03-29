@@ -211,25 +211,12 @@ export default {
 					</tbody>
 				</table>
 			</div>
-			<div class="col-md-auto text-md-end mt-md-3">
-				<!-- <p class="text-muted small d-none d-md-block mb-2"><small>{{ messageDate(message.Date) }}</small></p>
-																																																																												<p class="text-muted small d-none d-md-block"><small>Size: {{ getFileSize(message.Size) }}</small></p> -->
-				<div class="dropdown mt-2 mt-md-0" v-if="allAttachments(message)">
-					<button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown"
-						aria-expanded="false">
+			<div class="col-md-auto d-none d-md-block text-end mt-md-3">
+				<div class="mt-2 mt-md-0" v-if="allAttachments(message)">
+					<span class="badge rounded-pill text-bg-secondary p-2">
 						Attachment<span v-if="allAttachments(message).length > 1">s</span>
 						({{ allAttachments(message).length }})
-					</button>
-					<ul class="dropdown-menu">
-						<li v-for="part in allAttachments(message)">
-							<a :href="'api/v1/message/' + message.ID + '/part/' + part.PartID" type="button"
-								class="dropdown-item" target="_blank">
-								<i class="bi" :class="attachmentIcon(part)"></i>
-								{{ part.FileName != '' ? part.FileName : '[ unknown ]' }}
-								<small class="text-muted ms-2">{{ getFileSize(part.Size) }}</small>
-							</a>
-						</li>
-					</ul>
+					</span>
 				</div>
 			</div>
 		</div>
