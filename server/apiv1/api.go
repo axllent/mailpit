@@ -16,6 +16,34 @@ import (
 
 // GetMessages returns a paginated list of messages as JSON
 func GetMessages(w http.ResponseWriter, r *http.Request) {
+	// swagger:route GET /api/v1/messages messages GetMessages
+	//
+	// # List messages
+	//
+	// Returns messages from the mailbox ordered from newest to oldest.
+	//
+	//	Produces:
+	//	- application/json
+	//
+	//	Schemes: http, https
+	//
+	//	Parameters:
+	//	  + name: start
+	//	    in: query
+	//	    description: pagination offset
+	//	    required: false
+	//	    type: integer
+	//	    default: 0
+	//	  + name: limit
+	//	    in: query
+	//	    description: limit results
+	//	    required: false
+	//	    type: integer
+	//	    default: 50
+	//
+	//	Responses:
+	//		200: MessagesSummaryResponse
+	//		default: ErrorResponse
 	start, limit := getStartLimit(r)
 
 	messages, err := storage.List(start, limit)
@@ -40,11 +68,38 @@ func GetMessages(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(bytes)
 }
 
-// Search returns up to 200 of the latest messages as JSON
+// Search returns the latest messages as JSON
 func Search(w http.ResponseWriter, r *http.Request) {
+	// swagger:route GET /api/v1/search messages MessagesSummary
+	//
+	// # Search messages
+	//
+	// Returns the latest messages matching a search.
+	//
+	//	Produces:
+	//	- application/json
+	//
+	//	Schemes: http, https
+	//
+	//	Parameters:
+	//	  + name: query
+	//	    in: query
+	//	    description: search query
+	//	    required: true
+	//	    type: string
+	//	  + name: limit
+	//	    in: query
+	//	    description: limit results
+	//	    required: false
+	//	    type: integer
+	//	    default: 50
+	//
+	//	Responses:
+	//		200: MessagesSummaryResponse
+	//		default: ErrorResponse
 	search := strings.TrimSpace(r.URL.Query().Get("query"))
 	if search == "" {
-		fourOFour(w)
+		httpError(w, "Error: no search query")
 		return
 	}
 
@@ -72,15 +127,37 @@ func Search(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(bytes)
 }
 
-// GetMessage (method: GET) returns the *data.Message as JSON
+// GetMessage (method: GET) returns the Message as JSON
 func GetMessage(w http.ResponseWriter, r *http.Request) {
+	// swagger:route GET /api/v1/message/{ID} message Message
+	//
+	// # Get message summary
+	//
+	// Returns the summary of a message, marking the message as read.
+	//
+	//	Produces:
+	//	- application/json
+	//
+	//	Schemes: http, https
+	//
+	//	Parameters:
+	//	  + name: ID
+	//	    in: path
+	//	    description: message id
+	//	    required: true
+	//	    type: string
+	//
+	//	Responses:
+	//		200: Message
+	//		default: ErrorResponse
+
 	vars := mux.Vars(r)
 
 	id := vars["id"]
 
 	msg, err := storage.GetMessage(id)
 	if err != nil {
-		httpError(w, "Message not found")
+		fourOFour(w)
 		return
 	}
 
@@ -91,6 +168,35 @@ func GetMessage(w http.ResponseWriter, r *http.Request) {
 
 // DownloadAttachment (method: GET) returns the attachment data
 func DownloadAttachment(w http.ResponseWriter, r *http.Request) {
+	// swagger:route GET /api/v1/message/{ID}/part/{PartID} message Attachment
+	//
+	// # Get message attachment
+	//
+	// This will return the attachment part using the appropriate Content-Type.
+	//
+	//	Produces:
+	//	- application/*
+	//	- image/*
+	//	- text/*
+	//
+	//	Schemes: http, https
+	//
+	//	Parameters:
+	//	  + name: ID
+	//	    in: path
+	//	    description: message id
+	//	    required: true
+	//	    type: string
+	//	  + name: PartID
+	//	    in: path
+	//	    description: attachment part id
+	//	    required: true
+	//	    type: string
+	//
+	//	Responses:
+	//		200: BinaryResponse
+	//		default: ErrorResponse
+
 	vars := mux.Vars(r)
 
 	id := vars["id"]
@@ -98,7 +204,7 @@ func DownloadAttachment(w http.ResponseWriter, r *http.Request) {
 
 	a, err := storage.GetAttachmentPart(id, partID)
 	if err != nil {
-		httpError(w, err.Error())
+		fourOFour(w)
 		return
 	}
 	fileName := a.FileName
@@ -111,15 +217,37 @@ func DownloadAttachment(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(a.Content)
 }
 
-// Headers (method: GET) returns the message headers as JSON
-func Headers(w http.ResponseWriter, r *http.Request) {
+// GetHeaders (method: GET) returns the message headers as JSON
+func GetHeaders(w http.ResponseWriter, r *http.Request) {
+	// swagger:route GET /api/v1/message/{ID}/headers message Headers
+	//
+	// # Get message headers
+	//
+	// Returns the message headers as an array.
+	//
+	//	Produces:
+	//	- application/json
+	//
+	//	Schemes: http, https
+	//
+	//	Parameters:
+	//	  + name: ID
+	//	    in: path
+	//	    description: message id
+	//	    required: true
+	//	    type: string
+	//
+	//	Responses:
+	//	  200: MessageHeaders
+	//	  default: ErrorResponse
+
 	vars := mux.Vars(r)
 
 	id := vars["id"]
 
 	data, err := storage.GetMessageRaw(id)
 	if err != nil {
-		httpError(w, err.Error())
+		fourOFour(w)
 		return
 	}
 
@@ -130,8 +258,7 @@ func Headers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	headers := m.Header
-	bytes, _ := json.Marshal(headers)
+	bytes, _ := json.Marshal(m.Header)
 
 	w.Header().Add("Content-Type", "application/json")
 	_, _ = w.Write(bytes)
@@ -139,6 +266,28 @@ func Headers(w http.ResponseWriter, r *http.Request) {
 
 // DownloadRaw (method: GET) returns the full email source as plain text
 func DownloadRaw(w http.ResponseWriter, r *http.Request) {
+	// swagger:route GET /api/v1/message/{ID}/raw message Raw
+	//
+	// # Get message source
+	//
+	// Returns the full email source as plain text.
+	//
+	//	Produces:
+	//	- text/plain
+	//
+	//	Schemes: http, https
+	//
+	//	Parameters:
+	//	  + name: ID
+	//	    in: path
+	//	    description: message id
+	//	    required: true
+	//	    type: string
+	//
+	//	Responses:
+	//		200: TextResponse
+	//		default: ErrorResponse
+
 	vars := mux.Vars(r)
 
 	id := vars["id"]
@@ -147,7 +296,7 @@ func DownloadRaw(w http.ResponseWriter, r *http.Request) {
 
 	data, err := storage.GetMessageRaw(id)
 	if err != nil {
-		httpError(w, err.Error())
+		fourOFour(w)
 		return
 	}
 
@@ -159,8 +308,32 @@ func DownloadRaw(w http.ResponseWriter, r *http.Request) {
 }
 
 // DeleteMessages (method: DELETE) deletes all messages matching IDS.
-// If no IDs are provided then all messages are deleted.
 func DeleteMessages(w http.ResponseWriter, r *http.Request) {
+	// swagger:route DELETE /api/v1/messages messages Delete
+	//
+	// # Delete messages
+	//
+	// If no IDs are provided then all messages are deleted.
+	//
+	//	Consumes:
+	//	- application/json
+	//
+	//	Produces:
+	//	- text/plain
+	//
+	//	Schemes: http, https
+	//
+	//	Parameters:
+	//	  + name: ids
+	//	    in: body
+	//	    description: Message ids to delete
+	//	    required: false
+	//	    type: DeleteRequest
+	//
+	//	Responses:
+	//		200: OKResponse
+	//		default: ErrorResponse
+
 	decoder := json.NewDecoder(r.Body)
 	var data struct {
 		IDs []string
@@ -185,7 +358,33 @@ func DeleteMessages(w http.ResponseWriter, r *http.Request) {
 }
 
 // SetReadStatus (method: PUT) will update the status to Read/Unread for all provided IDs
+// If no IDs are provided then all messages are updated.
 func SetReadStatus(w http.ResponseWriter, r *http.Request) {
+	// swagger:route PUT /api/v1/messages messages SetReadStatus
+	//
+	// # Set read status
+	//
+	// If no IDs are provided then all messages are updated.
+	//
+	//	Consumes:
+	//	- application/json
+	//
+	//	Produces:
+	//	- text/plain
+	//
+	//	Schemes: http, https
+	//
+	//	Parameters:
+	//	  + name: ids
+	//	    in: body
+	//	    description: Message ids to update
+	//	    required: false
+	//	    type: SetReadStatusRequest
+	//
+	//	Responses:
+	//		200: OKResponse
+	//		default: ErrorResponse
+
 	decoder := json.NewDecoder(r.Body)
 
 	var data struct {
@@ -239,6 +438,31 @@ func SetReadStatus(w http.ResponseWriter, r *http.Request) {
 
 // SetTags (method: PUT) will set the tags for all provided IDs
 func SetTags(w http.ResponseWriter, r *http.Request) {
+	// swagger:route PUT /api/v1/tags tags SetTags
+	//
+	// # Set message tags
+	//
+	// To remove all tags from a message, pass an empty tags array.
+	//
+	//	Consumes:
+	//	- application/json
+	//
+	//	Produces:
+	//	- text/plain
+	//
+	//	Schemes: http, https
+	//
+	//	Parameters:
+	//	  + name: ids
+	//	    in: body
+	//	    description: Message ids to update
+	//	    required: true
+	//	    type: SetTagsRequest
+	//
+	//	Responses:
+	//		200: OKResponse
+	//		default: ErrorResponse
+
 	decoder := json.NewDecoder(r.Body)
 
 	var data struct {

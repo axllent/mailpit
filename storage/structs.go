@@ -7,45 +7,81 @@ import (
 	"github.com/jhillyerd/enmime"
 )
 
-// Message struct for loading messages. It does not include physical attachments.
+// Message data excluding physical attachments
+//
+// swagger:model Message
 type Message struct {
-	ID          string
-	Read        bool
-	From        *mail.Address
-	To          []*mail.Address
-	Cc          []*mail.Address
-	Bcc         []*mail.Address
-	Subject     string
-	Date        time.Time
-	Tags        []string
-	Text        string
-	HTML        string
-	Size        int
-	Inline      []Attachment
+	// Unique message database id
+	ID string
+	// Read status
+	Read bool
+	// From address
+	From *mail.Address
+	// To addresses
+	To []*mail.Address
+	// Cc addresses
+	Cc []*mail.Address
+	// Bcc addresses
+	Bcc []*mail.Address
+	// Message subject
+	Subject string
+	// Message date if set, else date received
+	Date time.Time
+	// Message tags
+	Tags []string
+	// Message body text
+	Text string
+	// Message body HTML
+	HTML string
+	// Message size in bytes
+	Size int
+	// Inline message attachments
+	Inline []Attachment
+	// Message attachments
 	Attachments []Attachment
 }
 
 // Attachment struct for inline and attachments
+//
+// swagger:model Attachment
 type Attachment struct {
-	PartID      string
-	FileName    string
+	// attachment part id
+	PartID string
+	// file name
+	FileName string
+	// content type
 	ContentType string
-	ContentID   string
-	Size        int
+	// content id
+	ContentID string
+	// size in bytes
+	Size int
 }
 
 // MessageSummary struct for frontend messages
+//
+// swagger:model MessageSummary
 type MessageSummary struct {
-	ID          string
-	Read        bool
-	From        *mail.Address
-	To          []*mail.Address
-	Cc          []*mail.Address
-	Bcc         []*mail.Address
-	Subject     string
-	Created     time.Time
-	Tags        []string
-	Size        int
+	// Unique message database id
+	ID string
+	// Read status
+	Read bool
+	// From address
+	From *mail.Address
+	// To address
+	To []*mail.Address
+	// Cc addresses
+	Cc []*mail.Address
+	// Bcc addresses
+	Bcc []*mail.Address
+	// Email subject
+	Subject string
+	// Created time
+	Created time.Time
+	// Message tags
+	Tags []string
+	// Message size in bytes (total)
+	Size int
+	// Whether the message has any attachments
 	Attachments int
 }
 

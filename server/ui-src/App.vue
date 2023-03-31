@@ -920,6 +920,12 @@ export default {
 					</a>
 
 					<div class="row g-3">
+						<div class="col-12">
+							<a class="btn btn-primary w-100" href="api/v1/" target="_blank">
+								<i class="bi bi-braces"></i>
+								OpenAPI / Swagger API documentation
+							</a>
+						</div>
 						<div class="col-sm-6">
 							<a class="btn btn-primary w-100" href="https://github.com/axllent/mailpit" target="_blank">
 								<i class="bi bi-github"></i>
