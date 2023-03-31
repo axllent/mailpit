@@ -45,11 +45,15 @@ func Run() {
 	var verbose bool
 
 	// override defaults from cli flags
-	flag.StringVar(&smtpAddr, "smtp-addr", smtpAddr, "SMTP server address")
 	flag.StringVarP(&fromAddr, "from", "f", fromAddr, "SMTP sender")
-	flag.BoolP("long-i", "i", true, "Ignored. This flag exists for sendmail compatibility.")
-	flag.BoolP("long-t", "t", true, "Ignored. This flag exists for sendmail compatibility.")
+	flag.StringVar(&smtpAddr, "smtp-addr", smtpAddr, "SMTP server address")
 	flag.BoolVarP(&verbose, "verbose", "v", false, "Verbose mode (sends debug output to stderr)")
+	flag.BoolP("long-b", "b", false, "Ignored. This flag exists for sendmail compatibility.")
+	flag.BoolP("long-i", "i", false, "Ignored. This flag exists for sendmail compatibility.")
+	flag.BoolP("long-o", "o", false, "Ignored. This flag exists for sendmail compatibility.")
+	flag.BoolP("long-s", "s", false, "Ignored. This flag exists for sendmail compatibility.")
+	flag.BoolP("long-t", "t", false, "Ignored. This flag exists for sendmail compatibility.")
+	flag.CommandLine.SortFlags = false
 	flag.Parse()
 
 	// allow recipient to be passed as an argument

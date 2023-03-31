@@ -2,6 +2,16 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.5.1]
+
+### Feature
+- Add 'o', 'b' & 's'  ignored flags for sendmail
+
+### Libs
+- Update Go modules
+- Update node modules
+
+
 ## [v1.5.0]
 
 ### API
