@@ -442,6 +442,7 @@ func GetMessage(id string) (*Message, error) {
 		To:      addressToSlice(env, "To"),
 		Cc:      addressToSlice(env, "Cc"),
 		Bcc:     addressToSlice(env, "Bcc"),
+		ReplyTo: addressToSlice(env, "Reply-To"),
 		Subject: env.GetHeader("Subject"),
 		Tags:    getMessageTags(id),
 		Size:    len(raw),

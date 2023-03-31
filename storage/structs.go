@@ -23,6 +23,8 @@ type Message struct {
 	Cc []*mail.Address
 	// Bcc addresses
 	Bcc []*mail.Address
+	// ReplyTo addresses
+	ReplyTo []*mail.Address
 	// Message subject
 	Subject string
 	// Message date if set, else date received

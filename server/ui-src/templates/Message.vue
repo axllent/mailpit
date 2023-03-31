@@ -147,12 +147,14 @@ export default {
 			<div class="col-md">
 				<table class="messageHeaders">
 					<tbody>
-						<tr class="small">
-							<th>From</th>
+						<tr>
+							<th class="small">From</th>
 							<td class="privacy">
 								<span v-if="message.From">
 									<span v-if="message.From.Name">{{ message.From.Name + " " }}</span>
-									<span v-if="message.From.Address">&lt;{{ message.From.Address }}&gt;</span>
+									<span v-if="message.From.Address" class="small">
+										&lt;{{ message.From.Address }}&gt;
+									</span>
 								</span>
 								<span v-else>
 									[ Unknown ]
@@ -164,9 +166,9 @@ export default {
 							<td class="privacy">
 								<span v-if="message.To && message.To.length" v-for="(t, i) in message.To">
 									<template v-if="i > 0">, </template>
-									<span class="text-nowrap">{{ t.Name + " <" + t.Address + ">" }}</span>
-									</span>
-									<span v-else>Undisclosed recipients</span>
+									<span class="text-nowrap">{{ t.Name + " &lt;" + t.Address + "&gt;" }}</span>
+								</span>
+								<span v-else>Undisclosed recipients</span>
 							</td>
 						</tr>
 						<tr v-if="message.Cc && message.Cc.length" class="small">
@@ -174,7 +176,7 @@ export default {
 							<td class="privacy">
 								<span v-for="(t, i) in message.Cc">
 									<template v-if="i > 0">,</template>
-									{{ t.Name + " <" + t.Address + ">" }} </span>
+									{{ t.Name + " &lt;" + t.Address + "&gt;" }} </span>
 							</td>
 						</tr>
 						<tr v-if="message.Bcc && message.Bcc.length" class="small">
@@ -182,7 +184,15 @@ export default {
 							<td class="privacy">
 								<span v-for="(t, i) in message.Bcc">
 									<template v-if="i > 0">,</template>
-									{{ t.Name + " <" + t.Address + ">" }} </span>
+									{{ t.Name + " &lt;" + t.Address + "&gt;" }} </span>
+							</td>
+						</tr>
+						<tr v-if="message.ReplyTo && message.ReplyTo.length" class="small">
+							<th class="text-nowrap">Reply-To</th>
+							<td class="privacy text-muted">
+								<span v-for="(t, i) in message.ReplyTo">
+									<template v-if="i > 0">,</template>
+									{{ t.Name + " &lt;" + t.Address + "&gt;" }} </span>
 							</td>
 						</tr>
 						<tr>
