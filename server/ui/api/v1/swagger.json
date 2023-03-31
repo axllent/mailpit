@@ -1,0 +1,820 @@
+{
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "schemes": [
+    "http"
+  ],
+  "swagger": "2.0",
+  "info": {
+    "description": "OpenAPI 2.0 documentation for [Mailpit](https://github.com/axllent/mailpit).",
+    "title": "Mailpit API",
+    "contact": {
+      "name": "GitHub",
+      "url": "https://github.com/axllent/mailpit"
+    },
+    "license": {
+      "name": "MIT license",
+      "url": "https://github.com/axllent/mailpit/blob/develop/LICENSE"
+    },
+    "version": "v1"
+  },
+  "paths": {
+    "/api/v1/info": {
+      "get": {
+        "description": "Returns basic runtime information, message totals and latest release version.",
+        "produces": [
+          "application/octet-stream"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "application"
+        ],
+        "summary": "Get the application information",
+        "operationId": "AppInformation",
+        "responses": {
+          "200": {
+            "$ref": "#/responses/InfoResponse"
+          },
+          "default": {
+            "$ref": "#/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/api/v1/message/{ID}": {
+      "get": {
+        "description": "Returns the summary of a message, marking the message as read.",
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "message"
+        ],
+        "summary": "Get message summary",
+        "operationId": "Message",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "message id",
+            "name": "ID",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Message",
+            "schema": {
+              "$ref": "#/definitions/Message"
+            }
+          },
+          "default": {
+            "$ref": "#/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/api/v1/message/{ID}/headers": {
+      "get": {
+        "description": "Returns the message headers as an array.",
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "message"
+        ],
+        "summary": "Get message headers",
+        "operationId": "Headers",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "message id",
+            "name": "ID",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "MessageHeaders",
+            "schema": {
+              "$ref": "#/definitions/MessageHeaders"
+            }
+          },
+          "default": {
+            "$ref": "#/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/api/v1/message/{ID}/part/{PartID}": {
+      "get": {
+        "description": "This will return the attachment part using the appropriate Content-Type.",
+        "produces": [
+          "application/*",
+          "image/*",
+          "text/*"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "message"
+        ],
+        "summary": "Get message attachment",
+        "operationId": "Attachment",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "message id",
+            "name": "ID",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "attachment part id",
+            "name": "PartID",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/BinaryResponse"
+          },
+          "default": {
+            "$ref": "#/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/api/v1/message/{ID}/part/{PartID}/thumb": {
+      "get": {
+        "description": "This will return a cropped 180x120 JPEG thumbnail of an image attachment.\nIf the image is smaller than 180x120 then the image is padded. If the attachment is not an image then a blank image is returned.",
+        "produces": [
+          "image/jpeg"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "message"
+        ],
+        "summary": "Get an attachment image thumbnail",
+        "operationId": "Thumbnail",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "message id",
+            "name": "ID",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "attachment part id",
+            "name": "PartID",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/BinaryResponse"
+          },
+          "default": {
+            "$ref": "#/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/api/v1/message/{ID}/raw": {
+      "get": {
+        "description": "Returns the full email source as plain text.",
+        "produces": [
+          "text/plain"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "message"
+        ],
+        "summary": "Get message source",
+        "operationId": "Raw",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "message id",
+            "name": "ID",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/TextResponse"
+          },
+          "default": {
+            "$ref": "#/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/api/v1/messages": {
+      "get": {
+        "description": "Returns messages from the mailbox ordered from newest to oldest.",
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "messages"
+        ],
+        "summary": "List messages",
+        "operationId": "GetMessages",
+        "parameters": [
+          {
+            "type": "integer",
+            "default": 0,
+            "description": "pagination offset",
+            "name": "start",
+            "in": "query"
+          },
+          {
+            "type": "integer",
+            "default": 50,
+            "description": "limit results",
+            "name": "limit",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/MessagesSummaryResponse"
+          },
+          "default": {
+            "$ref": "#/responses/ErrorResponse"
+          }
+        }
+      },
+      "put": {
+        "description": "If no IDs are provided then all messages are updated.",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "text/plain"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "messages"
+        ],
+        "summary": "Set read status",
+        "operationId": "SetReadStatus",
+        "parameters": [
+          {
+            "description": "Message ids to update",
+            "name": "ids",
+            "in": "body",
+            "schema": {
+              "description": "Message ids to update",
+              "type": "object",
+              "$ref": "#/definitions/SetReadStatusRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/OKResponse"
+          },
+          "default": {
+            "$ref": "#/responses/ErrorResponse"
+          }
+        }
+      },
+      "delete": {
+        "description": "If no IDs are provided then all messages are deleted.",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "text/plain"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "messages"
+        ],
+        "summary": "Delete messages",
+        "operationId": "Delete",
+        "parameters": [
+          {
+            "description": "Message ids to delete",
+            "name": "ids",
+            "in": "body",
+            "schema": {
+              "description": "Message ids to delete",
+              "type": "object",
+              "$ref": "#/definitions/DeleteRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/OKResponse"
+          },
+          "default": {
+            "$ref": "#/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/api/v1/search": {
+      "get": {
+        "description": "Returns the latest messages matching a search.",
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "messages"
+        ],
+        "summary": "Search messages",
+        "operationId": "MessagesSummary",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "search query",
+            "name": "query",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "integer",
+            "default": 50,
+            "description": "limit results",
+            "name": "limit",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/MessagesSummaryResponse"
+          },
+          "default": {
+            "$ref": "#/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/api/v1/tags": {
+      "put": {
+        "description": "To remove all tags from a message, pass an empty tags array.",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "text/plain"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "tags"
+        ],
+        "summary": "Set message tags",
+        "operationId": "SetTags",
+        "parameters": [
+          {
+            "description": "Message ids to update",
+            "name": "ids",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "description": "Message ids to update",
+              "type": "object",
+              "$ref": "#/definitions/SetTagsRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/OKResponse"
+          },
+          "default": {
+            "$ref": "#/responses/ErrorResponse"
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "Address": {
+      "description": "An address such as \"Barry Gibbs \u003cbg@example.com\u003e\" is represented\nas Address{Name: \"Barry Gibbs\", Address: \"bg@example.com\"}.",
+      "type": "object",
+      "title": "Address represents a single mail address.",
+      "properties": {
+        "Address": {
+          "type": "string"
+        },
+        "Name": {
+          "type": "string"
+        }
+      },
+      "x-go-package": "net/mail"
+    },
+    "AppInformation": {
+      "description": "Response includes the current and latest Mailpit versions, database info, and memory usage",
+      "type": "object",
+      "properties": {
+        "Database": {
+          "description": "Database path",
+          "type": "string"
+        },
+        "DatabaseSize": {
+          "description": "Database size in bytes",
+          "type": "integer",
+          "format": "int64"
+        },
+        "LatestVersion": {
+          "description": "Latest Mailpit version",
+          "type": "string"
+        },
+        "Memory": {
+          "description": "Current memory usage in bytes",
+          "type": "integer",
+          "format": "uint64"
+        },
+        "Messages": {
+          "description": "Total number of messages in the database",
+          "type": "integer",
+          "format": "int64"
+        },
+        "Version": {
+          "description": "Current Mailpit version",
+          "type": "string"
+        }
+      },
+      "x-go-name": "appInformation",
+      "x-go-package": "github.com/axllent/mailpit/server/apiv1"
+    },
+    "Attachment": {
+      "description": "Attachment struct for inline and attachments",
+      "type": "object",
+      "properties": {
+        "ContentID": {
+          "description": "content id",
+          "type": "string"
+        },
+        "ContentType": {
+          "description": "content type",
+          "type": "string"
+        },
+        "FileName": {
+          "description": "file name",
+          "type": "string"
+        },
+        "PartID": {
+          "description": "attachment part id",
+          "type": "string"
+        },
+        "Size": {
+          "description": "size in bytes",
+          "type": "integer",
+          "format": "int64"
+        }
+      },
+      "x-go-package": "github.com/axllent/mailpit/storage"
+    },
+    "DeleteRequest": {
+      "description": "Delete request",
+      "type": "object",
+      "properties": {
+        "ids": {
+          "description": "ids\nin:body",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "IDs"
+        }
+      },
+      "x-go-name": "deleteRequest",
+      "x-go-package": "github.com/axllent/mailpit/server/apiv1"
+    },
+    "Message": {
+      "description": "Message data excluding physical attachments",
+      "type": "object",
+      "properties": {
+        "Attachments": {
+          "description": "Message attachments",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Attachment"
+          }
+        },
+        "Bcc": {
+          "description": "Bcc addresses",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Address"
+          }
+        },
+        "Cc": {
+          "description": "Cc addresses",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Address"
+          }
+        },
+        "Date": {
+          "description": "Message date if set, else date received",
+          "type": "string",
+          "format": "date-time"
+        },
+        "From": {
+          "$ref": "#/definitions/Address"
+        },
+        "HTML": {
+          "description": "Message body HTML",
+          "type": "string"
+        },
+        "ID": {
+          "description": "Unique message database id",
+          "type": "string"
+        },
+        "Inline": {
+          "description": "Inline message attachments",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Attachment"
+          }
+        },
+        "Read": {
+          "description": "Read status",
+          "type": "boolean"
+        },
+        "Size": {
+          "description": "Message size in bytes",
+          "type": "integer",
+          "format": "int64"
+        },
+        "Subject": {
+          "description": "Message subject",
+          "type": "string"
+        },
+        "Tags": {
+          "description": "Message tags",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "Text": {
+          "description": "Message body text",
+          "type": "string"
+        },
+        "To": {
+          "description": "To addresses",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Address"
+          }
+        }
+      },
+      "x-go-package": "github.com/axllent/mailpit/storage"
+    },
+    "MessageHeaders": {
+      "description": "Message headers",
+      "type": "object",
+      "additionalProperties": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "x-go-name": "messageHeaders",
+      "x-go-package": "github.com/axllent/mailpit/server/apiv1"
+    },
+    "MessageSummary": {
+      "description": "MessageSummary struct for frontend messages",
+      "type": "object",
+      "properties": {
+        "Attachments": {
+          "description": "Whether the message has any attachments",
+          "type": "integer",
+          "format": "int64"
+        },
+        "Bcc": {
+          "description": "Bcc addresses",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Address"
+          }
+        },
+        "Cc": {
+          "description": "Cc addresses",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Address"
+          }
+        },
+        "Created": {
+          "description": "Created time",
+          "type": "string",
+          "format": "date-time"
+        },
+        "From": {
+          "$ref": "#/definitions/Address"
+        },
+        "ID": {
+          "description": "Unique message database id",
+          "type": "string"
+        },
+        "Read": {
+          "description": "Read status",
+          "type": "boolean"
+        },
+        "Size": {
+          "description": "Message size in bytes (total)",
+          "type": "integer",
+          "format": "int64"
+        },
+        "Subject": {
+          "description": "Email subject",
+          "type": "string"
+        },
+        "Tags": {
+          "description": "Message tags",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "To": {
+          "description": "To address",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Address"
+          }
+        }
+      },
+      "x-go-package": "github.com/axllent/mailpit/storage"
+    },
+    "MessagesSummary": {
+      "description": "MessagesSummary is a summary of a list of messages",
+      "type": "object",
+      "properties": {
+        "count": {
+          "description": "Number of results returned",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "Count"
+        },
+        "messages": {
+          "description": "Messages summary\nin:body",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/MessageSummary"
+          },
+          "x-go-name": "Messages"
+        },
+        "start": {
+          "description": "Pagination offset",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "Start"
+        },
+        "tags": {
+          "description": "All current tags",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "Tags"
+        },
+        "total": {
+          "description": "Total number of messages in mailbox",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "Total"
+        },
+        "unread": {
+          "description": "Total number of unread messages in mailbox",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "Unread"
+        }
+      },
+      "x-go-package": "github.com/axllent/mailpit/server/apiv1"
+    },
+    "SetReadStatusRequest": {
+      "description": "Set read status request",
+      "type": "object",
+      "properties": {
+        "ids": {
+          "description": "ids\nin:body",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "IDs"
+        },
+        "read": {
+          "description": "Read status",
+          "type": "boolean",
+          "x-go-name": "Read"
+        }
+      },
+      "x-go-name": "setReadStatusRequest",
+      "x-go-package": "github.com/axllent/mailpit/server/apiv1"
+    },
+    "SetTagsRequest": {
+      "description": "Set tags request",
+      "type": "object",
+      "properties": {
+        "ids": {
+          "description": "ids\nin:body",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "IDs"
+        },
+        "tags": {
+          "description": "Tags\nin:body",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "Tags"
+        }
+      },
+      "x-go-name": "setTagsRequest",
+      "x-go-package": "github.com/axllent/mailpit/server/apiv1"
+    }
+  },
+  "responses": {
+    "BinaryResponse": {
+      "description": "Binary data reponse inherits the attachment's content type"
+    },
+    "ErrorResponse": {
+      "description": "Error reponse"
+    },
+    "InfoResponse": {
+      "description": "Application information",
+      "schema": {
+        "$ref": "#/definitions/AppInformation"
+      },
+      "headers": {
+        "Body": {
+          "description": "Application information"
+        }
+      }
+    },
+    "MessagesSummaryResponse": {
+      "description": "Message summary",
+      "schema": {
+        "$ref": "#/definitions/MessagesSummary"
+      }
+    },
+    "OKResponse": {
+      "description": "Plain text \"ok\" reponse"
+    },
+    "TextResponse": {
+      "description": "Plain text response"
+    }
+  }
+}

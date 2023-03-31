@@ -149,10 +149,6 @@ body.blur {
     }
 }
 
-// .tag.active {
-//     font-weight: bold;
-// }
-
 .form-select.tag-selector {
     display: none;
 }
@@ -163,6 +159,17 @@ body.blur {
 
     input {
         font-size: 0.875em;
+    }
+}
+
+#DownloadBtn {
+    @include media-breakpoint-down(sm) {
+        position: static;
+
+        .dropdown-menu {
+            left: 0;
+            right: 0;
+        }
     }
 }
 

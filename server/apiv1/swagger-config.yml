@@ -1,0 +1,19 @@
+consumes:
+  - application/json
+info:
+  description:  |-
+    OpenAPI 2.0 documentation for [Mailpit](https://github.com/axllent/mailpit).
+  title: Mailpit API
+  contact:
+    name: GitHub
+    url: https://github.com/axllent/mailpit
+  license:
+    name: MIT license
+    url: https://github.com/axllent/mailpit/blob/develop/LICENSE
+  version: "v1"
+paths: {}
+produces:
+  - application/json
+schemes:
+  - http
+swagger: "2.0"
