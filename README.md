@@ -19,7 +19,7 @@ Mailpit is inspired by [MailHog](#why-rewrite-mailhog), but much, much faster.
 
 - Runs entirely from a single binary, no installation required
 - SMTP server (default `0.0.0.0:1025`)
-- Web UI to view emails (formatted HTML, highlighted HTML source, text, raw source and MIME attachments including image thumbnails)
+- Web UI to view emails (formatted HTML, highlighted HTML source, text, headers, raw source and MIME attachments including image thumbnails)
 - Advanced mail search ([see wiki](https://github.com/axllent/mailpit/wiki/Mail-search))
 - Message tagging ([see wiki](https://github.com/axllent/mailpit/wiki/Tagging))
 - Real-time web UI updates using web sockets for new mail
@@ -41,9 +41,11 @@ The Mailpit web UI listens by default on `http://0.0.0.0:8025`, and the SMTP por
 
 Mailpit runs as a single binary and can be installed in different ways:
 
+
 ### Install via Brew (Mac)
 
 Add the repository to your taps with `brew tap axllent/apps`, and then install Mailpit with `brew install mailpit`.
+
 
 ### Install via bash script (Linux & Mac)
 
@@ -53,13 +55,16 @@ Linux & Mac users can install it directly to `/usr/local/bin/mailpit` with:
 sudo bash < <(curl -sL https://raw.githubusercontent.com/axllent/mailpit/develop/install.sh)
 ```
 
+
 ### Download static binary (Windows, Linux and Mac)
 
 Static binaries can always be found on the [releases](https://github.com/axllent/mailpit/releases/latest). The `mailpit` binary can extracted and copied to your `$PATH`, or simply run as `./mailpit`.
 
+
 ### Docker
 
 See [Docker instructions](https://github.com/axllent/mailpit/wiki/Docker-images).
+
 
 ### Compile from source
 

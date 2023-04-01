@@ -586,6 +586,13 @@
           "description": "Read status",
           "type": "boolean"
         },
+        "ReplyTo": {
+          "description": "ReplyTo addresses",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Address"
+          }
+        },
         "Size": {
           "description": "Message size in bytes",
           "type": "integer",

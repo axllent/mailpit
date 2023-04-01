@@ -38,6 +38,14 @@
     }
 }
 
+.nav-tabs .nav-link {
+    @include media-breakpoint-down(sm) {
+        // font-size: 14px;
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+}
+
 #loading {
     position: absolute;
     top: 0;

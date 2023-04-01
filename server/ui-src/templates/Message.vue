@@ -4,6 +4,7 @@ import commonMixins from '../mixins.js';
 import Prism from "prismjs";
 import Tags from "bootstrap5-tags";
 import Attachments from './Attachments.vue';
+import Headers from './Headers.vue';
 
 export default {
 	props: {
@@ -12,7 +13,8 @@ export default {
 	},
 
 	components: {
-		Attachments
+		Attachments,
+		Headers
 	},
 
 	mixins: [commonMixins],
@@ -24,6 +26,7 @@ export default {
 			showTags: false, // to force rerendering of component
 			messageTags: [],
 			allTags: [],
+			loadHeaders: false
 		}
 	},
 
@@ -34,6 +37,7 @@ export default {
 				self.showTags = false;
 				self.messageTags = self.message.Tags;
 				self.allTags = self.existingTags;
+				self.loadHeaders = false;
 				// delay to select first tab and add HTML highlighting (prev/next)
 				self.$nextTick(function () {
 					self.renderUI();
@@ -60,9 +64,16 @@ export default {
 		self.allTags = self.existingTags;
 		window.addEventListener("resize", self.resizeIframes);
 		self.renderUI();
-		var tabEl = document.getElementById('nav-raw-tab');
-		tabEl.addEventListener('shown.bs.tab', function (event) {
+
+		let headersTab = document.getElementById('nav-headers-tab');
+		headersTab.addEventListener('shown.bs.tab', function (event) {
+			self.loadHeaders = true;
+		});
+
+		let rawTab = document.getElementById('nav-raw-tab');
+		rawTab.addEventListener('shown.bs.tab', function (event) {
 			self.srcURI = 'api/v1/message/' + self.message.ID + '/raw';
+			self.resizeIframes();
 		});
 
 		self.showTags = true;
@@ -147,12 +158,14 @@ export default {
 			<div class="col-md">
 				<table class="messageHeaders">
 					<tbody>
-						<tr class="small">
-							<th>From</th>
+						<tr>
+							<th class="small">From</th>
 							<td class="privacy">
 								<span v-if="message.From">
 									<span v-if="message.From.Name">{{ message.From.Name + " " }}</span>
-									<span v-if="message.From.Address">&lt;{{ message.From.Address }}&gt;</span>
+									<span v-if="message.From.Address" class="small">
+										&lt;{{ message.From.Address }}&gt;
+									</span>
 								</span>
 								<span v-else>
 									[ Unknown ]
@@ -164,9 +177,9 @@ export default {
 							<td class="privacy">
 								<span v-if="message.To && message.To.length" v-for="(t, i) in message.To">
 									<template v-if="i > 0">, </template>
-									<span class="text-nowrap">{{ t.Name + " <" + t.Address + ">" }}</span>
-									</span>
-									<span v-else>Undisclosed recipients</span>
+									<span class="text-nowrap">{{ t.Name + " &lt;" + t.Address + "&gt;" }}</span>
+								</span>
+								<span v-else>Undisclosed recipients</span>
 							</td>
 						</tr>
 						<tr v-if="message.Cc && message.Cc.length" class="small">
@@ -174,7 +187,7 @@ export default {
 							<td class="privacy">
 								<span v-for="(t, i) in message.Cc">
 									<template v-if="i > 0">,</template>
-									{{ t.Name + " <" + t.Address + ">" }} </span>
+									{{ t.Name + " &lt;" + t.Address + "&gt;" }} </span>
 							</td>
 						</tr>
 						<tr v-if="message.Bcc && message.Bcc.length" class="small">
@@ -182,7 +195,15 @@ export default {
 							<td class="privacy">
 								<span v-for="(t, i) in message.Bcc">
 									<template v-if="i > 0">,</template>
-									{{ t.Name + " <" + t.Address + ">" }} </span>
+									{{ t.Name + " &lt;" + t.Address + "&gt;" }} </span>
+							</td>
+						</tr>
+						<tr v-if="message.ReplyTo && message.ReplyTo.length" class="small">
+							<th class="text-nowrap">Reply-To</th>
+							<td class="privacy text-muted">
+								<span v-for="(t, i) in message.ReplyTo">
+									<template v-if="i > 0">,</template>
+									{{ t.Name + " &lt;" + t.Address + "&gt;" }} </span>
 							</td>
 						</tr>
 						<tr>
@@ -226,15 +247,21 @@ export default {
 				<button class="nav-link" id="nav-html-tab" data-bs-toggle="tab" data-bs-target="#nav-html" type="button"
 					role="tab" aria-controls="nav-html" aria-selected="true" v-if="message.HTML">HTML</button>
 				<button class="nav-link" id="nav-html-source-tab" data-bs-toggle="tab" data-bs-target="#nav-html-source"
-					type="button" role="tab" aria-controls="nav-html-source" aria-selected="false" v-if="message.HTML">HTML
-					Source</button>
+					type="button" role="tab" aria-controls="nav-html-source" aria-selected="false" v-if="message.HTML">
+					HTML <span class="d-sm-none">Src</span><span class="d-none d-sm-inline">Source</span>
+				</button>
 				<button class="nav-link" id="nav-plain-text-tab" data-bs-toggle="tab" data-bs-target="#nav-plain-text"
 					type="button" role="tab" aria-controls="nav-plain-text" aria-selected="false"
 					:class="message.HTML == '' ? 'show' : ''">Text</button>
+				<button class="nav-link" id="nav-headers-tab" data-bs-toggle="tab" data-bs-target="#nav-headers"
+					type="button" role="tab" aria-controls="nav-headers" aria-selected="false">
+					<span class="d-sm-none">Hdrs</span><span class="d-none d-sm-inline">Headers</span>
+				</button>
 				<button class="nav-link" id="nav-raw-tab" data-bs-toggle="tab" data-bs-target="#nav-raw" type="button"
 					role="tab" aria-controls="nav-raw" aria-selected="false">Raw</button>
 			</div>
 		</nav>
+
 		<div class="tab-content mb-5" id="nav-tabContent">
 			<div v-if="message.HTML != ''" class="tab-pane fade show" id="nav-html" role="tabpanel"
 				aria-labelledby="nav-html-tab" tabindex="0">
@@ -253,6 +280,9 @@ export default {
 				<div class="text-view">{{ message.Text }}</div>
 				<Attachments v-if="allAttachments(message).length" :message="message"
 					:attachments="allAttachments(message)"></Attachments>
+			</div>
+			<div class="tab-pane fade" id="nav-headers" role="tabpanel" aria-labelledby="nav-headers-tab" tabindex="0">
+				<Headers v-if="loadHeaders" :message="message"></Headers>
 			</div>
 			<div class="tab-pane fade" id="nav-raw" role="tabpanel" aria-labelledby="nav-raw-tab" tabindex="0">
 				<iframe v-if="srcURI" :src="srcURI" v-on:load="resizeIframe" seamless frameborder="0"
