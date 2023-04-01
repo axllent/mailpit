@@ -2,6 +2,12 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.5.3]
+
+### Bugfix
+- Enable SMTP auth flags to be set via env
+
+
 ## [v1.5.2]
 
 ### API
