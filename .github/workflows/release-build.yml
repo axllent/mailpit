@@ -33,7 +33,7 @@ jobs:
     - run: npm run package
 
     # build the binaries
-    - uses: wangyoucao577/go-release-action@v1.36
+    - uses: wangyoucao577/go-release-action@v1.37
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         goos: ${{ matrix.goos }}
