@@ -2,6 +2,15 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.5.2]
+
+### API
+- Include Reply-To in message summary (including Web UI)
+
+### UI
+- Tab to view formatted message headers
+
+
 ## [v1.5.1]
 
 ### Feature
