@@ -2,6 +2,12 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.5.4]
+
+### Feature
+- Mobile and tablet HTML preview toggle in desktop mode
+
+
 ## [v1.5.3]
 
 ### Bugfix

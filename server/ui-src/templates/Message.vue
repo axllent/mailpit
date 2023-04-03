@@ -26,7 +26,15 @@ export default {
 			showTags: false, // to force rerendering of component
 			messageTags: [],
 			allTags: [],
-			loadHeaders: false
+			loadHeaders: false,
+			showMobileBtns: false,
+			scaleHTMLPreview: 'display',
+			// keys names match bootstrap icon names 
+			responsiveSizes: {
+				phone: 'width: 322px; height: 570px',
+				tablet: 'width: 768px; height: 1024px',
+				display: 'width: 100%; height: 100%',
+			},
 		}
 	},
 
@@ -38,6 +46,7 @@ export default {
 				self.messageTags = self.message.Tags;
 				self.allTags = self.existingTags;
 				self.loadHeaders = false;
+				self.scaleHTMLPreview = 'display';// default view
 				// delay to select first tab and add HTML highlighting (prev/next)
 				self.$nextTick(function () {
 					self.renderUI();
@@ -54,6 +63,14 @@ export default {
 			// save changed to tags
 			if (this.showTags) {
 				this.saveTags();
+			}
+		},
+		scaleHTMLPreview() {
+			if (this.scaleHTMLPreview == 'display') {
+				let self = this;
+				window.setTimeout(function () {
+					self.resizeIframes();
+				}, 500);
 			}
 		}
 	},
@@ -124,15 +141,14 @@ export default {
 		},
 
 		resizeIframes: function () {
+			if (this.scaleHTMLPreview != 'display') {
+				return;
+			}
 			let h = document.getElementById('preview-html');
 			if (h) {
 				h.style.height = h.contentWindow.document.body.scrollHeight + 50 + 'px';
 			}
 
-			let s = document.getElementById('message-src');
-			if (s) {
-				s.style.height = s.contentWindow.document.body.scrollHeight + 50 + 'px';
-			}
 		},
 
 		saveTags: function () {
@@ -245,29 +261,45 @@ export default {
 		<nav>
 			<div class="nav nav-tabs my-3" id="nav-tab" role="tablist">
 				<button class="nav-link" id="nav-html-tab" data-bs-toggle="tab" data-bs-target="#nav-html" type="button"
-					role="tab" aria-controls="nav-html" aria-selected="true" v-if="message.HTML">HTML</button>
+					role="tab" aria-controls="nav-html" aria-selected="true" v-if="message.HTML"
+					v-on:click="showMobileBtns = true">HTML</button>
 				<button class="nav-link" id="nav-html-source-tab" data-bs-toggle="tab" data-bs-target="#nav-html-source"
-					type="button" role="tab" aria-controls="nav-html-source" aria-selected="false" v-if="message.HTML">
+					type="button" role="tab" aria-controls="nav-html-source" aria-selected="false" v-if="message.HTML"
+					v-on:click="showMobileBtns = false">
 					HTML <span class="d-sm-none">Src</span><span class="d-none d-sm-inline">Source</span>
 				</button>
 				<button class="nav-link" id="nav-plain-text-tab" data-bs-toggle="tab" data-bs-target="#nav-plain-text"
 					type="button" role="tab" aria-controls="nav-plain-text" aria-selected="false"
-					:class="message.HTML == '' ? 'show' : ''">Text</button>
+					:class="message.HTML == '' ? 'show' : ''" v-on:click="showMobileBtns = false">Text</button>
 				<button class="nav-link" id="nav-headers-tab" data-bs-toggle="tab" data-bs-target="#nav-headers"
-					type="button" role="tab" aria-controls="nav-headers" aria-selected="false">
+					type="button" role="tab" aria-controls="nav-headers" aria-selected="false"
+					v-on:click="showMobileBtns = false">
 					<span class="d-sm-none">Hdrs</span><span class="d-none d-sm-inline">Headers</span>
 				</button>
 				<button class="nav-link" id="nav-raw-tab" data-bs-toggle="tab" data-bs-target="#nav-raw" type="button"
-					role="tab" aria-controls="nav-raw" aria-selected="false">Raw</button>
+					role="tab" aria-controls="nav-raw" aria-selected="false"
+					v-on:click="showMobileBtns = false">Raw</button>
+
+				<div class="d-none d-lg-block ms-auto me-2" v-if="showMobileBtns">
+					<template v-for="vals, key in responsiveSizes">
+						<button class="btn" :class="scaleHTMLPreview == key ? 'btn-outline-primary' : ''"
+							:disabled="scaleHTMLPreview == key" :title="'Switch to ' + key + ' view'"
+							v-on:click="scaleHTMLPreview = key">
+							<i class="bi" :class="'bi-' + key"></i>
+						</button>
+					</template>
+				</div>
 			</div>
 		</nav>
 
 		<div class="tab-content mb-5" id="nav-tabContent">
 			<div v-if="message.HTML != ''" class="tab-pane fade show" id="nav-html" role="tabpanel"
 				aria-labelledby="nav-html-tab" tabindex="0">
-				<iframe target-blank="" class="tab-pane" id="preview-html" :srcdoc="message.HTML" v-on:load="resizeIframe"
-					seamless frameborder="0" style="width: 100%; height: 100%;">
-				</iframe>
+				<div id="responsive-view" :class="scaleHTMLPreview" :style="responsiveSizes[scaleHTMLPreview]">
+					<iframe target-blank="" class="tab-pane d-block" id="preview-html" :srcdoc="message.HTML"
+						v-on:load="resizeIframe" seamless frameborder="0" style="width: 100%; height: 100%;">
+					</iframe>
+				</div>
 				<Attachments v-if="allAttachments(message).length" :message="message"
 					:attachments="allAttachments(message)"></Attachments>
 			</div>
