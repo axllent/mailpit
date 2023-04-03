@@ -91,6 +91,89 @@
 
 #preview-html {
     min-height: 300px;
+
+    &.tablet,
+    &.phone {
+        border: solid $gray-300 1px;
+    }
+}
+
+#responsive-view {
+    margin: auto;
+    transition: width 0.5s;
+    position: relative;
+
+    &.tablet,
+    &.phone {
+        border-radius: 35px;
+        box-sizing: content-box;
+        padding-bottom: 76px;
+        padding-top: 54px;
+        padding-left: 10px;
+        padding-right: 10px;
+        background: $gray-800;
+
+        iframe {
+            height: 100% !important;
+            background: #fff;
+        }
+    }
+
+    &.phone {
+        &::before {
+            border-radius: 5px;
+            background: $gray-600;
+            top: 22px;
+            content: "";
+            display: block;
+            height: 10px;
+            left: 50%;
+            position: absolute;
+            transform: translateX(-50%);
+            width: 80px;
+        }
+
+        &::after {
+            border-radius: 20px;
+            background: $gray-900;
+            bottom: 20px;
+            content: "";
+            display: block;
+            width: 65px;
+            height: 40px;
+            left: 50%;
+            position: absolute;
+            transform: translateX(-50%);
+        }
+    }
+
+    &.tablet {
+        &::before {
+            border-radius: 50%;
+            border: solid #b5b0b0 2px;
+            top: 22px;
+            content: "";
+            display: block;
+            width: 10px;
+            height: 10px;
+            left: 50%;
+            position: absolute;
+            transform: translateX(-50%);
+        }
+
+        &::after {
+            border-radius: 50%;
+            border: solid #b5b0b0 2px;
+            bottom: 23px;
+            content: "";
+            display: block;
+            width: 30px;
+            height: 30px;
+            left: 50%;
+            position: absolute;
+            transform: translateX(-50%);
+        }
+    }
 }
 
 .list-group-item.message:first-child {
@@ -302,8 +385,8 @@ pre[class*="language-"] {
     opacity: 0.7;
 }
 @media screen and (max-width: 767px) {
-    pre[class*="language-"]:after,
-    pre[class*="language-"]:before {
+    pre[class*="language-"]::after,
+    pre[class*="language-"]::before {
         bottom: 14px;
         box-shadow: none;
     }
