@@ -24,7 +24,7 @@ jobs:
 
     - name: Parse semver
       id: semver_parser 
-      uses: booxmedialtd/ws-action-parse-semver@v1
+      uses: booxmedialtd/ws-action-parse-semver@v1.4.7
       with:
         input_string: '${{ github.ref_name }}'
         version_extractor_regex: 'v(.*)$'
