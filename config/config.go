@@ -16,10 +16,10 @@ import (
 
 var (
 	// SMTPListen to listen on <interface>:<port>
-	SMTPListen = "0.0.0.0:1025"
+	SMTPListen = "[::]:1025"
 
 	// HTTPListen to listen on <interface>:<port>
-	HTTPListen = "0.0.0.0:8025"
+	HTTPListen = "[::]:8025"
 
 	// DataFile for mail (optional)
 	DataFile string
@@ -106,7 +106,7 @@ func VerifyConfig() error {
 		DataFile = filepath.Join(DataFile, "mailpit.db")
 	}
 
-	re := regexp.MustCompile(`^[a-zA-Z0-9\.\-]{3,}:\d{2,}$`)
+	re := regexp.MustCompile(`^((\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})|(\[([\da-fA-F:])+\])):\d+$`)
 	if !re.MatchString(SMTPListen) {
 		return errors.New("SMTP bind should be in the format of <ip>:<port>")
 	}
