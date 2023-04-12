@@ -71,7 +71,7 @@ func Listen() error {
 		}
 	}
 
-	logger.Log().Infof("[smtp] starting on %s", config.SMTPListen)
+	logger.Log().Infof("[smtp] starting on %s", logger.CleanIP(config.SMTPListen))
 
 	return listenAndServe(config.SMTPListen, mailHandler, authHandler)
 }

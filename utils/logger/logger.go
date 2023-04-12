@@ -1,9 +1,11 @@
+// Package logger handles the logging
 package logger
 
 import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"regexp"
 
 	"github.com/axllent/mailpit/config"
 	"github.com/sirupsen/logrus"
@@ -44,4 +46,15 @@ func Log() *logrus.Logger {
 func PrettyPrint(i interface{}) {
 	s, _ := json.MarshalIndent(i, "", "\t")
 	fmt.Println(string(s))
+}
+
+// CleanIP returns a human-readable IP for the logging interface
+// when starting services. It translates [::]:<port> to "localhost:<port>"
+func CleanIP(s string) string {
+	re := regexp.MustCompile(`^\[\:\:\]\:\d+`)
+	if re.MatchString(s) {
+		return "0.0.0.0:" + s[5:]
+	}
+
+	return s
 }

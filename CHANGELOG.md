@@ -2,6 +2,15 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.5.5]
+
+### Docker
+- Add Docker image tag for major/minor version
+
+### Feature
+- Update listen regex to allow IPv6 addresses ([#85](https://github.com/axllent/mailpit/issues/85))
+
+
 ## [v1.5.4]
 
 ### Feature

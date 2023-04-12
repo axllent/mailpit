@@ -64,13 +64,12 @@ func Listen() {
 	isReady.Store(true)
 
 	if config.UITLSCert != "" && config.UITLSKey != "" {
-		logger.Log().Infof("[http] starting secure server on https://%s%s", config.HTTPListen, config.Webroot)
+		logger.Log().Infof("[http] starting secure server on https://%s%s", logger.CleanIP(config.HTTPListen), config.Webroot)
 		logger.Log().Fatal(http.ListenAndServeTLS(config.HTTPListen, config.UITLSCert, config.UITLSKey, nil))
 	} else {
-		logger.Log().Infof("[http] starting server on http://%s%s", config.HTTPListen, config.Webroot)
+		logger.Log().Infof("[http] starting server on http://%s%s", logger.CleanIP(config.HTTPListen), config.Webroot)
 		logger.Log().Fatal(http.ListenAndServe(config.HTTPListen, nil))
 	}
-
 }
 
 func defaultRoutes() *mux.Router {
