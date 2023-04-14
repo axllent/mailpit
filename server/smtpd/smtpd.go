@@ -3,6 +3,7 @@ package smtpd
 
 import (
 	"bytes"
+	"fmt"
 	"net"
 	"net/mail"
 	"regexp"
@@ -17,25 +18,60 @@ import (
 func mailHandler(origin net.Addr, from string, to []string, data []byte) error {
 	msg, err := mail.ReadMessage(bytes.NewReader(data))
 	if err != nil {
-		logger.Log().Errorf("error parsing message: %s", err.Error())
+		logger.Log().Errorf("[smtp] error parsing message: %s", err.Error())
+
 		return err
 	}
 
-	if _, err := storage.Store(data); err != nil {
-		// Value with size 4800709 exceeded 1048576 limit
-		re := regexp.MustCompile(`(Value with size \d+ exceeded \d+ limit)`)
-		tooLarge := re.FindStringSubmatch(err.Error())
-		if len(tooLarge) > 0 {
-			logger.Log().Errorf("[db] error storing message: %s", tooLarge[0])
+	// build array of all addresses in the header to compare to the []to array
+	emails, hasBccHeader := scanAddressesInHeader(msg.Header)
+
+	missingAddresses := []string{}
+	for _, a := range to {
+		// loop through passed email addresses to check if they are in the headers
+		if _, err := mail.ParseAddress(a); err == nil {
+			_, ok := emails[strings.ToLower(a)]
+			if !ok {
+				missingAddresses = append(missingAddresses, a)
+			}
 		} else {
-			logger.Log().Errorf("[db] error storing message")
-			logger.Log().Errorf(err.Error())
+			logger.Log().Warnf("[smtp] ignoring invalid email address: %s", a)
 		}
+	}
+
+	// add missing email addresses to Bcc (eg: Laravel doesn't include these in the headers)
+	if len(missingAddresses) > 0 {
+		if hasBccHeader {
+			// email already has Bcc header, add to existing addresses
+			re := regexp.MustCompile(`(?i)(^|\n)(Bcc: )`)
+			replaced := false
+			data = re.ReplaceAllFunc(data, func(r []byte) []byte {
+				if replaced {
+					return r
+				}
+				replaced = true // only replace first occurence
+
+				return re.ReplaceAll(r, []byte("${1}Bcc: "+strings.Join(missingAddresses, ", ")+", "))
+			})
+
+		} else {
+			// prepend new Bcc header
+			bcc := []byte(fmt.Sprintf("Bcc: %s\r\n", strings.Join(missingAddresses, ", ")))
+			data = append(bcc, data...)
+		}
+
+		logger.Log().Debugf("[smtp] added missing addresses to Bcc header: %s", strings.Join(missingAddresses, ", "))
+	}
+
+	if _, err := storage.Store(data); err != nil {
+		logger.Log().Errorf("[db] error storing message: %d", err.Error())
+
 		return err
 	}
 
 	subject := msg.Header.Get("Subject")
 	logger.Log().Debugf("[smtp] received (%s) from:%s to:%s subject:%q", cleanIP(origin), from, to[0], subject)
+
 	return nil
 }
 
@@ -46,12 +82,14 @@ func authHandler(remoteAddr net.Addr, mechanism string, username []byte, passwor
 	} else {
 		logger.Log().Warnf("[smtp] deny %s login:%q from:%s", mechanism, string(username), cleanIP(remoteAddr))
 	}
+
 	return allow, nil
 }
 
 // Allow any username and password
 func authHandlerAny(remoteAddr net.Addr, mechanism string, username []byte, password []byte, shared []byte) (bool, error) {
 	logger.Log().Debugf("[smtp] allow %s login %q from %s", mechanism, string(username), cleanIP(remoteAddr))
+
 	return true, nil
 }
 
@@ -112,4 +150,34 @@ func cleanIP(i net.Addr) string {
 	parts := strings.Split(i.String(), ":")
 
 	return parts[0]
+}
+
+// Returns a list of all lowercased emails found in To, Cc and Bcc,
+// as well as whether there is a Bcc field
+func scanAddressesInHeader(h mail.Header) (map[string]bool, bool) {
+	emails := make(map[string]bool)
+	hasBccHeader := false
+
+	if recipients, err := h.AddressList("To"); err == nil {
+		for _, r := range recipients {
+			emails[strings.ToLower(r.Address)] = true
+		}
+	}
+
+	if recipients, err := h.AddressList("Cc"); err == nil {
+		for _, r := range recipients {
+			emails[strings.ToLower(r.Address)] = true
+		}
+	}
+
+	recipients, err := h.AddressList("Bcc")
+	if err == nil {
+		for _, r := range recipients {
+			emails[strings.ToLower(r.Address)] = true
+		}
+
+		hasBccHeader = true
+	}
+
+	return emails, hasBccHeader
 }
