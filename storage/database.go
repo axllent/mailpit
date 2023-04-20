@@ -404,6 +404,11 @@ func GetMessage(id string) (*Message, error) {
 		from = &mail.Address{Name: env.GetHeader("From")}
 	}
 
+	returnPath := strings.Trim(env.GetHeader("Return-Path"), "<>")
+	if returnPath == "" {
+		returnPath = from.Address
+	}
+
 	date, err := env.Date()
 	if err != nil {
 		// return received datetime when message does not contain a date header
@@ -435,18 +440,19 @@ func GetMessage(id string) (*Message, error) {
 	}
 
 	obj := Message{
-		ID:      id,
-		Read:    true,
-		From:    from,
-		Date:    date,
-		To:      addressToSlice(env, "To"),
-		Cc:      addressToSlice(env, "Cc"),
-		Bcc:     addressToSlice(env, "Bcc"),
-		ReplyTo: addressToSlice(env, "Reply-To"),
-		Subject: env.GetHeader("Subject"),
-		Tags:    getMessageTags(id),
-		Size:    len(raw),
-		Text:    env.Text,
+		ID:         id,
+		Read:       true,
+		From:       from,
+		Date:       date,
+		To:         addressToSlice(env, "To"),
+		Cc:         addressToSlice(env, "Cc"),
+		Bcc:        addressToSlice(env, "Bcc"),
+		ReplyTo:    addressToSlice(env, "Reply-To"),
+		ReturnPath: returnPath,
+		Subject:    env.GetHeader("Subject"),
+		Tags:       getMessageTags(id),
+		Size:       len(raw),
+		Text:       env.Text,
 	}
 
 	// strip base tags
