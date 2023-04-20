@@ -30,15 +30,6 @@ var (
 	// UseMessageDates sets the Created date using the message date, not the delivered date
 	UseMessageDates bool
 
-	// VerboseLogging for console output
-	VerboseLogging = false
-
-	// QuietLogging for console output (errors only)
-	QuietLogging = false
-
-	// NoLogging for tests
-	NoLogging = false
-
 	// UITLSCert file
 	UITLSCert string
 

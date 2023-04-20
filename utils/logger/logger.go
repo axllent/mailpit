@@ -7,12 +7,17 @@ import (
 	"os"
 	"regexp"
 
-	"github.com/axllent/mailpit/config"
 	"github.com/sirupsen/logrus"
 )
 
 var (
 	log *logrus.Logger
+	// VerboseLogging for verbose logging
+	VerboseLogging bool
+	// QuietLogging shows only errors
+	QuietLogging bool
+	// NoLogging shows only fatal errors
+	NoLogging bool
 )
 
 // Log returns the logger instance
@@ -20,13 +25,13 @@ func Log() *logrus.Logger {
 	if log == nil {
 		log = logrus.New()
 		log.SetLevel(logrus.InfoLevel)
-		if config.VerboseLogging {
+		if VerboseLogging {
 			// verbose logging (debug)
 			log.SetLevel(logrus.DebugLevel)
-		} else if config.QuietLogging {
+		} else if QuietLogging {
 			// show errors only
 			log.SetLevel(logrus.ErrorLevel)
-		} else if config.NoLogging {
+		} else if NoLogging {
 			// disable all logging (tests)
 			log.SetLevel(logrus.PanicLevel)
 		}

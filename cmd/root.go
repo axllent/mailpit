@@ -98,8 +98,8 @@ func init() {
 	rootCmd.Flags().BoolVar(&config.SMTPAuthAllowInsecure, "smtp-auth-allow-insecure", config.SMTPAuthAllowInsecure, "Enable insecure PLAIN & LOGIN authentication")
 	rootCmd.Flags().StringVarP(&config.SMTPCLITags, "tag", "t", config.SMTPCLITags, "Tag new messages matching filters")
 
-	rootCmd.Flags().BoolVarP(&config.QuietLogging, "quiet", "q", config.QuietLogging, "Quiet logging (errors only)")
-	rootCmd.Flags().BoolVarP(&config.VerboseLogging, "verbose", "v", config.VerboseLogging, "Verbose logging")
+	rootCmd.Flags().BoolVarP(&logger.QuietLogging, "quiet", "q", logger.QuietLogging, "Quiet logging (errors only)")
+	rootCmd.Flags().BoolVarP(&logger.VerboseLogging, "verbose", "v", logger.VerboseLogging, "Verbose logging")
 
 	// deprecated flags 2022/08/06
 	rootCmd.Flags().StringVarP(&config.UIAuthFile, "auth-file", "a", config.UIAuthFile, "A password file for web UI authentication")
