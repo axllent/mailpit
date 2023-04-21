@@ -211,7 +211,8 @@ export default {
 							<td class="privacy">
 								<span v-for="(t, i) in message.Bcc">
 									<template v-if="i > 0">,</template>
-									{{ t.Name + " &lt;" + t.Address + "&gt;" }} </span>
+									{{ t.Name + " &lt;" + t.Address + "&gt;" }}
+								</span>
 							</td>
 						</tr>
 						<tr v-if="message.ReplyTo && message.ReplyTo.length" class="small">
@@ -222,9 +223,16 @@ export default {
 									{{ t.Name + " &lt;" + t.Address + "&gt;" }} </span>
 							</td>
 						</tr>
+						<tr v-if="message.ReturnPath && message.ReturnPath != message.From.Address" class="small">
+							<th class="text-nowrap">Return-Path</th>
+							<td class="privacy text-muted">&lt;{{ message.ReturnPath }}&gt;</td>
+						</tr>
 						<tr>
 							<th class="small">Subject</th>
-							<td><strong>{{ message.Subject }}</strong></td>
+							<td>
+								<strong v-if="message.Subject != ''">{{ message.Subject }}</strong>
+								<small class="text-muted" v-else>[ no subject ]</small>
+							</td>
 						</tr>
 						<tr class="d-md-none small">
 							<th class="small">Date</th>
@@ -262,7 +270,7 @@ export default {
 			<div class="nav nav-tabs my-3" id="nav-tab" role="tablist">
 				<button class="nav-link" id="nav-html-tab" data-bs-toggle="tab" data-bs-target="#nav-html" type="button"
 					role="tab" aria-controls="nav-html" aria-selected="true" v-if="message.HTML"
-					v-on:click="showMobileBtns = true">HTML</button>
+					v-on:click="showMobileBtns = true; resizeIframes()">HTML</button>
 				<button class="nav-link" id="nav-html-source-tab" data-bs-toggle="tab" data-bs-target="#nav-html-source"
 					type="button" role="tab" aria-controls="nav-html-source" aria-selected="false" v-if="message.HTML"
 					v-on:click="showMobileBtns = false">
