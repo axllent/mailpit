@@ -1,3 +1,4 @@
+// Package server is the HTTP daemon
 package server
 
 import (

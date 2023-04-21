@@ -98,6 +98,9 @@ func init() {
 	rootCmd.Flags().BoolVar(&config.SMTPAuthAllowInsecure, "smtp-auth-allow-insecure", config.SMTPAuthAllowInsecure, "Enable insecure PLAIN & LOGIN authentication")
 	rootCmd.Flags().StringVarP(&config.SMTPCLITags, "tag", "t", config.SMTPCLITags, "Tag new messages matching filters")
 
+	rootCmd.Flags().StringVar(&config.SMTPRelayConfigFile, "smtp-relay-config", config.SMTPRelayConfigFile, "SMTP configuration file to allow releasing messages")
+	rootCmd.Flags().BoolVar(&config.SMTPRelayAllIncoming, "smtp-relay-all", config.SMTPRelayAllIncoming, "Relay all incoming messages via external SMTP server (caution!)")
+
 	rootCmd.Flags().BoolVarP(&logger.QuietLogging, "quiet", "q", logger.QuietLogging, "Quiet logging (errors only)")
 	rootCmd.Flags().BoolVarP(&logger.VerboseLogging, "verbose", "v", logger.VerboseLogging, "Verbose logging")
 
@@ -179,6 +182,14 @@ func initConfigFromEnv() {
 		config.SMTPAuthAllowInsecure = true
 	}
 
+	// Relay server config
+	if len(os.Getenv("MP_SMTP_RELAY_CONFIG")) > 0 {
+		config.SMTPRelayConfigFile = os.Getenv("MP_SMTP_RELAY_CONFIG")
+	}
+	if getEnabledFromEnv("MP_SMTP_RELAY_ALL") {
+		config.SMTPRelayAllIncoming = true
+	}
+
 	if len(os.Getenv("MP_WEBROOT")) > 0 {
 		config.Webroot = os.Getenv("MP_WEBROOT")
 	}
@@ -189,10 +200,10 @@ func initConfigFromEnv() {
 		config.UseMessageDates = true
 	}
 	if getEnabledFromEnv("MP_QUIET") {
-		config.QuietLogging = true
+		logger.QuietLogging = true
 	}
 	if getEnabledFromEnv("MP_VERBOSE") {
-		config.VerboseLogging = true
+		logger.VerboseLogging = true
 	}
 }
 
