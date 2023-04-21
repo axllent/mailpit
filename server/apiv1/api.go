@@ -586,13 +586,18 @@ func ReleaseMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if config.SMTPRelayConfig.ReturnPath != "" && m.Header.Get("Return-Path") != "<"+config.SMTPRelayConfig.ReturnPath+">" {
-		msg, err = tools.RemoveMessageHeaders(msg, []string{"Return-Path"})
-		if err != nil {
-			httpError(w, err.Error())
-			return
+	// set the Return-Path and SMTP mfrom
+	if config.SMTPRelayConfig.ReturnPath != "" {
+		if m.Header.Get("Return-Path") != "<"+config.SMTPRelayConfig.ReturnPath+">" {
+			msg, err = tools.RemoveMessageHeaders(msg, []string{"Return-Path"})
+			if err != nil {
+				httpError(w, err.Error())
+				return
+			}
+			msg = append([]byte("Return-Path: <"+config.SMTPRelayConfig.ReturnPath+">\r\n"), msg...)
 		}
-		msg = append([]byte("Return-Path: <"+config.SMTPRelayConfig.ReturnPath+">\r\n"), msg...)
+
+		from = config.SMTPRelayConfig.ReturnPath
 	}
 
 	// generate unique ID
