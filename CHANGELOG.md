@@ -2,6 +2,12 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.6.2]
+
+### Bugfix
+- If set use return-path address as SMTP from address
+
+
 ## [v1.6.1]
 
 ### Bugfix
