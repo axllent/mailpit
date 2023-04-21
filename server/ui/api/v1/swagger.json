@@ -27,7 +27,7 @@
       "get": {
         "description": "Returns basic runtime information, message totals and latest release version.",
         "produces": [
-          "application/octet-stream"
+          "application/json"
         ],
         "schemes": [
           "http",
@@ -36,7 +36,7 @@
         "tags": [
           "application"
         ],
-        "summary": "Get the application information",
+        "summary": "Get application information",
         "operationId": "AppInformation",
         "responses": {
           "200": {
@@ -233,6 +233,54 @@
         "responses": {
           "200": {
             "$ref": "#/responses/TextResponse"
+          },
+          "default": {
+            "$ref": "#/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/api/v1/message/{ID}/release": {
+      "post": {
+        "description": "Release a message via a preconfigured external SMTP server..",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "text/plain"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "message"
+        ],
+        "summary": "Release message",
+        "operationId": "Release",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "message id",
+            "name": "ID",
+            "in": "path",
+            "required": true
+          },
+          {
+            "description": "Array of email addresses to release message to",
+            "name": "To",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "description": "Array of email addresses to release message to",
+              "type": "object",
+              "$ref": "#/definitions/ReleaseMessageRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/OKResponse"
           },
           "default": {
             "$ref": "#/responses/ErrorResponse"
@@ -438,6 +486,31 @@
           }
         }
       }
+    },
+    "/api/v1/webui": {
+      "get": {
+        "description": "Returns configuration settings for the web UI.",
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "application"
+        ],
+        "summary": "Get web UI configuration",
+        "operationId": "WebUIConfiguration",
+        "responses": {
+          "200": {
+            "$ref": "#/responses/WebUIConfigurationResponse"
+          },
+          "default": {
+            "$ref": "#/responses/ErrorResponse"
+          }
+        }
+      }
     }
   },
   "definitions": {
@@ -456,7 +529,7 @@
       "x-go-package": "net/mail"
     },
     "AppInformation": {
-      "description": "Response includes the current and latest Mailpit versions, database info, and memory usage",
+      "description": "Response includes the current and latest Mailpit version, database info, and memory usage",
       "type": "object",
       "properties": {
         "Database": {
@@ -592,6 +665,10 @@
           "items": {
             "$ref": "#/definitions/Address"
           }
+        },
+        "ReturnPath": {
+          "description": "ReturnPath is the Return-Path",
+          "type": "string"
         },
         "Size": {
           "description": "Message size in bytes",
@@ -747,6 +824,22 @@
       },
       "x-go-package": "github.com/axllent/mailpit/server/apiv1"
     },
+    "ReleaseMessageRequest": {
+      "description": "Release request",
+      "type": "object",
+      "properties": {
+        "to": {
+          "description": "To\nin:body",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "To"
+        }
+      },
+      "x-go-name": "releaseMessageRequest",
+      "x-go-package": "github.com/axllent/mailpit/server/apiv1"
+    },
     "SetReadStatusRequest": {
       "description": "Set read status request",
       "type": "object",
@@ -773,7 +866,7 @@
       "type": "object",
       "properties": {
         "ids": {
-          "description": "ids\nin:body",
+          "description": "IDs\nin:body",
           "type": "array",
           "items": {
             "type": "string"
@@ -790,6 +883,32 @@
         }
       },
       "x-go-name": "setTagsRequest",
+      "x-go-package": "github.com/axllent/mailpit/server/apiv1"
+    },
+    "WebUIConfiguration": {
+      "description": "Response includes global web UI settings",
+      "type": "object",
+      "properties": {
+        "MessageRelay": {
+          "description": "Message Relay information",
+          "type": "object",
+          "properties": {
+            "Enabled": {
+              "description": "Whether message relaying (release) is enabled",
+              "type": "boolean"
+            },
+            "ReturnPath": {
+              "description": "Enforced Return-Path (if set) for relay bounces",
+              "type": "string"
+            },
+            "SMTPServer": {
+              "description": "The configured SMTP server address",
+              "type": "string"
+            }
+          }
+        }
+      },
+      "x-go-name": "webUIConfiguration",
       "x-go-package": "github.com/axllent/mailpit/server/apiv1"
     }
   },
@@ -822,6 +941,17 @@
     },
     "TextResponse": {
       "description": "Plain text response"
+    },
+    "WebUIConfigurationResponse": {
+      "description": "Web UI configuration",
+      "schema": {
+        "$ref": "#/definitions/WebUIConfiguration"
+      },
+      "headers": {
+        "Body": {
+          "description": "Web UI configuration settings"
+        }
+      }
     }
   }
 }
