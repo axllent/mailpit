@@ -85,6 +85,7 @@ func init() {
 	rootCmd.Flags().StringVarP(&config.HTTPListen, "listen", "l", config.HTTPListen, "HTTP bind interface and port for UI")
 	rootCmd.Flags().IntVarP(&config.MaxMessages, "max", "m", config.MaxMessages, "Max number of messages to store")
 	rootCmd.Flags().StringVar(&config.Webroot, "webroot", config.Webroot, "Set the webroot for web UI & API")
+	rootCmd.Flags().StringVar(&server.AccessControlAllowOrigin, "api-cors", server.AccessControlAllowOrigin, "Set API CORS Access-Control-Allow-Origin header")
 	rootCmd.Flags().BoolVar(&config.UseMessageDates, "use-message-dates", config.UseMessageDates, "Use message dates as the received dates")
 
 	rootCmd.Flags().StringVar(&config.UIAuthFile, "ui-auth-file", config.UIAuthFile, "A password file for web UI authentication")
@@ -98,8 +99,11 @@ func init() {
 	rootCmd.Flags().BoolVar(&config.SMTPAuthAllowInsecure, "smtp-auth-allow-insecure", config.SMTPAuthAllowInsecure, "Enable insecure PLAIN & LOGIN authentication")
 	rootCmd.Flags().StringVarP(&config.SMTPCLITags, "tag", "t", config.SMTPCLITags, "Tag new messages matching filters")
 
-	rootCmd.Flags().BoolVarP(&config.QuietLogging, "quiet", "q", config.QuietLogging, "Quiet logging (errors only)")
-	rootCmd.Flags().BoolVarP(&config.VerboseLogging, "verbose", "v", config.VerboseLogging, "Verbose logging")
+	rootCmd.Flags().StringVar(&config.SMTPRelayConfigFile, "smtp-relay-config", config.SMTPRelayConfigFile, "SMTP configuration file to allow releasing messages")
+	rootCmd.Flags().BoolVar(&config.SMTPRelayAllIncoming, "smtp-relay-all", config.SMTPRelayAllIncoming, "Relay all incoming messages via external SMTP server (caution!)")
+
+	rootCmd.Flags().BoolVarP(&logger.QuietLogging, "quiet", "q", logger.QuietLogging, "Quiet logging (errors only)")
+	rootCmd.Flags().BoolVarP(&logger.VerboseLogging, "verbose", "v", logger.VerboseLogging, "Verbose logging")
 
 	// deprecated flags 2022/08/06
 	rootCmd.Flags().StringVarP(&config.UIAuthFile, "auth-file", "a", config.UIAuthFile, "A password file for web UI authentication")
@@ -179,8 +183,20 @@ func initConfigFromEnv() {
 		config.SMTPAuthAllowInsecure = true
 	}
 
+	// Relay server config
+	if len(os.Getenv("MP_SMTP_RELAY_CONFIG")) > 0 {
+		config.SMTPRelayConfigFile = os.Getenv("MP_SMTP_RELAY_CONFIG")
+	}
+	if getEnabledFromEnv("MP_SMTP_RELAY_ALL") {
+		config.SMTPRelayAllIncoming = true
+	}
+
+	// Misc options
 	if len(os.Getenv("MP_WEBROOT")) > 0 {
 		config.Webroot = os.Getenv("MP_WEBROOT")
+	}
+	if len(os.Getenv("MP_API_CORS")) > 0 {
+		server.AccessControlAllowOrigin = os.Getenv("MP_API_CORS")
 	}
 	if getEnabledFromEnv("MP_USE_MESSAGE_DATES") {
 		config.UseMessageDates = true
@@ -189,10 +205,10 @@ func initConfigFromEnv() {
 		config.UseMessageDates = true
 	}
 	if getEnabledFromEnv("MP_QUIET") {
-		config.QuietLogging = true
+		logger.QuietLogging = true
 	}
 	if getEnabledFromEnv("MP_VERBOSE") {
-		config.VerboseLogging = true
+		logger.VerboseLogging = true
 	}
 }
 

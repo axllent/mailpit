@@ -11,7 +11,7 @@ import (
 	"github.com/axllent/mailpit/utils/updater"
 )
 
-// Response includes the current and latest Mailpit versions, database info, and memory usage
+// Response includes the current and latest Mailpit version, database info, and memory usage
 //
 // swagger:model AppInformation
 type appInformation struct {
@@ -33,12 +33,12 @@ type appInformation struct {
 func AppInfo(w http.ResponseWriter, r *http.Request) {
 	// swagger:route GET /api/v1/info application AppInformation
 	//
-	// # Get the application information
+	// # Get application information
 	//
 	// Returns basic runtime information, message totals and latest release version.
 	//
 	//	Produces:
-	//	- application/octet-stream
+	//	- application/json
 	//
 	//	Schemes: http, https
 	//

@@ -251,6 +251,10 @@ body.blur {
     input {
         font-size: 0.875em;
     }
+
+    div {
+        cursor: text; // html5-tags
+    }
 }
 
 #DownloadBtn {
@@ -260,6 +264,14 @@ body.blur {
         .dropdown-menu {
             left: 0;
             right: 0;
+        }
+    }
+}
+
+#ReleaseModal {
+    .form-control.dropdown {
+        div {
+            @extend .form-control;
         }
     }
 }

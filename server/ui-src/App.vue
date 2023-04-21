@@ -2,6 +2,7 @@
 import commonMixins from './mixins.js';
 import Message from './templates/Message.vue';
 import MessageSummary from './templates/MessageSummary.vue';
+import MessageRelease from './templates/MessageRelease.vue';
 import moment from 'moment';
 import Tinycon from 'tinycon';
 
@@ -10,7 +11,8 @@ export default {
 
 	components: {
 		Message,
-		MessageSummary
+		MessageSummary,
+		MessageRelease
 	},
 
 	data() {
@@ -36,7 +38,9 @@ export default {
 			selected: [],
 			tcStatus: 0,
 			appInfo: false,
-			lastLoaded: false
+			lastLoaded: false,
+			relayConfig: {},
+			releaseAddresses: false,
 		}
 	},
 
@@ -87,6 +91,7 @@ export default {
 		});
 
 		this.connect();
+		this.getUISettings();
 		this.loadMessages();
 	},
 
@@ -147,6 +152,13 @@ export default {
 			});
 		},
 
+		getUISettings: function () {
+			let self = this;
+			self.get('api/v1/webui', null, function (response) {
+				self.relayConfig = response.data;
+			});
+		},
+
 		doSearch: function (e) {
 			e.preventDefault();
 			this.loadMessages();
@@ -192,6 +204,7 @@ export default {
 		openMessage: function (id) {
 			let self = this;
 			self.selected = [];
+			self.releaseAddresses = false;
 			self.existingTags = JSON.parse(JSON.stringify(self.tags));
 
 			let uri = 'api/v1/message/' + self.currentPath
@@ -550,6 +563,34 @@ export default {
 			dl.target = '_blank';
 			dl.download = this.message.ID + '.' + ext;
 			dl.click();
+		},
+
+		initReleaseModal: function () {
+			this.releaseAddresses = false;
+			let addresses = [];
+			for (let i in this.message.To) {
+				addresses.push(this.message.To[i].Address)
+			}
+			for (let i in this.message.Cc) {
+				addresses.push(this.message.Cc[i].Address)
+			}
+			for (let i in this.message.Bcc) {
+				addresses.push(this.message.Bcc[i].Address)
+			}
+
+			// include only unique email addresses, regardless of casing
+			let uAddresses = new Map(addresses.map(a => [a.toLowerCase(), a]));
+			this.releaseAddresses = [...uAddresses.values()];
+
+			let self = this;
+			window.setTimeout(function () {
+				// delay to allow elements to load
+				self.modal('ReleaseModal').show();
+
+				window.setTimeout(function () {
+					document.querySelector('#ReleaseModal input[role="combobox"]').focus()
+				}, 500);
+			}, 300);
 		}
 	}
 }
@@ -571,6 +612,10 @@ export default {
 			</a>
 			<button class="btn btn-outline-light me-2" title="Mark unread" v-on:click="markUnread">
 				<i class="bi bi-eye-slash"></i> <span class="d-none d-md-inline">Mark unread</span>
+			</button>
+			<button class="btn btn-outline-light me-2" title="Release message"
+				v-if="relayConfig.MessageRelay && relayConfig.MessageRelay.Enabled" v-on:click="initReleaseModal">
+				<i class="bi bi-send"></i> <span class="d-none d-md-inline">Release</span>
 			</button>
 			<button class="btn btn-outline-light me-2" title="Delete message" v-on:click="deleteMessages">
 				<i class="bi bi-trash-fill"></i> <span class="d-none d-md-inline">Delete</span>
@@ -962,5 +1007,11 @@ export default {
 				</div>
 			</div>
 		</div>
+	</div>
+
+	<!-- Modal -->
+	<div class="modal fade" id="ReleaseModal" tabindex="-1" aria-labelledby="AppInfoModalLabel" aria-hidden="true">
+		<MessageRelease v-if="releaseAddresses" :message="message" :relayConfig="relayConfig"
+			:releaseAddresses="releaseAddresses"></MessageRelease>
 	</div>
 </template>

@@ -9,6 +9,13 @@ type infoResponse struct {
 	Body appInformation
 }
 
+// Web UI configuration
+// swagger:response WebUIConfigurationResponse
+type webUIConfigurationResponse struct {
+	// Web UI configuration settings
+	Body webUIConfiguration
+}
+
 // Message summary
 // swagger:response MessagesSummaryResponse
 type messagesSummaryResponse struct {
@@ -47,9 +54,17 @@ type setTagsRequest struct {
 	// in:body
 	Tags []string `json:"tags"`
 
-	// ids
+	// IDs
 	// in:body
 	IDs []string `json:"ids"`
+}
+
+// Release request
+// swagger:model ReleaseMessageRequest
+type releaseMessageRequest struct {
+	// To
+	// in:body
+	To []string `json:"to"`
 }
 
 // Binary data reponse inherits the attachment's content type

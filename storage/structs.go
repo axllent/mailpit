@@ -25,6 +25,8 @@ type Message struct {
 	Bcc []*mail.Address
 	// ReplyTo addresses
 	ReplyTo []*mail.Address
+	// ReturnPath is the Return-Path
+	ReturnPath string
 	// Message subject
 	Subject string
 	// Message date if set, else date received

@@ -14,6 +14,7 @@ import (
 	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/server/apiv1"
 	"github.com/axllent/mailpit/storage"
+	"github.com/axllent/mailpit/utils/logger"
 	"github.com/jhillyerd/enmime"
 )
 
@@ -150,7 +151,7 @@ func Test_APIv1(t *testing.T) {
 }
 
 func setup() {
-	config.NoLogging = true
+	logger.NoLogging = true
 	config.MaxMessages = 0
 	config.DataFile = ""
 

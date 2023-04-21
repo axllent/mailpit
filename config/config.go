@@ -10,8 +10,10 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/axllent/mailpit/utils/logger"
 	"github.com/mattn/go-shellwords"
 	"github.com/tg123/go-htpasswd"
+	"gopkg.in/yaml.v3"
 )
 
 var (
@@ -29,15 +31,6 @@ var (
 
 	// UseMessageDates sets the Created date using the message date, not the delivered date
 	UseMessageDates bool
-
-	// VerboseLogging for console output
-	VerboseLogging = false
-
-	// QuietLogging for console output (errors only)
-	QuietLogging = false
-
-	// NoLogging for tests
-	NoLogging = false
 
 	// UITLSCert file
 	UITLSCert string
@@ -63,8 +56,8 @@ var (
 	// SMTPAuthFile for SMTP authentication
 	SMTPAuthFile string
 
-	// SMTPAuth used for euthentication
-	SMTPAuth *htpasswd.File
+	// SMTPAuthConfig used for authentication auto-generated from SMTPAuthFile
+	SMTPAuthConfig *htpasswd.File
 
 	// SMTPAuthAllowInsecure allows PLAIN & LOGIN unencrypted authentication
 	SMTPAuthAllowInsecure bool
@@ -79,7 +72,20 @@ var (
 	TagRegexp = regexp.MustCompile(`^([a-zA-Z0-9\-\ \_]){3,}$`)
 
 	// SMTPTags are expressions to apply tags to new mail
-	SMTPTags []Tag
+	SMTPTags []AutoTag
+
+	// SMTPRelayConfigFile to parse a yaml file and store config of relay SMTP server
+	SMTPRelayConfigFile string
+
+	// SMTPRelayConfig to parse a yaml file and store config of relay SMTP server
+	SMTPRelayConfig smtpRelayConfigStruct
+
+	// ReleaseEnabled is whether message releases are enabled, requires a valid SMTPRelayConfigFile
+	ReleaseEnabled = false
+
+	// SMTPRelayAllIncoming is whether to relay all incoming messages via preconfgured SMTP server.
+	// Use with extreme caution!
+	SMTPRelayAllIncoming = false
 
 	// ContentSecurityPolicy for HTTP server
 	ContentSecurityPolicy = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; frame-src 'self'; img-src * data: blob:; font-src 'self' data:; media-src 'self'; connect-src 'self' ws: wss:; object-src 'none'; base-uri 'self';"
@@ -94,10 +100,23 @@ var (
 	RepoBinaryName = "mailpit"
 )
 
-// Tag struct
-type Tag struct {
+// AutoTag struct for auto-tagging
+type AutoTag struct {
 	Tag   string
 	Match string
+}
+
+// SMTPRelayConfigStruct struct for parsing yaml & storing variables
+type smtpRelayConfigStruct struct {
+	Host          string `yaml:"host"`
+	Port          int    `yaml:"port"`
+	STARTTLS      bool   `yaml:"starttls"`
+	AllowInsecure bool   `yaml:"allow-insecure"`
+	Auth          string `yaml:"auth"`        // none, plain, cram-md5
+	Username      string `yaml:"username"`    // plain & cram-md5
+	Password      string `yaml:"password"`    // plain
+	Secret        string `yaml:"secret"`      // cram-md5
+	ReturnPath    string `yaml:"return-path"` // allows overriding the boune address
 }
 
 // VerifyConfig wil do some basic checking
@@ -167,7 +186,7 @@ func VerifyConfig() error {
 		if err != nil {
 			return err
 		}
-		SMTPAuth = a
+		SMTPAuthConfig = a
 	}
 
 	if SMTPTLSCert == "" && (SMTPAuthFile != "" || SMTPAuthAcceptAny) && !SMTPAuthAllowInsecure {
@@ -182,7 +201,7 @@ func VerifyConfig() error {
 	s := strings.TrimRight(path.Join("/", Webroot, "/"), "/") + "/"
 	Webroot = s
 
-	SMTPTags = []Tag{}
+	SMTPTags = []AutoTag{}
 
 	p := shellwords.NewParser()
 
@@ -203,13 +222,76 @@ func VerifyConfig() error {
 				if len(match) == 0 {
 					return fmt.Errorf("Invalid tag match (%s) - no search detected", tag)
 				}
-				SMTPTags = append(SMTPTags, Tag{Tag: tag, Match: match})
+				SMTPTags = append(SMTPTags, AutoTag{Tag: tag, Match: match})
 			} else {
 				return fmt.Errorf("Error parsing tags (%s)", a)
 			}
 		}
-
 	}
+
+	if err := parseRelayConfig(SMTPRelayConfigFile); err != nil {
+		return err
+	}
+
+	if !ReleaseEnabled && SMTPRelayAllIncoming {
+		return errors.New("SMTP relay config must be set to relay all messages")
+	}
+
+	if SMTPRelayAllIncoming {
+		// this deserves a warning
+		logger.Log().Warnf("[smtp] enabling automatic relay of all new messages via %s:%d", SMTPRelayConfig.Host, SMTPRelayConfig.Port)
+	}
+
+	return nil
+}
+
+// Parse & validate the SMTPRelayConfigFile (if set)
+func parseRelayConfig(c string) error {
+	if c == "" {
+		return nil
+	}
+
+	if !isFile(c) {
+		return fmt.Errorf("SMTP relay configuration not found: %s", SMTPRelayConfigFile)
+	}
+
+	data, err := os.ReadFile(c)
+	if err != nil {
+		return err
+	}
+
+	if err := yaml.Unmarshal(data, &SMTPRelayConfig); err != nil {
+		return err
+	}
+
+	if SMTPRelayConfig.Host == "" {
+		return errors.New("SMTP relay host not set")
+	}
+
+	if SMTPRelayConfig.Port == 0 {
+		SMTPRelayConfig.Port = 25 // default
+	}
+
+	SMTPRelayConfig.Auth = strings.ToLower(SMTPRelayConfig.Auth)
+
+	if SMTPRelayConfig.Auth == "" || SMTPRelayConfig.Auth == "none" || SMTPRelayConfig.Auth == "false" {
+		SMTPRelayConfig.Auth = "none"
+	} else if SMTPRelayConfig.Auth == "plain" {
+		if SMTPRelayConfig.Username == "" || SMTPRelayConfig.Password == "" {
+			return fmt.Errorf("SMTP relay host username or password not set for PLAIN authentication (%s)", c)
+		}
+	} else if strings.HasPrefix(SMTPRelayConfig.Auth, "cram") {
+		SMTPRelayConfig.Auth = "cram-md5"
+		if SMTPRelayConfig.Username == "" || SMTPRelayConfig.Secret == "" {
+			return fmt.Errorf("SMTP relay host username or secret not set for CRAM-MD5 authentication (%s)", c)
+		}
+	} else {
+		return fmt.Errorf("SMTP relay authentication method not supported: %s", SMTPRelayConfig.Auth)
+	}
+
+	ReleaseEnabled = true
+
+	logger.Log().Infof("[smtp] enabling message relaying via %s:%d", SMTPRelayConfig.Host, SMTPRelayConfig.Port)
 
 	return nil
 }

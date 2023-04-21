@@ -27,8 +27,8 @@ Mailpit is inspired by [MailHog](#why-rewrite-mailhog), but much, much faster.
 - Optional browser notifications for new mail (HTTPS only)
 - Configurable automatic email pruning (default keeps the most recent 500 emails)
 - Email storage either in a temporary or persistent database ([see wiki](https://github.com/axllent/mailpit/wiki/Email-storage))
-- Fast SMTP processing & storing - approximately 70-100 emails per second depending on CPU, network speed & email size
-- Can handle tens of thousands of emails
+- Fast SMTP processing & storing - approximately 70-100 emails per second depending on CPU, network speed & email size, easily handling tens of thousands of emails
+- SMTP relaying / message release - relay messages via a different SMTP server ([see wiki](https://github.com/axllent/mailpit/wiki/SMTP-relay))
 - Optional SMTP with STARTTLS & SMTP authentication, including an "accept anything" mode ([see wiki](https://github.com/axllent/mailpit/wiki/SMTP-with-STARTTLS-and-authentication))
 - Optional HTTPS for web UI ([see wiki](https://github.com/axllent/mailpit/wiki/HTTPS))
 - Optional basic authentication for web UI ([see wiki](https://github.com/axllent/mailpit/wiki/Basic-authentication))
@@ -90,8 +90,8 @@ You can build a Mailpit-specific sendmail binary from source (see [building from
 
 ## Why rewrite MailHog?
 
-I had been using MailHog for a few years to intercept and test emails generated from several projects. MailHog has a number of severe performance issues, many of the modules are horribly out of date, and other than a few accepted MRs, it is not actively developed.
+I had been using MailHog for a few years to intercept and test emails generated from several projects. MailHog has a number of performance issues, many of the frontend and Go modules are horribly out of date, and it is not actively developed.
 
-Initially I started trying to upgrade a fork of MailHog (both the UI as well as the HTTP server & API), but soon discovered that it is (with all due respect) very poorly designed. It is over-engineered (split over 9 separate projects) and has too many unnecessary features for my purpose. It performs exceptionally poorly when dealing with large amounts of emails or processing any email with an attachment (a single email with a 3MB attachment can take over a minute to ingest). The API also transmits a lot of duplicate and unnecessary data on every message request for all web calls, and there is no HTTP compression.
+Initially I tried to upgrade a fork of MailHog (both the UI as well as the HTTP server & API), but soon discovered that it is (with all due respect to its authors) poorly designed. It is in my opinion over-engineered (split over 9 separate projects), and performs very poorly when dealing with large amounts of emails or processing emails with an attachments (a single email with a 3MB attachment can take over a minute to ingest). Finally, the API transmits a lot of duplicate and unnecessary data on every browser request, and there is no HTTP compression.
 
 In order to improve it I felt it needed to be completely rewritten, and so Mailpit was born.

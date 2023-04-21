@@ -1,3 +1,4 @@
+// Package server is the HTTP daemon
 package server
 
 import (
@@ -20,6 +21,9 @@ import (
 
 //go:embed ui
 var embeddedFS embed.FS
+
+// AccessControlAllowOrigin CORS policy
+var AccessControlAllowOrigin string
 
 // Listen will start the httpd
 func Listen() {
@@ -87,6 +91,7 @@ func defaultRoutes() *mux.Router {
 	r.HandleFunc(config.Webroot+"api/v1/message/{id}/headers", middleWareFunc(apiv1.GetHeaders)).Methods("GET")
 	r.HandleFunc(config.Webroot+"api/v1/message/{id}", middleWareFunc(apiv1.GetMessage)).Methods("GET")
 	r.HandleFunc(config.Webroot+"api/v1/info", middleWareFunc(apiv1.AppInfo)).Methods("GET")
+	r.HandleFunc(config.Webroot+"api/v1/webui", middleWareFunc(apiv1.WebUIConfig)).Methods("GET")
 
 	return r
 }
@@ -113,6 +118,10 @@ func middleWareFunc(fn http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Referrer-Policy", "no-referrer")
 		w.Header().Set("Content-Security-Policy", config.ContentSecurityPolicy)
+
+		if AccessControlAllowOrigin != "" && strings.HasPrefix(r.RequestURI, config.Webroot+"api/") {
+			w.Header().Set("Access-Control-Allow-Origin", AccessControlAllowOrigin)
+		}
 
 		if config.UIAuthFile != "" {
 			user, pass, ok := r.BasicAuth()
@@ -146,6 +155,10 @@ func middlewareHandler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Referrer-Policy", "no-referrer")
 		w.Header().Set("Content-Security-Policy", config.ContentSecurityPolicy)
+
+		if AccessControlAllowOrigin != "" && strings.HasPrefix(r.RequestURI, config.Webroot+"api/") {
+			w.Header().Set("Access-Control-Allow-Origin", AccessControlAllowOrigin)
+		}
 
 		if config.UIAuthFile != "" {
 			user, pass, ok := r.BasicAuth()
