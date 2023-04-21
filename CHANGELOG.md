@@ -2,6 +2,25 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.6.0]
+
+### API
+- Enable cross-origin resource sharing (CORS) configuration
+- Message relay / release
+- Include Return-Path in message summary data
+
+### Feature
+- Inject/update Bcc header for missing addresses when SMTP recipients do not match messsage headers
+
+### Libs
+- Update Go modules
+- Update node modules
+
+### UI
+- Display Return-Path if different to the From address
+- Message release functionality
+
+
 ## [v1.5.5]
 
 ### Docker
