@@ -22,6 +22,9 @@ import (
 //go:embed ui
 var embeddedFS embed.FS
 
+// AccessControlAllowOrigin CORS policy
+var AccessControlAllowOrigin string
+
 // Listen will start the httpd
 func Listen() {
 	isReady := &atomic.Value{}
@@ -116,6 +119,10 @@ func middleWareFunc(fn http.HandlerFunc) http.HandlerFunc {
 		w.Header().Set("Referrer-Policy", "no-referrer")
 		w.Header().Set("Content-Security-Policy", config.ContentSecurityPolicy)
 
+		if AccessControlAllowOrigin != "" && strings.HasPrefix(r.RequestURI, config.Webroot+"api/") {
+			w.Header().Set("Access-Control-Allow-Origin", AccessControlAllowOrigin)
+		}
+
 		if config.UIAuthFile != "" {
 			user, pass, ok := r.BasicAuth()
 
@@ -148,6 +155,10 @@ func middlewareHandler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Referrer-Policy", "no-referrer")
 		w.Header().Set("Content-Security-Policy", config.ContentSecurityPolicy)
+
+		if AccessControlAllowOrigin != "" && strings.HasPrefix(r.RequestURI, config.Webroot+"api/") {
+			w.Header().Set("Access-Control-Allow-Origin", AccessControlAllowOrigin)
+		}
 
 		if config.UIAuthFile != "" {
 			user, pass, ok := r.BasicAuth()

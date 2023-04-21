@@ -85,6 +85,7 @@ func init() {
 	rootCmd.Flags().StringVarP(&config.HTTPListen, "listen", "l", config.HTTPListen, "HTTP bind interface and port for UI")
 	rootCmd.Flags().IntVarP(&config.MaxMessages, "max", "m", config.MaxMessages, "Max number of messages to store")
 	rootCmd.Flags().StringVar(&config.Webroot, "webroot", config.Webroot, "Set the webroot for web UI & API")
+	rootCmd.Flags().StringVar(&server.AccessControlAllowOrigin, "api-cors", server.AccessControlAllowOrigin, "Set API CORS Access-Control-Allow-Origin header")
 	rootCmd.Flags().BoolVar(&config.UseMessageDates, "use-message-dates", config.UseMessageDates, "Use message dates as the received dates")
 
 	rootCmd.Flags().StringVar(&config.UIAuthFile, "ui-auth-file", config.UIAuthFile, "A password file for web UI authentication")
@@ -190,8 +191,12 @@ func initConfigFromEnv() {
 		config.SMTPRelayAllIncoming = true
 	}
 
+	// Misc options
 	if len(os.Getenv("MP_WEBROOT")) > 0 {
 		config.Webroot = os.Getenv("MP_WEBROOT")
+	}
+	if len(os.Getenv("MP_API_CORS")) > 0 {
+		server.AccessControlAllowOrigin = os.Getenv("MP_API_CORS")
 	}
 	if getEnabledFromEnv("MP_USE_MESSAGE_DATES") {
 		config.UseMessageDates = true
