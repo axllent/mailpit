@@ -2,6 +2,12 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.6.1]
+
+### Bugfix
+- Add API release route again (bad merge)
+
+
 ## [v1.6.0]
 
 ### API
