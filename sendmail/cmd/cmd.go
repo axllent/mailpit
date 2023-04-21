@@ -22,6 +22,8 @@ import (
 var (
 	// Verbose flag
 	Verbose bool
+
+	fromAddr string
 )
 
 // Run the Mailpit sendmail replacement.
@@ -37,7 +39,10 @@ func Run() {
 		username = user.Username
 	}
 
-	fromAddr := username + "@" + host
+	if fromAddr == "" {
+		fromAddr = username + "@" + host
+	}
+
 	smtpAddr := "localhost:1025"
 	var recip []string
 
@@ -50,7 +55,7 @@ func Run() {
 	}
 
 	// override defaults from cli flags
-	flag.StringVarP(&fromAddr, "from", "f", fromAddr, "SMTP sender")
+	flag.StringVarP(&fromAddr, "from", "f", fromAddr, "SMTP sender address")
 	flag.StringVar(&smtpAddr, "smtp-addr", smtpAddr, "SMTP server address")
 	flag.BoolVarP(&Verbose, "verbose", "v", false, "Verbose mode (sends debug output to stderr)")
 	flag.BoolP("long-b", "b", false, "Ignored. This flag exists for sendmail compatibility.")
@@ -74,7 +79,7 @@ func Run() {
 	recip = flag.Args()
 
 	if Verbose {
-		fmt.Fprintln(os.Stderr, smtpAddr, fromAddr)
+		fmt.Fprintln(os.Stdout, smtpAddr, fromAddr)
 	}
 
 	body, err := ioutil.ReadAll(os.Stdin)

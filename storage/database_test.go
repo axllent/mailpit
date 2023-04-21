@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/axllent/mailpit/config"
+	"github.com/axllent/mailpit/utils/logger"
 	"github.com/jhillyerd/enmime"
 )
 
@@ -230,7 +231,7 @@ func BenchmarkImportMime(b *testing.B) {
 }
 
 func setup() {
-	config.NoLogging = true
+	logger.NoLogging = true
 	config.MaxMessages = 0
 	config.DataFile = ""
 
