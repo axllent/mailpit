@@ -9,6 +9,13 @@ type infoResponse struct {
 	Body appInformation
 }
 
+// Web UI configuration
+// swagger:response WebUIConfigurationResponse
+type webUIConfigurationResponse struct {
+	// Web UI configuration settings
+	Body webUIConfiguration
+}
+
 // Message summary
 // swagger:response MessagesSummaryResponse
 type messagesSummaryResponse struct {
