@@ -2,6 +2,12 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.6.3]
+
+### Feature
+- Display clickable toast notifications for new messages
+
+
 ## [v1.6.2]
 
 ### Bugfix
