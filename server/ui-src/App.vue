@@ -3,6 +3,7 @@ import commonMixins from './mixins.js';
 import Message from './templates/Message.vue';
 import MessageSummary from './templates/MessageSummary.vue';
 import MessageRelease from './templates/MessageRelease.vue';
+import MessageToast from './templates/MessageToast.vue';
 import moment from 'moment';
 import Tinycon from 'tinycon';
 
@@ -12,7 +13,8 @@ export default {
 	components: {
 		Message,
 		MessageSummary,
-		MessageRelease
+		MessageRelease,
+		MessageToast
 	},
 
 	data() {
@@ -41,6 +43,7 @@ export default {
 			lastLoaded: false,
 			relayConfig: {},
 			releaseAddresses: false,
+			toastMessage: false,
 		}
 	},
 
@@ -205,6 +208,7 @@ export default {
 			let self = this;
 			self.selected = [];
 			self.releaseAddresses = false;
+			self.toastMessage = false;
 			self.existingTags = JSON.parse(JSON.stringify(self.tags));
 
 			let uri = 'api/v1/message/' + self.currentPath
@@ -396,9 +400,15 @@ export default {
 				if (response.Type == "new" && response.Data) {
 					if (!self.searching) {
 						if (self.start < 1) {
+							// first page
 							self.items.unshift(response.Data);
 							if (self.items.length > self.limit) {
 								self.items.pop();
+							}
+
+							// first message was open, set messagePrev
+							if (!self.messagePrev) {
+								self.messagePrev = response.Data.ID;
 							}
 						} else {
 							self.start++;
@@ -416,6 +426,7 @@ export default {
 
 					let from = response.Data.From != null ? response.Data.From.Address : '[unknown]';
 					self.browserNotify("New mail from: " + from, response.Data.Subject);
+					self.setMessageToast(response.Data);
 				} else if (response.Type == "prune") {
 					// messages have been deleted, reload messages to adjust
 					self.scrollInPlace = true;
@@ -591,6 +602,18 @@ export default {
 					document.querySelector('#ReleaseModal input[role="combobox"]').focus()
 				}, 500);
 			}, 300);
+		},
+
+		setMessageToast: function (m) {
+			if (this.toastMessage) {
+				return;
+			}
+
+			this.toastMessage = m;
+		},
+
+		clearMessageToast: function () {
+			this.toastMessage = false;
 		}
 	}
 }
@@ -1014,4 +1037,6 @@ export default {
 		<MessageRelease v-if="releaseAddresses" :message="message" :relayConfig="relayConfig"
 			:releaseAddresses="releaseAddresses"></MessageRelease>
 	</div>
+
+	<MessageToast v-if="toastMessage" :message="toastMessage" @clearMessageToast="clearMessageToast"></MessageToast>
 </template>
