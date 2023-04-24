@@ -213,7 +213,6 @@ export default {
 
 			let uri = 'api/v1/message/' + self.currentPath
 			self.get(uri, false, function (response) {
-
 				for (let i in self.items) {
 					if (self.items[i].ID == self.currentPath) {
 						if (!self.items[i].Read) {
@@ -222,51 +221,56 @@ export default {
 						}
 					}
 				}
+
 				let d = response.data;
-				// replace inline images
+
+				// replace inline images embedded as inline attachments
 				if (d.HTML && d.Inline) {
 					for (let i in d.Inline) {
 						let a = d.Inline[i];
 						if (a.ContentID != '') {
 							d.HTML = d.HTML.replace(
-								new RegExp('cid:' + a.ContentID, 'g'),
-								window.location.origin + window.location.pathname + 'api/v1/message/' + d.ID + '/part/' + a.PartID
+								new RegExp('(=["\']?)(cid:' + a.ContentID + ')(["|\'|\s|\/|>|;])', 'g'),
+								'$1' + window.location.origin + window.location.pathname + 'api/v1/message/' + d.ID + '/part/' + a.PartID + '$3'
 							);
 						}
 						if (a.FileName.match(/^[a-zA-Z0-9\_\-\.]+$/)) {
 							// some old email clients use the filename
 							d.HTML = d.HTML.replace(
-								new RegExp('src=(\'|")' + a.FileName + '(\'|")', 'g'),
-								'src="' + window.location.origin + window.location.pathname + 'api/v1/message/' + d.ID + '/part/' + a.PartID + '"'
+								new RegExp('(=["\']?)(' + a.FileName + ')(["|\'|\s|\/|>|;])', 'g'),
+								'$1' + window.location.origin + window.location.pathname + 'api/v1/message/' + d.ID + '/part/' + a.PartID + '$3'
 							);
 						}
 					}
 				}
-				// replace inline images
+
+				// replace inline images embedded as regular attachments
 				if (d.HTML && d.Attachments) {
 					for (let i in d.Attachments) {
 						let a = d.Attachments[i];
 						if (a.ContentID != '') {
 							d.HTML = d.HTML.replace(
-								new RegExp('cid:' + a.ContentID, 'g'),
-								window.location.origin + window.location.pathname + 'api/v1/message/' + d.ID + '/part/' + a.PartID
+								new RegExp('(=["\']?)(cid:' + a.ContentID + ')(["|\'|\s|\/|>|;])', 'g'),
+								'$1' + window.location.origin + window.location.pathname + 'api/v1/message/' + d.ID + '/part/' + a.PartID + '$3'
 							);
 						}
 						if (a.FileName.match(/^[a-zA-Z0-9\_\-\.]+$/)) {
 							// some old email clients use the filename
 							d.HTML = d.HTML.replace(
-								new RegExp('src=(\'|")' + a.FileName + '(\'|")', 'g'),
-								'src="' + window.location.origin + window.location.pathname + 'api/v1/message/' + d.ID + '/part/' + a.PartID + '"'
+								new RegExp('(=["\']?)(' + a.FileName + ')(["|\'|\s|\/|>|;])', 'g'),
+								'$1' + window.location.origin + window.location.pathname + 'api/v1/message/' + d.ID + '/part/' + a.PartID + '$3'
 							);
 						}
 					}
 				}
 
 				self.message = d;
+
 				// generate the prev/next links based on current message list
 				self.messagePrev = false;
 				self.messageNext = false;
 				let found = false;
+
 				for (let i in self.items) {
 					if (self.items[i].ID == self.message.ID) {
 						found = true;
