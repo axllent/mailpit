@@ -2,6 +2,12 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.6.4]
+
+### Bugfix
+- Fix UI images not displaying when multiple cid names overlap
+
+
 ## [v1.6.3]
 
 ### Feature
