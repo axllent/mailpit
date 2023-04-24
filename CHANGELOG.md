@@ -2,6 +2,12 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.6.5]
+
+### Feature
+- Add Access-Control-Allow-Methods methods when CORS origin is set
+
+
 ## [v1.6.4]
 
 ### Bugfix
