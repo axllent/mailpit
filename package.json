@@ -11,7 +11,7 @@
     "axios": "^1.2.1",
     "bootstrap": "^5.2.0",
     "bootstrap-icons": "^1.9.1",
-    "bootstrap5-tags": "^1.4.41",
+    "bootstrap5-tags": "^1.5.20",
     "moment": "^2.29.4",
     "prismjs": "^1.29.0",
     "rapidoc": "^9.3.4",
