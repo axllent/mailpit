@@ -10,7 +10,7 @@
   "dependencies": {
     "axios": "^1.2.1",
     "bootstrap": "^5.2.0",
-    "bootstrap-icons": "^1.9.1",
+    "bootstrap-icons": "^1.10.5",
     "bootstrap5-tags": "^1.4.41",
     "moment": "^2.29.4",
     "prismjs": "^1.29.0",
