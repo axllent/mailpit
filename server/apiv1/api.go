@@ -119,7 +119,7 @@ func Search(w http.ResponseWriter, r *http.Request) {
 
 	var res MessagesSummary
 
-	res.Start = 0
+	res.Start = start
 	res.Messages = messages
 	res.Count = len(messages)
 	res.Total = stats.Total
