@@ -34,13 +34,13 @@ func GetMessages(w http.ResponseWriter, r *http.Request) {
 	//	Parameters:
 	//	  + name: start
 	//	    in: query
-	//	    description: pagination offset
+	//	    description: Pagination offset
 	//	    required: false
 	//	    type: integer
 	//	    default: 0
 	//	  + name: limit
 	//	    in: query
-	//	    description: limit results
+	//	    description: Limit results
 	//	    required: false
 	//	    type: integer
 	//	    default: 50
@@ -88,12 +88,12 @@ func Search(w http.ResponseWriter, r *http.Request) {
 	//	Parameters:
 	//	  + name: query
 	//	    in: query
-	//	    description: search query
+	//	    description: Search query
 	//	    required: true
 	//	    type: string
 	//	  + name: limit
 	//	    in: query
-	//	    description: limit results
+	//	    description: Limit results
 	//	    required: false
 	//	    type: integer
 	//	    default: 50
@@ -119,7 +119,7 @@ func Search(w http.ResponseWriter, r *http.Request) {
 
 	var res MessagesSummary
 
-	res.Start = 0
+	res.Start = start
 	res.Messages = messages
 	res.Count = len(messages)
 	res.Total = stats.Total
@@ -147,7 +147,7 @@ func GetMessage(w http.ResponseWriter, r *http.Request) {
 	//	Parameters:
 	//	  + name: ID
 	//	    in: path
-	//	    description: message id
+	//	    description: Message ID
 	//	    required: true
 	//	    type: string
 	//
@@ -188,12 +188,12 @@ func DownloadAttachment(w http.ResponseWriter, r *http.Request) {
 	//	Parameters:
 	//	  + name: ID
 	//	    in: path
-	//	    description: message id
+	//	    description: Message ID
 	//	    required: true
 	//	    type: string
 	//	  + name: PartID
 	//	    in: path
-	//	    description: attachment part id
+	//	    description: Attachment part ID
 	//	    required: true
 	//	    type: string
 	//
@@ -237,7 +237,7 @@ func GetHeaders(w http.ResponseWriter, r *http.Request) {
 	//	Parameters:
 	//	  + name: ID
 	//	    in: path
-	//	    description: message id
+	//	    description: Message ID
 	//	    required: true
 	//	    type: string
 	//
@@ -284,7 +284,7 @@ func DownloadRaw(w http.ResponseWriter, r *http.Request) {
 	//	Parameters:
 	//	  + name: ID
 	//	    in: path
-	//	    description: message id
+	//	    description: Message ID
 	//	    required: true
 	//	    type: string
 	//
@@ -330,7 +330,7 @@ func DeleteMessages(w http.ResponseWriter, r *http.Request) {
 	//	Parameters:
 	//	  + name: ids
 	//	    in: body
-	//	    description: Message ids to delete
+	//	    description: Message IDs to delete
 	//	    required: false
 	//	    type: DeleteRequest
 	//
@@ -381,7 +381,7 @@ func SetReadStatus(w http.ResponseWriter, r *http.Request) {
 	//	Parameters:
 	//	  + name: ids
 	//	    in: body
-	//	    description: Message ids to update
+	//	    description: Message IDs to update
 	//	    required: false
 	//	    type: SetReadStatusRequest
 	//
@@ -459,7 +459,7 @@ func SetTags(w http.ResponseWriter, r *http.Request) {
 	//	Parameters:
 	//	  + name: ids
 	//	    in: body
-	//	    description: Message ids to update
+	//	    description: Message IDs to update
 	//	    required: true
 	//	    type: SetTagsRequest
 	//
@@ -515,10 +515,10 @@ func ReleaseMessage(w http.ResponseWriter, r *http.Request) {
 	//	Parameters:
 	//	  + name: ID
 	//	    in: path
-	//	    description: message id
+	//	    description: Message ID
 	//	    required: true
 	//	    type: string
-	//		+ name: To
+	//		+ name: to
 	//	    in: body
 	//	    description: Array of email addresses to release message to
 	//	    required: true

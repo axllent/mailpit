@@ -195,7 +195,7 @@ export default {
 									<template v-if="i > 0">, </template>
 									<span class="text-nowrap">{{ t.Name + " &lt;" + t.Address + "&gt;" }}</span>
 								</span>
-								<span v-else>Undisclosed recipients</span>
+								<span v-else class="text-muted">[Undisclosed recipients]</span>
 							</td>
 						</tr>
 						<tr v-if="message.Cc && message.Cc.length" class="small">
@@ -272,28 +272,28 @@ export default {
 					role="tab" aria-controls="nav-html" aria-selected="true" v-if="message.HTML"
 					v-on:click="showMobileBtns = true; resizeIframes()">HTML</button>
 				<button class="nav-link" id="nav-html-source-tab" data-bs-toggle="tab" data-bs-target="#nav-html-source"
-					type="button" role="tab" aria-controls="nav-html-source" aria-selected="false" v-if="message.HTML"
-					v-on:click="showMobileBtns = false">
+					type="button" role="tab" aria-controls="nav-html-source" aria-selected="false" v-if=" message.HTML "
+					v-on:click=" showMobileBtns = false ">
 					HTML <span class="d-sm-none">Src</span><span class="d-none d-sm-inline">Source</span>
 				</button>
 				<button class="nav-link" id="nav-plain-text-tab" data-bs-toggle="tab" data-bs-target="#nav-plain-text"
 					type="button" role="tab" aria-controls="nav-plain-text" aria-selected="false"
-					:class="message.HTML == '' ? 'show' : ''" v-on:click="showMobileBtns = false">Text</button>
+					:class=" message.HTML == '' ? 'show' : '' " v-on:click=" showMobileBtns = false ">Text</button>
 				<button class="nav-link" id="nav-headers-tab" data-bs-toggle="tab" data-bs-target="#nav-headers"
 					type="button" role="tab" aria-controls="nav-headers" aria-selected="false"
-					v-on:click="showMobileBtns = false">
+					v-on:click=" showMobileBtns = false ">
 					<span class="d-sm-none">Hdrs</span><span class="d-none d-sm-inline">Headers</span>
 				</button>
 				<button class="nav-link" id="nav-raw-tab" data-bs-toggle="tab" data-bs-target="#nav-raw" type="button"
 					role="tab" aria-controls="nav-raw" aria-selected="false"
-					v-on:click="showMobileBtns = false">Raw</button>
+					v-on:click=" showMobileBtns = false ">Raw</button>
 
-				<div class="d-none d-lg-block ms-auto me-2" v-if="showMobileBtns">
-					<template v-for="vals, key in responsiveSizes">
-						<button class="btn" :class="scaleHTMLPreview == key ? 'btn-outline-primary' : ''"
-							:disabled="scaleHTMLPreview == key" :title="'Switch to ' + key + ' view'"
-							v-on:click="scaleHTMLPreview = key">
-							<i class="bi" :class="'bi-' + key"></i>
+				<div class="d-none d-lg-block ms-auto me-2" v-if=" showMobileBtns ">
+					<template v-for="  vals, key   in   responsiveSizes  ">
+						<button class="btn" :class=" scaleHTMLPreview == key ? 'btn-outline-primary' : '' "
+							:disabled=" scaleHTMLPreview == key " :title=" 'Switch to ' + key + ' view' "
+							v-on:click=" scaleHTMLPreview = key ">
+							<i class="bi" :class=" 'bi-' + key "></i>
 						</button>
 					</template>
 				</div>
@@ -301,31 +301,31 @@ export default {
 		</nav>
 
 		<div class="tab-content mb-5" id="nav-tabContent">
-			<div v-if="message.HTML != ''" class="tab-pane fade show" id="nav-html" role="tabpanel"
+			<div v-if=" message.HTML != '' " class="tab-pane fade show" id="nav-html" role="tabpanel"
 				aria-labelledby="nav-html-tab" tabindex="0">
-				<div id="responsive-view" :class="scaleHTMLPreview" :style="responsiveSizes[scaleHTMLPreview]">
-					<iframe target-blank="" class="tab-pane d-block" id="preview-html" :srcdoc="message.HTML"
-						v-on:load="resizeIframe" seamless frameborder="0" style="width: 100%; height: 100%;">
+				<div id="responsive-view" :class=" scaleHTMLPreview " :style=" responsiveSizes[scaleHTMLPreview] ">
+					<iframe target-blank="" class="tab-pane d-block" id="preview-html" :srcdoc=" message.HTML "
+						v-on:load=" resizeIframe " seamless frameborder="0" style="width: 100%; height: 100%;">
 					</iframe>
 				</div>
-				<Attachments v-if="allAttachments(message).length" :message="message"
-					:attachments="allAttachments(message)"></Attachments>
+				<Attachments v-if=" allAttachments(message).length " :message=" message "
+					:attachments=" allAttachments(message) "></Attachments>
 			</div>
 			<div class="tab-pane fade" id="nav-html-source" role="tabpanel" aria-labelledby="nav-html-source-tab"
-				tabindex="0" v-if="message.HTML">
+				tabindex="0" v-if=" message.HTML ">
 				<pre><code class="language-html">{{ message.HTML }}</code></pre>
 			</div>
 			<div class="tab-pane fade" id="nav-plain-text" role="tabpanel" aria-labelledby="nav-plain-text-tab" tabindex="0"
-				:class="message.HTML == '' ? 'show' : ''">
+				:class=" message.HTML == '' ? 'show' : '' ">
 				<div class="text-view">{{ message.Text }}</div>
-				<Attachments v-if="allAttachments(message).length" :message="message"
-					:attachments="allAttachments(message)"></Attachments>
+				<Attachments v-if=" allAttachments(message).length " :message=" message "
+					:attachments=" allAttachments(message) "></Attachments>
 			</div>
 			<div class="tab-pane fade" id="nav-headers" role="tabpanel" aria-labelledby="nav-headers-tab" tabindex="0">
-				<Headers v-if="loadHeaders" :message="message"></Headers>
+				<Headers v-if=" loadHeaders " :message=" message "></Headers>
 			</div>
 			<div class="tab-pane fade" id="nav-raw" role="tabpanel" aria-labelledby="nav-raw-tab" tabindex="0">
-				<iframe v-if="srcURI" :src="srcURI" v-on:load="resizeIframe" seamless frameborder="0"
+				<iframe v-if=" srcURI " :src=" srcURI " v-on:load=" resizeIframe " seamless frameborder="0"
 					style="width: 100%; height: 300px;" id="message-src"></iframe>
 			</div>
 		</div>

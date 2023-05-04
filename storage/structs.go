@@ -11,8 +11,10 @@ import (
 //
 // swagger:model Message
 type Message struct {
-	// Unique message database id
+	// Database ID
 	ID string
+	// Message ID
+	MessageID string
 	// Read status
 	Read bool
 	// From address
@@ -25,7 +27,7 @@ type Message struct {
 	Bcc []*mail.Address
 	// ReplyTo addresses
 	ReplyTo []*mail.Address
-	// ReturnPath is the Return-Path
+	// Return-Path
 	ReturnPath string
 	// Message subject
 	Subject string
@@ -49,15 +51,15 @@ type Message struct {
 //
 // swagger:model Attachment
 type Attachment struct {
-	// attachment part id
+	// Attachment part ID
 	PartID string
-	// file name
+	// File name
 	FileName string
-	// content type
+	// Content type
 	ContentType string
-	// content id
+	// Content ID
 	ContentID string
-	// size in bytes
+	// Size in bytes
 	Size int
 }
 
@@ -65,7 +67,7 @@ type Attachment struct {
 //
 // swagger:model MessageSummary
 type MessageSummary struct {
-	// Unique message database id
+	// Database ID
 	ID string
 	// Read status
 	Read bool

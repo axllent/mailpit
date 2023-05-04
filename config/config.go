@@ -65,6 +65,9 @@ var (
 	// SMTPAuthAcceptAny accepts any username/password including none
 	SMTPAuthAcceptAny bool
 
+	// IgnoreDuplicateIDs will skip messages with the same ID
+	IgnoreDuplicateIDs bool
+
 	// SMTPCLITags is used to map the CLI args
 	SMTPCLITags string
 
