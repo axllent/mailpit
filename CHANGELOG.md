@@ -2,6 +2,26 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.6.6]
+
+### API
+- Set Access-Control-Allow-Headers when --api-cors is set
+- Include correct start value in search reponse
+
+### Feature
+- Option to ignore duplicate Message-IDs
+
+### Libs
+- Update node modules
+- Update Go modules
+
+### Swagger
+- Update swagger field descriptions
+
+### UI
+- Style Undisclosed recipients in message view
+
+
 ## [v1.6.5]
 
 ### Feature
