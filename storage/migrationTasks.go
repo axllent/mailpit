@@ -16,13 +16,13 @@ import (
 )
 
 func dataMigrations() {
-	updateSortByCreatedTask()
+	updateOrderByCreatedTask()
 	assignMessageIDsTask()
 }
 
-// Update Sort column using Created datetime <= v1.6.5
+// Update Created column using Created metadata datetime <= v1.6.5
 // Migration task implemented 05/2023 - can be removed end 2023
-func updateSortByCreatedTask() {
+func updateOrderByCreatedTask() {
 	q := sqlf.From("mailbox").
 		Select("ID").
 		Select(`json_extract(Metadata, '$.Created') as Created`).
