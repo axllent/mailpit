@@ -2,6 +2,12 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.6.7]
+
+### Bugfix
+- Fix auto-deletion cron
+
+
 ## [v1.6.6]
 
 ### API

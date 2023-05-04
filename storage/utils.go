@@ -39,7 +39,7 @@ func createSearchText(env *enmime.Envelope) string {
 	b.WriteString(env.GetHeader("Bcc") + " ")
 	h := strings.TrimSpace(
 		html2text.HTML2TextWithOptions(
-			env.HTML, 
+			env.HTML,
 			html2text.WithLinksInnerText(),
 		),
 	)
@@ -92,7 +92,7 @@ func dbCron() {
 		if config.MaxMessages > 0 {
 			q := sqlf.Select("ID").
 				From("mailbox").
-				OrderBy("Sort DESC").
+				OrderBy("Created DESC").
 				Limit(5000).
 				Offset(config.MaxMessages)
 
