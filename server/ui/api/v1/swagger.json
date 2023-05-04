@@ -655,6 +655,10 @@
             "$ref": "#/definitions/Attachment"
           }
         },
+        "MessageID": {
+          "description": "Message ID",
+          "type": "string"
+        },
         "Read": {
           "description": "Read status",
           "type": "boolean"
