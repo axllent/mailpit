@@ -24,12 +24,19 @@ func mailHandler(origin net.Addr, from string, to []string, data []byte) error {
 		return err
 	}
 
+	messageID := strings.Trim(msg.Header.Get("Message-Id"), "<>")
+
 	// add a message ID if not set
-	if msg.Header.Get("Message-Id") == "" {
+	if messageID == "" {
 		// generate unique ID
-		uid := uuid.NewV4().String() + "@mailpit"
+		messageID = uuid.NewV4().String() + "@mailpit"
 		// add unique ID
-		data = append([]byte("Message-Id: <"+uid+">\r\n"), data...)
+		data = append([]byte("Message-Id: <"+messageID+">\r\n"), data...)
+	} else if config.IgnoreDuplicateIDs {
+		if storage.MessageIDExists(messageID) {
+			logger.Log().Debugf("[smtpd] duplicate message found, ignoring %s", messageID)
+			return nil
+		}
 	}
 
 	// if enabled, this will route the email 1:1 through to the preconfigured smtp server
@@ -81,7 +88,8 @@ func mailHandler(origin net.Addr, from string, to []string, data []byte) error {
 		logger.Log().Debugf("[smtpd] added missing addresses to Bcc header: %s", strings.Join(missingAddresses, ", "))
 	}
 
-	if _, err := storage.Store(data); err != nil {
+	_, err = storage.Store(data)
+	if err != nil {
 		logger.Log().Errorf("[db] error storing message: %d", err.Error())
 
 		return err

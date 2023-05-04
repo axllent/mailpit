@@ -72,20 +72,55 @@ var (
 			Script: `ALTER TABLE mailbox ADD COLUMN Tags Text  NOT NULL DEFAULT '[]';
 			CREATE INDEX IF NOT EXISTS idx_tags ON mailbox (Tags);`,
 		},
+		{
+			Version:     1.2,
+			Description: "Creating new mailbox format",
+			Script: `CREATE TABLE IF NOT EXISTS mailboxtmp (
+				Created INTEGER NOT NULL,
+				ID TEXT NOT NULL,
+				MessageID TEXT NOT NULL,
+				Subject TEXT NOT NULL,
+				Metadata TEXT,
+				Size INTEGER NOT NULL,
+				Inline INTEGER NOT NULL,
+				Attachments INTEGER NOT NULL,
+				Read INTEGER,
+				Tags TEXT,
+				SearchText TEXT
+			);
+			INSERT INTO mailboxtmp 
+				(Created, ID, MessageID, Subject, Metadata, Size, Inline, Attachments, SearchText, Read, Tags) 
+			SELECT 
+				Sort, ID, '', json_extract(Data, '$.Subject'),Data, 
+				json_extract(Data, '$.Size'), json_extract(Data, '$.Inline'), json_extract(Data, '$.Attachments'), 
+				Search, Read, Tags
+			FROM mailbox;
+
+			DROP TABLE IF EXISTS mailbox;
+			ALTER TABLE mailboxtmp RENAME TO mailbox;
+			CREATE INDEX IF NOT EXISTS idx_created ON mailbox (Created);
+			CREATE UNIQUE INDEX IF NOT EXISTS idx_id ON mailbox (ID);
+			CREATE INDEX IF NOT EXISTS idx_message_id ON mailbox (MessageID);
+			CREATE INDEX IF NOT EXISTS idx_subject ON mailbox (Subject);
+			CREATE INDEX IF NOT EXISTS idx_size ON mailbox (Size);
+			CREATE INDEX IF NOT EXISTS idx_inline ON mailbox (Inline);
+			CREATE INDEX IF NOT EXISTS idx_attachments ON mailbox (Attachments);
+			CREATE INDEX IF NOT EXISTS idx_read ON mailbox (Read);
+			CREATE INDEX IF NOT EXISTS idx_tags ON mailbox (Tags);`,
+		},
 	}
 )
 
 // DBMailSummary struct for storing mail summary
 type DBMailSummary struct {
-	Created     time.Time
-	From        *mail.Address
-	To          []*mail.Address
-	Cc          []*mail.Address
-	Bcc         []*mail.Address
-	Subject     string
-	Size        int
-	Inline      int
-	Attachments int
+	From *mail.Address
+	To   []*mail.Address
+	Cc   []*mail.Address
+	Bcc  []*mail.Address
+	// Subject     string
+	// Size        int
+	// Inline      int
+	// Attachments int
 }
 
 // InitDB will initialise the database
@@ -144,6 +179,8 @@ func InitDB() error {
 	// auto-prune & delete
 	go dbCron()
 
+	go dataMigrations()
+
 	return nil
 }
 
@@ -189,22 +226,21 @@ func Store(body []byte) (string, error) {
 		from = &mail.Address{Name: env.GetHeader("From")}
 	}
 
+	messageID := strings.Trim(env.Root.Header.Get("Message-ID"), "<>")
+
 	obj := DBMailSummary{
-		Created:     time.Now(),
-		From:        from,
-		To:          addressToSlice(env, "To"),
-		Cc:          addressToSlice(env, "Cc"),
-		Bcc:         addressToSlice(env, "Bcc"),
-		Subject:     env.GetHeader("Subject"),
-		Size:        len(body),
-		Inline:      len(env.Inlines),
-		Attachments: len(env.Attachments),
+		From: from,
+		To:   addressToSlice(env, "To"),
+		Cc:   addressToSlice(env, "Cc"),
+		Bcc:  addressToSlice(env, "Bcc"),
 	}
+
+	created := time.Now()
 
 	// use message date instead of created date
 	if config.UseMessageDates {
 		if mDate, err := env.Date(); err == nil {
-			obj.Created = mDate
+			created = mDate
 		}
 	}
 
@@ -237,8 +273,14 @@ func Store(body []byte) (string, error) {
 	// roll back if it fails
 	defer tx.Rollback()
 
+	subject := env.GetHeader("Subject")
+	size := len(body)
+	inline := len(env.Inlines)
+	attachments := len(env.Attachments)
+
 	// insert mail summary data
-	_, err = tx.Exec("INSERT INTO mailbox(ID, Data, Search, Tags, Read) values(?,?,?,?,0)", id, string(summaryJSON), searchText, string(tagJSON))
+	_, err = tx.Exec("INSERT INTO mailbox(Created, ID, MessageID, Subject, Metadata, Size, Inline, Attachments, SearchText, Tags, Read) values(?,?,?,?,?,?,?,?,?,?,0)",
+		created.UnixMilli(), id, messageID, subject, string(summaryJSON), size, inline, attachments, searchText, string(tagJSON))
 	if err != nil {
 		return "", err
 	}
@@ -259,9 +301,12 @@ func Store(body []byte) (string, error) {
 		return "", err
 	}
 
-	c.Tags = tagData
-
+	c.Created = created
 	c.ID = id
+	c.Attachments = attachments
+	c.Subject = subject
+	c.Size = size
+	c.Tags = tagData
 
 	websockets.Broadcast("new", c)
 
@@ -276,24 +321,28 @@ func List(start, limit int) ([]MessageSummary, error) {
 	results := []MessageSummary{}
 
 	q := sqlf.From("mailbox").
-		Select(`ID, Data, Tags, Read`).
-		OrderBy("Sort DESC").
+		Select(`Created, ID, Subject, Metadata, Size, Attachments, Read, Tags`).
+		OrderBy("Created DESC").
 		Limit(limit).
 		Offset(start)
 
 	if err := q.QueryAndClose(nil, db, func(row *sql.Rows) {
+		var created int64
 		var id string
-		var summary string
+		var subject string
+		var metadata string
+		var size int
+		var attachments int
 		var tags string
 		var read int
 		em := MessageSummary{}
 
-		if err := row.Scan(&id, &summary, &tags, &read); err != nil {
+		if err := row.Scan(&created, &id, &subject, &metadata, &size, &attachments, &read, &tags); err != nil {
 			logger.Log().Error(err)
 			return
 		}
 
-		if err := json.Unmarshal([]byte(summary), &em); err != nil {
+		if err := json.Unmarshal([]byte(metadata), &em); err != nil {
 			logger.Log().Error(err)
 			return
 		}
@@ -303,10 +352,16 @@ func List(start, limit int) ([]MessageSummary, error) {
 			return
 		}
 
+		em.Created = time.UnixMilli(created)
 		em.ID = id
+		em.Subject = subject
+		em.Size = size
+		em.Attachments = attachments
 		em.Read = read == 1
 
 		results = append(results, em)
+
+		// logger.PrettyPrint(em)
 
 	}); err != nil {
 		return results, err
@@ -342,19 +397,23 @@ func Search(search string, start, limit int) ([]MessageSummary, error) {
 	q := searchParser(args, start, limit)
 
 	if err := q.QueryAndClose(nil, db, func(row *sql.Rows) {
+		var created int64
 		var id string
-		var summary string
+		var subject string
+		var metadata string
+		var size int
+		var attachments int
 		var tags string
 		var read int
 		var ignore string
 		em := MessageSummary{}
 
-		if err := row.Scan(&id, &summary, &tags, &read, &ignore, &ignore, &ignore, &ignore, &ignore, &ignore); err != nil {
+		if err := row.Scan(&created, &id, &subject, &metadata, &size, &attachments, &read, &tags, &ignore, &ignore, &ignore, &ignore); err != nil {
 			logger.Log().Error(err)
 			return
 		}
 
-		if err := json.Unmarshal([]byte(summary), &em); err != nil {
+		if err := json.Unmarshal([]byte(metadata), &em); err != nil {
 			logger.Log().Error(err)
 			return
 		}
@@ -364,7 +423,11 @@ func Search(search string, start, limit int) ([]MessageSummary, error) {
 			return
 		}
 
+		em.Created = time.UnixMilli(created)
 		em.ID = id
+		em.Subject = subject
+		em.Size = size
+		em.Attachments = attachments
 		em.Read = read == 1
 
 		results = append(results, em)
@@ -404,6 +467,8 @@ func GetMessage(id string) (*Message, error) {
 		from = &mail.Address{Name: env.GetHeader("From")}
 	}
 
+	messageID := strings.Trim(env.GetHeader("Message-ID"), "<>")
+
 	returnPath := strings.Trim(env.GetHeader("Return-Path"), "<>")
 	if returnPath == "" {
 		returnPath = from.Address
@@ -413,27 +478,20 @@ func GetMessage(id string) (*Message, error) {
 	if err != nil {
 		// return received datetime when message does not contain a date header
 		q := sqlf.From("mailbox").
-			Select(`Data`).
-			OrderBy("Sort DESC").
+			Select(`Created`).
 			Where(`ID = ?`, id)
 
 		if err := q.QueryAndClose(nil, db, func(row *sql.Rows) {
-			var summary string
-			em := MessageSummary{}
+			var created int64
 
-			if err := row.Scan(&summary); err != nil {
-				logger.Log().Error(err)
-				return
-			}
-
-			if err := json.Unmarshal([]byte(summary), &em); err != nil {
+			if err := row.Scan(&created); err != nil {
 				logger.Log().Error(err)
 				return
 			}
 
 			logger.Log().Debugf("[db] %s does not contain a date header, using received datetime", id)
 
-			date = em.Created
+			date = time.UnixMicro(created)
 		}); err != nil {
 			logger.Log().Error(err)
 		}
@@ -441,6 +499,7 @@ func GetMessage(id string) (*Message, error) {
 
 	obj := Message{
 		ID:         id,
+		MessageID:  messageID,
 		Read:       true,
 		From:       from,
 		Date:       date,
@@ -820,4 +879,17 @@ func IsUnread(id string) bool {
 	_ = q.QueryRowAndClose(nil, db)
 
 	return unread == 1
+}
+
+// MessageIDExists blaah
+func MessageIDExists(id string) bool {
+	var total int
+
+	q := sqlf.From("mailbox").
+		Select("COUNT(*)").To(&total).
+		Where("MessageID = ?", id)
+
+	_ = q.QueryRowAndClose(nil, db)
+
+	return total != 0
 }
