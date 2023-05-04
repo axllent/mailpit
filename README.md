@@ -72,20 +72,14 @@ See [Docker instructions](https://github.com/axllent/mailpit/wiki/Docker-images)
 To build Mailpit from source see [building from source](https://github.com/axllent/mailpit/wiki/Building-from-source).
 
 
+### Testing Mailpit
+
+Please refer to [the documentation](https://github.com/axllent/mailpit/wiki/Testing-Mailpit) of how to easily test email delivery to Mailpit.
+
+
 ### Configuring sendmail
 
-There are several different options available:
-
-You can use `mailpit sendmail` as your sendmail configuration in `php.ini`:
-```
-sendmail_path = /usr/local/bin/mailpit sendmail
-```
-
-If Mailpit is found on the same host as sendmail, you can symlink the Mailpit binary to sendmail, eg: `ln -s /usr/local/bin/mailpit /usr/sbin/sendmail`  (only if Mailpit is running on default 1025 port).
-
-You can use your default system `sendmail` binary to route directly to port `1025` (configurable) by calling `/usr/sbin/sendmail -S localhost:1025`.
-
-You can build a Mailpit-specific sendmail binary from source (see [building from source](https://github.com/axllent/mailpit/wiki/Building-from-source)).
+Mailpit's SMTP server (by default on port 1025), so you will likely need to configure your sending application to deliver mail via that port. A common MTA (Mail Transfer Agent) that delivers system emails to a SMTP server is `sendmail`, used by many applications including PHP. Mailpit can also act as substitute for sendmail. For instructions of how to set this up, please refer to the [sendmail documentation](https://github.com/axllent/mailpit/wiki/Configuring-sendmail).
 
 
 ## Why rewrite MailHog?
