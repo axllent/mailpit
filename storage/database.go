@@ -491,7 +491,7 @@ func GetMessage(id string) (*Message, error) {
 
 			logger.Log().Debugf("[db] %s does not contain a date header, using received datetime", id)
 
-			date = time.UnixMicro(created)
+			date = time.UnixMilli(created)
 		}); err != nil {
 			logger.Log().Error(err)
 		}
