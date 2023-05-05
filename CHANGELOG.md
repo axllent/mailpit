@@ -2,6 +2,16 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.6.8]
+
+### Bugfix
+- Fix Date display when message doesn't contain a Date header
+
+### Feature
+- Add allowlist to filter recipients before relaying messages ([#109](https://github.com/axllent/mailpit/issues/109))
+- Add `-S` short flag for sendmail `--smtp-addr`
+
+
 ## [v1.6.7]
 
 ### Bugfix

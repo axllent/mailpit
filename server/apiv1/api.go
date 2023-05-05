@@ -554,8 +554,15 @@ func ReleaseMessage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for _, to := range tos {
-		if _, err := mail.ParseAddress(to); err != nil {
+		address, err := mail.ParseAddress(to)
+
+		if err != nil {
 			httpError(w, "Invalid email address: "+to)
+			return
+		}
+
+		if config.SMTPRelayConfig.RecipientAllowlistRegexp != nil && !config.SMTPRelayConfig.RecipientAllowlistRegexp.MatchString(address.Address) {
+			httpError(w, "Mail address does not match allowlist: "+to)
 			return
 		}
 	}

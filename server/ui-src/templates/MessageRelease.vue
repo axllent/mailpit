@@ -83,6 +83,11 @@ export default {
 						<div class="invalid-feedback">Invalid email address</div>
 					</div>
 				</div>
+				<div class="form-text text-center" v-if="relayConfig.MessageRelay.RecipientAllowlist != ''">
+					Note: A recipient allowlist has been configured. Any mail address not matching it will be rejected.
+					<br class="d-none d-md-inline">
+					Configured allowlist: <b>{{ relayConfig.MessageRelay.RecipientAllowlist }}</b>
+				</div>
 				<div class="form-text text-center">
 					Note: For testing purposes, a unique Message-Id will be generated on send.
 					<br class="d-none d-md-inline">

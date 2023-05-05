@@ -27,7 +27,7 @@ func init() {
 
 	// these are simply repeated for cli consistency
 	sendmailCmd.Flags().StringVarP(&fromAddr, "from", "f", fromAddr, "SMTP sender")
-	sendmailCmd.Flags().StringVar(&smtpAddr, "smtp-addr", smtpAddr, "SMTP server address")
+	sendmailCmd.Flags().StringVarP(&smtpAddr, "smtp-addr", "S", smtpAddr, "SMTP server address")
 	sendmailCmd.Flags().BoolVarP(&sendmail.Verbose, "verbose", "v", false, "Verbose mode (sends debug output to stderr)")
 	sendmailCmd.Flags().BoolP("long-b", "b", false, "Ignored. This flag exists for sendmail compatibility.")
 	sendmailCmd.Flags().BoolP("long-i", "i", false, "Ignored. This flag exists for sendmail compatibility.")

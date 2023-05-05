@@ -111,15 +111,17 @@ type AutoTag struct {
 
 // SMTPRelayConfigStruct struct for parsing yaml & storing variables
 type smtpRelayConfigStruct struct {
-	Host          string `yaml:"host"`
-	Port          int    `yaml:"port"`
-	STARTTLS      bool   `yaml:"starttls"`
-	AllowInsecure bool   `yaml:"allow-insecure"`
-	Auth          string `yaml:"auth"`        // none, plain, cram-md5
-	Username      string `yaml:"username"`    // plain & cram-md5
-	Password      string `yaml:"password"`    // plain
-	Secret        string `yaml:"secret"`      // cram-md5
-	ReturnPath    string `yaml:"return-path"` // allows overriding the boune address
+	Host                     string `yaml:"host"`
+	Port                     int    `yaml:"port"`
+	STARTTLS                 bool   `yaml:"starttls"`
+	AllowInsecure            bool   `yaml:"allow-insecure"`
+	Auth                     string `yaml:"auth"`                // none, plain, cram-md5
+	Username                 string `yaml:"username"`            // plain & cram-md5
+	Password                 string `yaml:"password"`            // plain
+	Secret                   string `yaml:"secret"`              // cram-md5
+	ReturnPath               string `yaml:"return-path"`         // allows overriding the boune address
+	RecipientAllowlist       string `yaml:"recipient-allowlist"` // regex, if set needs to match for mails to be relayed
+	RecipientAllowlistRegexp *regexp.Regexp
 }
 
 // VerifyConfig wil do some basic checking
@@ -295,6 +297,18 @@ func parseRelayConfig(c string) error {
 	ReleaseEnabled = true
 
 	logger.Log().Infof("[smtp] enabling message relaying via %s:%d", SMTPRelayConfig.Host, SMTPRelayConfig.Port)
+
+	allowlistRegexp, err := regexp.Compile(SMTPRelayConfig.RecipientAllowlist)
+
+	if SMTPRelayConfig.RecipientAllowlist != "" {
+		if err != nil {
+			return fmt.Errorf("failed to compile recipient allowlist regexp: %e", err)
+		}
+
+		SMTPRelayConfig.RecipientAllowlistRegexp = allowlistRegexp
+		logger.Log().Infof("[smtp] recipient allowlist is active with the following regexp: %s", SMTPRelayConfig.RecipientAllowlist)
+
+	}
 
 	return nil
 }

@@ -20,6 +20,8 @@ type webUIConfiguration struct {
 		SMTPServer string
 		// Enforced Return-Path (if set) for relay bounces
 		ReturnPath string
+		// Allowlist of accepted recipients
+		RecipientAllowlist string
 	}
 }
 
@@ -45,6 +47,7 @@ func WebUIConfig(w http.ResponseWriter, r *http.Request) {
 	if config.ReleaseEnabled {
 		conf.MessageRelay.SMTPServer = fmt.Sprintf("%s:%d", config.SMTPRelayConfig.Host, config.SMTPRelayConfig.Port)
 		conf.MessageRelay.ReturnPath = config.SMTPRelayConfig.ReturnPath
+		conf.MessageRelay.RecipientAllowlist = config.SMTPRelayConfig.RecipientAllowlist
 	}
 
 	bytes, _ := json.Marshal(conf)
