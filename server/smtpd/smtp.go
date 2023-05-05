@@ -2,11 +2,13 @@ package smtpd
 
 import (
 	"crypto/tls"
+	"errors"
 	"fmt"
-	"github.com/axllent/mailpit/config"
-	"github.com/axllent/mailpit/utils/logger"
 	"net/mail"
 	"net/smtp"
+
+	"github.com/axllent/mailpit/config"
+	"github.com/axllent/mailpit/utils/logger"
 )
 
 func allowedRecipients(to []string) []string {
@@ -39,7 +41,7 @@ func Send(from string, to []string, msg []byte) error {
 	recipients := allowedRecipients(to)
 
 	if len(recipients) == 0 {
-		return nil
+		return errors.New("no valid recipients")
 	}
 
 	addr := fmt.Sprintf("%s:%d", config.SMTPRelayConfig.Host, config.SMTPRelayConfig.Port)
