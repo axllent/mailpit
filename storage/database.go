@@ -470,7 +470,7 @@ func GetMessage(id string) (*Message, error) {
 	messageID := strings.Trim(env.GetHeader("Message-ID"), "<>")
 
 	returnPath := strings.Trim(env.GetHeader("Return-Path"), "<>")
-	if returnPath == "" {
+	if returnPath == "" && from != nil {
 		returnPath = from.Address
 	}
 

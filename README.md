@@ -28,7 +28,7 @@ Mailpit is inspired by [MailHog](#why-rewrite-mailhog), but much, much faster.
 - Configurable automatic email pruning (default keeps the most recent 500 emails)
 - Email storage either in a temporary or persistent database ([see wiki](https://github.com/axllent/mailpit/wiki/Email-storage))
 - Fast SMTP processing & storing - approximately 70-100 emails per second depending on CPU, network speed & email size, easily handling tens of thousands of emails
-- SMTP relaying / message release - relay messages via a different SMTP server ([see wiki](https://github.com/axllent/mailpit/wiki/SMTP-relay))
+- SMTP relaying / message release - relay messages via a different SMTP server including a allowlist of accepted recipients ([see wiki](https://github.com/axllent/mailpit/wiki/SMTP-relay))
 - Optional SMTP with STARTTLS & SMTP authentication, including an "accept anything" mode ([see wiki](https://github.com/axllent/mailpit/wiki/SMTP-with-STARTTLS-and-authentication))
 - Optional HTTPS for web UI ([see wiki](https://github.com/axllent/mailpit/wiki/HTTPS))
 - Optional basic authentication for web UI ([see wiki](https://github.com/axllent/mailpit/wiki/Basic-authentication))

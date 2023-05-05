@@ -3,13 +3,45 @@ package smtpd
 import (
 	"crypto/tls"
 	"fmt"
-	"net/smtp"
-
 	"github.com/axllent/mailpit/config"
+	"github.com/axllent/mailpit/utils/logger"
+	"net/mail"
+	"net/smtp"
 )
+
+func allowedRecipients(to []string) []string {
+	if config.SMTPRelayConfig.RecipientAllowlistRegexp == nil {
+		return to
+	}
+
+	var ar []string
+
+	for _, recipient := range to {
+		address, err := mail.ParseAddress(recipient)
+
+		if err != nil {
+			logger.Log().Warnf("ignoring invalid email address: %s", recipient)
+			continue
+		}
+
+		if !config.SMTPRelayConfig.RecipientAllowlistRegexp.MatchString(address.Address) {
+			logger.Log().Debugf("[smtp] not allowed to relay to %s: does not match the allowlist %s", recipient, config.SMTPRelayConfig.RecipientAllowlist)
+		} else {
+			ar = append(ar, recipient)
+		}
+	}
+
+	return ar
+}
 
 // Send will connect to a pre-configured SMTP server and send a message to one or more recipients.
 func Send(from string, to []string, msg []byte) error {
+	recipients := allowedRecipients(to)
+
+	if len(recipients) == 0 {
+		return nil
+	}
+
 	addr := fmt.Sprintf("%s:%d", config.SMTPRelayConfig.Host, config.SMTPRelayConfig.Port)
 
 	c, err := smtp.Dial(addr)
@@ -48,7 +80,7 @@ func Send(from string, to []string, msg []byte) error {
 		return err
 	}
 
-	for _, addr := range to {
+	for _, addr := range recipients {
 		if err = c.Rcpt(addr); err != nil {
 			return err
 		}
