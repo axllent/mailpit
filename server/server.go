@@ -94,6 +94,9 @@ func defaultRoutes() *mux.Router {
 	r.HandleFunc(config.Webroot+"api/v1/info", middleWareFunc(apiv1.AppInfo)).Methods("GET")
 	r.HandleFunc(config.Webroot+"api/v1/webui", middleWareFunc(apiv1.WebUIConfig)).Methods("GET")
 
+	// return blank 200 response for OPTIONS requests for CORS
+	r.PathPrefix(config.Webroot + "api/v1/").Handler(middleWareFunc(apiv1.GetOptions)).Methods("OPTIONS")
+
 	return r
 }
 
@@ -122,7 +125,7 @@ func middleWareFunc(fn http.HandlerFunc) http.HandlerFunc {
 
 		if AccessControlAllowOrigin != "" && strings.HasPrefix(r.RequestURI, config.Webroot+"api/") {
 			w.Header().Set("Access-Control-Allow-Origin", AccessControlAllowOrigin)
-			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT")
+			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT, OPTIONS")
 			w.Header().Set("Access-Control-Allow-Headers", "*")
 		}
 
@@ -161,7 +164,7 @@ func middlewareHandler(h http.Handler) http.Handler {
 
 		if AccessControlAllowOrigin != "" && strings.HasPrefix(r.RequestURI, config.Webroot+"api/") {
 			w.Header().Set("Access-Control-Allow-Origin", AccessControlAllowOrigin)
-			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT")
+			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT, OPTIONS")
 			w.Header().Set("Access-Control-Allow-Headers", "*")
 		}
 
