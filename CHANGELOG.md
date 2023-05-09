@@ -2,6 +2,19 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.6.9]
+
+### API
+- Return blank 200 response for OPTIONS requests (CORS)
+
+### Bugfix
+- Correctly escape JS cid regex
+
+### Libs
+- Update node modules
+- Update Go modules
+
+
 ## [v1.6.8]
 
 ### Bugfix
