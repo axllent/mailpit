@@ -657,3 +657,10 @@ func getStartLimit(req *http.Request) (start int, limit int) {
 
 	return start, limit
 }
+
+// GetOptions returns a blank response
+func GetOptions(w http.ResponseWriter, r *http.Request) {
+
+	w.Header().Set("Content-Type", "text/plain")
+	_, _ = w.Write([]byte(""))
+}

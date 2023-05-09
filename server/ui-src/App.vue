@@ -230,14 +230,14 @@ export default {
 						let a = d.Inline[i];
 						if (a.ContentID != '') {
 							d.HTML = d.HTML.replace(
-								new RegExp('(=["\']?)(cid:' + a.ContentID + ')(["|\'|\s|\/|>|;])', 'g'),
+								new RegExp('(=["\']?)(cid:' + a.ContentID + ')(["|\'|\\s|\\/|>|;])', 'g'),
 								'$1' + window.location.origin + window.location.pathname + 'api/v1/message/' + d.ID + '/part/' + a.PartID + '$3'
 							);
 						}
 						if (a.FileName.match(/^[a-zA-Z0-9\_\-\.]+$/)) {
 							// some old email clients use the filename
 							d.HTML = d.HTML.replace(
-								new RegExp('(=["\']?)(' + a.FileName + ')(["|\'|\s|\/|>|;])', 'g'),
+								new RegExp('(=["\']?)(' + a.FileName + ')(["|\'|\\s|\\/|>|;])', 'g'),
 								'$1' + window.location.origin + window.location.pathname + 'api/v1/message/' + d.ID + '/part/' + a.PartID + '$3'
 							);
 						}
@@ -250,14 +250,14 @@ export default {
 						let a = d.Attachments[i];
 						if (a.ContentID != '') {
 							d.HTML = d.HTML.replace(
-								new RegExp('(=["\']?)(cid:' + a.ContentID + ')(["|\'|\s|\/|>|;])', 'g'),
+								new RegExp('(=["\']?)(cid:' + a.ContentID + ')(["|\'|\\s|\\/|>|;])', 'g'),
 								'$1' + window.location.origin + window.location.pathname + 'api/v1/message/' + d.ID + '/part/' + a.PartID + '$3'
 							);
 						}
 						if (a.FileName.match(/^[a-zA-Z0-9\_\-\.]+$/)) {
 							// some old email clients use the filename
 							d.HTML = d.HTML.replace(
-								new RegExp('(=["\']?)(' + a.FileName + ')(["|\'|\s|\/|>|;])', 'g'),
+								new RegExp('(=["\']?)(' + a.FileName + ')(["|\'|\\s|\\/|>|;])', 'g'),
 								'$1' + window.location.origin + window.location.pathname + 'api/v1/message/' + d.ID + '/part/' + a.PartID + '$3'
 							);
 						}
