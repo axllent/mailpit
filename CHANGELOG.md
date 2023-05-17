@@ -2,6 +2,16 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.6.10]
+
+### Libs
+- Update node modules
+- Update Go modules
+
+### UI
+- Remove "Noto Color Emoji" from default bootstrap font list
+
+
 ## [v1.6.9]
 
 ### API
