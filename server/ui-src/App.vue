@@ -83,7 +83,7 @@ export default {
 			this.currentPath = window.location.hash.slice(1);
 		});
 
-		this.notificationsSupported = 'https:' == document.location.protocol
+		this.notificationsSupported = window.isSecureContext
 			&& ("Notification" in window && Notification.permission !== "denied");
 		this.notificationsEnabled = this.notificationsSupported && Notification.permission == "granted";
 
