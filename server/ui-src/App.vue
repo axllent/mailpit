@@ -83,7 +83,7 @@ export default {
 			this.currentPath = window.location.hash.slice(1);
 		});
 
-		this.notificationsSupported = 'https:' == document.location.protocol
+		this.notificationsSupported = window.isSecureContext
 			&& ("Notification" in window && Notification.permission !== "denied");
 		this.notificationsEnabled = this.notificationsSupported && Notification.permission == "granted";
 
@@ -609,7 +609,8 @@ export default {
 		},
 
 		setMessageToast: function (m) {
-			if (this.toastMessage) {
+			// don't display if browser notifications are enabled, or a toast is already displayed
+			if (this.notificationsEnabled || this.toastMessage) {
 				return;
 			}
 
@@ -765,10 +766,10 @@ export default {
 					class="list-group-item list-group-item-action" :class="!searching && !message ? 'active' : ''">
 					<template v-if="isConnected">
 						<i class="bi bi-envelope-fill me-1" v-if="!searching && !message"></i>
-						<i class="bi bi-arrow-return-left" v-else></i>
+						<i class="bi bi-arrow-return-left me-1" v-else></i>
 					</template>
 					<i class="bi bi-arrow-clockwise me-1" v-else></i>
-					<span v-if="message" class="ms-1">Return</span>
+					<span v-if="message" class="ms-1 me-1">Return</span>
 					<span v-else class="ms-1">Inbox</span>
 					<span class="badge rounded-pill ms-1 float-end text-bg-secondary" title="Unread messages">
 						{{ formatNumber(unread) }}
@@ -778,7 +779,7 @@ export default {
 				<template v-if="!message && !selected.length">
 					<button class="list-group-item list-group-item-action" data-bs-toggle="modal"
 						data-bs-target="#MarkAllReadModal" :disabled="!unread || searching">
-						<i class="bi bi-eye-fill"></i>
+						<i class="bi bi-eye-fill me-1"></i>
 						Mark all read
 					</button>
 
@@ -790,19 +791,19 @@ export default {
 					<button class="list-group-item list-group-item-action" data-bs-toggle="modal"
 						data-bs-target="#EnableNotificationsModal"
 						v-if="isConnected && notificationsSupported && !notificationsEnabled">
-						<i class="bi bi-bell"></i>
+						<i class="bi bi-bell me-1"></i>
 						Enable alerts
 					</button>
 				</template>
 				<template v-if="!message && selected.length">
 					<button class="list-group-item list-group-item-action" :disabled="!selectedHasUnread()"
 						v-on:click="markSelectedRead">
-						<i class="bi bi-eye-fill"></i>
+						<i class="bi bi-eye-fill me-1"></i>
 						Mark read
 					</button>
 					<button class="list-group-item list-group-item-action" :disabled="!selectedHasRead()"
 						v-on:click="markSelectedUnread">
-						<i class="bi bi-eye-slash"></i>
+						<i class="bi bi-eye-slash me-1"></i>
 						Mark unread
 					</button>
 					<button class="list-group-item list-group-item-action" v-on:click="deleteMessages">

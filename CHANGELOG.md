@@ -2,6 +2,16 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.6.11]
+
+### Libs
+- Update node modules
+- Update Go modules
+
+### UI
+- Check for secure context instead of HTTPS ([#114](https://github.com/axllent/mailpit/issues/114))
+
+
 ## [v1.6.10]
 
 ### Libs

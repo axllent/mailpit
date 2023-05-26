@@ -54,11 +54,22 @@ func PrettyPrint(i interface{}) {
 }
 
 // CleanIP returns a human-readable IP for the logging interface
-// when starting services. It translates [::]:<port> to "localhost:<port>"
+// when starting services. It translates [::]:<port> to "0.0.0.0:<port>"
 func CleanIP(s string) string {
 	re := regexp.MustCompile(`^\[\:\:\]\:\d+`)
 	if re.MatchString(s) {
 		return "0.0.0.0:" + s[5:]
+	}
+
+	return s
+}
+
+// CleanHTTPIP returns a human-readable IP for the logging interface
+// when starting services. It translates [::]:<port> to "localhost:<port>"
+func CleanHTTPIP(s string) string {
+	re := regexp.MustCompile(`^\[\:\:\]\:\d+`)
+	if re.MatchString(s) {
+		return "localhost:" + s[5:]
 	}
 
 	return s
