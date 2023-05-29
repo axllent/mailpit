@@ -329,7 +329,7 @@ func List(start, limit int) ([]MessageSummary, error) {
 	if err := q.QueryAndClose(nil, db, func(row *sql.Rows) {
 		var created int64
 		var id string
-		var messageID
+		var messageID string
 		var subject string
 		var metadata string
 		var size int
