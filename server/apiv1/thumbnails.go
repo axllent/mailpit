@@ -39,12 +39,12 @@ func Thumbnail(w http.ResponseWriter, r *http.Request) {
 	//	Parameters:
 	//	  + name: ID
 	//	    in: path
-	//	    description: message id
+	//	    description: Database ID
 	//	    required: true
 	//	    type: string
 	//	  + name: PartID
 	//	    in: path
-	//	    description: attachment part id
+	//	    description: Attachment part ID
 	//	    required: true
 	//	    type: string
 	//

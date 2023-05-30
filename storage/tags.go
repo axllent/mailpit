@@ -12,7 +12,7 @@ import (
 	"github.com/leporo/sqlf"
 )
 
-// SetTags will set the tags for a given message ID, used via API
+// SetTags will set the tags for a given database ID, used via API
 func SetTags(id string, tags []string) error {
 	applyTags := []string{}
 	reg := regexp.MustCompile(`\s+`)
@@ -61,7 +61,7 @@ func findTags(message *[]byte) []string {
 	return tags
 }
 
-// Get message tags from the database for a given message ID.
+// Get message tags from the database for a given database ID
 // Used when parsing a raw email.
 func getMessageTags(id string) []string {
 	tags := []string{}

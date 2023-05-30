@@ -69,6 +69,8 @@ type Attachment struct {
 type MessageSummary struct {
 	// Database ID
 	ID string
+	// Message ID
+	MessageID string
 	// Read status
 	Read bool
 	// From address
