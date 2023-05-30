@@ -31,9 +31,11 @@ List messages in the mailbox. Messages are returned in the order of latest recei
   "unread": 500,
   "count": 50,
   "start": 0,
+  "tags": ["test"],
   "messages": [
     {
       "ID": "1c575821-70ba-466f-8cee-2e1cf0fcdd0f",
+      "MessageID": "12345.67890@localhost",
       "Read": false,
       "From": {
         "Name": "John Doe",
@@ -54,6 +56,7 @@ List messages in the mailbox. Messages are returned in the order of latest recei
       "Bcc": [],
       "Subject": "Message subject",
       "Created": "2022-10-03T21:35:32.228605299+13:00",
+      "Tags": ["test"],
       "Size": 6144,
       "Attachments": 0
     },

@@ -15,6 +15,7 @@ Returns a JSON summary of the message and attachments.
 ```json
 {
   "ID": "d7a5543b-96dd-478b-9b60-2b465c9884de",
+  "MessageID": "12345.67890@localhost",
   "Read": true,
   "From": {
     "Name": "John Doe",
@@ -31,6 +32,7 @@ Returns a JSON summary of the message and attachments.
   "ReplyTo": [],
   "Subject": "Message subject",
   "Date": "2016-09-07T16:46:00+13:00",
+  "Tags": ["test"],
   "Text": "Plain text MIME part of the email",
   "HTML": "HTML MIME part (if exists)",
   "Size": 79499,
