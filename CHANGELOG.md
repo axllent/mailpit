@@ -2,6 +2,15 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.6.12]
+
+### Feature
+- Add Message-Id to MessageSummary ([#116](https://github.com/axllent/mailpit/issues/116))
+
+### Swagger
+- Update swagger field descriptions, add MessageID
+
+
 ## [v1.6.11]
 
 ### Libs
