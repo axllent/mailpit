@@ -2,6 +2,12 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.6.13]
+
+### Feature
+- Add SMTP LOGIN authentication method for message relay
+
+
 ## [v1.6.12]
 
 ### Feature
