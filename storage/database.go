@@ -211,7 +211,7 @@ func Close() {
 
 // Store will save an email to the database tables
 func Store(body []byte) (string, error) {
-	// Parse message body with enmime.
+	// Parse message body with enmime
 	env, err := enmime.ReadEnvelope(bytes.NewReader(body))
 	if err != nil {
 		logger.Log().Warningf("[db] %s", err.Error())
@@ -303,6 +303,7 @@ func Store(body []byte) (string, error) {
 
 	c.Created = created
 	c.ID = id
+	c.MessageID = messageID
 	c.Attachments = attachments
 	c.Subject = subject
 	c.Size = size
@@ -338,7 +339,7 @@ func List(start, limit int) ([]MessageSummary, error) {
 		var read int
 		em := MessageSummary{}
 
-		if err := row.Scan(&created, &id, &subject, &metadata, &size, &attachments, &read, &tags); err != nil {
+		if err := row.Scan(&created, &id, &messageID, &subject, &metadata, &size, &attachments, &read, &tags); err != nil {
 			logger.Log().Error(err)
 			return
 		}
@@ -401,6 +402,7 @@ func Search(search string, start, limit int) ([]MessageSummary, error) {
 	if err := q.QueryAndClose(nil, db, func(row *sql.Rows) {
 		var created int64
 		var id string
+		var messageID string
 		var subject string
 		var metadata string
 		var size int
@@ -410,7 +412,7 @@ func Search(search string, start, limit int) ([]MessageSummary, error) {
 		var ignore string
 		em := MessageSummary{}
 
-		if err := row.Scan(&created, &id, &subject, &metadata, &size, &attachments, &read, &tags, &ignore, &ignore, &ignore, &ignore); err != nil {
+		if err := row.Scan(&created, &id, &messageID, &subject, &metadata, &size, &attachments, &read, &tags, &ignore, &ignore, &ignore, &ignore); err != nil {
 			logger.Log().Error(err)
 			return
 		}
@@ -427,6 +429,7 @@ func Search(search string, start, limit int) ([]MessageSummary, error) {
 
 		em.Created = time.UnixMilli(created)
 		em.ID = id
+		em.MessageID = messageID
 		em.Subject = subject
 		em.Size = size
 		em.Attachments = attachments

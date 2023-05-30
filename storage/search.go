@@ -14,7 +14,7 @@ func searchParser(args []string, start, limit int) *sqlf.Stmt {
 	}
 
 	q := sqlf.From("mailbox").
-		Select(`Created, ID, Subject, Metadata, Size, Attachments, Read, Tags,
+		Select(`Created, ID, MessageID, Subject, Metadata, Size, Attachments, Read, Tags,
 			IFNULL(json_extract(Metadata, '$.To'), '{}') as ToJSON,
 			IFNULL(json_extract(Metadata, '$.From'), '{}') as FromJSON,
 			IFNULL(json_extract(Metadata, '$.Cc'), '{}') as CcJSON,
