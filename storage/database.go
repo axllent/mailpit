@@ -321,7 +321,7 @@ func List(start, limit int) ([]MessageSummary, error) {
 	results := []MessageSummary{}
 
 	q := sqlf.From("mailbox").
-		Select(`Created, ID, Subject, Metadata, Size, Attachments, Read, Tags`).
+		Select(`Created, ID, MessageID, Subject, Metadata, Size, Attachments, Read, Tags`).
 		OrderBy("Created DESC").
 		Limit(limit).
 		Offset(start)
@@ -329,6 +329,7 @@ func List(start, limit int) ([]MessageSummary, error) {
 	if err := q.QueryAndClose(nil, db, func(row *sql.Rows) {
 		var created int64
 		var id string
+		var messageID string
 		var subject string
 		var metadata string
 		var size int
@@ -354,6 +355,7 @@ func List(start, limit int) ([]MessageSummary, error) {
 
 		em.Created = time.UnixMilli(created)
 		em.ID = id
+		em.MessageID = messageID
 		em.Subject = subject
 		em.Size = size
 		em.Attachments = attachments
