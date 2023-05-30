@@ -115,11 +115,11 @@ type smtpRelayConfigStruct struct {
 	Port                     int    `yaml:"port"`
 	STARTTLS                 bool   `yaml:"starttls"`
 	AllowInsecure            bool   `yaml:"allow-insecure"`
-	Auth                     string `yaml:"auth"`                // none, plain, cram-md5
+	Auth                     string `yaml:"auth"`                // none, plain, login, cram-md5
 	Username                 string `yaml:"username"`            // plain & cram-md5
 	Password                 string `yaml:"password"`            // plain
 	Secret                   string `yaml:"secret"`              // cram-md5
-	ReturnPath               string `yaml:"return-path"`         // allows overriding the boune address
+	ReturnPath               string `yaml:"return-path"`         // allow overriding the bounce address
 	RecipientAllowlist       string `yaml:"recipient-allowlist"` // regex, if set needs to match for mails to be relayed
 	RecipientAllowlistRegexp *regexp.Regexp
 }
@@ -284,6 +284,11 @@ func parseRelayConfig(c string) error {
 	} else if SMTPRelayConfig.Auth == "plain" {
 		if SMTPRelayConfig.Username == "" || SMTPRelayConfig.Password == "" {
 			return fmt.Errorf("SMTP relay host username or password not set for PLAIN authentication (%s)", c)
+		}
+	} else if SMTPRelayConfig.Auth == "login" {
+		SMTPRelayConfig.Auth = "login"
+		if SMTPRelayConfig.Username == "" || SMTPRelayConfig.Password == "" {
+			return fmt.Errorf("SMTP relay host username or password not set for LOGIN authentication (%s)", c)
 		}
 	} else if strings.HasPrefix(SMTPRelayConfig.Auth, "cram") {
 		SMTPRelayConfig.Auth = "cram-md5"

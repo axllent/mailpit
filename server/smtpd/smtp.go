@@ -69,6 +69,10 @@ func Send(from string, to []string, msg []byte) error {
 		a = smtp.PlainAuth("", config.SMTPRelayConfig.Username, config.SMTPRelayConfig.Password, config.SMTPRelayConfig.Host)
 	}
 
+	if config.SMTPRelayConfig.Auth == "login" {
+		a = LoginAuth(config.SMTPRelayConfig.Username, config.SMTPRelayConfig.Password)
+	}
+
 	if config.SMTPRelayConfig.Auth == "cram-md5" {
 		a = smtp.CRAMMD5Auth(config.SMTPRelayConfig.Username, config.SMTPRelayConfig.Secret)
 	}
@@ -102,4 +106,34 @@ func Send(from string, to []string, msg []byte) error {
 	}
 
 	return c.Quit()
+}
+
+// Custom implementation of LOGIN SMTP authentication
+// @see https://gist.github.com/andelf/5118732
+type loginAuth struct {
+	username, password string
+}
+
+// LoginAuth authentication
+func LoginAuth(username, password string) smtp.Auth {
+	return &loginAuth{username, password}
+}
+
+func (a *loginAuth) Start(server *smtp.ServerInfo) (string, []byte, error) {
+	return "LOGIN", []byte{}, nil
+}
+
+func (a *loginAuth) Next(fromServer []byte, more bool) ([]byte, error) {
+	if more {
+		switch string(fromServer) {
+		case "Username:":
+			return []byte(a.username), nil
+		case "Password:":
+			return []byte(a.password), nil
+		default:
+			return nil, errors.New("Unknown fromServer")
+		}
+	}
+
+	return nil, nil
 }
