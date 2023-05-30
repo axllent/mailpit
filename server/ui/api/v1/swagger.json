@@ -66,7 +66,7 @@
         "parameters": [
           {
             "type": "string",
-            "description": "Message ID",
+            "description": "Database ID",
             "name": "ID",
             "in": "path",
             "required": true
@@ -103,7 +103,7 @@
         "parameters": [
           {
             "type": "string",
-            "description": "Message ID",
+            "description": "Database ID",
             "name": "ID",
             "in": "path",
             "required": true
@@ -142,7 +142,7 @@
         "parameters": [
           {
             "type": "string",
-            "description": "Message ID",
+            "description": "Database ID",
             "name": "ID",
             "in": "path",
             "required": true
@@ -183,14 +183,14 @@
         "parameters": [
           {
             "type": "string",
-            "description": "message id",
+            "description": "Database ID",
             "name": "ID",
             "in": "path",
             "required": true
           },
           {
             "type": "string",
-            "description": "attachment part id",
+            "description": "Attachment part ID",
             "name": "PartID",
             "in": "path",
             "required": true
@@ -224,7 +224,7 @@
         "parameters": [
           {
             "type": "string",
-            "description": "Message ID",
+            "description": "Database ID",
             "name": "ID",
             "in": "path",
             "required": true
@@ -242,7 +242,7 @@
     },
     "/api/v1/message/{ID}/release": {
       "post": {
-        "description": "Release a message via a preconfigured external SMTP server..",
+        "description": "Release a message via a pre-configured external SMTP server..",
         "consumes": [
           "application/json"
         ],
@@ -261,7 +261,7 @@
         "parameters": [
           {
             "type": "string",
-            "description": "Message ID",
+            "description": "Database ID",
             "name": "ID",
             "in": "path",
             "required": true
@@ -347,11 +347,11 @@
         "operationId": "SetReadStatus",
         "parameters": [
           {
-            "description": "Message IDs to update",
+            "description": "Database IDs to update",
             "name": "ids",
             "in": "body",
             "schema": {
-              "description": "Message IDs to update",
+              "description": "Database IDs to update",
               "type": "object",
               "$ref": "#/definitions/SetReadStatusRequest"
             }
@@ -385,11 +385,11 @@
         "operationId": "Delete",
         "parameters": [
           {
-            "description": "Message IDs to delete",
+            "description": "Database IDs to delete",
             "name": "ids",
             "in": "body",
             "schema": {
-              "description": "Message IDs to delete",
+              "description": "Database IDs to delete",
               "type": "object",
               "$ref": "#/definitions/DeleteRequest"
             }
@@ -466,12 +466,12 @@
         "operationId": "SetTags",
         "parameters": [
           {
-            "description": "Message IDs to update",
+            "description": "Database IDs to update",
             "name": "ids",
             "in": "body",
             "required": true,
             "schema": {
-              "description": "Message IDs to update",
+              "description": "Database IDs to update",
               "type": "object",
               "$ref": "#/definitions/SetTagsRequest"
             }
@@ -751,6 +751,10 @@
           "description": "Database ID",
           "type": "string"
         },
+        "MessageID": {
+          "description": "Message ID",
+          "type": "string"
+        },
         "Read": {
           "description": "Read status",
           "type": "boolean"
@@ -900,6 +904,10 @@
             "Enabled": {
               "description": "Whether message relaying (release) is enabled",
               "type": "boolean"
+            },
+            "RecipientAllowlist": {
+              "description": "Allowlist of accepted recipients",
+              "type": "string"
             },
             "ReturnPath": {
               "description": "Enforced Return-Path (if set) for relay bounces",

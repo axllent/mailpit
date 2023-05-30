@@ -147,7 +147,7 @@ func GetMessage(w http.ResponseWriter, r *http.Request) {
 	//	Parameters:
 	//	  + name: ID
 	//	    in: path
-	//	    description: Message ID
+	//	    description: Database ID
 	//	    required: true
 	//	    type: string
 	//
@@ -188,7 +188,7 @@ func DownloadAttachment(w http.ResponseWriter, r *http.Request) {
 	//	Parameters:
 	//	  + name: ID
 	//	    in: path
-	//	    description: Message ID
+	//	    description: Database ID
 	//	    required: true
 	//	    type: string
 	//	  + name: PartID
@@ -237,7 +237,7 @@ func GetHeaders(w http.ResponseWriter, r *http.Request) {
 	//	Parameters:
 	//	  + name: ID
 	//	    in: path
-	//	    description: Message ID
+	//	    description: Database ID
 	//	    required: true
 	//	    type: string
 	//
@@ -284,7 +284,7 @@ func DownloadRaw(w http.ResponseWriter, r *http.Request) {
 	//	Parameters:
 	//	  + name: ID
 	//	    in: path
-	//	    description: Message ID
+	//	    description: Database ID
 	//	    required: true
 	//	    type: string
 	//
@@ -330,7 +330,7 @@ func DeleteMessages(w http.ResponseWriter, r *http.Request) {
 	//	Parameters:
 	//	  + name: ids
 	//	    in: body
-	//	    description: Message IDs to delete
+	//	    description: Database IDs to delete
 	//	    required: false
 	//	    type: DeleteRequest
 	//
@@ -381,7 +381,7 @@ func SetReadStatus(w http.ResponseWriter, r *http.Request) {
 	//	Parameters:
 	//	  + name: ids
 	//	    in: body
-	//	    description: Message IDs to update
+	//	    description: Database IDs to update
 	//	    required: false
 	//	    type: SetReadStatusRequest
 	//
@@ -459,7 +459,7 @@ func SetTags(w http.ResponseWriter, r *http.Request) {
 	//	Parameters:
 	//	  + name: ids
 	//	    in: body
-	//	    description: Message IDs to update
+	//	    description: Database IDs to update
 	//	    required: true
 	//	    type: SetTagsRequest
 	//
@@ -502,7 +502,7 @@ func ReleaseMessage(w http.ResponseWriter, r *http.Request) {
 	//
 	// # Release message
 	//
-	// Release a message via a preconfigured external SMTP server..
+	// Release a message via a pre-configured external SMTP server..
 	//
 	//	Consumes:
 	//	- application/json
@@ -515,7 +515,7 @@ func ReleaseMessage(w http.ResponseWriter, r *http.Request) {
 	//	Parameters:
 	//	  + name: ID
 	//	    in: path
-	//	    description: Message ID
+	//	    description: Database ID
 	//	    required: true
 	//	    type: string
 	//		+ name: to
