@@ -90,7 +90,7 @@ func mailHandler(origin net.Addr, from string, to []string, data []byte) error {
 
 	_, err = storage.Store(data)
 	if err != nil {
-		logger.Log().Errorf("[db] error storing message: %d", err.Error())
+		logger.Log().Errorf("[db] error storing message: %s", err.Error())
 
 		return err
 	}
