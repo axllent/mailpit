@@ -74,6 +74,13 @@ export default {
 		},
 		canNext: function () {
 			return this.total > (this.start + this.count);
+		},
+		unreadInSearch: function () {
+			if (!this.searching) {
+				return false;
+			}
+
+			return this.items.filter(i => !i.Read).length;
 		}
 	},
 
@@ -304,6 +311,24 @@ export default {
 			});
 		},
 
+		// delete messages displayed in current search
+		deleteSearch: function () {
+			let ids = this.items.map(item => item.ID);
+
+			if (!ids.length) {
+				return false;
+			}
+
+			let self = this;
+			let uri = 'api/v1/messages';
+			self.delete(uri, { 'ids': ids }, function (response) {
+				window.location.hash = "";
+				self.scrollInPlace = true;
+				self.loadMessages();
+			});
+		},
+
+		// delete all messages from mailbox
 		deleteAll: function () {
 			let self = this;
 			let uri = 'api/v1/messages';
@@ -313,6 +338,7 @@ export default {
 			});
 		},
 
+		// mark current message as read
 		markUnread: function () {
 			let self = this;
 			if (!self.message) {
@@ -326,6 +352,7 @@ export default {
 			});
 		},
 
+		// mark all messages in mailbox as read
 		markAllRead: function () {
 			let self = this;
 			let uri = 'api/v1/messages'
@@ -336,6 +363,24 @@ export default {
 			});
 		},
 
+		// mark messages in current search as read
+		markSearchRead: function () {
+			let ids = this.items.map(item => item.ID);
+
+			if (!ids.length) {
+				return false;
+			}
+
+			let self = this;
+			let uri = 'api/v1/messages';
+			self.put(uri, { 'read': true, 'ids': ids }, function (response) {
+				window.location.hash = "";
+				self.scrollInPlace = true;
+				self.loadMessages();
+			});
+		},
+
+		// mark selected messages as read
 		markSelectedRead: function () {
 			let self = this;
 			if (!self.selected.length) {
@@ -349,6 +394,7 @@ export default {
 			});
 		},
 
+		// mark selected messages as unread
 		markSelectedUnread: function () {
 			let self = this;
 			if (!self.selected.length) {
@@ -362,7 +408,7 @@ export default {
 			});
 		},
 
-		// test of any selected emails are unread
+		// test if any selected emails are unread
 		selectedHasUnread: function () {
 			if (!this.selected.length) {
 				return false;
@@ -709,7 +755,8 @@ export default {
 						<span v-if="!total" class="ms-2">Mailpit</span>
 					</a>
 					<div v-if="total" class="ms-md-2 d-flex bg-white border rounded-start flex-fill position-relative">
-						<input type="text" class="form-control border-0" v-model.trim="search" placeholder="Search mailbox">
+						<input type="text" class="form-control border-0" aria-label="Search" v-model.trim="search"
+							placeholder="Search mailbox">
 						<span class="btn btn-link position-absolute end-0 text-muted" v-if="search"
 							v-on:click="resetSearch"><i class="bi bi-x-circle"></i></span>
 					</div>
@@ -720,13 +767,28 @@ export default {
 			</form>
 		</div>
 		<div class="col-12 col-lg-5 text-end mt-2 mt-lg-0" v-if="!message && total">
-			<button v-if="total" class="btn btn-danger float-start d-md-none me-2" data-bs-toggle="modal"
-				data-bs-target="#DeleteAllModal" title="Delete all messages">
+			<button v-if="searching && items.length" class="btn btn-danger float-start d-md-none me-2"
+				data-bs-toggle="modal" data-bs-target="#DeleteSearchModal" :disabled="!items" title="Delete results">
+				<i class="bi bi-trash-fill"></i>
+			</button>
+			<button v-else class="btn btn-danger float-start d-md-none me-2" data-bs-toggle="modal"
+				data-bs-target="#DeleteAllModal" :disabled="!total || searching" title="Delete all messages">
 				<i class="bi bi-trash-fill"></i>
 			</button>
 
+			<!-- TODO
 			<button v-if="unread" class="btn btn-light float-start d-md-none" data-bs-toggle="modal"
 				data-bs-target="#MarkAllReadModal" title="Mark all read">
+				<i class="bi bi-check2-square"></i>
+			</button> -->
+
+			<button v-if="searching && items.length" class="btn btn-light float-start d-md-none" data-bs-toggle="modal"
+				data-bs-target="#MarkSearchReadModal" :disabled="!unreadInSearch"
+				:title="'Mark ' + formatNumber(unreadInSearch) + ' read'">
+				<i class="bi bi-check2-square"></i>
+			</button>
+			<button v-else class="btn btn-light float-start d-md-none" data-bs-toggle="modal"
+				data-bs-target="#MarkAllReadModal" :disabled="!unread || searching">
 				<i class="bi bi-check2-square"></i>
 			</button>
 
@@ -777,17 +839,28 @@ export default {
 				</a>
 
 				<template v-if="!message && !selected.length">
-					<button class="list-group-item list-group-item-action" data-bs-toggle="modal"
+					<button v-if="searching && items.length" class="list-group-item list-group-item-action"
+						data-bs-toggle="modal" data-bs-target="#MarkSearchReadModal" :disabled="!unreadInSearch">
+						<i class="bi bi-eye-fill me-1"></i>
+						Mark {{ formatNumber(unreadInSearch) }} read
+					</button>
+					<button v-else class="list-group-item list-group-item-action" data-bs-toggle="modal"
 						data-bs-target="#MarkAllReadModal" :disabled="!unread || searching">
 						<i class="bi bi-eye-fill me-1"></i>
 						Mark all read
 					</button>
 
-					<button class="list-group-item list-group-item-action" data-bs-toggle="modal"
+					<button v-if="searching && items.length" class="list-group-item list-group-item-action"
+						data-bs-toggle="modal" data-bs-target="#DeleteSearchModal" :disabled="!items">
+						<i class="bi bi-trash-fill me-1 text-danger"></i>
+						Delete {{ formatNumber(items.length) }} results
+					</button>
+					<button v-else class="list-group-item list-group-item-action" data-bs-toggle="modal"
 						data-bs-target="#DeleteAllModal" :disabled="!total || searching">
 						<i class="bi bi-trash-fill me-1 text-danger"></i>
 						Delete all
 					</button>
+
 					<button class="list-group-item list-group-item-action" data-bs-toggle="modal"
 						data-bs-target="#EnableNotificationsModal"
 						v-if="isConnected && notificationsSupported && !notificationsEnabled">
@@ -808,7 +881,7 @@ export default {
 					</button>
 					<button class="list-group-item list-group-item-action" v-on:click="deleteMessages">
 						<i class="bi bi-trash-fill me-1 text-danger"></i>
-						Delete
+						Delete selected
 					</button>
 					<button class="list-group-item list-group-item-action" v-on:click="selected = []">
 						<i class="bi bi-x-circle me-1"></i>
@@ -820,7 +893,7 @@ export default {
 			<template v-if="!selected.length && tags.length && !message">
 				<h6 class="mt-4 text-muted"><small>Tags</small></h6>
 				<div class="list-group mt-2 mb-5">
-					<button class="list-group-item list-group-item-action" v-for="tag in tags"
+					<button class="list-group-item list-group-item-action small" v-for="tag in tags"
 						v-on:click="tagSearch($event, tag)" :class="inSearch(tag) ? 'active' : ''">
 						<i class="bi bi-tag-fill" v-if="inSearch(tag)"></i>
 						<i class="bi bi-tag" v-else></i>
@@ -930,6 +1003,29 @@ export default {
 	</div>
 
 	<!-- Modal -->
+	<div class="modal fade" id="DeleteSearchModal" tabindex="-1" aria-labelledby="DeleteSearchModalLabel"
+		aria-hidden="true">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title" id="DeleteSearchModalLabel">
+						Delete {{ formatNumber(items.length) }} search result<span v-if="items.length > 1">s</span>?
+					</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					This will permanently delete {{ formatNumber(items.length) }} message<span v-if="total > 1">s</span>.
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+					<button type="button" class="btn btn-danger" data-bs-dismiss="modal"
+						v-on:click="deleteSearch">Delete</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Modal -->
 	<div class="modal fade" id="MarkAllReadModal" tabindex="-1" aria-labelledby="MarkAllReadModalLabel" aria-hidden="true">
 		<div class="modal-dialog">
 			<div class="modal-content">
@@ -944,6 +1040,30 @@ export default {
 					<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
 					<button type="button" class="btn btn-success" data-bs-dismiss="modal"
 						v-on:click="markAllRead">Confirm</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Modal -->
+	<div class="modal fade" id="MarkSearchReadModal" tabindex="-1" aria-labelledby="MarkSearchReadModalLabel"
+		aria-hidden="true">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title" id="MarkSearchReadModalLabel">
+						Mark {{ formatNumber(unreadInSearch) }} search result<span v-if="unreadInSearch > 1">s</span> as
+						read?
+					</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					This will mark {{ formatNumber(unreadInSearch) }} message<span v-if="unread > 1">s</span> as read.
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+					<button type="button" class="btn btn-success" data-bs-dismiss="modal"
+						v-on:click="markSearchRead">Confirm</button>
 				</div>
 			</div>
 		</div>

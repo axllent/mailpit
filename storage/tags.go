@@ -3,23 +3,21 @@ package storage
 import (
 	"context"
 	"encoding/json"
-	"regexp"
 	"sort"
 	"strings"
 
 	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/utils/logger"
+	"github.com/axllent/mailpit/utils/tools"
 	"github.com/leporo/sqlf"
 )
 
 // SetTags will set the tags for a given database ID, used via API
 func SetTags(id string, tags []string) error {
 	applyTags := []string{}
-	reg := regexp.MustCompile(`\s+`)
 	for _, t := range tags {
-		t = strings.TrimSpace(reg.ReplaceAllString(t, " "))
-
-		if t != "" && config.TagRegexp.MatchString(t) && !inArray(t, applyTags) {
+		t = tools.CleanTag(t)
+		if t != "" && config.ValidTagRegexp.MatchString(t) && !inArray(t, applyTags) {
 			applyTags = append(applyTags, t)
 		}
 	}
@@ -42,23 +40,22 @@ func SetTags(id string, tags []string) error {
 	return err
 }
 
-// Used to auto-apply tags to new messages
-func findTags(message *[]byte) []string {
-	tags := []string{}
+// Find tags set via --tags in raw message.
+// Returns a comma-separated string.
+func findTagsInRawMessage(message *[]byte) string {
+	tagStr := ""
 	if len(config.SMTPTags) == 0 {
-		return tags
+		return tagStr
 	}
 
 	str := strings.ToLower(string(*message))
 	for _, t := range config.SMTPTags {
-		if !inArray(t.Tag, tags) && strings.Contains(str, t.Match) {
-			tags = append(tags, t.Tag)
+		if strings.Contains(str, t.Match) {
+			tagStr += "," + t.Tag
 		}
 	}
 
-	sort.Strings(tags)
-
-	return tags
+	return tagStr
 }
 
 // Get message tags from the database for a given database ID
@@ -81,6 +78,34 @@ func getMessageTags(id string) []string {
 		logger.Log().Error(err)
 		return tags
 	}
+
+	return tags
+}
+
+// UniqueTagsFromString will split a string with commas, and extract a unique slice of formatted tags
+func uniqueTagsFromString(s string) []string {
+	tags := []string{}
+
+	if s == "" {
+		return tags
+	}
+
+	parts := strings.Split(s, ",")
+	for _, p := range parts {
+		w := tools.CleanTag(p)
+		if w == "" {
+			continue
+		}
+		if config.ValidTagRegexp.MatchString(w) {
+			if !inArray(w, tags) {
+				tags = append(tags, w)
+			}
+		} else {
+			logger.Log().Debugf("[db] ignoring invalid tag: %s", w)
+		}
+	}
+
+	sort.Strings(tags)
 
 	return tags
 }

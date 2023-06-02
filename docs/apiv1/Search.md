@@ -30,6 +30,7 @@ Matching messages are returned in the order of latest received to oldest.
   "messages": [
     {
       "ID": "1c575821-70ba-466f-8cee-2e1cf0fcdd0f",
+      "MessageID": "12345.67890@localhost",
       "Read": false,
       "From": {
         "Name": "John Doe",
