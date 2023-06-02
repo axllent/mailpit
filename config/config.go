@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/axllent/mailpit/utils/logger"
+	"github.com/axllent/mailpit/utils/tools"
 	"github.com/mattn/go-shellwords"
 	"github.com/tg123/go-htpasswd"
 	"gopkg.in/yaml.v3"
@@ -41,7 +42,7 @@ var (
 	// UIAuthFile for basic authentication
 	UIAuthFile string
 
-	// UIAuth used for euthentication
+	// UIAuth used for authentication
 	UIAuth *htpasswd.File
 
 	// Webroot to define the base path for the UI and API
@@ -71,8 +72,8 @@ var (
 	// SMTPCLITags is used to map the CLI args
 	SMTPCLITags string
 
-	// TagRegexp is the allowed tag characters
-	TagRegexp = regexp.MustCompile(`^([a-zA-Z0-9\-\ \_]){3,}$`)
+	// ValidTagRegexp represents a valid tag
+	ValidTagRegexp = regexp.MustCompile(`^([a-zA-Z0-9\-\ \_]){3,}$`)
 
 	// SMTPTags are expressions to apply tags to new mail
 	SMTPTags []AutoTag
@@ -86,7 +87,7 @@ var (
 	// ReleaseEnabled is whether message releases are enabled, requires a valid SMTPRelayConfigFile
 	ReleaseEnabled = false
 
-	// SMTPRelayAllIncoming is whether to relay all incoming messages via preconfgured SMTP server.
+	// SMTPRelayAllIncoming is whether to relay all incoming messages via pre-configured SMTP server.
 	// Use with extreme caution!
 	SMTPRelayAllIncoming = false
 
@@ -219,8 +220,8 @@ func VerifyConfig() error {
 		for _, a := range args {
 			t := strings.Split(a, "=")
 			if len(t) > 1 {
-				tag := strings.TrimSpace(t[0])
-				if !TagRegexp.MatchString(tag) || len(tag) == 0 {
+				tag := tools.CleanTag(t[0])
+				if !ValidTagRegexp.MatchString(tag) || len(tag) == 0 {
 					return fmt.Errorf("Invalid tag (%s) - can only contain spaces, letters, numbers, - & _", tag)
 				}
 				match := strings.TrimSpace(strings.ToLower(strings.Join(t[1:], "=")))
