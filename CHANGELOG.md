@@ -2,6 +2,16 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.6.14]
+
+### Feature
+- Add ability to delete or mark search results read
+- Set tags via X-Tags message header
+
+### Libs
+- Update node modules
+
+
 ## [v1.6.13]
 
 ### Feature
