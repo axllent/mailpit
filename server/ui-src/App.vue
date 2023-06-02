@@ -776,12 +776,6 @@ export default {
 				<i class="bi bi-trash-fill"></i>
 			</button>
 
-			<!-- TODO
-			<button v-if="unread" class="btn btn-light float-start d-md-none" data-bs-toggle="modal"
-				data-bs-target="#MarkAllReadModal" title="Mark all read">
-				<i class="bi bi-check2-square"></i>
-			</button> -->
-
 			<button v-if="searching && items.length" class="btn btn-light float-start d-md-none" data-bs-toggle="modal"
 				data-bs-target="#MarkSearchReadModal" :disabled="!unreadInSearch"
 				:title="'Mark ' + formatNumber(unreadInSearch) + ' read'">
@@ -853,7 +847,7 @@ export default {
 					<button v-if="searching && items.length" class="list-group-item list-group-item-action"
 						data-bs-toggle="modal" data-bs-target="#DeleteSearchModal" :disabled="!items">
 						<i class="bi bi-trash-fill me-1 text-danger"></i>
-						Delete {{ formatNumber(items.length) }} results
+						Delete {{ formatNumber(items.length) }} message<span v-if="items.length > 1">s</span>
 					</button>
 					<button v-else class="list-group-item list-group-item-action" data-bs-toggle="modal"
 						data-bs-target="#DeleteAllModal" :disabled="!total || searching">
