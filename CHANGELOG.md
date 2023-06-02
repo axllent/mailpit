@@ -2,6 +2,12 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.6.15]
+
+### Feature
+- Add `sendmail -bs` functionality
+
+
 ## [v1.6.14]
 
 ### Feature
