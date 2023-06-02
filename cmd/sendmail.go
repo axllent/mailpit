@@ -1,23 +1,18 @@
 package cmd
 
 import (
+	"os"
+
 	sendmail "github.com/axllent/mailpit/sendmail/cmd"
 	"github.com/spf13/cobra"
-)
-
-var (
-	smtpAddr = "localhost:1025"
-	fromAddr string
 )
 
 // sendmailCmd represents the sendmail command
 var sendmailCmd = &cobra.Command{
 	Use:   "sendmail [flags] [recipients]",
 	Short: "A sendmail command replacement for Mailpit",
-	Long: `A sendmail command replacement for Mailpit.
-	
-You can optionally create a symlink called 'sendmail' to the Mailpit binary.`,
 	Run: func(_ *cobra.Command, _ []string) {
+
 		sendmail.Run()
 	},
 }
@@ -25,13 +20,17 @@ You can optionally create a symlink called 'sendmail' to the Mailpit binary.`,
 func init() {
 	rootCmd.AddCommand(sendmailCmd)
 
-	// these are simply repeated for cli consistency
-	sendmailCmd.Flags().StringVarP(&fromAddr, "from", "f", fromAddr, "SMTP sender")
-	sendmailCmd.Flags().StringVarP(&smtpAddr, "smtp-addr", "S", smtpAddr, "SMTP server address")
-	sendmailCmd.Flags().BoolVarP(&sendmail.Verbose, "verbose", "v", false, "Verbose mode (sends debug output to stderr)")
-	sendmailCmd.Flags().BoolP("long-b", "b", false, "Ignored. This flag exists for sendmail compatibility.")
-	sendmailCmd.Flags().BoolP("long-i", "i", false, "Ignored. This flag exists for sendmail compatibility.")
-	sendmailCmd.Flags().BoolP("long-o", "o", false, "Ignored. This flag exists for sendmail compatibility.")
-	sendmailCmd.Flags().BoolP("long-s", "s", false, "Ignored. This flag exists for sendmail compatibility.")
-	sendmailCmd.Flags().BoolP("long-t", "t", false, "Ignored. This flag exists for sendmail compatibility.")
+	// print out manual help screen
+	rootCmd.SetHelpTemplate(sendmail.HelpTemplate(os.Args[0:2]))
+
+	// these are simply repeated for cli consistency as cobra/viper does not allow
+	// multi-letter single-dash variables (-bs)
+	sendmailCmd.Flags().StringVarP(&sendmail.FromAddr, "from", "f", sendmail.FromAddr, "SMTP sender")
+	sendmailCmd.Flags().StringVarP(&sendmail.SMTPAddr, "smtp-addr", "S", sendmail.SMTPAddr, "SMTP server address")
+	sendmailCmd.Flags().BoolVarP(&sendmail.UseB, "long-b", "b", false, "Handle SMTP commands on standard input (use as -bs)")
+	sendmailCmd.Flags().BoolVarP(&sendmail.UseS, "long-s", "s", false, "Handle SMTP commands on standard input (use as -bs)")
+	sendmailCmd.Flags().BoolP("verbose", "v", false, "Verbose mode (sends debug output to stderr)")
+	sendmailCmd.Flags().Bool("i", false, "Ignored")
+	sendmailCmd.Flags().Bool("o", false, "Ignored")
+	sendmailCmd.Flags().Bool("t", false, "Ignored")
 }

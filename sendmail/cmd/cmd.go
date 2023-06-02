@@ -3,8 +3,16 @@ package cmd
 
 /**
  * Bare bones sendmail drop-in replacement borrowed from MailHog
+ *
+ * It uses a bit of a hack for flag parsing in order to be compatible
+ * with the cobra sendmail subcommand, as sendmail uses `-bc` which
+ * is not POSIX compatible.
+ *
+ * The -bs command-line switch causes sendmail to run a single SMTP session in the
+ * foreground over its standard input and output, and then exit. The SMTP session
+ * is exactly like a network SMTP session. Usually, one or more messages are
+ * submitted to sendmail for delivery.
  */
-
 import (
 	"bytes"
 	"fmt"
@@ -13,21 +21,27 @@ import (
 	"net/smtp"
 	"os"
 	"os/user"
+	"strings"
 
 	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/utils/logger"
+	"github.com/reiver/go-telnet"
 	flag "github.com/spf13/pflag"
 )
 
 var (
-	// Verbose flag
-	Verbose bool
+	// SMTPAddr address
+	SMTPAddr = "localhost:1025"
+	// FromAddr email address
+	FromAddr string
 
-	fromAddr string
+	// UseB - used to set from `-bs`
+	UseB bool
+	// UseS - used to set from `-bs`
+	UseS bool
 )
 
-// Run the Mailpit sendmail replacement.
-func Run() {
+func init() {
 	host, err := os.Hostname()
 	if err != nil {
 		host = "localhost"
@@ -39,47 +53,68 @@ func Run() {
 		username = user.Username
 	}
 
-	if fromAddr == "" {
-		fromAddr = username + "@" + host
+	if FromAddr == "" {
+		FromAddr = username + "@" + host
 	}
+}
 
-	smtpAddr := "localhost:1025"
-	var recip []string
+// Run the Mailpit sendmail replacement.
+func Run() {
+	var recipients []string
 
 	// defaults from envars if provided
 	if len(os.Getenv("MP_SENDMAIL_SMTP_ADDR")) > 0 {
-		smtpAddr = os.Getenv("MP_SENDMAIL_SMTP_ADDR")
+		SMTPAddr = os.Getenv("MP_SENDMAIL_SMTP_ADDR")
 	}
 	if len(os.Getenv("MP_SENDMAIL_FROM")) > 0 {
-		fromAddr = os.Getenv("MP_SENDMAIL_FROM")
+		FromAddr = os.Getenv("MP_SENDMAIL_FROM")
 	}
 
-	// override defaults from cli flags
-	flag.StringVarP(&fromAddr, "from", "f", fromAddr, "SMTP sender address")
-	flag.StringVarP(&smtpAddr, "smtp-addr", "S", smtpAddr, "SMTP server address")
-	flag.BoolVarP(&Verbose, "verbose", "v", false, "Verbose mode (sends debug output to stderr)")
-	flag.BoolP("long-b", "b", false, "Ignored. This flag exists for sendmail compatibility.")
-	flag.BoolP("long-i", "i", false, "Ignored. This flag exists for sendmail compatibility.")
-	flag.BoolP("long-o", "o", false, "Ignored. This flag exists for sendmail compatibility.")
-	flag.BoolP("long-s", "s", false, "Ignored. This flag exists for sendmail compatibility.")
-	flag.BoolP("long-t", "t", false, "Ignored. This flag exists for sendmail compatibility.")
-	flag.CommandLine.SortFlags = false
+	flag.StringVarP(&FromAddr, "from", "f", FromAddr, "SMTP sender")
+	flag.StringVarP(&SMTPAddr, "smtp-addr", "S", SMTPAddr, "SMTP server address")
+	flag.BoolVarP(&UseB, "long-b", "b", false, "Handle SMTP commands on standard input (use as -bs)")
+	flag.BoolVarP(&UseS, "long-s", "s", false, "Handle SMTP commands on standard input (use as -bs)")
+	flag.BoolP("verbose", "v", false, "Ignored")
+	flag.Bool("i", false, "Ignored")
+	flag.Bool("o", false, "Ignored")
+	flag.Bool("t", false, "Ignored")
 
 	// set the default help
 	flag.Usage = func() {
-		fmt.Printf("A sendmail command replacement for Mailpit (%s).\n\n", config.Version)
-		fmt.Printf("Usage:\n %s [flags] [recipients]\n", os.Args[0])
-		fmt.Println("\nFlags:")
-		flag.PrintDefaults()
+		fmt.Println(HelpTemplate(os.Args[0:1]))
 	}
+
+	var showHelp bool
+	// avoid 'pflag: help requested' error
+	flag.BoolVarP(&showHelp, "help", "h", false, "")
 
 	flag.Parse()
 
-	// allow recipient to be passed as an argument
-	recip = flag.Args()
+	// allow recipients to be passed as an argument
+	recipients = flag.Args()
 
-	if Verbose {
-		fmt.Fprintln(os.Stdout, smtpAddr, fromAddr)
+	if showHelp {
+		flag.Usage()
+		os.Exit(0)
+	}
+
+	// ensure -bs is set
+	if UseB && !UseS || !UseB && UseS {
+		fmt.Printf("error: use -bs")
+		os.Exit(1)
+	}
+
+	// handles `sendmail -bs`
+	if UseB && UseS {
+		var caller telnet.Caller = telnet.StandardCaller
+
+		// telnet directly to SMTP
+		if err := telnet.DialToAndCall(SMTPAddr, caller); err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+
+		return
 	}
 
 	body, err := ioutil.ReadAll(os.Stdin)
@@ -96,8 +131,8 @@ func Run() {
 
 	addresses := []string{}
 
-	if len(recip) > 0 {
-		addresses = recip
+	if len(recipients) > 0 {
+		addresses = recipients
 	} else {
 		// get all recipients in To, Cc and Bcc
 		if to, err := msg.Header.AddressList("To"); err == nil {
@@ -117,9 +152,29 @@ func Run() {
 		}
 	}
 
-	err = smtp.SendMail(smtpAddr, nil, fromAddr, addresses, body)
+	err = smtp.SendMail(SMTPAddr, nil, FromAddr, addresses, body)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "error sending mail")
 		logger.Log().Fatal(err)
 	}
+}
+
+// HelpTemplate returns a string of the help
+func HelpTemplate(args []string) string {
+	fmt.Println(args)
+	return fmt.Sprintf(`A sendmail command replacement for Mailpit (%s)
+
+Usage: %s [flags] [recipients] < message
+
+See: https://github.com/axllent/mailpit
+
+Flags:
+  -S  string  SMTP server address (default "localhost:1025")
+  -f  string  Set the envelope sender address (default "%s")
+  -bs         Handle SMTP commands on standard input
+  -t          Ignored
+  -i          Ignored
+  -o          Ignored
+  -v          Ignored
+`, config.Version, strings.Join(args, " "), FromAddr)
 }
