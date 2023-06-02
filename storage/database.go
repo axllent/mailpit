@@ -117,10 +117,6 @@ type DBMailSummary struct {
 	To   []*mail.Address
 	Cc   []*mail.Address
 	Bcc  []*mail.Address
-	// Subject     string
-	// Size        int
-	// Inline      int
-	// Attachments int
 }
 
 // InitDB will initialise the database
@@ -255,7 +251,16 @@ func Store(body []byte) (string, error) {
 		return "", err
 	}
 
-	tagData := findTags(&body)
+	// extract tags from body matches based on --tag
+	tagStr := findTagsInRawMessage(&body)
+
+	// extract tags from X-Tags header
+	headerTags := strings.TrimSpace(env.Root.Header.Get("X-Tags"))
+	if headerTags != "" {
+		tagStr += "," + headerTags
+	}
+
+	tagData := uniqueTagsFromString(tagStr)
 
 	tagJSON, err := json.Marshal(tagData)
 	if err != nil {
@@ -376,7 +381,7 @@ func List(start, limit int) ([]MessageSummary, error) {
 }
 
 // Search will search a mailbox for search terms.
-// The search is broken up by segments (exact phrases can be quoted), and interprits specific terms such as:
+// The search is broken up by segments (exact phrases can be quoted), and interprets specific terms such as:
 // is:read, is:unread, has:attachment, to:<term>, from:<term> & subject:<term>
 // Negative searches also also included by prefixing the search term with a `-` or `!`
 func Search(search string, start, limit int) ([]MessageSummary, error) {
@@ -886,7 +891,7 @@ func IsUnread(id string) bool {
 	return unread == 1
 }
 
-// MessageIDExists blaah
+// MessageIDExists checks whether a Message-ID exists in the DB
 func MessageIDExists(id string) bool {
 	var total int
 

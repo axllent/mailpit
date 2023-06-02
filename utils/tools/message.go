@@ -1,4 +1,4 @@
-// Package tools provides various methods for variouws things
+// Package tools provides various methods for various things
 package tools
 
 import (
@@ -23,7 +23,7 @@ func RemoveMessageHeaders(msg []byte, headers []string) ([]byte, error) {
 	reBlank := regexp.MustCompile(`^\s+`)
 
 	for _, hdr := range headers {
-		// case-insentitive
+		// case-insensitive
 		reHdr := regexp.MustCompile(`(?i)^` + regexp.QuoteMeta(hdr+":"))
 
 		// header := []byte(hdr + ":")

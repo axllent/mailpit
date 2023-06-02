@@ -75,7 +75,7 @@ func dbCron() {
 		time.Sleep(60 * time.Second)
 		start := time.Now()
 
-		// check if database contains deleted data and has not beein in use
+		// check if database contains deleted data and has not been in use
 		// for 5 minutes, if so VACUUM
 		currentTime := time.Now()
 		diff := currentTime.Sub(dbLastAction)
@@ -167,6 +167,7 @@ func isFile(path string) bool {
 	return true
 }
 
+// InArray tests if a string in within an array. It is not case sensitive.
 func inArray(k string, arr []string) bool {
 	k = strings.ToLower(k)
 	for _, v := range arr {
