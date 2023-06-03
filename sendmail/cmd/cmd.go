@@ -161,7 +161,6 @@ func Run() {
 
 // HelpTemplate returns a string of the help
 func HelpTemplate(args []string) string {
-	fmt.Println(args)
 	return fmt.Sprintf(`A sendmail command replacement for Mailpit (%s)
 
 Usage: %s [flags] [recipients] < message
