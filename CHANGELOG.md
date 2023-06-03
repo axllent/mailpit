@@ -2,6 +2,12 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.6.16]
+
+### Bugfix
+- Fix sendmail/startup panic
+
+
 ## [v1.6.15]
 
 ### Feature

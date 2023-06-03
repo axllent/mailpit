@@ -21,7 +21,7 @@ func init() {
 	rootCmd.AddCommand(sendmailCmd)
 
 	// print out manual help screen
-	rootCmd.SetHelpTemplate(sendmail.HelpTemplate(os.Args[0:2]))
+	rootCmd.SetHelpTemplate(sendmail.HelpTemplate([]string{os.Args[0], "sendmail"}))
 
 	// these are simply repeated for cli consistency as cobra/viper does not allow
 	// multi-letter single-dash variables (-bs)
