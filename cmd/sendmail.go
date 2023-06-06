@@ -30,7 +30,7 @@ func init() {
 	sendmailCmd.Flags().BoolVarP(&sendmail.UseB, "long-b", "b", false, "Handle SMTP commands on standard input (use as -bs)")
 	sendmailCmd.Flags().BoolVarP(&sendmail.UseS, "long-s", "s", false, "Handle SMTP commands on standard input (use as -bs)")
 	sendmailCmd.Flags().BoolP("verbose", "v", false, "Verbose mode (sends debug output to stderr)")
-	sendmailCmd.Flags().Bool("i", false, "Ignored")
-	sendmailCmd.Flags().Bool("o", false, "Ignored")
-	sendmailCmd.Flags().Bool("t", false, "Ignored")
+	sendmailCmd.Flags().BoolP("long-i", "i", false, "Ignored")
+	sendmailCmd.Flags().BoolP("long-o", "o", false, "Ignored")
+	sendmailCmd.Flags().BoolP("long-t", "t", false, "Ignored")
 }
