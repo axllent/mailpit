@@ -2,6 +2,12 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.6.17]
+
+### Fix
+- Add single dash arguments support to sendmail command ([#123](https://github.com/axllent/mailpit/issues/123))
+
+
 ## [v1.6.16]
 
 ### Bugfix
