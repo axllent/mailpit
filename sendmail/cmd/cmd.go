@@ -75,9 +75,9 @@ func Run() {
 	flag.BoolVarP(&UseB, "long-b", "b", false, "Handle SMTP commands on standard input (use as -bs)")
 	flag.BoolVarP(&UseS, "long-s", "s", false, "Handle SMTP commands on standard input (use as -bs)")
 	flag.BoolP("verbose", "v", false, "Ignored")
-	flag.BoolP("i", "i", false, "Ignored")
-	flag.BoolP("o", "o", false, "Ignored")
-	flag.BoolP("t", "t", false, "Ignored")
+	flag.BoolP("long-i", "i", false, "Ignored")
+	flag.BoolP("long-o", "o", false, "Ignored")
+	flag.BoolP("long-t", "t", false, "Ignored")
 
 	// set the default help
 	flag.Usage = func() {
