@@ -100,6 +100,27 @@ export default {
 			fallback: false
 		});
 
+		moment.updateLocale('en', {
+			relativeTime: {
+				future: "in %s",
+				past: "%s ago",
+				s: 'seconds',
+				ss: '%d secs',
+				m: "a minute",
+				mm: "%d mins",
+				h: "an hour",
+				hh: "%d hours",
+				d: "a day",
+				dd: "%d days",
+				w: "a week",
+				ww: "%d weeks",
+				M: "a month",
+				MM: "%d months",
+				y: "a year",
+				yy: "%d years"
+			}
+		});
+
 		this.connect();
 		this.getUISettings();
 		this.loadMessages();
@@ -906,13 +927,13 @@ export default {
 			</div>
 		</div>
 
-		<div class="col-lg-10 col-md-9 mh-100 pe-0">
+		<div class="col-lg-10 col-md-9 mh-100 ps-0 pe-0">
 			<div class="mh-100" style="overflow-y: auto;" :class="message ? 'd-none' : ''" id="message-page">
 				<div class="list-group my-2" v-if="items.length">
 					<a v-for="message in items" :href="'#' + message.ID"
 						v-on:click.ctrl="toggleSelected($event, message.ID)"
 						v-on:click.shift="selectRange($event, message.ID)"
-						class="row message d-flex small list-group-item list-group-item-action border-start-0 border-end-0"
+						class="row gx-1 message d-flex small list-group-item list-group-item-action border-start-0 border-end-0"
 						:class="message.Read ? 'read' : '', isSelected(message.ID) ? 'selected' : ''">
 						<div class="col-lg-3">
 							<div class="d-lg-none float-end text-muted text-nowrap small">
@@ -938,18 +959,20 @@ export default {
 								</span>
 							</div>
 						</div>
-						<div class="col-lg-6 mt-2 mt-lg-0">
-							<span class="badge text-bg-secondary me-1" v-for="t in message.Tags"
-								:title="'Filter messages tagged with ' + t" v-on:click="tagSearch($event, t)">
-								{{ t }}
-							</span>
-							<b>{{ message.Subject != "" ? message.Subject : "[ no subject ]" }}</b>
+						<div class="col-lg-6 col-xxl-7 mt-2 mt-lg-0">
+							<div><b>{{ message.Subject != "" ? message.Subject : "[ no subject ]" }}</b></div>
+							<div>
+								<span class="badge text-bg-secondary me-1" v-for="t in message.Tags"
+									:title="'Filter messages tagged with ' + t" v-on:click="tagSearch($event, t)">
+									{{ t }}
+								</span>
+							</div>
 						</div>
 						<div class="d-none d-lg-block col-1 small text-end text-muted">
 							<i class="bi bi-paperclip float-start h6" v-if="message.Attachments"></i>
 							{{ getFileSize(message.Size) }}
 						</div>
-						<div class="d-none d-lg-block col-2 small text-end text-muted">
+						<div class="d-none d-lg-block col-2 col-xxl-1 small text-end text-muted">
 							{{ getRelativeCreated(message) }}
 						</div>
 					</a>
