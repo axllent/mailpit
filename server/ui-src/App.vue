@@ -944,7 +944,7 @@ export default {
 		<div class="col-lg-10 col-md-9 mh-100 ps-0 ps-md-2 pe-0">
 			<div class="mh-100" style="overflow-y: auto;" :class="message ? 'd-none' : ''" id="message-page">
 				<div class="list-group my-2" v-if="items.length">
-					<a v-for="message in items" :href="'#' + message.ID"
+					<a v-for="message in items" :href="'#' + message.ID" :key="message.ID"
 						v-on:click.ctrl="toggleSelected($event, message.ID)"
 						v-on:click.shift="selectRange($event, message.ID)"
 						class="row gx-1 message d-flex small list-group-item list-group-item-action border-start-0 border-end-0"

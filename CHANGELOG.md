@@ -2,6 +2,12 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.6.19]
+
+### Fix
+- Only display sendmail help when sendmail subcommand is invoked
+
+
 ## [v1.6.18]
 
 ### API
