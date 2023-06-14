@@ -2,6 +2,16 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.6.18]
+
+### API
+- Sort tags before saving
+
+### UI
+- Add option to enable tag colors based on tag name hash
+- Display message tags below subject in message overview
+
+
 ## [v1.6.17]
 
 ### Fix
