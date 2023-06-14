@@ -22,6 +22,8 @@ func SetTags(id string, tags []string) error {
 		}
 	}
 
+	sort.Strings(applyTags)
+
 	tagJSON, err := json.Marshal(applyTags)
 	if err != nil {
 		logger.Log().Errorf("[db] setting tags for message %s", id)
