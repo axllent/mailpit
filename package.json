@@ -12,6 +12,7 @@
     "bootstrap": "^5.2.0",
     "bootstrap-icons": "^1.9.1",
     "bootstrap5-tags": "^1.4.41",
+    "color-hash": "^2.0.2",
     "moment": "^2.29.4",
     "prismjs": "^1.29.0",
     "rapidoc": "^9.3.4",

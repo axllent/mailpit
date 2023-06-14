@@ -1,11 +1,11 @@
 <script>
-import commonMixins from './mixins.js';
-import Message from './templates/Message.vue';
-import MessageSummary from './templates/MessageSummary.vue';
-import MessageRelease from './templates/MessageRelease.vue';
-import MessageToast from './templates/MessageToast.vue';
-import moment from 'moment';
-import Tinycon from 'tinycon';
+import commonMixins from './mixins.js'
+import Message from './templates/Message.vue'
+import MessageSummary from './templates/MessageSummary.vue'
+import MessageRelease from './templates/MessageRelease.vue'
+import MessageToast from './templates/MessageToast.vue'
+import moment from 'moment'
+import Tinycon from 'tinycon'
 
 export default {
 	mixins: [commonMixins],
@@ -906,9 +906,23 @@ export default {
 			</div>
 
 			<template v-if="!selected.length && tags.length && !message">
-				<h6 class="mt-4 text-muted"><small>Tags</small></h6>
-				<div class="list-group mt-2 mb-5">
-					<button class="list-group-item list-group-item-action small" v-for="tag in tags"
+				<div class="mt-4 text-muted">
+					<button class="btn btn-sm dropdown-toggle ms-n1" data-bs-toggle="dropdown" aria-expanded="false">
+						Tags
+					</button>
+					<ul class="dropdown-menu dropdown-menu-end">
+						<li>
+							<button class="dropdown-item" @click="toggleTagColors()">
+								<template v-if="showTagColors">Hide</template>
+								<template v-else>Show</template>
+								tag colors
+							</button>
+						</li>
+					</ul>
+				</div>
+				<div class="list-group mt-1 mb-5">
+					<button class="list-group-item list-group-item-action small px-2" v-for="tag in tags"
+						:style="showTagColors ? { borderLeftColor: colorHash(tag), borderLeftWidth: '4px' } : ''"
 						v-on:click="tagSearch($event, tag)" :class="inSearch(tag) ? 'active' : ''">
 						<i class="bi bi-tag-fill" v-if="inSearch(tag)"></i>
 						<i class="bi bi-tag" v-else></i>
@@ -919,7 +933,7 @@ export default {
 
 			<MessageSummary v-if="message" :message="message"></MessageSummary>
 
-			<div class="position-fixed bottom-0 bg-white py-2 text-muted w-100">
+			<div class="position-fixed bottom-0 bg-white py-2 text-muted small w-100">
 				<a href="#" class="text-muted" v-on:click="loadInfo">
 					<i class="bi bi-info-circle-fill"></i>
 					About
@@ -927,7 +941,7 @@ export default {
 			</div>
 		</div>
 
-		<div class="col-lg-10 col-md-9 mh-100 ps-0 pe-0">
+		<div class="col-lg-10 col-md-9 mh-100 ps-0 ps-md-2 pe-0">
 			<div class="mh-100" style="overflow-y: auto;" :class="message ? 'd-none' : ''" id="message-page">
 				<div class="list-group my-2" v-if="items.length">
 					<a v-for="message in items" :href="'#' + message.ID"
@@ -962,7 +976,8 @@ export default {
 						<div class="col-lg-6 col-xxl-7 mt-2 mt-lg-0">
 							<div><b>{{ message.Subject != "" ? message.Subject : "[ no subject ]" }}</b></div>
 							<div>
-								<span class="badge text-bg-secondary me-1" v-for="t in message.Tags"
+								<span class="badge me-1" v-for="t in message.Tags"
+									:style="showTagColors ? { backgroundColor: colorHash(t) } : { backgroundColor: '#6c757d' }"
 									:title="'Filter messages tagged with ' + t" v-on:click="tagSearch($event, t)">
 									{{ t }}
 								</span>
