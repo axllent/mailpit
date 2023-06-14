@@ -1,20 +1,30 @@
-import axios from 'axios';
-import { Modal } from 'bootstrap';
-import moment from 'moment';
+import axios from 'axios'
+import { Modal } from 'bootstrap'
+import moment from 'moment'
+import ColorHash from 'color-hash'
 
 
 // FakeModal is used to return a fake Bootstrap modal
-// if the ID returns nothing
+// if the ID returns nothing to prevent errors.
 function FakeModal() { }
-FakeModal.prototype.hide = function () { alert('close fake modal') }
-FakeModal.prototype.show = function () { alert('open fake modal') }
+FakeModal.prototype.hide = function () { }
+FakeModal.prototype.show = function () { }
+
+// Set up the color hash generator lightness and hue to ensure darker colors
+const colorHash = new ColorHash({ lightness: 0.3, saturation: [0.35, 0.5, 0.65] });
 
 /* Common mixin functions used in apps */
 const commonMixins = {
 	data() {
 		return {
-			loading: 0
+			loading: 0,
+			tagColorCache: {},
+			showTagColors: true
 		}
+	},
+
+	mounted() {
+		this.showTagColors = localStorage.getItem('showTagsColors')
 	},
 
 	methods: {
@@ -201,6 +211,27 @@ const commonMixins = {
 			}
 
 			return 'bi-file-arrow-down-fill';
+		},
+
+		// Returns a hex color based on a string.
+		// Values are stored in an array for faster lookup / processing.
+		colorHash: function (s) {
+			if (this.tagColorCache[s] != undefined) {
+				return this.tagColorCache[s]
+			}
+			this.tagColorCache[s] = colorHash.hex(s)
+
+			return this.tagColorCache[s]
+		},
+
+		toggleTagColors: function () {
+			if (this.showTagColors) {
+				localStorage.removeItem('showTagsColors')
+				this.showTagColors = false
+			} else {
+				localStorage.setItem('showTagsColors', '1')
+				this.showTagColors = true
+			}
 		}
 	}
 }
