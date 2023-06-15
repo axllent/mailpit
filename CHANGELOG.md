@@ -2,6 +2,15 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.6.20]
+
+### Feature
+- Convert links into clickable hyperlinks in plain text message content
+
+### Libs
+- Update node modules
+
+
 ## [v1.6.19]
 
 ### Fix
