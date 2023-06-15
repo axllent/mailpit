@@ -167,21 +167,26 @@ export default {
 
 		// Convert plain text to HTML including anchor links
 		textToHTML: function (s) {
-			// escape to HTML
 			let html = s
+
+			// full links with http(s)
+			let re = /(\b(https?|ftp):\/\/[\-\w@:%_\+.~#?,&\/\/=;]+)\b/gim
+			html = html.replace(re, '˱˱˱a href=ˠˠˠ$&ˠˠˠ target=_blank rel=noopener˲˲˲$&˱˱˱/a˲˲˲')
+
+			// plain www links without https?:// prefix
+			let re2 = /(^|[^\/])(www\.[\S]+(\b|$))/gim
+			html = html.replace(re2, '$1˱˱˱a href=ˠˠˠhttp://$2ˠˠˠ target=ˠˠˠ_blankˠˠˠ rel=ˠˠˠnoopenerˠˠˠ˲˲˲$2˱˱˱/a˲˲˲')
+
+			// escape to HTML & convert <>" back
+			html = html
 				.replace(/&/g, "&amp;")
 				.replace(/</g, "&lt;")
 				.replace(/>/g, "&gt;")
 				.replace(/"/g, "&quot;")
 				.replace(/'/g, "&#039;")
-
-			// full links with http(s)
-			let re = /(\b(https?|ftp):\/\/[\-\w@:%_\+.~#?,&\/\/=;]+)\b/gim
-			html = html.replace(re, '<a href="$&" target="_blank" rel="noopener">$&</a>')
-
-			// plain www links without https?:// prefix
-			let re2 = /(^|[^\/])(www\.[\S]+(\b|$))/gim
-			html = html.replace(re2, '$1<a href="http://$2" target="_blank" rel="noopener">$2</a>')
+				.replace(/˱˱˱/g, '<')
+				.replace(/˲˲˲/g, '>')
+				.replace(/ˠˠˠ/g, '"')
 
 			return html
 		}
@@ -326,7 +331,7 @@ export default {
 				aria-labelledby="nav-html-tab" tabindex="0">
 				<div id="responsive-view" :class="scaleHTMLPreview" :style="responsiveSizes[scaleHTMLPreview]">
 					<iframe target-blank="" class="tab-pane d-block" id="preview-html" :srcdoc="message.HTML"
-						v-on:load="resizeIframe" seamless frameborder="0" style="width: 100%; height: 100%;">
+						v-on:load="resizeIframe" frameborder="0" style="width: 100%; height: 100%;">
 					</iframe>
 				</div>
 				<Attachments v-if="allAttachments(message).length" :message="message"
@@ -346,8 +351,8 @@ export default {
 				<Headers v-if="loadHeaders" :message="message"></Headers>
 			</div>
 			<div class="tab-pane fade" id="nav-raw" role="tabpanel" aria-labelledby="nav-raw-tab" tabindex="0">
-				<iframe v-if="srcURI" :src="srcURI" v-on:load="resizeIframe" seamless frameborder="0"
-					style="width: 100%; height: 300px;" id="message-src"></iframe>
+				<iframe v-if="srcURI" :src="srcURI" v-on:load="resizeIframe" frameborder="0"
+					style="width: 100%; height: 300px; background: #fff; color: #15141A"></iframe>
 			</div>
 		</div>
 	</div>
