@@ -2,6 +2,12 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.6.21]
+
+### UI
+- More accurate clickable hyperlink logic in plain text messages
+
+
 ## [v1.6.20]
 
 ### Feature
