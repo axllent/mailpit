@@ -79,7 +79,7 @@ func Send(from string, to []string, msg []byte) error {
 
 	if a != nil {
 		if err = c.Auth(a); err != nil {
-			return fmt.Errorf("error authenticating: %s", err.Error())
+			return fmt.Errorf("error response to AUTH command: %s", err.Error())
 		}
 	}
 	if err = c.Mail(from); err != nil {
