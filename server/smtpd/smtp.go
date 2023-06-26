@@ -48,7 +48,7 @@ func Send(from string, to []string, msg []byte) error {
 
 	c, err := smtp.Dial(addr)
 	if err != nil {
-		return err
+		return fmt.Errorf("error connecting to %s: %s", addr, err.Error())
 	}
 
 	defer c.Close()
@@ -59,7 +59,7 @@ func Send(from string, to []string, msg []byte) error {
 		conf.InsecureSkipVerify = config.SMTPRelayConfig.AllowInsecure
 
 		if err = c.StartTLS(conf); err != nil {
-			return err
+			return fmt.Errorf("error creating StartTLS config: %s", err.Error())
 		}
 	}
 
@@ -79,30 +79,30 @@ func Send(from string, to []string, msg []byte) error {
 
 	if a != nil {
 		if err = c.Auth(a); err != nil {
-			return err
+			return fmt.Errorf("error authenticating: %s", err.Error())
 		}
 	}
 	if err = c.Mail(from); err != nil {
-		return err
+		return fmt.Errorf("error response to MAIL command: %s", err.Error())
 	}
 
 	for _, addr := range recipients {
 		if err = c.Rcpt(addr); err != nil {
-			return err
+			return fmt.Errorf("error response to RCPT command for %s: %s", addr, err.Error())
 		}
 	}
 
 	w, err := c.Data()
 	if err != nil {
-		return err
+		return fmt.Errorf("error response to DATA command: %s", err.Error())
 	}
 
 	if _, err := w.Write(msg); err != nil {
-		return err
+		return fmt.Errorf("error sending message: %s", err.Error())
 	}
 
 	if err := w.Close(); err != nil {
-		return err
+		return fmt.Errorf("error closing connection: %s", err.Error())
 	}
 
 	return c.Quit()
