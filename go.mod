@@ -8,7 +8,7 @@ require (
 	github.com/disintegration/imaging v1.6.2
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/websocket v1.5.0
-	github.com/jhillyerd/enmime v0.11.1
+	github.com/jhillyerd/enmime v1.0.0
 	github.com/k3a/html2text v1.2.1
 	github.com/klauspost/compress v1.16.6
 	github.com/leporo/sqlf v1.4.0
