@@ -2,6 +2,16 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.6.22]
+
+### Feature
+- Clearer SMTP error messages
+
+### Libs
+- Update Go modules
+- Upgrade node modules
+
+
 ## [v1.6.21]
 
 ### UI

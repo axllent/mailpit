@@ -269,9 +269,10 @@ export default {
 							<th>Tags</th>
 							<td>
 								<select class="form-select small tag-selector" v-model="messageTags" multiple
-									data-allow-new="true" data-clear-end="true" data-allow-clear="true"
-									data-placeholder="Add tags..." data-badge-style="secondary"
-									data-regex="^([a-zA-Z0-9\-\ \_]){3,}$" data-separator="|,|">
+									data-full-width="false" data-suggestions-threshold="1" data-allow-new="true"
+									data-clear-end="true" data-allow-clear="true" data-placeholder="Add tags..."
+									data-badge-style="secondary" data-regex="^([a-zA-Z0-9\-\ \_]){3,}$"
+									data-separator="|,|">
 									<option value="">Type a tag...</option>
 									<!-- you need at least one option with the placeholder -->
 									<option v-for="t in allTags" :value="t">{{ t }}</option>
