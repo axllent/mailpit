@@ -95,7 +95,9 @@
 }
 
 #nav-html {
-    padding-right: 1.5rem;
+    @include media-breakpoint-up(md) {
+        padding-right: 1.5rem;
+    }
 }
 
 #preview-html {

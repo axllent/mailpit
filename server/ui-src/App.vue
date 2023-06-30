@@ -935,7 +935,7 @@ export default {
 
 			<MessageSummary v-if="message" :message="message"></MessageSummary>
 
-			<div class="position-fixed bg-body bottom-0 py-2 text-muted small col-lg-2 col-md-3 pe-3 z-3">
+			<div class="position-fixed bg-body bottom-0 ms-n1 py-2 text-muted small col-lg-2 col-md-3 pe-3 z-3">
 				<a href="#" class="text-muted btn btn-sm" v-on:click="loadInfo">
 					<i class="bi bi-info-circle-fill"></i>
 					About
