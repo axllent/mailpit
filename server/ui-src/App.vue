@@ -4,6 +4,7 @@ import Message from './templates/Message.vue'
 import MessageSummary from './templates/MessageSummary.vue'
 import MessageRelease from './templates/MessageRelease.vue'
 import MessageToast from './templates/MessageToast.vue'
+import ThemeToggle from './templates/ThemeToggle.vue'
 import moment from 'moment'
 import Tinycon from 'tinycon'
 
@@ -14,7 +15,8 @@ export default {
 		Message,
 		MessageSummary,
 		MessageRelease,
-		MessageToast
+		MessageToast,
+		ThemeToggle,
 	},
 
 	data() {
@@ -50,55 +52,55 @@ export default {
 	watch: {
 		currentPath(v, old) {
 			if (v && v.match(/^[a-z0-9]+-[a-z0-9]+-[a-z0-9]+-[a-z0-9]+-[a-z0-9]+$/)) {
-				this.openMessage();
+				this.openMessage()
 			} else {
-				this.message = false;
+				this.message = false
 			}
 		},
 		unread(v, old) {
 			if (v == this.tcStatus) {
-				return;
+				return
 			}
-			this.tcStatus = v;
+			this.tcStatus = v
 			if (v == 0) {
-				Tinycon.reset();
+				Tinycon.reset()
 			} else {
-				Tinycon.setBubble(v);
+				Tinycon.setBubble(v)
 			}
 		}
 	},
 
 	computed: {
 		canPrev: function () {
-			return this.start > 0;
+			return this.start > 0
 		},
 		canNext: function () {
-			return this.total > (this.start + this.count);
+			return this.total > (this.start + this.count)
 		},
 		unreadInSearch: function () {
 			if (!this.searching) {
-				return false;
+				return false
 			}
 
-			return this.items.filter(i => !i.Read).length;
+			return this.items.filter(i => !i.Read).length
 		}
 	},
 
 	mounted() {
-		this.currentPath = window.location.hash.slice(1);
+		this.currentPath = window.location.hash.slice(1)
 		window.addEventListener('hashchange', () => {
-			this.currentPath = window.location.hash.slice(1);
-		});
+			this.currentPath = window.location.hash.slice(1)
+		})
 
 		this.notificationsSupported = window.isSecureContext
-			&& ("Notification" in window && Notification.permission !== "denied");
-		this.notificationsEnabled = this.notificationsSupported && Notification.permission == "granted";
+			&& ("Notification" in window && Notification.permission !== "denied")
+		this.notificationsEnabled = this.notificationsSupported && Notification.permission == "granted"
 
 		Tinycon.setOptions({
 			height: 11,
 			background: '#dd0000',
 			fallback: false
-		});
+		})
 
 		moment.updateLocale('en', {
 			relativeTime: {
@@ -119,11 +121,11 @@ export default {
 				y: "a year",
 				yy: "%d years"
 			}
-		});
+		})
 
-		this.connect();
-		this.getUISettings();
-		this.loadMessages();
+		this.connect()
+		this.getUISettings()
+		this.loadMessages()
 	},
 
 	methods: {
@@ -131,143 +133,143 @@ export default {
 			let now = Date.now()
 			// prevent double loading when UI loads & websocket connects
 			if (this.lastLoaded && now - this.lastLoaded < 250) {
-				return;
+				return
 			}
 			if (this.start == 0) {
-				this.lastLoaded = now;
+				this.lastLoaded = now
 			}
 
-			let self = this;
-			let params = {};
-			self.selected = [];
+			let self = this
+			let params = {}
+			self.selected = []
 
-			let uri = 'api/v1/messages';
+			let uri = 'api/v1/messages'
 			if (self.search) {
-				self.searching = true;
-				self.items = [];
+				self.searching = true
+				self.items = []
 				uri = 'api/v1/search'
-				self.start = 0; // search is displayed on one page
-				params['query'] = self.search;
-				params['limit'] = 200;
+				self.start = 0 // search is displayed on one page
+				params['query'] = self.search
+				params['limit'] = 200
 			} else {
-				self.searching = false;
-				params['limit'] = self.limit;
+				self.searching = false
+				params['limit'] = self.limit
 				if (self.start > 0) {
-					params['start'] = self.start;
+					params['start'] = self.start
 				}
 			}
 
 			self.get(uri, params, function (response) {
-				self.total = response.data.total;
-				self.unread = response.data.unread;
-				self.count = response.data.count;
-				self.start = response.data.start;
-				self.items = response.data.messages;
-				self.tags = response.data.tags;
-				self.existingTags = JSON.parse(JSON.stringify(self.tags));
+				self.total = response.data.total
+				self.unread = response.data.unread
+				self.count = response.data.count
+				self.start = response.data.start
+				self.items = response.data.messages
+				self.tags = response.data.tags
+				self.existingTags = JSON.parse(JSON.stringify(self.tags))
 
 				// if pagination > 0 && results == 0 reload first page (prune)
 				if (response.data.count == 0 && response.data.start > 0) {
-					self.start = 0;
-					return self.loadMessages();
+					self.start = 0
+					return self.loadMessages()
 				}
 
 				if (!self.scrollInPlace) {
-					let mp = document.getElementById('message-page');
+					let mp = document.getElementById('message-page')
 					if (mp) {
-						mp.scrollTop = 0;
+						mp.scrollTop = 0
 					}
 				}
 
-				self.scrollInPlace = false;
-			});
+				self.scrollInPlace = false
+			})
 		},
 
 		getUISettings: function () {
-			let self = this;
+			let self = this
 			self.get('api/v1/webui', null, function (response) {
-				self.relayConfig = response.data;
-			});
+				self.relayConfig = response.data
+			})
 		},
 
 		doSearch: function (e) {
-			e.preventDefault();
-			this.loadMessages();
+			e.preventDefault()
+			this.loadMessages()
 		},
 
 		tagSearch: function (e, tag) {
-			e.preventDefault();
+			e.preventDefault()
 			if (tag.match(/ /)) {
-				tag = '"' + tag + '"';
+				tag = '"' + tag + '"'
 			}
-			this.search = 'tag:' + tag;
-			window.location.hash = "";
-			this.loadMessages();
+			this.search = 'tag:' + tag
+			window.location.hash = ""
+			this.loadMessages()
 		},
 
 		resetSearch: function (e) {
-			e.preventDefault();
-			this.search = '';
-			this.scrollInPlace = true;
-			this.loadMessages();
+			e.preventDefault()
+			this.search = ''
+			this.scrollInPlace = true
+			this.loadMessages()
 		},
 
 		reloadMessages: function () {
-			this.search = "";
-			this.start = 0;
-			this.loadMessages();
+			this.search = ""
+			this.start = 0
+			this.loadMessages()
 		},
 
 		viewNext: function () {
-			this.start = parseInt(this.start, 10) + parseInt(this.limit, 10);
-			this.loadMessages();
+			this.start = parseInt(this.start, 10) + parseInt(this.limit, 10)
+			this.loadMessages()
 		},
 
 		viewPrev: function () {
-			let s = this.start - this.limit;
+			let s = this.start - this.limit
 			if (s < 0) {
-				s = 0;
+				s = 0
 			}
-			this.start = s;
-			this.loadMessages();
+			this.start = s
+			this.loadMessages()
 		},
 
 		openMessage: function (id) {
-			let self = this;
-			self.selected = [];
-			self.releaseAddresses = false;
-			self.toastMessage = false;
-			self.existingTags = JSON.parse(JSON.stringify(self.tags));
+			let self = this
+			self.selected = []
+			self.releaseAddresses = false
+			self.toastMessage = false
+			self.existingTags = JSON.parse(JSON.stringify(self.tags))
 
 			let uri = 'api/v1/message/' + self.currentPath
 			self.get(uri, false, function (response) {
 				for (let i in self.items) {
 					if (self.items[i].ID == self.currentPath) {
 						if (!self.items[i].Read) {
-							self.items[i].Read = true;
-							self.unread--;
+							self.items[i].Read = true
+							self.unread--
 						}
 					}
 				}
 
-				let d = response.data;
+				let d = response.data
 
 				// replace inline images embedded as inline attachments
 				if (d.HTML && d.Inline) {
 					for (let i in d.Inline) {
-						let a = d.Inline[i];
+						let a = d.Inline[i]
 						if (a.ContentID != '') {
 							d.HTML = d.HTML.replace(
 								new RegExp('(=["\']?)(cid:' + a.ContentID + ')(["|\'|\\s|\\/|>|;])', 'g'),
 								'$1' + window.location.origin + window.location.pathname + 'api/v1/message/' + d.ID + '/part/' + a.PartID + '$3'
-							);
+							)
 						}
 						if (a.FileName.match(/^[a-zA-Z0-9\_\-\.]+$/)) {
 							// some old email clients use the filename
 							d.HTML = d.HTML.replace(
 								new RegExp('(=["\']?)(' + a.FileName + ')(["|\'|\\s|\\/|>|;])', 'g'),
 								'$1' + window.location.origin + window.location.pathname + 'api/v1/message/' + d.ID + '/part/' + a.PartID + '$3'
-							);
+							)
 						}
 					}
 				}
@@ -275,381 +277,381 @@ export default {
 				// replace inline images embedded as regular attachments
 				if (d.HTML && d.Attachments) {
 					for (let i in d.Attachments) {
-						let a = d.Attachments[i];
+						let a = d.Attachments[i]
 						if (a.ContentID != '') {
 							d.HTML = d.HTML.replace(
 								new RegExp('(=["\']?)(cid:' + a.ContentID + ')(["|\'|\\s|\\/|>|;])', 'g'),
 								'$1' + window.location.origin + window.location.pathname + 'api/v1/message/' + d.ID + '/part/' + a.PartID + '$3'
-							);
+							)
 						}
 						if (a.FileName.match(/^[a-zA-Z0-9\_\-\.]+$/)) {
 							// some old email clients use the filename
 							d.HTML = d.HTML.replace(
 								new RegExp('(=["\']?)(' + a.FileName + ')(["|\'|\\s|\\/|>|;])', 'g'),
 								'$1' + window.location.origin + window.location.pathname + 'api/v1/message/' + d.ID + '/part/' + a.PartID + '$3'
-							);
+							)
 						}
 					}
 				}
 
-				self.message = d;
+				self.message = d
 
 				// generate the prev/next links based on current message list
-				self.messagePrev = false;
-				self.messageNext = false;
-				let found = false;
+				self.messagePrev = false
+				self.messageNext = false
+				let found = false
 
 				for (let i in self.items) {
 					if (self.items[i].ID == self.message.ID) {
-						found = true;
+						found = true
 					} else if (found && !self.messageNext) {
-						self.messageNext = self.items[i].ID;
-						break;
+						self.messageNext = self.items[i].ID
+						break
 					} else {
-						self.messagePrev = self.items[i].ID;
+						self.messagePrev = self.items[i].ID
 					}
 				}
-			});
+			})
 		},
 
 		// universal handler to delete current or selected messages
 		deleteMessages: function () {
-			let ids = [];
-			let self = this;
+			let ids = []
+			let self = this
 			if (self.message) {
-				ids.push(self.message.ID);
+				ids.push(self.message.ID)
 			} else {
-				ids = JSON.parse(JSON.stringify(self.selected));
+				ids = JSON.parse(JSON.stringify(self.selected))
 			}
 			if (!ids.length) {
-				return false;
+				return false
 			}
-			let uri = 'api/v1/messages';
+			let uri = 'api/v1/messages'
 			self.delete(uri, { 'ids': ids }, function (response) {
-				window.location.hash = "";
-				self.scrollInPlace = true;
-				self.loadMessages();
-			});
+				window.location.hash = ""
+				self.scrollInPlace = true
+				self.loadMessages()
+			})
 		},
 
 		// delete messages displayed in current search
 		deleteSearch: function () {
-			let ids = this.items.map(item => item.ID);
+			let ids = this.items.map(item => item.ID)
 
 			if (!ids.length) {
-				return false;
+				return false
 			}
 
-			let self = this;
-			let uri = 'api/v1/messages';
+			let self = this
+			let uri = 'api/v1/messages'
 			self.delete(uri, { 'ids': ids }, function (response) {
-				window.location.hash = "";
-				self.scrollInPlace = true;
-				self.loadMessages();
-			});
+				window.location.hash = ""
+				self.scrollInPlace = true
+				self.loadMessages()
+			})
 		},
 
 		// delete all messages from mailbox
 		deleteAll: function () {
-			let self = this;
-			let uri = 'api/v1/messages';
+			let self = this
+			let uri = 'api/v1/messages'
 			self.delete(uri, false, function (response) {
-				window.location.hash = "";
-				self.reloadMessages();
-			});
+				window.location.hash = ""
+				self.reloadMessages()
+			})
 		},
 
 		// mark current message as read
 		markUnread: function () {
-			let self = this;
+			let self = this
 			if (!self.message) {
-				return false;
+				return false
 			}
-			let uri = 'api/v1/messages';
+			let uri = 'api/v1/messages'
 			self.put(uri, { 'read': false, 'ids': [self.message.ID] }, function (response) {
-				window.location.hash = "";
-				self.scrollInPlace = true;
-				self.loadMessages();
-			});
+				window.location.hash = ""
+				self.scrollInPlace = true
+				self.loadMessages()
+			})
 		},
 
 		// mark all messages in mailbox as read
 		markAllRead: function () {
-			let self = this;
+			let self = this
 			let uri = 'api/v1/messages'
 			self.put(uri, { 'read': true }, function (response) {
-				window.location.hash = "";
-				self.scrollInPlace = true;
-				self.loadMessages();
-			});
+				window.location.hash = ""
+				self.scrollInPlace = true
+				self.loadMessages()
+			})
 		},
 
 		// mark messages in current search as read
 		markSearchRead: function () {
-			let ids = this.items.map(item => item.ID);
+			let ids = this.items.map(item => item.ID)
 
 			if (!ids.length) {
-				return false;
+				return false
 			}
 
-			let self = this;
-			let uri = 'api/v1/messages';
+			let self = this
+			let uri = 'api/v1/messages'
 			self.put(uri, { 'read': true, 'ids': ids }, function (response) {
-				window.location.hash = "";
-				self.scrollInPlace = true;
-				self.loadMessages();
-			});
+				window.location.hash = ""
+				self.scrollInPlace = true
+				self.loadMessages()
+			})
 		},
 
 		// mark selected messages as read
 		markSelectedRead: function () {
-			let self = this;
+			let self = this
 			if (!self.selected.length) {
-				return false;
+				return false
 			}
-			let uri = 'api/v1/messages';
+			let uri = 'api/v1/messages'
 			self.put(uri, { 'read': true, 'ids': self.selected }, function (response) {
-				window.location.hash = "";
-				self.scrollInPlace = true;
-				self.loadMessages();
-			});
+				window.location.hash = ""
+				self.scrollInPlace = true
+				self.loadMessages()
+			})
 		},
 
 		// mark selected messages as unread
 		markSelectedUnread: function () {
-			let self = this;
+			let self = this
 			if (!self.selected.length) {
-				return false;
+				return false
 			}
-			let uri = 'api/v1/messages';
+			let uri = 'api/v1/messages'
 			self.put(uri, { 'read': false, 'ids': self.selected }, function (response) {
-				window.location.hash = "";
-				self.scrollInPlace = true;
-				self.loadMessages();
-			});
+				window.location.hash = ""
+				self.scrollInPlace = true
+				self.loadMessages()
+			})
 		},
 
 		// test if any selected emails are unread
 		selectedHasUnread: function () {
 			if (!this.selected.length) {
-				return false;
+				return false
 			}
 			for (let i in this.items) {
 				if (this.isSelected(this.items[i].ID) && !this.items[i].Read) {
-					return true;
+					return true
 				}
 			}
-			return false;
+			return false
 		},
 
 		// test of any selected emails are read
 		selectedHasRead: function () {
 			if (!this.selected.length) {
-				return false;
+				return false
 			}
 			for (let i in this.items) {
 				if (this.isSelected(this.items[i].ID) && this.items[i].Read) {
-					return true;
+					return true
 				}
 			}
-			return false;
+			return false
 		},
 
 		// websocket connect
 		connect: function () {
-			let wsproto = location.protocol == 'https:' ? 'wss' : 'ws';
+			let wsproto = location.protocol == 'https:' ? 'wss' : 'ws'
 			let ws = new WebSocket(
 				wsproto + "://" + document.location.host + document.location.pathname + "api/events"
-			);
-			let self = this;
+			)
+			let self = this
 			ws.onmessage = function (e) {
-				let response = JSON.parse(e.data);
+				let response = JSON.parse(e.data)
 				if (!response) {
-					return;
+					return
 				}
 				// new messages
 				if (response.Type == "new" && response.Data) {
 					if (!self.searching) {
 						if (self.start < 1) {
 							// first page
-							self.items.unshift(response.Data);
+							self.items.unshift(response.Data)
 							if (self.items.length > self.limit) {
-								self.items.pop();
+								self.items.pop()
 							}
 
 							// first message was open, set messagePrev
 							if (!self.messagePrev) {
-								self.messagePrev = response.Data.ID;
+								self.messagePrev = response.Data.ID
 							}
 						} else {
-							self.start++;
+							self.start++
 						}
 					}
-					self.total++;
-					self.unread++;
+					self.total++
+					self.unread++
 
 					for (let i in response.Data.Tags) {
 						if (self.tags.indexOf(response.Data.Tags[i]) < 0) {
-							self.tags.push(response.Data.Tags[i]);
-							self.tags.sort();
+							self.tags.push(response.Data.Tags[i])
+							self.tags.sort()
 						}
 					}
 
-					let from = response.Data.From != null ? response.Data.From.Address : '[unknown]';
-					self.browserNotify("New mail from: " + from, response.Data.Subject);
-					self.setMessageToast(response.Data);
+					let from = response.Data.From != null ? response.Data.From.Address : '[unknown]'
+					self.browserNotify("New mail from: " + from, response.Data.Subject)
+					self.setMessageToast(response.Data)
 				} else if (response.Type == "prune") {
 					// messages have been deleted, reload messages to adjust
-					self.scrollInPlace = true;
-					self.loadMessages();
+					self.scrollInPlace = true
+					self.loadMessages()
 				}
 			}
 
 			ws.onopen = function () {
-				self.isConnected = true;
-				self.loadMessages();
+				self.isConnected = true
+				self.loadMessages()
 			}
 
 			ws.onclose = function (e) {
-				self.isConnected = false;
+				self.isConnected = false
 
 				setTimeout(function () {
-					self.connect(); // reconnect
-				}, 1000);
+					self.connect() // reconnect
+				}, 1000)
 			}
 
 			ws.onerror = function (err) {
-				ws.close();
+				ws.close()
 			}
 		},
 
 		getPrimaryEmailTo: function (message) {
 			for (let i in message.To) {
-				return message.To[i].Address;
+				return message.To[i].Address
 			}
 
-			return '[ Undisclosed recipients ]';
+			return '[ Undisclosed recipients ]'
 		},
 
 		getRelativeCreated: function (message) {
 			let d = new Date(message.Created)
-			return moment(d).fromNow().toString();
+			return moment(d).fromNow().toString()
 		},
 
 		browserNotify: function (title, message) {
 			if (!("Notification" in window)) {
-				return;
+				return
 			}
 
 			if (Notification.permission === "granted") {
-				let b = message.Subject;
+				let b = message.Subject
 				let options = {
 					body: message,
 					icon: 'notification.png'
 				}
-				new Notification(title, options);
+				new Notification(title, options)
 			}
 		},
 
 		requestNotifications: function () {
 			// check if the browser supports notifications
 			if (!("Notification" in window)) {
-				alert("This browser does not support desktop notification");
+				alert("This browser does not support desktop notification")
 			}
 
 			// we need to ask the user for permission
 			else if (Notification.permission !== "denied") {
-				let self = this;
+				let self = this
 				Notification.requestPermission().then(function (permission) {
 					// if the user accepts, let's create a notification
 					if (permission === "granted") {
-						self.browserNotify("Notifications enabled", "You will receive notifications when new mails are received.");
-						self.notificationsEnabled = true;
+						self.browserNotify("Notifications enabled", "You will receive notifications when new mails are received.")
+						self.notificationsEnabled = true
 					}
-				});
+				})
 			}
 		},
 
 		toggleSelected: function (e, id) {
-			e.preventDefault();
+			e.preventDefault()
 
 			if (this.isSelected(id)) {
 				this.selected = this.selected.filter(function (ele) {
-					return ele != id;
-				});
+					return ele != id
+				})
 			} else {
-				this.selected.push(id);
+				this.selected.push(id)
 			}
 		},
 
 		selectRange: function (e, id) {
-			e.preventDefault();
+			e.preventDefault()
 
-			let selecting = false;
-			let lastSelected = this.selected.length > 0 && this.selected[this.selected.length - 1];
+			let selecting = false
+			let lastSelected = this.selected.length > 0 && this.selected[this.selected.length - 1]
 			if (lastSelected == id) {
 				this.selected = this.selected.filter(function (ele) {
-					return ele != id;
-				});
-				return;
+					return ele != id
+				})
+				return
 			}
 
 			if (lastSelected === false) {
-				this.selected.push(id);
-				return;
+				this.selected.push(id)
+				return
 			}
 
 			for (let d of this.items) {
 				if (selecting) {
 					if (!this.isSelected(d.ID)) {
-						this.selected.push(d.ID);
+						this.selected.push(d.ID)
 					}
 					if (d.ID == lastSelected || d.ID == id) {
 						// reached backwards select
-						break;
+						break
 					}
 				} else if (d.ID == id || d.ID == lastSelected) {
 					if (!this.isSelected(d.ID)) {
-						this.selected.push(d.ID);
+						this.selected.push(d.ID)
 					}
-					selecting = true;
+					selecting = true
 				}
 			}
 		},
 
 		isSelected: function (id) {
-			return this.selected.indexOf(id) != -1;
+			return this.selected.indexOf(id) != -1
 		},
 
 		inSearch: function (tag) {
-			tag = tag.toLowerCase();
+			tag = tag.toLowerCase()
 			if (tag.match(/ /)) {
-				tag = '"' + tag + '"';
+				tag = '"' + tag + '"'
 			}
 
-			return this.search.toLowerCase().indexOf('tag:' + tag) > -1;
+			return this.search.toLowerCase().indexOf('tag:' + tag) > -1
 		},
 
 		loadInfo: function (e) {
-			e.preventDefault();
-			let self = this;
+			e.preventDefault()
+			let self = this
 			self.get('api/v1/info', false, function (response) {
-				self.appInfo = response.data;
-				self.modal('AppInfoModal').show();
-			});
+				self.appInfo = response.data
+				self.modal('AppInfoModal').show()
+			})
 		},
 
 		downloadMessageBody: function (str, ext) {
-			let dl = document.createElement('a');
-			dl.href = "data:text/plain," + encodeURIComponent(str);
-			dl.target = '_blank';
-			dl.download = this.message.ID + '.' + ext;
-			dl.click();
+			let dl = document.createElement('a')
+			dl.href = "data:text/plain," + encodeURIComponent(str)
+			dl.target = '_blank'
+			dl.download = this.message.ID + '.' + ext
+			dl.click()
 		},
 
 		initReleaseModal: function () {
-			this.releaseAddresses = false;
-			let addresses = [];
+			this.releaseAddresses = false
+			let addresses = []
 			for (let i in this.message.To) {
 				addresses.push(this.message.To[i].Address)
 			}
@@ -661,31 +663,31 @@ export default {
 			}
 
 			// include only unique email addresses, regardless of casing
-			let uAddresses = new Map(addresses.map(a => [a.toLowerCase(), a]));
-			this.releaseAddresses = [...uAddresses.values()];
+			let uAddresses = new Map(addresses.map(a => [a.toLowerCase(), a]))
+			this.releaseAddresses = [...uAddresses.values()]
 
-			let self = this;
+			let self = this
 			window.setTimeout(function () {
 				// delay to allow elements to load
-				self.modal('ReleaseModal').show();
+				self.modal('ReleaseModal').show()
 
 				window.setTimeout(function () {
 					document.querySelector('#ReleaseModal input[role="combobox"]').focus()
-				}, 500);
-			}, 300);
+				}, 500)
+			}, 300)
 		},
 
 		setMessageToast: function (m) {
 			// don't display if browser notifications are enabled, or a toast is already displayed
 			if (this.notificationsEnabled || this.toastMessage) {
-				return;
+				return
 			}
 
-			this.toastMessage = m;
+			this.toastMessage = m
 		},
 
 		clearMessageToast: function () {
-			this.toastMessage = false;
+			this.toastMessage = false
 		}
 	}
 }
@@ -775,13 +777,13 @@ export default {
 						<img src="mailpit.svg" alt="Mailpit">
 						<span v-if="!total" class="ms-2">Mailpit</span>
 					</a>
-					<div v-if="total" class="ms-md-2 d-flex bg-white border rounded-start flex-fill position-relative">
+					<div v-if="total" class="ms-md-2 d-flex border bg-body rounded-start flex-fill position-relative">
 						<input type="text" class="form-control border-0" aria-label="Search" v-model.trim="search"
 							placeholder="Search mailbox">
 						<span class="btn btn-link position-absolute end-0 text-muted" v-if="search"
 							v-on:click="resetSearch"><i class="bi bi-x-circle"></i></span>
 					</div>
-					<button v-if="total" class="btn btn-outline-light" type="submit">
+					<button v-if="total" class="btn btn-outline-secondary" type="submit">
 						<i class="bi bi-search"></i>
 					</button>
 				</div>
@@ -807,8 +809,8 @@ export default {
 				<i class="bi bi-check2-square"></i>
 			</button>
 
-			<select v-model="limit" v-on:change="loadMessages" class="form-select form-select-sm d-inline w-auto me-2"
-				v-if="!searching">
+			<select v-model="limit" v-on:change="loadMessages" v-if="!searching"
+				class="form-select form-select-sm d-none d-md-inline w-auto me-2">
 				<option value="25">25</option>
 				<option value="50">50</option>
 				<option value="100">100</option>
@@ -920,7 +922,7 @@ export default {
 						</li>
 					</ul>
 				</div>
-				<div class="list-group mt-1 mb-5">
+				<div class="list-group mt-1 mb-5 pb-3">
 					<button class="list-group-item list-group-item-action small px-2" v-for="tag in tags"
 						:style="showTagColors ? { borderLeftColor: colorHash(tag), borderLeftWidth: '4px' } : ''"
 						v-on:click="tagSearch($event, tag)" :class="inSearch(tag) ? 'active' : ''">
@@ -933,11 +935,13 @@ export default {
 
 			<MessageSummary v-if="message" :message="message"></MessageSummary>
 
-			<div class="position-fixed bottom-0 py-2 text-muted small w-100">
-				<a href="#" class="text-muted" v-on:click="loadInfo">
+			<div class="position-fixed bg-body bottom-0 py-2 text-muted small col-lg-2 col-md-3 pe-3 z-3">
+				<a href="#" class="text-muted btn btn-sm" v-on:click="loadInfo">
 					<i class="bi bi-info-circle-fill"></i>
 					About
 				</a>
+
+				<ThemeToggle />
 			</div>
 		</div>
 
@@ -1196,53 +1200,4 @@ export default {
 	</div>
 
 	<MessageToast v-if="toastMessage" :message="toastMessage" @clearMessageToast="clearMessageToast"></MessageToast>
-
-  <!-- Toggle theme -->
-  <svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
-    <symbol id="bootstrap" viewBox="0 0 512 408" fill="currentcolor">
-      <path d="M106.342 0c-29.214 0-50.827 25.58-49.86 53.32.927 26.647-.278 61.165-8.966 89.31C38.802 170.862 24.07 188.707 0 191v26c24.069 2.293 38.802 20.138 47.516 48.37 8.688 28.145 9.893 62.663 8.965 89.311C55.515 382.42 77.128 408 106.342 408h299.353c29.214 0 50.827-25.58 49.861-53.319-.928-26.648.277-61.166 8.964-89.311 8.715-28.232 23.411-46.077 47.48-48.37v-26c-24.069-2.293-38.765-20.138-47.48-48.37-8.687-28.145-9.892-62.663-8.964-89.31C456.522 25.58 434.909 0 405.695 0H106.342zm236.559 251.102c0 38.197-28.501 61.355-75.798 61.355h-87.202a2 2 0 01-2-2v-213a2 2 0 012-2h86.74c39.439 0 65.322 21.354 65.322 54.138 0 23.008-17.409 43.61-39.594 47.219v1.203c30.196 3.309 50.532 24.212 50.532 53.085zm-84.58-128.125h-45.91v64.814h38.669c29.888 0 46.373-12.03 46.373-33.535 0-20.151-14.174-31.279-39.132-31.279zm-45.91 90.53v71.431h47.605c31.12 0 47.605-12.482 47.605-35.941 0-23.46-16.947-35.49-49.608-35.49h-45.602z"/>
-    </symbol>
-    <symbol id="check2" viewBox="0 0 16 16" fill="currentcolor">
-      <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/>
-    </symbol>
-    <symbol id="circle-half" viewBox="0 0 16 16" fill="currentcolor">
-      <path d="M8 15A7 7 0 1 0 8 1v14zm0 1A8 8 0 1 1 8 0a8 8 0 0 1 0 16z"/>
-    </symbol>
-    <symbol id="moon-stars-fill" viewBox="0 0 16 16" fill="currentcolor">
-      <path d="M6 .278a.768.768 0 0 1 .08.858 7.208 7.208 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 0 1 .81.316.733.733 0 0 1-.031.893A8.349 8.349 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 0 1 6 .278z"/>
-      <path d="M10.794 3.148a.217.217 0 0 1 .412 0l.387 1.162c.173.518.579.924 1.097 1.097l1.162.387a.217.217 0 0 1 0 .412l-1.162.387a1.734 1.734 0 0 0-1.097 1.097l-.387 1.162a.217.217 0 0 1-.412 0l-.387-1.162A1.734 1.734 0 0 0 9.31 6.593l-1.162-.387a.217.217 0 0 1 0-.412l1.162-.387a1.734 1.734 0 0 0 1.097-1.097l.387-1.162zM13.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.156 1.156 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.156 1.156 0 0 0-.732-.732l-.774-.258a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732L13.863.1z"/>
-    </symbol>
-    <symbol id="sun-fill" viewBox="0 0 16 16" fill="currentcolor">
-      <path d="M8 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0zm0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13zm8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5zM3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8zm10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0zm-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0zm9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707zM4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708z"/>
-    </symbol>
-  </svg>
-  <div class="dropdown position-fixed bottom-0 end-0 mb-3 me-3 bd-mode-toggle">
-    <button class="btn btn-primary py-2 dropdown-toggle d-flex align-items-center" id="bd-theme" type="button" aria-expanded="false" data-bs-toggle="dropdown" aria-label="Toggle theme (light)">
-      <svg class="bi my-1 theme-icon-active" width="1em" height="1em"><use href="#sun-fill"></use></svg>
-      <span class="visually-hidden" id="bd-theme-text">Toggle theme</span>
-    </button>
-    <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="bd-theme-text" style="">
-      <li>
-        <button type="button" class="dropdown-item d-flex align-items-center active" data-bs-theme-value="light" aria-pressed="true">
-          <svg class="bi me-2 opacity-50 theme-icon" width="1em" height="1em"><use href="#sun-fill"></use></svg>
-          Light
-          <svg class="bi ms-auto d-none" width="1em" height="1em"><use href="#check2"></use></svg>
-        </button>
-      </li>
-      <li>
-        <button type="button" class="dropdown-item d-flex align-items-center" data-bs-theme-value="dark" aria-pressed="false">
-          <svg class="bi me-2 opacity-50 theme-icon" width="1em" height="1em"><use href="#moon-stars-fill"></use></svg>
-          Dark
-          <svg class="bi ms-auto d-none" width="1em" height="1em"><use href="#check2"></use></svg>
-        </button>
-      </li>
-      <li>
-        <button type="button" class="dropdown-item d-flex align-items-center" data-bs-theme-value="auto" aria-pressed="false">
-          <svg class="bi me-2 opacity-50 theme-icon" width="1em" height="1em"><use href="#circle-half"></use></svg>
-          Auto
-          <svg class="bi ms-auto d-none" width="1em" height="1em"><use href="#check2"></use></svg>
-        </button>
-      </li>
-    </ul>
-  </div>
 </template>
