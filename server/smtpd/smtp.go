@@ -88,7 +88,7 @@ func Send(from string, to []string, msg []byte) error {
 
 	for _, addr := range recipients {
 		if err = c.Rcpt(addr); err != nil {
-			return fmt.Errorf("error response to RCPT command for %s: %s", addr, err.Error())
+			logger.Log().Warnf("error response to RCPT command for %s: %s", addr, err.Error())
 		}
 	}
 
