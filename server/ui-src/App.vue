@@ -52,55 +52,55 @@ export default {
 	watch: {
 		currentPath(v, old) {
 			if (v && v.match(/^[a-z0-9]+-[a-z0-9]+-[a-z0-9]+-[a-z0-9]+-[a-z0-9]+$/)) {
-				this.openMessage();
+				this.openMessage()
 			} else {
-				this.message = false;
+				this.message = false
 			}
 		},
 		unread(v, old) {
 			if (v == this.tcStatus) {
-				return;
+				return
 			}
-			this.tcStatus = v;
+			this.tcStatus = v
 			if (v == 0) {
-				Tinycon.reset();
+				Tinycon.reset()
 			} else {
-				Tinycon.setBubble(v);
+				Tinycon.setBubble(v)
 			}
 		}
 	},
 
 	computed: {
 		canPrev: function () {
-			return this.start > 0;
+			return this.start > 0
 		},
 		canNext: function () {
-			return this.total > (this.start + this.count);
+			return this.total > (this.start + this.count)
 		},
 		unreadInSearch: function () {
 			if (!this.searching) {
-				return false;
+				return false
 			}
 
-			return this.items.filter(i => !i.Read).length;
+			return this.items.filter(i => !i.Read).length
 		}
 	},
 
 	mounted() {
-		this.currentPath = window.location.hash.slice(1);
+		this.currentPath = window.location.hash.slice(1)
 		window.addEventListener('hashchange', () => {
-			this.currentPath = window.location.hash.slice(1);
-		});
+			this.currentPath = window.location.hash.slice(1)
+		})
 
 		this.notificationsSupported = window.isSecureContext
-			&& ("Notification" in window && Notification.permission !== "denied");
-		this.notificationsEnabled = this.notificationsSupported && Notification.permission == "granted";
+			&& ("Notification" in window && Notification.permission !== "denied")
+		this.notificationsEnabled = this.notificationsSupported && Notification.permission == "granted"
 
 		Tinycon.setOptions({
 			height: 11,
 			background: '#dd0000',
 			fallback: false
-		});
+		})
 
 		moment.updateLocale('en', {
 			relativeTime: {
@@ -121,11 +121,11 @@ export default {
 				y: "a year",
 				yy: "%d years"
 			}
-		});
+		})
 
-		this.connect();
-		this.getUISettings();
-		this.loadMessages();
+		this.connect()
+		this.getUISettings()
+		this.loadMessages()
 	},
 
 	methods: {
@@ -133,143 +133,143 @@ export default {
 			let now = Date.now()
 			// prevent double loading when UI loads & websocket connects
 			if (this.lastLoaded && now - this.lastLoaded < 250) {
-				return;
+				return
 			}
 			if (this.start == 0) {
-				this.lastLoaded = now;
+				this.lastLoaded = now
 			}
 
-			let self = this;
-			let params = {};
-			self.selected = [];
+			let self = this
+			let params = {}
+			self.selected = []
 
-			let uri = 'api/v1/messages';
+			let uri = 'api/v1/messages'
 			if (self.search) {
-				self.searching = true;
-				self.items = [];
+				self.searching = true
+				self.items = []
 				uri = 'api/v1/search'
-				self.start = 0; // search is displayed on one page
-				params['query'] = self.search;
-				params['limit'] = 200;
+				self.start = 0 // search is displayed on one page
+				params['query'] = self.search
+				params['limit'] = 200
 			} else {
-				self.searching = false;
-				params['limit'] = self.limit;
+				self.searching = false
+				params['limit'] = self.limit
 				if (self.start > 0) {
-					params['start'] = self.start;
+					params['start'] = self.start
 				}
 			}
 
 			self.get(uri, params, function (response) {
-				self.total = response.data.total;
-				self.unread = response.data.unread;
-				self.count = response.data.count;
-				self.start = response.data.start;
-				self.items = response.data.messages;
-				self.tags = response.data.tags;
-				self.existingTags = JSON.parse(JSON.stringify(self.tags));
+				self.total = response.data.total
+				self.unread = response.data.unread
+				self.count = response.data.count
+				self.start = response.data.start
+				self.items = response.data.messages
+				self.tags = response.data.tags
+				self.existingTags = JSON.parse(JSON.stringify(self.tags))
 
 				// if pagination > 0 && results == 0 reload first page (prune)
 				if (response.data.count == 0 && response.data.start > 0) {
-					self.start = 0;
-					return self.loadMessages();
+					self.start = 0
+					return self.loadMessages()
 				}
 
 				if (!self.scrollInPlace) {
-					let mp = document.getElementById('message-page');
+					let mp = document.getElementById('message-page')
 					if (mp) {
-						mp.scrollTop = 0;
+						mp.scrollTop = 0
 					}
 				}
 
-				self.scrollInPlace = false;
-			});
+				self.scrollInPlace = false
+			})
 		},
 
 		getUISettings: function () {
-			let self = this;
+			let self = this
 			self.get('api/v1/webui', null, function (response) {
-				self.relayConfig = response.data;
-			});
+				self.relayConfig = response.data
+			})
 		},
 
 		doSearch: function (e) {
-			e.preventDefault();
-			this.loadMessages();
+			e.preventDefault()
+			this.loadMessages()
 		},
 
 		tagSearch: function (e, tag) {
-			e.preventDefault();
+			e.preventDefault()
 			if (tag.match(/ /)) {
-				tag = '"' + tag + '"';
+				tag = '"' + tag + '"'
 			}
-			this.search = 'tag:' + tag;
-			window.location.hash = "";
-			this.loadMessages();
+			this.search = 'tag:' + tag
+			window.location.hash = ""
+			this.loadMessages()
 		},
 
 		resetSearch: function (e) {
-			e.preventDefault();
-			this.search = '';
-			this.scrollInPlace = true;
-			this.loadMessages();
+			e.preventDefault()
+			this.search = ''
+			this.scrollInPlace = true
+			this.loadMessages()
 		},
 
 		reloadMessages: function () {
-			this.search = "";
-			this.start = 0;
-			this.loadMessages();
+			this.search = ""
+			this.start = 0
+			this.loadMessages()
 		},
 
 		viewNext: function () {
-			this.start = parseInt(this.start, 10) + parseInt(this.limit, 10);
-			this.loadMessages();
+			this.start = parseInt(this.start, 10) + parseInt(this.limit, 10)
+			this.loadMessages()
 		},
 
 		viewPrev: function () {
-			let s = this.start - this.limit;
+			let s = this.start - this.limit
 			if (s < 0) {
-				s = 0;
+				s = 0
 			}
-			this.start = s;
-			this.loadMessages();
+			this.start = s
+			this.loadMessages()
 		},
 
 		openMessage: function (id) {
-			let self = this;
-			self.selected = [];
-			self.releaseAddresses = false;
-			self.toastMessage = false;
-			self.existingTags = JSON.parse(JSON.stringify(self.tags));
+			let self = this
+			self.selected = []
+			self.releaseAddresses = false
+			self.toastMessage = false
+			self.existingTags = JSON.parse(JSON.stringify(self.tags))
 
 			let uri = 'api/v1/message/' + self.currentPath
 			self.get(uri, false, function (response) {
 				for (let i in self.items) {
 					if (self.items[i].ID == self.currentPath) {
 						if (!self.items[i].Read) {
-							self.items[i].Read = true;
-							self.unread--;
+							self.items[i].Read = true
+							self.unread--
 						}
 					}
 				}
 
-				let d = response.data;
+				let d = response.data
 
 				// replace inline images embedded as inline attachments
 				if (d.HTML && d.Inline) {
 					for (let i in d.Inline) {
-						let a = d.Inline[i];
+						let a = d.Inline[i]
 						if (a.ContentID != '') {
 							d.HTML = d.HTML.replace(
 								new RegExp('(=["\']?)(cid:' + a.ContentID + ')(["|\'|\\s|\\/|>|;])', 'g'),
 								'$1' + window.location.origin + window.location.pathname + 'api/v1/message/' + d.ID + '/part/' + a.PartID + '$3'
-							);
+							)
 						}
 						if (a.FileName.match(/^[a-zA-Z0-9\_\-\.]+$/)) {
 							// some old email clients use the filename
 							d.HTML = d.HTML.replace(
 								new RegExp('(=["\']?)(' + a.FileName + ')(["|\'|\\s|\\/|>|;])', 'g'),
 								'$1' + window.location.origin + window.location.pathname + 'api/v1/message/' + d.ID + '/part/' + a.PartID + '$3'
-							);
+							)
 						}
 					}
 				}
@@ -277,381 +277,381 @@ export default {
 				// replace inline images embedded as regular attachments
 				if (d.HTML && d.Attachments) {
 					for (let i in d.Attachments) {
-						let a = d.Attachments[i];
+						let a = d.Attachments[i]
 						if (a.ContentID != '') {
 							d.HTML = d.HTML.replace(
 								new RegExp('(=["\']?)(cid:' + a.ContentID + ')(["|\'|\\s|\\/|>|;])', 'g'),
 								'$1' + window.location.origin + window.location.pathname + 'api/v1/message/' + d.ID + '/part/' + a.PartID + '$3'
-							);
+							)
 						}
 						if (a.FileName.match(/^[a-zA-Z0-9\_\-\.]+$/)) {
 							// some old email clients use the filename
 							d.HTML = d.HTML.replace(
 								new RegExp('(=["\']?)(' + a.FileName + ')(["|\'|\\s|\\/|>|;])', 'g'),
 								'$1' + window.location.origin + window.location.pathname + 'api/v1/message/' + d.ID + '/part/' + a.PartID + '$3'
-							);
+							)
 						}
 					}
 				}
 
-				self.message = d;
+				self.message = d
 
 				// generate the prev/next links based on current message list
-				self.messagePrev = false;
-				self.messageNext = false;
-				let found = false;
+				self.messagePrev = false
+				self.messageNext = false
+				let found = false
 
 				for (let i in self.items) {
 					if (self.items[i].ID == self.message.ID) {
-						found = true;
+						found = true
 					} else if (found && !self.messageNext) {
-						self.messageNext = self.items[i].ID;
-						break;
+						self.messageNext = self.items[i].ID
+						break
 					} else {
-						self.messagePrev = self.items[i].ID;
+						self.messagePrev = self.items[i].ID
 					}
 				}
-			});
+			})
 		},
 
 		// universal handler to delete current or selected messages
 		deleteMessages: function () {
-			let ids = [];
-			let self = this;
+			let ids = []
+			let self = this
 			if (self.message) {
-				ids.push(self.message.ID);
+				ids.push(self.message.ID)
 			} else {
-				ids = JSON.parse(JSON.stringify(self.selected));
+				ids = JSON.parse(JSON.stringify(self.selected))
 			}
 			if (!ids.length) {
-				return false;
+				return false
 			}
-			let uri = 'api/v1/messages';
+			let uri = 'api/v1/messages'
 			self.delete(uri, { 'ids': ids }, function (response) {
-				window.location.hash = "";
-				self.scrollInPlace = true;
-				self.loadMessages();
-			});
+				window.location.hash = ""
+				self.scrollInPlace = true
+				self.loadMessages()
+			})
 		},
 
 		// delete messages displayed in current search
 		deleteSearch: function () {
-			let ids = this.items.map(item => item.ID);
+			let ids = this.items.map(item => item.ID)
 
 			if (!ids.length) {
-				return false;
+				return false
 			}
 
-			let self = this;
-			let uri = 'api/v1/messages';
+			let self = this
+			let uri = 'api/v1/messages'
 			self.delete(uri, { 'ids': ids }, function (response) {
-				window.location.hash = "";
-				self.scrollInPlace = true;
-				self.loadMessages();
-			});
+				window.location.hash = ""
+				self.scrollInPlace = true
+				self.loadMessages()
+			})
 		},
 
 		// delete all messages from mailbox
 		deleteAll: function () {
-			let self = this;
-			let uri = 'api/v1/messages';
+			let self = this
+			let uri = 'api/v1/messages'
 			self.delete(uri, false, function (response) {
-				window.location.hash = "";
-				self.reloadMessages();
-			});
+				window.location.hash = ""
+				self.reloadMessages()
+			})
 		},
 
 		// mark current message as read
 		markUnread: function () {
-			let self = this;
+			let self = this
 			if (!self.message) {
-				return false;
+				return false
 			}
-			let uri = 'api/v1/messages';
+			let uri = 'api/v1/messages'
 			self.put(uri, { 'read': false, 'ids': [self.message.ID] }, function (response) {
-				window.location.hash = "";
-				self.scrollInPlace = true;
-				self.loadMessages();
-			});
+				window.location.hash = ""
+				self.scrollInPlace = true
+				self.loadMessages()
+			})
 		},
 
 		// mark all messages in mailbox as read
 		markAllRead: function () {
-			let self = this;
+			let self = this
 			let uri = 'api/v1/messages'
 			self.put(uri, { 'read': true }, function (response) {
-				window.location.hash = "";
-				self.scrollInPlace = true;
-				self.loadMessages();
-			});
+				window.location.hash = ""
+				self.scrollInPlace = true
+				self.loadMessages()
+			})
 		},
 
 		// mark messages in current search as read
 		markSearchRead: function () {
-			let ids = this.items.map(item => item.ID);
+			let ids = this.items.map(item => item.ID)
 
 			if (!ids.length) {
-				return false;
+				return false
 			}
 
-			let self = this;
-			let uri = 'api/v1/messages';
+			let self = this
+			let uri = 'api/v1/messages'
 			self.put(uri, { 'read': true, 'ids': ids }, function (response) {
-				window.location.hash = "";
-				self.scrollInPlace = true;
-				self.loadMessages();
-			});
+				window.location.hash = ""
+				self.scrollInPlace = true
+				self.loadMessages()
+			})
 		},
 
 		// mark selected messages as read
 		markSelectedRead: function () {
-			let self = this;
+			let self = this
 			if (!self.selected.length) {
-				return false;
+				return false
 			}
-			let uri = 'api/v1/messages';
+			let uri = 'api/v1/messages'
 			self.put(uri, { 'read': true, 'ids': self.selected }, function (response) {
-				window.location.hash = "";
-				self.scrollInPlace = true;
-				self.loadMessages();
-			});
+				window.location.hash = ""
+				self.scrollInPlace = true
+				self.loadMessages()
+			})
 		},
 
 		// mark selected messages as unread
 		markSelectedUnread: function () {
-			let self = this;
+			let self = this
 			if (!self.selected.length) {
-				return false;
+				return false
 			}
-			let uri = 'api/v1/messages';
+			let uri = 'api/v1/messages'
 			self.put(uri, { 'read': false, 'ids': self.selected }, function (response) {
-				window.location.hash = "";
-				self.scrollInPlace = true;
-				self.loadMessages();
-			});
+				window.location.hash = ""
+				self.scrollInPlace = true
+				self.loadMessages()
+			})
 		},
 
 		// test if any selected emails are unread
 		selectedHasUnread: function () {
 			if (!this.selected.length) {
-				return false;
+				return false
 			}
 			for (let i in this.items) {
 				if (this.isSelected(this.items[i].ID) && !this.items[i].Read) {
-					return true;
+					return true
 				}
 			}
-			return false;
+			return false
 		},
 
 		// test of any selected emails are read
 		selectedHasRead: function () {
 			if (!this.selected.length) {
-				return false;
+				return false
 			}
 			for (let i in this.items) {
 				if (this.isSelected(this.items[i].ID) && this.items[i].Read) {
-					return true;
+					return true
 				}
 			}
-			return false;
+			return false
 		},
 
 		// websocket connect
 		connect: function () {
-			let wsproto = location.protocol == 'https:' ? 'wss' : 'ws';
+			let wsproto = location.protocol == 'https:' ? 'wss' : 'ws'
 			let ws = new WebSocket(
 				wsproto + "://" + document.location.host + document.location.pathname + "api/events"
-			);
-			let self = this;
+			)
+			let self = this
 			ws.onmessage = function (e) {
-				let response = JSON.parse(e.data);
+				let response = JSON.parse(e.data)
 				if (!response) {
-					return;
+					return
 				}
 				// new messages
 				if (response.Type == "new" && response.Data) {
 					if (!self.searching) {
 						if (self.start < 1) {
 							// first page
-							self.items.unshift(response.Data);
+							self.items.unshift(response.Data)
 							if (self.items.length > self.limit) {
-								self.items.pop();
+								self.items.pop()
 							}
 
 							// first message was open, set messagePrev
 							if (!self.messagePrev) {
-								self.messagePrev = response.Data.ID;
+								self.messagePrev = response.Data.ID
 							}
 						} else {
-							self.start++;
+							self.start++
 						}
 					}
-					self.total++;
-					self.unread++;
+					self.total++
+					self.unread++
 
 					for (let i in response.Data.Tags) {
 						if (self.tags.indexOf(response.Data.Tags[i]) < 0) {
-							self.tags.push(response.Data.Tags[i]);
-							self.tags.sort();
+							self.tags.push(response.Data.Tags[i])
+							self.tags.sort()
 						}
 					}
 
-					let from = response.Data.From != null ? response.Data.From.Address : '[unknown]';
-					self.browserNotify("New mail from: " + from, response.Data.Subject);
-					self.setMessageToast(response.Data);
+					let from = response.Data.From != null ? response.Data.From.Address : '[unknown]'
+					self.browserNotify("New mail from: " + from, response.Data.Subject)
+					self.setMessageToast(response.Data)
 				} else if (response.Type == "prune") {
 					// messages have been deleted, reload messages to adjust
-					self.scrollInPlace = true;
-					self.loadMessages();
+					self.scrollInPlace = true
+					self.loadMessages()
 				}
 			}
 
 			ws.onopen = function () {
-				self.isConnected = true;
-				self.loadMessages();
+				self.isConnected = true
+				self.loadMessages()
 			}
 
 			ws.onclose = function (e) {
-				self.isConnected = false;
+				self.isConnected = false
 
 				setTimeout(function () {
-					self.connect(); // reconnect
-				}, 1000);
+					self.connect() // reconnect
+				}, 1000)
 			}
 
 			ws.onerror = function (err) {
-				ws.close();
+				ws.close()
 			}
 		},
 
 		getPrimaryEmailTo: function (message) {
 			for (let i in message.To) {
-				return message.To[i].Address;
+				return message.To[i].Address
 			}
 
-			return '[ Undisclosed recipients ]';
+			return '[ Undisclosed recipients ]'
 		},
 
 		getRelativeCreated: function (message) {
 			let d = new Date(message.Created)
-			return moment(d).fromNow().toString();
+			return moment(d).fromNow().toString()
 		},
 
 		browserNotify: function (title, message) {
 			if (!("Notification" in window)) {
-				return;
+				return
 			}
 
 			if (Notification.permission === "granted") {
-				let b = message.Subject;
+				let b = message.Subject
 				let options = {
 					body: message,
 					icon: 'notification.png'
 				}
-				new Notification(title, options);
+				new Notification(title, options)
 			}
 		},
 
 		requestNotifications: function () {
 			// check if the browser supports notifications
 			if (!("Notification" in window)) {
-				alert("This browser does not support desktop notification");
+				alert("This browser does not support desktop notification")
 			}
 
 			// we need to ask the user for permission
 			else if (Notification.permission !== "denied") {
-				let self = this;
+				let self = this
 				Notification.requestPermission().then(function (permission) {
 					// if the user accepts, let's create a notification
 					if (permission === "granted") {
-						self.browserNotify("Notifications enabled", "You will receive notifications when new mails are received.");
-						self.notificationsEnabled = true;
+						self.browserNotify("Notifications enabled", "You will receive notifications when new mails are received.")
+						self.notificationsEnabled = true
 					}
-				});
+				})
 			}
 		},
 
 		toggleSelected: function (e, id) {
-			e.preventDefault();
+			e.preventDefault()
 
 			if (this.isSelected(id)) {
 				this.selected = this.selected.filter(function (ele) {
-					return ele != id;
-				});
+					return ele != id
+				})
 			} else {
-				this.selected.push(id);
+				this.selected.push(id)
 			}
 		},
 
 		selectRange: function (e, id) {
-			e.preventDefault();
+			e.preventDefault()
 
-			let selecting = false;
-			let lastSelected = this.selected.length > 0 && this.selected[this.selected.length - 1];
+			let selecting = false
+			let lastSelected = this.selected.length > 0 && this.selected[this.selected.length - 1]
 			if (lastSelected == id) {
 				this.selected = this.selected.filter(function (ele) {
-					return ele != id;
-				});
-				return;
+					return ele != id
+				})
+				return
 			}
 
 			if (lastSelected === false) {
-				this.selected.push(id);
-				return;
+				this.selected.push(id)
+				return
 			}
 
 			for (let d of this.items) {
 				if (selecting) {
 					if (!this.isSelected(d.ID)) {
-						this.selected.push(d.ID);
+						this.selected.push(d.ID)
 					}
 					if (d.ID == lastSelected || d.ID == id) {
 						// reached backwards select
-						break;
+						break
 					}
 				} else if (d.ID == id || d.ID == lastSelected) {
 					if (!this.isSelected(d.ID)) {
-						this.selected.push(d.ID);
+						this.selected.push(d.ID)
 					}
-					selecting = true;
+					selecting = true
 				}
 			}
 		},
 
 		isSelected: function (id) {
-			return this.selected.indexOf(id) != -1;
+			return this.selected.indexOf(id) != -1
 		},
 
 		inSearch: function (tag) {
-			tag = tag.toLowerCase();
+			tag = tag.toLowerCase()
 			if (tag.match(/ /)) {
-				tag = '"' + tag + '"';
+				tag = '"' + tag + '"'
 			}
 
-			return this.search.toLowerCase().indexOf('tag:' + tag) > -1;
+			return this.search.toLowerCase().indexOf('tag:' + tag) > -1
 		},
 
 		loadInfo: function (e) {
-			e.preventDefault();
-			let self = this;
+			e.preventDefault()
+			let self = this
 			self.get('api/v1/info', false, function (response) {
-				self.appInfo = response.data;
-				self.modal('AppInfoModal').show();
-			});
+				self.appInfo = response.data
+				self.modal('AppInfoModal').show()
+			})
 		},
 
 		downloadMessageBody: function (str, ext) {
-			let dl = document.createElement('a');
-			dl.href = "data:text/plain," + encodeURIComponent(str);
-			dl.target = '_blank';
-			dl.download = this.message.ID + '.' + ext;
-			dl.click();
+			let dl = document.createElement('a')
+			dl.href = "data:text/plain," + encodeURIComponent(str)
+			dl.target = '_blank'
+			dl.download = this.message.ID + '.' + ext
+			dl.click()
 		},
 
 		initReleaseModal: function () {
-			this.releaseAddresses = false;
-			let addresses = [];
+			this.releaseAddresses = false
+			let addresses = []
 			for (let i in this.message.To) {
 				addresses.push(this.message.To[i].Address)
 			}
@@ -663,31 +663,31 @@ export default {
 			}
 
 			// include only unique email addresses, regardless of casing
-			let uAddresses = new Map(addresses.map(a => [a.toLowerCase(), a]));
-			this.releaseAddresses = [...uAddresses.values()];
+			let uAddresses = new Map(addresses.map(a => [a.toLowerCase(), a]))
+			this.releaseAddresses = [...uAddresses.values()]
 
-			let self = this;
+			let self = this
 			window.setTimeout(function () {
 				// delay to allow elements to load
-				self.modal('ReleaseModal').show();
+				self.modal('ReleaseModal').show()
 
 				window.setTimeout(function () {
 					document.querySelector('#ReleaseModal input[role="combobox"]').focus()
-				}, 500);
-			}, 300);
+				}, 500)
+			}, 300)
 		},
 
 		setMessageToast: function (m) {
 			// don't display if browser notifications are enabled, or a toast is already displayed
 			if (this.notificationsEnabled || this.toastMessage) {
-				return;
+				return
 			}
 
-			this.toastMessage = m;
+			this.toastMessage = m
 		},
 
 		clearMessageToast: function () {
-			this.toastMessage = false;
+			this.toastMessage = false
 		}
 	}
 }

@@ -1,7 +1,7 @@
 
 <script>
-import Tags from "bootstrap5-tags";
-import commonMixins from '../mixins.js';
+import Tags from "bootstrap5-tags"
+import commonMixins from '../mixins.js'
 
 export default {
 	props: {
@@ -19,19 +19,19 @@ export default {
 	mixins: [commonMixins],
 
 	mounted() {
-		this.addresses = JSON.parse(JSON.stringify(this.releaseAddresses));
+		this.addresses = JSON.parse(JSON.stringify(this.releaseAddresses))
 		this.$nextTick(function () {
-			Tags.init("select[multiple]");
-		});
+			Tags.init("select[multiple]")
+		})
 	},
 
 	methods: {
 		releaseMessage: function () {
-			let self = this;
+			let self = this
 			// set timeout to allow for user clicking send before the tag filter has applied the tag
 			window.setTimeout(function () {
 				if (!self.addresses.length) {
-					return false;
+					return false
 				}
 
 				let data = {
@@ -39,9 +39,9 @@ export default {
 				}
 
 				self.post('api/v1/message/' + self.message.ID + '/release', data, function (response) {
-					self.modal("ReleaseModal").hide();
-				});
-			}, 100);
+					self.modal("ReleaseModal").hide()
+				})
+			}, 100)
 		}
 	}
 }
