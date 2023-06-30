@@ -2,6 +2,23 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.7.0]
+
+### API
+- Ignore SMTP relay error when one of multiple recipients doesn't exist
+- Set raw message Content-Type to UTF-8
+
+### Build
+- Define Vue build options in esbuild
+
+### Libs
+- Update node modules
+- Update Go modules
+
+### UI
+- Theme toggler - auto, light and dark themes
+
+
 ## [v1.6.22]
 
 ### Feature
