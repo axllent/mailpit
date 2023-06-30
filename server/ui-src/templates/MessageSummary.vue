@@ -1,5 +1,5 @@
 <script>
-import commonMixins from '../mixins.js';
+import commonMixins from '../mixins.js'
 
 export default {
 	props: {
@@ -12,7 +12,7 @@ export default {
 
 <template>
 	<div class="card mt-4">
-		<div class="card-body text-muted small">
+		<div class="card-body text-body-secondary small">
 			<p class="card-text">
 				<b>Message date:</b><br>
 				<small>{{ messageDate(message.Date) }}</small>

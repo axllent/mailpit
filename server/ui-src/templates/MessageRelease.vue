@@ -57,19 +57,21 @@ export default {
 			<div class="modal-body">
 				<h6>Send this message to one or more addresses specified below.</h6>
 				<div class="row">
-					<label class="col-sm-2 col-form-label text-muted">From</label>
+					<label class="col-sm-2 col-form-label text-body-secondary">From</label>
 					<div class="col-sm-10">
-						<input type="text" readonly class="form-control-plaintext" :value="message.From.Address">
+						<input type="text" aria-label="From address" readonly class="form-control-plaintext"
+							:value="message.From.Address">
 					</div>
 				</div>
 				<div class="row">
-					<label class=" col-sm-2 col-form-label text-muted">Subject</label>
+					<label class=" col-sm-2 col-form-label text-body-secondary">Subject</label>
 					<div class="col-sm-10">
-						<input type="text" readonly class="form-control-plaintext" :value="message.Subject">
+						<input type="text" aria-label="Subject" readonly class="form-control-plaintext"
+							:value="message.Subject">
 					</div>
 				</div>
 				<div class="row mb-3">
-					<label class="col-sm-2 col-form-label text-muted">Send to</label>
+					<label class="col-sm-2 col-form-label text-body-secondary">Send to</label>
 					<div class="col-sm-10">
 						<select class="form-select tag-selector" v-model="addresses" multiple data-allow-new="true"
 							data-clear-end="true" data-allow-clear="true" data-placeholder="Enter email addresses..."

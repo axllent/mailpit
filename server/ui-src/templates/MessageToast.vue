@@ -1,5 +1,5 @@
 <script>
-import { Toast } from 'bootstrap';
+import { Toast } from 'bootstrap'
 
 export default {
 	props: {
@@ -7,15 +7,15 @@ export default {
 	},
 
 	mounted() {
-		let self = this;
-		let el = document.getElementById('messageToast');
+		let self = this
+		let el = document.getElementById('messageToast')
 		if (el) {
 			el.addEventListener('hidden.bs.toast', () => {
-				self.$emit("clearMessageToast");
+				self.$emit("clearMessageToast")
 			})
 
-			let b = Toast.getOrCreateInstance(el);
-			b.show();
+			let b = Toast.getOrCreateInstance(el)
+			b.show()
 		}
 	}
 }
@@ -33,7 +33,7 @@ export default {
 
 			<div class="toast-body">
 				<div>
-					<a :href="'#' + message.ID" class="d-block text-truncate text-muted">
+					<a :href="'#' + message.ID" class="d-block text-truncate text-body-secondary">
 						<template v-if="message.Subject != ''">{{ message.Subject }}</template>
 						<template v-else>[ no subject ]</template>
 					</a>
