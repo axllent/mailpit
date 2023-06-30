@@ -8,9 +8,9 @@
 
 Mailpit is a multi-platform email testing tool & API for developers.
 
-It acts as both an SMTP server, and provides a web interface to view all captured emails.
+It acts as both an SMTP server, and provides a web interface to view all captured emails. It also contains an API for automated integration testing.
 
-Mailpit is inspired by [MailHog](#why-rewrite-mailhog), but much, much faster.
+Mailpit is inspired by [MailHog](#why-rewrite-mailhog), but modern and much, much faster.
 
 ![Mailpit](https://raw.githubusercontent.com/axllent/mailpit/develop/docs/screenshot.png)
 
@@ -20,6 +20,7 @@ Mailpit is inspired by [MailHog](#why-rewrite-mailhog), but much, much faster.
 - Runs entirely from a single binary, no installation required
 - SMTP server (default `0.0.0.0:1025`)
 - Web UI to view emails (formatted HTML, highlighted HTML source, text, headers, raw source and MIME attachments including image thumbnails)
+- Light & dark web UI theme with auto-detect
 - Mobile and tablet HTML preview toggle in desktop mode
 - Advanced mail search ([see wiki](https://github.com/axllent/mailpit/wiki/Mail-search))
 - Message tagging ([see wiki](https://github.com/axllent/mailpit/wiki/Tagging))
@@ -64,7 +65,7 @@ Static binaries can always be found on the [releases](https://github.com/axllent
 
 ### Docker
 
-See [Docker instructions](https://github.com/axllent/mailpit/wiki/Docker-images).
+See [Docker instructions](https://github.com/axllent/mailpit/wiki/Docker-images) for 386, amd64 & arm64 images.
 
 
 ### Compile from source
@@ -84,8 +85,8 @@ Mailpit's SMTP server (by default on port 1025), so you will likely need to conf
 
 ## Why rewrite MailHog?
 
-I had been using MailHog for a few years to intercept and test emails generated from several projects. MailHog has a number of performance issues, many of the frontend and Go modules are horribly out of date, and it is not actively developed.
+I had been using MailHog for a few years to intercept and test emails, but experienced a number of severe performance issues. Many of the frontend and Go libraries are very out of date, and the project [is no longer maintained](https://github.com/mailhog/MailHog/issues/442#issuecomment-1493415258).
 
-Initially I tried to upgrade a fork of MailHog (both the UI as well as the HTTP server & API), but soon discovered that it is (with all due respect to its authors) poorly designed. It is in my opinion over-engineered (split over 9 separate projects), and performs very poorly when dealing with large amounts of emails or processing emails with an attachments (a single email with a 3MB attachment can take over a minute to ingest). Finally, the API transmits a lot of duplicate and unnecessary data on every browser request, and there is no HTTP compression.
+Initially I tried to upgrade a fork of MailHog (the UI, the HTTP server and the API), but discovered that it is (with all due respect to its authors) far too complex. I found it over-engineered (split over 9 separate projects), and performs very poorly when dealing with large amounts of emails or emails with attachments (a single email with a 3MB attachment can take over a minute to ingest). Finally the API transmits a lot of duplicate & irrelevant data on every browser request, all without any HTTP compression.
 
 In order to improve it I felt it needed to be completely rewritten, and so Mailpit was born.
