@@ -304,7 +304,7 @@ func DownloadRaw(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "text/plain")
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	if dl == "1" {
 		w.Header().Set("Content-Disposition", "attachment; filename=\""+id+".eml\"")
 	}
@@ -495,7 +495,7 @@ func SetTags(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write([]byte("ok"))
 }
 
-// ReleaseMessage (method: POST) will release a message via a preconfigured external SMTP server.
+// ReleaseMessage (method: POST) will release a message via a pre-configured external SMTP server.
 // If no IDs are provided then all messages are updated.
 func ReleaseMessage(w http.ResponseWriter, r *http.Request) {
 	// swagger:route POST /api/v1/message/{ID}/release message Release

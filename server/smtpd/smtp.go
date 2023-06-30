@@ -79,7 +79,7 @@ func Send(from string, to []string, msg []byte) error {
 
 	if a != nil {
 		if err = c.Auth(a); err != nil {
-			return fmt.Errorf("error authenticating: %s", err.Error())
+			return fmt.Errorf("error response to AUTH command: %s", err.Error())
 		}
 	}
 	if err = c.Mail(from); err != nil {
@@ -88,7 +88,7 @@ func Send(from string, to []string, msg []byte) error {
 
 	for _, addr := range recipients {
 		if err = c.Rcpt(addr); err != nil {
-			return fmt.Errorf("error response to RCPT command for %s: %s", addr, err.Error())
+			logger.Log().Warnf("error response to RCPT command for %s: %s", addr, err.Error())
 		}
 	}
 

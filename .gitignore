@@ -4,5 +4,6 @@
 /server/ui/dist
 /Makefile
 /mailpit*
+/.idea
 *.old
 *.db

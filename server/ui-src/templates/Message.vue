@@ -1,10 +1,10 @@
 
 <script>
-import commonMixins from '../mixins.js';
-import Prism from "prismjs";
-import Tags from "bootstrap5-tags";
-import Attachments from './Attachments.vue';
-import Headers from './Headers.vue';
+import commonMixins from '../mixins.js'
+import Prism from "prismjs"
+import Tags from "bootstrap5-tags"
+import Attachments from './Attachments.vue'
+import Headers from './Headers.vue'
 
 export default {
 	props: {
@@ -14,7 +14,7 @@ export default {
 
 	components: {
 		Attachments,
-		Headers
+		Headers,
 	},
 
 	mixins: [commonMixins],
@@ -41,20 +41,20 @@ export default {
 	watch: {
 		message: {
 			handler() {
-				let self = this;
-				self.showTags = false;
-				self.messageTags = self.message.Tags;
-				self.allTags = self.existingTags;
-				self.loadHeaders = false;
+				let self = this
+				self.showTags = false
+				self.messageTags = self.message.Tags
+				self.allTags = self.existingTags
+				self.loadHeaders = false
 				self.scaleHTMLPreview = 'display';// default view
 				// delay to select first tab and add HTML highlighting (prev/next)
 				self.$nextTick(function () {
-					self.renderUI();
-					self.showTags = true;
+					self.renderUI()
+					self.showTags = true
 					self.$nextTick(function () {
-						Tags.init("select[multiple]");
-					});
-				});
+						Tags.init("select[multiple]")
+					})
+				})
 			},
 			// force eager callback execution
 			immediate: true
@@ -62,97 +62,112 @@ export default {
 		messageTags() {
 			// save changed to tags
 			if (this.showTags) {
-				this.saveTags();
+				this.saveTags()
 			}
 		},
 		scaleHTMLPreview() {
 			if (this.scaleHTMLPreview == 'display') {
-				let self = this;
+				let self = this
 				window.setTimeout(function () {
-					self.resizeIframes();
-				}, 500);
+					self.resizeIframes()
+				}, 500)
 			}
 		}
 	},
 
 	mounted() {
-		let self = this;
-		self.showTags = false;
-		self.allTags = self.existingTags;
-		window.addEventListener("resize", self.resizeIframes);
-		self.renderUI();
+		let self = this
+		self.showTags = false
+		self.allTags = self.existingTags
+		window.addEventListener("resize", self.resizeIframes)
+		self.renderUI()
 
-		let headersTab = document.getElementById('nav-headers-tab');
+		let headersTab = document.getElementById('nav-headers-tab')
 		headersTab.addEventListener('shown.bs.tab', function (event) {
-			self.loadHeaders = true;
-		});
+			self.loadHeaders = true
+		})
 
-		let rawTab = document.getElementById('nav-raw-tab');
+		let rawTab = document.getElementById('nav-raw-tab')
 		rawTab.addEventListener('shown.bs.tab', function (event) {
-			self.srcURI = 'api/v1/message/' + self.message.ID + '/raw';
-			self.resizeIframes();
-		});
+			self.srcURI = 'api/v1/message/' + self.message.ID + '/raw'
+			self.resizeIframes()
+		})
 
-		self.showTags = true;
+		self.showTags = true
 		self.$nextTick(function () {
-			Tags.init("select[multiple]");
-		});
+			Tags.init("select[multiple]")
+		})
 	},
 
 	unmounted: function () {
-		window.removeEventListener("resize", this.resizeIframes);
+		window.removeEventListener("resize", this.resizeIframes)
 	},
 
 	methods: {
 		renderUI: function () {
-			let self = this;
+			let self = this
 			// click the first non-disabled tab
-			document.querySelector('#nav-tab button:not([disabled])').click();
-			document.activeElement.blur(); // blur focus
-			document.getElementById('message-view').scrollTop = 0;
+			document.querySelector('#nav-tab button:not([disabled])').click()
+			document.activeElement.blur() // blur focus
+			document.getElementById('message-view').scrollTop = 0
 
 			// delay 0.2s until vue has rendered the iframe content
 			window.setTimeout(function () {
-				let p = document.getElementById('preview-html');
+				let p = document.getElementById('preview-html')
 				if (p) {
 					// make links open in new window
-					let anchorEls = p.contentWindow.document.body.querySelectorAll('a');
+					let anchorEls = p.contentWindow.document.body.querySelectorAll('a')
 					for (var i = 0; i < anchorEls.length; i++) {
-						let anchorEl = anchorEls[i];
-						let href = anchorEl.getAttribute('href');
+						let anchorEl = anchorEls[i]
+						let href = anchorEl.getAttribute('href')
 
 						if (href && href.match(/^http/)) {
-							anchorEl.setAttribute('target', '_blank');
+							anchorEl.setAttribute('target', '_blank')
 						}
 					}
-					self.resizeIframes();
+					self.resizeIframes()
 				}
-			}, 200);
+			}, 200)
 
 			// html highlighting
-			window.Prism = window.Prism || {};
-			window.Prism.manual = true;
-			Prism.highlightAll();
+			window.Prism = window.Prism || {}
+			window.Prism.manual = true
+			Prism.highlightAll()
 		},
 
 		resizeIframe: function (el) {
-			let i = el.target;
-			i.style.height = i.contentWindow.document.body.scrollHeight + 50 + 'px';
+			let i = el.target
+			i.style.height = i.contentWindow.document.body.scrollHeight + 50 + 'px'
 		},
 
 		resizeIframes: function () {
 			if (this.scaleHTMLPreview != 'display') {
-				return;
+				return
 			}
-			let h = document.getElementById('preview-html');
+			let h = document.getElementById('preview-html')
 			if (h) {
-				h.style.height = h.contentWindow.document.body.scrollHeight + 50 + 'px';
+				h.style.height = h.contentWindow.document.body.scrollHeight + 50 + 'px'
 			}
 
 		},
 
+		// set the iframe body & text colors based on current theme
+		initRawIframe: function (el) {
+			let bodyStyles = window.getComputedStyle(document.body, null)
+			let bg = bodyStyles.getPropertyValue('background-color')
+			let txt = bodyStyles.getPropertyValue('color')
+
+			let body = el.target.contentWindow.document.querySelector('body')
+			if (body) {
+				body.style.color = txt
+				body.style.backgroundColor = bg
+			}
+
+			this.resizeIframe(el)
+		},
+
 		saveTags: function () {
-			let self = this;
+			let self = this
 
 			var data = {
 				ids: [this.message.ID],
@@ -160,9 +175,9 @@ export default {
 			}
 
 			self.put('api/v1/tags', data, function (response) {
-				self.scrollInPlace = true;
-				self.$emit('loadMessages');
-			});
+				self.scrollInPlace = true
+				self.$emit('loadMessages')
+			})
 		},
 
 		// Convert plain text to HTML including anchor links
@@ -195,7 +210,7 @@ export default {
 </script>
 
 <template>
-	<div v-if="message" id="message-view" class="mh-100" style="overflow-y: scroll;">
+	<div v-if="message" id="message-view" class="px-2 px-md-0 mh-100" style="overflow-y: scroll;">
 		<div class="row w-100">
 			<div class="col-md">
 				<table class="messageHeaders">
@@ -221,7 +236,7 @@ export default {
 									<template v-if="i > 0">, </template>
 									<span class="text-nowrap">{{ t.Name + " &lt;" + t.Address + "&gt;" }}</span>
 								</span>
-								<span v-else class="text-muted">[Undisclosed recipients]</span>
+								<span v-else class="text-body-secondary">[Undisclosed recipients]</span>
 							</td>
 						</tr>
 						<tr v-if="message.Cc && message.Cc.length" class="small">
@@ -243,7 +258,7 @@ export default {
 						</tr>
 						<tr v-if="message.ReplyTo && message.ReplyTo.length" class="small">
 							<th class="text-nowrap">Reply-To</th>
-							<td class="privacy text-muted">
+							<td class="privacy text-body-secondary">
 								<span v-for="(t, i) in message.ReplyTo">
 									<template v-if="i > 0">,</template>
 									{{ t.Name + " &lt;" + t.Address + "&gt;" }} </span>
@@ -251,13 +266,13 @@ export default {
 						</tr>
 						<tr v-if="message.ReturnPath && message.ReturnPath != message.From.Address" class="small">
 							<th class="text-nowrap">Return-Path</th>
-							<td class="privacy text-muted">&lt;{{ message.ReturnPath }}&gt;</td>
+							<td class="privacy text-body-secondary">&lt;{{ message.ReturnPath }}&gt;</td>
 						</tr>
 						<tr>
 							<th class="small">Subject</th>
 							<td>
 								<strong v-if="message.Subject != ''">{{ message.Subject }}</strong>
-								<small class="text-muted" v-else>[ no subject ]</small>
+								<small class="text-body-secondary" v-else>[ no subject ]</small>
 							</td>
 						</tr>
 						<tr class="d-md-none small">
@@ -317,8 +332,7 @@ export default {
 
 				<div class="d-none d-lg-block ms-auto me-2" v-if="showMobileBtns">
 					<template v-for="  vals, key   in   responsiveSizes  ">
-						<button class="btn" :class="scaleHTMLPreview == key ? 'btn-outline-primary' : ''"
-							:disabled="scaleHTMLPreview == key" :title="'Switch to ' + key + ' view'"
+						<button class="btn" :disabled="scaleHTMLPreview == key" :title="'Switch to ' + key + ' view'"
 							v-on:click=" scaleHTMLPreview = key">
 							<i class="bi" :class="'bi-' + key"></i>
 						</button>
@@ -352,8 +366,8 @@ export default {
 				<Headers v-if="loadHeaders" :message="message"></Headers>
 			</div>
 			<div class="tab-pane fade" id="nav-raw" role="tabpanel" aria-labelledby="nav-raw-tab" tabindex="0">
-				<iframe v-if="srcURI" :src="srcURI" v-on:load="resizeIframe" frameborder="0"
-					style="width: 100%; height: 300px; background: #fff; color: #15141A"></iframe>
+				<iframe v-if="srcURI" :src="srcURI" v-on:load="initRawIframe" frameborder="0"
+					style="width: 100%; height: 300px"></iframe>
 			</div>
 		</div>
 	</div>

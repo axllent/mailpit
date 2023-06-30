@@ -1,7 +1,7 @@
 
 <script>
-import Tags from "bootstrap5-tags";
-import commonMixins from '../mixins.js';
+import Tags from "bootstrap5-tags"
+import commonMixins from '../mixins.js'
 
 export default {
 	props: {
@@ -19,19 +19,19 @@ export default {
 	mixins: [commonMixins],
 
 	mounted() {
-		this.addresses = JSON.parse(JSON.stringify(this.releaseAddresses));
+		this.addresses = JSON.parse(JSON.stringify(this.releaseAddresses))
 		this.$nextTick(function () {
-			Tags.init("select[multiple]");
-		});
+			Tags.init("select[multiple]")
+		})
 	},
 
 	methods: {
 		releaseMessage: function () {
-			let self = this;
+			let self = this
 			// set timeout to allow for user clicking send before the tag filter has applied the tag
 			window.setTimeout(function () {
 				if (!self.addresses.length) {
-					return false;
+					return false
 				}
 
 				let data = {
@@ -39,9 +39,9 @@ export default {
 				}
 
 				self.post('api/v1/message/' + self.message.ID + '/release', data, function (response) {
-					self.modal("ReleaseModal").hide();
-				});
-			}, 100);
+					self.modal("ReleaseModal").hide()
+				})
+			}, 100)
 		}
 	}
 }
@@ -57,19 +57,21 @@ export default {
 			<div class="modal-body">
 				<h6>Send this message to one or more addresses specified below.</h6>
 				<div class="row">
-					<label class="col-sm-2 col-form-label text-muted">From</label>
+					<label class="col-sm-2 col-form-label text-body-secondary">From</label>
 					<div class="col-sm-10">
-						<input type="text" readonly class="form-control-plaintext" :value="message.From.Address">
+						<input type="text" aria-label="From address" readonly class="form-control-plaintext"
+							:value="message.From.Address">
 					</div>
 				</div>
 				<div class="row">
-					<label class=" col-sm-2 col-form-label text-muted">Subject</label>
+					<label class=" col-sm-2 col-form-label text-body-secondary">Subject</label>
 					<div class="col-sm-10">
-						<input type="text" readonly class="form-control-plaintext" :value="message.Subject">
+						<input type="text" aria-label="Subject" readonly class="form-control-plaintext"
+							:value="message.Subject">
 					</div>
 				</div>
 				<div class="row mb-3">
-					<label class="col-sm-2 col-form-label text-muted">Send to</label>
+					<label class="col-sm-2 col-form-label text-body-secondary">Send to</label>
 					<div class="col-sm-10">
 						<select class="form-select tag-selector" v-model="addresses" multiple data-allow-new="true"
 							data-clear-end="true" data-allow-clear="true" data-placeholder="Enter email addresses..."
