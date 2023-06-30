@@ -14,6 +14,10 @@ const ctx = await esbuild.context(
         bundle: true,
         minify: doMinify,
         sourcemap: false,
+        define: {
+            '__VUE_OPTIONS_API__': 'true',
+            '__VUE_PROD_DEVTOOLS__': 'false',
+        },
         outdir: "server/ui/dist/",
         plugins: [pluginVue(), sassPlugin()],
         loader: {
