@@ -74,7 +74,7 @@ func mailHandler(origin net.Addr, from string, to []string, data []byte) error {
 				if replaced {
 					return r
 				}
-				replaced = true // only replace first occurence
+				replaced = true // only replace first occurrence
 
 				return re.ReplaceAll(r, []byte("${1}Bcc: "+strings.Join(missingAddresses, ", ")+", "))
 			})
