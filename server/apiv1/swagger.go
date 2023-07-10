@@ -67,7 +67,7 @@ type releaseMessageRequest struct {
 	To []string `json:"to"`
 }
 
-// Binary data reponse inherits the attachment's content type
+// Binary data response inherits the attachment's content type
 // swagger:response BinaryResponse
 type binaryResponse struct {
 	// in: body
@@ -81,7 +81,7 @@ type textResponse struct {
 	Body string
 }
 
-// Error reponse
+// Error response
 // swagger:response ErrorResponse
 type errorResponse struct {
 	// The error message
@@ -89,10 +89,10 @@ type errorResponse struct {
 	Body string
 }
 
-// Plain text "ok" reponse
+// Plain text "ok" response
 // swagger:response OKResponse
 type okResponse struct {
-	// Default reponse
+	// Default response
 	// in: body
 	Body string
 }
