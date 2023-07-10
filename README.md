@@ -53,6 +53,9 @@ Install Mailpit with `brew install mailpit`.
 
 To run automatically run mailpit in the background, run `brew services start mailpit`.
 
+### Install via package manager (Linux)
+
+* Arch Linux: Available in the AUR as `mailpit`
 
 ### Install via bash script (Linux & Mac)
 
