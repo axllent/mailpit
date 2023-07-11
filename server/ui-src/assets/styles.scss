@@ -56,6 +56,12 @@
     z-index: 1500;
 }
 
+@include color-mode(dark) {
+    #loading {
+        background: rgba(0, 0, 0, 0.4);
+    }
+}
+
 .message {
     &.read {
         color: $text-muted;
@@ -72,7 +78,11 @@
 #nav-plain-text .text-view,
 #nav-source {
     white-space: pre;
-    font-family: Courier New, Courier, System, fixed-width;
+    font-family:
+        Courier New,
+        Courier,
+        System,
+        fixed-width;
     font-size: 0.85em;
 }
 
