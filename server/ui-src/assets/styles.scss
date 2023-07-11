@@ -92,6 +92,10 @@
     font-size: 0.85em;
 }
 
+#nav-html-source pre[class*="language-"] code {
+    white-space: pre-wrap;
+}
+
 #nav-plain-text .text-view {
     white-space: pre-wrap;
 }
