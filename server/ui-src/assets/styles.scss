@@ -56,9 +56,15 @@
     z-index: 1500;
 }
 
+// dark mode adjustments
 @include color-mode(dark) {
     #loading {
         background: rgba(0, 0, 0, 0.4);
+    }
+
+    .token.tag,
+    .token.property {
+        color: #ee6969;
     }
 }
 
