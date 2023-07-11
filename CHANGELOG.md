@@ -2,6 +2,18 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.7.1]
+
+### Libs
+- Update Go modules
+- Update node modules
+
+### UI
+- Wrap HTML source lines
+- Dark mode color adjustments
+- Update dark mode loading background color
+
+
 ## [v1.7.0]
 
 ### API
