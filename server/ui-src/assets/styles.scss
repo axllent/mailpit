@@ -56,6 +56,18 @@
     z-index: 1500;
 }
 
+// dark mode adjustments
+@include color-mode(dark) {
+    #loading {
+        background: rgba(0, 0, 0, 0.4);
+    }
+
+    .token.tag,
+    .token.property {
+        color: #ee6969;
+    }
+}
+
 .message {
     &.read {
         color: $text-muted;
@@ -72,8 +84,16 @@
 #nav-plain-text .text-view,
 #nav-source {
     white-space: pre;
-    font-family: Courier New, Courier, System, fixed-width;
+    font-family:
+        Courier New,
+        Courier,
+        System,
+        fixed-width;
     font-size: 0.85em;
+}
+
+#nav-html-source pre[class*="language-"] code {
+    white-space: pre-wrap;
 }
 
 #nav-plain-text .text-view {
