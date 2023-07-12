@@ -489,7 +489,7 @@
     },
     "/api/v1/webui": {
       "get": {
-        "description": "Returns configuration settings for the web UI.",
+        "description": "Returns configuration settings for the web UI.\nIntended for web UI only!",
         "produces": [
           "application/json"
         ],
@@ -789,12 +789,6 @@
       "description": "MessagesSummary is a summary of a list of messages",
       "type": "object",
       "properties": {
-        "count": {
-          "description": "Number of results returned",
-          "type": "integer",
-          "format": "int64",
-          "x-go-name": "Count"
-        },
         "messages": {
           "description": "Messages summary\nin:body",
           "type": "array",
@@ -802,6 +796,12 @@
             "$ref": "#/definitions/MessageSummary"
           },
           "x-go-name": "Messages"
+        },
+        "messages_count": {
+          "description": "Total number of messages matching current query",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "MessagesCount"
         },
         "start": {
           "description": "Pagination offset",
@@ -926,10 +926,10 @@
   },
   "responses": {
     "BinaryResponse": {
-      "description": "Binary data reponse inherits the attachment's content type"
+      "description": "Binary data response inherits the attachment's content type"
     },
     "ErrorResponse": {
-      "description": "Error reponse"
+      "description": "Error response"
     },
     "InfoResponse": {
       "description": "Application information",
@@ -949,7 +949,7 @@
       }
     },
     "OKResponse": {
-      "description": "Plain text \"ok\" reponse"
+      "description": "Plain text \"ok\" response"
     },
     "TextResponse": {
       "description": "Plain text response"
