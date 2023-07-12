@@ -384,9 +384,14 @@ func List(start, limit int) ([]MessageSummary, error) {
 // The search is broken up by segments (exact phrases can be quoted), and interprets specific terms such as:
 // is:read, is:unread, has:attachment, to:<term>, from:<term> & subject:<term>
 // Negative searches also also included by prefixing the search term with a `-` or `!`
-func Search(search string, start, limit int) ([]MessageSummary, error) {
+func Search(search string, start, limit int) ([]MessageSummary, int, error) {
 	results := []MessageSummary{}
+	allResults := []MessageSummary{}
 	tsStart := time.Now()
+	nrResults := 0
+	if limit < 0 {
+		limit = 50
+	}
 
 	s := strings.ToLower(search)
 	// add another quote if missing closing quote
@@ -398,11 +403,11 @@ func Search(search string, start, limit int) ([]MessageSummary, error) {
 	p := shellwords.NewParser()
 	args, err := p.Parse(s)
 	if err != nil {
-		return results, errors.New("Your search contains invalid characters")
+		return results, nrResults, errors.New("Your search contains invalid characters")
 	}
 
 	// generate the SQL based on arguments
-	q := searchParser(args, start, limit)
+	q := searchParser(args)
 
 	if err := q.QueryAndClose(nil, db, func(row *sql.Rows) {
 		var created int64
@@ -440,18 +445,29 @@ func Search(search string, start, limit int) ([]MessageSummary, error) {
 		em.Attachments = attachments
 		em.Read = read == 1
 
-		results = append(results, em)
+		allResults = append(allResults, em)
 	}); err != nil {
-		return results, err
+		return results, nrResults, err
+	}
+
+	dbLastAction = time.Now()
+
+	nrResults = len(allResults)
+
+	if nrResults > start {
+		end := nrResults
+		if nrResults >= start+limit {
+			end = start + limit
+		}
+
+		results = allResults[start:end]
 	}
 
 	elapsed := time.Since(tsStart)
 
 	logger.Log().Debugf("[db] search for \"%s\" in %s", search, elapsed)
 
-	dbLastAction = time.Now()
-
-	return results, err
+	return results, nrResults, err
 }
 
 // GetMessage returns a Message generated from the mailbox_data collection.

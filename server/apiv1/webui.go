@@ -32,6 +32,7 @@ func WebUIConfig(w http.ResponseWriter, r *http.Request) {
 	// # Get web UI configuration
 	//
 	// Returns configuration settings for the web UI.
+	// Intended for web UI only!
 	//
 	//	Produces:
 	//	- application/json

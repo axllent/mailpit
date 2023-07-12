@@ -23,11 +23,12 @@ export default {
 		return {
 			srcURI: false,
 			iframes: [], // for resizing
-			showTags: false, // to force rerendering of component
+			showTags: false, // to force re-rendering of component
+			canSaveTags: false, // prevent auto-saving tags on render
 			messageTags: [],
 			allTags: [],
 			loadHeaders: false,
-			showMobileBtns: false,
+			showMobileButtons: false,
 			scaleHTMLPreview: 'display',
 			// keys names match bootstrap icon names 
 			responsiveSizes: {
@@ -39,20 +40,25 @@ export default {
 	},
 
 	watch: {
+		// handle changes to the URL messageID
 		message: {
 			handler() {
 				let self = this
 				self.showTags = false
+				self.canSaveTags = false
 				self.messageTags = self.message.Tags
 				self.allTags = self.existingTags
 				self.loadHeaders = false
-				self.scaleHTMLPreview = 'display';// default view
+				self.scaleHTMLPreview = 'display' // default view
 				// delay to select first tab and add HTML highlighting (prev/next)
 				self.$nextTick(function () {
 					self.renderUI()
 					self.showTags = true
 					self.$nextTick(function () {
 						Tags.init("select[multiple]")
+						window.setTimeout(function () {
+							self.canSaveTags = true
+						}, 200)
 					})
 				})
 			},
@@ -60,8 +66,8 @@ export default {
 			immediate: true
 		},
 		messageTags() {
-			// save changed to tags
-			if (this.showTags) {
+			// save changes to tags
+			if (this.canSaveTags) {
 				this.saveTags()
 			}
 		},
@@ -78,6 +84,7 @@ export default {
 	mounted() {
 		let self = this
 		self.showTags = false
+		self.canSaveTags = false
 		self.allTags = self.existingTags
 		window.addEventListener("resize", self.resizeIframes)
 		self.renderUI()
@@ -95,7 +102,12 @@ export default {
 
 		self.showTags = true
 		self.$nextTick(function () {
-			Tags.init("select[multiple]")
+			self.$nextTick(function () {
+				Tags.init('select[multiple]')
+				window.setTimeout(function () {
+					self.canSaveTags = true
+				}, 200)
+			})
 		})
 	},
 
@@ -104,12 +116,24 @@ export default {
 	},
 
 	methods: {
+		isHTMLTabSelected: function () {
+			this.showMobileButtons = this.$refs.navhtml
+				&& this.$refs.navhtml.classList.contains('active')
+		},
 		renderUI: function () {
 			let self = this
 			// click the first non-disabled tab
 			document.querySelector('#nav-tab button:not([disabled])').click()
 			document.activeElement.blur() // blur focus
 			document.getElementById('message-view').scrollTop = 0
+
+			self.isHTMLTabSelected()
+
+			document.querySelectorAll('button[data-bs-toggle="tab"]').forEach(function (listObj) {
+				listObj.addEventListener('shown.bs.tab', function (event) {
+					self.isHTMLTabSelected()
+				})
+			})
 
 			// delay 0.2s until vue has rendered the iframe content
 			window.setTimeout(function () {
@@ -311,29 +335,30 @@ export default {
 		<nav>
 			<div class="nav nav-tabs my-3" id="nav-tab" role="tablist">
 				<button class="nav-link" id="nav-html-tab" data-bs-toggle="tab" data-bs-target="#nav-html" type="button"
-					role="tab" aria-controls="nav-html" aria-selected="true" v-if="message.HTML"
-					v-on:click="showMobileBtns = true; resizeIframes()">HTML</button>
+					role="tab" aria-controls="nav-html" aria-selected="true" v-if="message.HTML" ref="navhtml"
+					v-on:click="resizeIframes()">HTML</button>
 				<button class="nav-link" id="nav-html-source-tab" data-bs-toggle="tab" data-bs-target="#nav-html-source"
-					type="button" role="tab" aria-controls="nav-html-source" aria-selected="false" v-if="message.HTML"
-					v-on:click=" showMobileBtns = false">
+					type="button" role="tab" aria-controls="nav-html-source" aria-selected="false" v-if="message.HTML">
 					HTML <span class="d-sm-none">Src</span><span class="d-none d-sm-inline">Source</span>
 				</button>
 				<button class="nav-link" id="nav-plain-text-tab" data-bs-toggle="tab" data-bs-target="#nav-plain-text"
 					type="button" role="tab" aria-controls="nav-plain-text" aria-selected="false"
-					:class="message.HTML == '' ? 'show' : ''" v-on:click=" showMobileBtns = false">Text</button>
+					:class="message.HTML == '' ? 'show' : ''">
+					Text
+				</button>
 				<button class="nav-link" id="nav-headers-tab" data-bs-toggle="tab" data-bs-target="#nav-headers"
-					type="button" role="tab" aria-controls="nav-headers" aria-selected="false"
-					v-on:click=" showMobileBtns = false">
+					type="button" role="tab" aria-controls="nav-headers" aria-selected="false">
 					<span class="d-sm-none">Hdrs</span><span class="d-none d-sm-inline">Headers</span>
 				</button>
 				<button class="nav-link" id="nav-raw-tab" data-bs-toggle="tab" data-bs-target="#nav-raw" type="button"
-					role="tab" aria-controls="nav-raw" aria-selected="false"
-					v-on:click=" showMobileBtns = false">Raw</button>
+					role="tab" aria-controls="nav-raw" aria-selected="false">
+					Raw
+				</button>
 
-				<div class="d-none d-lg-block ms-auto me-2" v-if="showMobileBtns">
-					<template v-for="  vals, key   in   responsiveSizes  ">
+				<div class="d-none d-lg-block ms-auto me-2" v-if="showMobileButtons">
+					<template v-for="vals, key in responsiveSizes">
 						<button class="btn" :disabled="scaleHTMLPreview == key" :title="'Switch to ' + key + ' view'"
-							v-on:click=" scaleHTMLPreview = key">
+							v-on:click="scaleHTMLPreview = key">
 							<i class="bi" :class="'bi-' + key"></i>
 						</button>
 					</template>

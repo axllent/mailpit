@@ -62,10 +62,11 @@ func GetMessages(w http.ResponseWriter, r *http.Request) {
 
 	res.Start = start
 	res.Messages = messages
-	res.Count = len(messages)
+	res.Count = len(messages) // legacy - now undocumented in API specs
 	res.Total = stats.Total
 	res.Unread = stats.Unread
 	res.Tags = stats.Tags
+	res.MessagesCount = stats.Total
 
 	bytes, _ := json.Marshal(res)
 	w.Header().Add("Content-Type", "application/json")
@@ -109,7 +110,7 @@ func Search(w http.ResponseWriter, r *http.Request) {
 
 	start, limit := getStartLimit(r)
 
-	messages, err := storage.Search(search, start, limit)
+	messages, results, err := storage.Search(search, start, limit)
 	if err != nil {
 		httpError(w, err.Error())
 		return
@@ -121,8 +122,9 @@ func Search(w http.ResponseWriter, r *http.Request) {
 
 	res.Start = start
 	res.Messages = messages
-	res.Count = len(messages)
+	res.Count = results // legacy - now undocumented in API specs
 	res.Total = stats.Total
+	res.MessagesCount = results
 	res.Unread = stats.Unread
 	res.Tags = stats.Tags
 
