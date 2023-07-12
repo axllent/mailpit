@@ -29,7 +29,7 @@ List messages in the mailbox. Messages are returned in the order of latest recei
 {
   "total": 500,
   "unread": 500,
-  "count": 50,
+  "messages_count": 50,
   "start": 0,
   "tags": ["test"],
   "messages": [
@@ -69,7 +69,7 @@ List messages in the mailbox. Messages are returned in the order of latest recei
 
 - `total` - Total messages in mailbox
 - `unread` - Total unread messages in mailbox
-- `count` - Number of messages returned in request
+- `messages_count` - Total number of messages in mailbox
 - `start` - The offset (default `0`) for pagination
 - `Read` - The read/unread status of the message
 - `From` - Name & Address, or null if none
