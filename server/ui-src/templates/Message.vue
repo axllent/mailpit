@@ -190,6 +190,11 @@ export default {
 			this.resizeIframe(el)
 		},
 
+		sanitizeHTML: function (h) {
+			// remove <base/> tag if set
+			return h.replace(/<base .*>/mi, '')
+		},
+
 		saveTags: function () {
 			let self = this
 
@@ -370,7 +375,7 @@ export default {
 			<div v-if="message.HTML != ''" class="tab-pane fade show" id="nav-html" role="tabpanel"
 				aria-labelledby="nav-html-tab" tabindex="0">
 				<div id="responsive-view" :class="scaleHTMLPreview" :style="responsiveSizes[scaleHTMLPreview]">
-					<iframe target-blank="" class="tab-pane d-block" id="preview-html" :srcdoc="message.HTML"
+					<iframe target-blank="" class="tab-pane d-block" id="preview-html" :srcdoc="sanitizeHTML(message.HTML)"
 						v-on:load="resizeIframe" frameborder="0" style="width: 100%; height: 100%;">
 					</iframe>
 				</div>
