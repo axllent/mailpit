@@ -46,7 +46,7 @@ Mailpit runs as a single binary and can be installed in different ways:
 
 ### Install via Brew (Mac)
 
-Add the repository to your taps with `brew tap axllent/apps`, and then install Mailpit with `brew install mailpit`.
+Install Mailpit with `brew install mailpit`.
 
 
 ### Install via bash script (Linux & Mac)
