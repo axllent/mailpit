@@ -6,7 +6,7 @@ import commonMixins from '../mixins.js'
 export default {
 	props: {
 		message: Object,
-		relayConfig: Object,
+		uiConfig: Object,
 		releaseAddresses: Array
 	},
 
@@ -85,16 +85,16 @@ export default {
 						<div class="invalid-feedback">Invalid email address</div>
 					</div>
 				</div>
-				<div class="form-text text-center" v-if="relayConfig.MessageRelay.RecipientAllowlist != ''">
+				<div class="form-text text-center" v-if="uiConfig.MessageRelay.RecipientAllowlist != ''">
 					Note: A recipient allowlist has been configured. Any mail address not matching it will be rejected.
 					<br class="d-none d-md-inline">
-					Configured allowlist: <b>{{ relayConfig.MessageRelay.RecipientAllowlist }}</b>
+					Configured allowlist: <b>{{ uiConfig.MessageRelay.RecipientAllowlist }}</b>
 				</div>
 				<div class="form-text text-center">
 					Note: For testing purposes, a unique Message-Id will be generated on send.
 					<br class="d-none d-md-inline">
 					SMTP delivery failures will bounce back to
-					<b v-if="relayConfig.MessageRelay.ReturnPath != ''">{{ relayConfig.MessageRelay.ReturnPath }}</b>
+					<b v-if="uiConfig.MessageRelay.ReturnPath != ''">{{ uiConfig.MessageRelay.ReturnPath }}</b>
 					<b v-else>{{ message.ReturnPath }}</b>.
 				</div>
 			</div>

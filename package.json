@@ -5,7 +5,8 @@
   "scripts": {
     "build": "node esbuild.config.mjs",
     "watch": "WATCH=true node esbuild.config.mjs",
-    "package": "MINIFY=true node esbuild.config.mjs"
+    "package": "MINIFY=true node esbuild.config.mjs",
+    "update-caniemail": "wget -O utils/html-check/caniemail-data.json https://www.caniemail.com/api/data.json"
   },
   "dependencies": {
     "axios": "^1.2.1",
@@ -17,7 +18,8 @@
     "prismjs": "^1.29.0",
     "rapidoc": "^9.3.4",
     "tinycon": "^0.6.8",
-    "vue": "^3.2.13"
+    "vue": "^3.2.13",
+    "vue-css-donut-chart": "^2.0.0"
   },
   "devDependencies": {
     "@popperjs/core": "^2.11.5",

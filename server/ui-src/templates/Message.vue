@@ -5,16 +5,19 @@ import Prism from "prismjs"
 import Tags from "bootstrap5-tags"
 import Attachments from './Attachments.vue'
 import Headers from './Headers.vue'
+import HTMLCheck from './MessageHTMLCheck.vue'
 
 export default {
 	props: {
 		message: Object,
-		existingTags: Array
+		existingTags: Array,
+		uiConfig: Object
 	},
 
 	components: {
 		Attachments,
 		Headers,
+		HTMLCheck,
 	},
 
 	mixins: [commonMixins],
@@ -28,6 +31,8 @@ export default {
 			messageTags: [],
 			allTags: [],
 			loadHeaders: false,
+			htmlScore: false,
+			htmlScoreColor: false,
 			showMobileButtons: false,
 			scaleHTMLPreview: 'display',
 			// keys names match bootstrap icon names 
@@ -75,7 +80,7 @@ export default {
 			if (this.scaleHTMLPreview == 'display') {
 				let self = this
 				window.setTimeout(function () {
-					self.resizeIframes()
+					self.resizeIFrames()
 				}, 500)
 			}
 		}
@@ -86,8 +91,7 @@ export default {
 		self.showTags = false
 		self.canSaveTags = false
 		self.allTags = self.existingTags
-		window.addEventListener("resize", self.resizeIframes)
-		self.renderUI()
+		window.addEventListener("resize", self.resizeIFrames)
 
 		let headersTab = document.getElementById('nav-headers-tab')
 		headersTab.addEventListener('shown.bs.tab', function (event) {
@@ -97,7 +101,7 @@ export default {
 		let rawTab = document.getElementById('nav-raw-tab')
 		rawTab.addEventListener('shown.bs.tab', function (event) {
 			self.srcURI = 'api/v1/message/' + self.message.ID + '/raw'
-			self.resizeIframes()
+			self.resizeIFrames()
 		})
 
 		self.showTags = true
@@ -112,7 +116,7 @@ export default {
 	},
 
 	unmounted: function () {
-		window.removeEventListener("resize", this.resizeIframes)
+		window.removeEventListener("resize", this.resizeIFrames)
 	},
 
 	methods: {
@@ -122,6 +126,7 @@ export default {
 		},
 		renderUI: function () {
 			let self = this
+
 			// click the first non-disabled tab
 			document.querySelector('#nav-tab button:not([disabled])').click()
 			document.activeElement.blur() // blur focus
@@ -149,7 +154,7 @@ export default {
 							anchorEl.setAttribute('target', '_blank')
 						}
 					}
-					self.resizeIframes()
+					self.resizeIFrames()
 				}
 			}, 200)
 
@@ -164,7 +169,7 @@ export default {
 			i.style.height = i.contentWindow.document.body.scrollHeight + 50 + 'px'
 		},
 
-		resizeIframes: function () {
+		resizeIFrames: function () {
 			if (this.scaleHTMLPreview != 'display') {
 				return
 			}
@@ -188,6 +193,11 @@ export default {
 			}
 
 			this.resizeIframe(el)
+		},
+
+		sanitizeHTML: function (h) {
+			// remove <base/> tag if set
+			return h.replace(/<base .*>/mi, '')
 		},
 
 		saveTags: function () {
@@ -228,7 +238,7 @@ export default {
 				.replace(/ˠˠˠ/g, '"')
 
 			return html
-		}
+		},
 	}
 }
 </script>
@@ -336,7 +346,9 @@ export default {
 			<div class="nav nav-tabs my-3" id="nav-tab" role="tablist">
 				<button class="nav-link" id="nav-html-tab" data-bs-toggle="tab" data-bs-target="#nav-html" type="button"
 					role="tab" aria-controls="nav-html" aria-selected="true" v-if="message.HTML" ref="navhtml"
-					v-on:click="resizeIframes()">HTML</button>
+					v-on:click="resizeIFrames()">
+					HTML
+				</button>
 				<button class="nav-link" id="nav-html-source-tab" data-bs-toggle="tab" data-bs-target="#nav-html-source"
 					type="button" role="tab" aria-controls="nav-html-source" aria-selected="false" v-if="message.HTML">
 					HTML <span class="d-sm-none">Src</span><span class="d-none d-sm-inline">Source</span>
@@ -354,8 +366,17 @@ export default {
 					role="tab" aria-controls="nav-raw" aria-selected="false">
 					Raw
 				</button>
+				<button class="nav-link position-relative" id="nav-html-check-tab" data-bs-toggle="tab"
+					data-bs-target="#nav-html-check" type="button" role="tab" aria-controls="nav-html" aria-selected="false"
+					v-if="!uiConfig.DisableHTMLCheck && message.HTML != ''" @click="showMobileButtons = false">
+					<span class="d-none d-sm-inline">HTML</span> Check
+					<span class="position-absolute top-10 start-100 translate-middle badge rounded-pill p-1"
+						:class="htmlScoreColor" v-if="htmlScore !== false">
+						<small>{{ Math.floor(htmlScore) }}%</small>
+					</span>
+				</button>
 
-				<div class="d-none d-lg-block ms-auto me-2" v-if="showMobileButtons">
+				<div class="d-none d-lg-block ms-auto me-3" v-if="showMobileButtons">
 					<template v-for="vals, key in responsiveSizes">
 						<button class="btn" :disabled="scaleHTMLPreview == key" :title="'Switch to ' + key + ' view'"
 							v-on:click="scaleHTMLPreview = key">
@@ -370,12 +391,17 @@ export default {
 			<div v-if="message.HTML != ''" class="tab-pane fade show" id="nav-html" role="tabpanel"
 				aria-labelledby="nav-html-tab" tabindex="0">
 				<div id="responsive-view" :class="scaleHTMLPreview" :style="responsiveSizes[scaleHTMLPreview]">
-					<iframe target-blank="" class="tab-pane d-block" id="preview-html" :srcdoc="message.HTML"
+					<iframe target-blank="" class="tab-pane d-block" id="preview-html" :srcdoc="sanitizeHTML(message.HTML)"
 						v-on:load="resizeIframe" frameborder="0" style="width: 100%; height: 100%;">
 					</iframe>
 				</div>
 				<Attachments v-if="allAttachments(message).length" :message="message"
 					:attachments="allAttachments(message)"></Attachments>
+			</div>
+			<div class="tab-pane fade" id="nav-html-check" role="tabpanel" aria-labelledby="nav-html-check-tab"
+				tabindex="0">
+				<HTMLCheck v-if="!uiConfig.DisableHTMLCheck && message.HTML != ''" :message="message"
+					@setHtmlScore="(n) => htmlScore = n" @set-badge-style="(v) => htmlScoreColor = v" />
 			</div>
 			<div class="tab-pane fade" id="nav-html-source" role="tabpanel" aria-labelledby="nav-html-source-tab"
 				tabindex="0" v-if="message.HTML">

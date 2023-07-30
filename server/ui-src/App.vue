@@ -44,7 +44,7 @@ export default {
 			tcStatus: 0,
 			appInfo: false,
 			lastLoaded: false,
-			relayConfig: {},
+			uiConfig: {},
 			releaseAddresses: false,
 			toastMessage: false,
 		}
@@ -191,7 +191,7 @@ export default {
 		getUISettings: function () {
 			let self = this
 			self.get('api/v1/webui', null, function (response) {
-				self.relayConfig = response.data
+				self.uiConfig = response.data
 			})
 		},
 
@@ -716,7 +716,7 @@ export default {
 				<i class="bi bi-eye-slash"></i> <span class="d-none d-md-inline">Mark unread</span>
 			</button>
 			<button class="btn btn-outline-light me-2" title="Release message"
-				v-if="relayConfig.MessageRelay && relayConfig.MessageRelay.Enabled" v-on:click="initReleaseModal">
+				v-if="uiConfig.MessageRelay && uiConfig.MessageRelay.Enabled" v-on:click="initReleaseModal">
 				<i class="bi bi-send"></i> <span class="d-none d-md-inline">Release</span>
 			</button>
 			<button class="btn btn-outline-light me-2" title="Delete message" v-on:click="deleteMessages">
@@ -1006,7 +1006,8 @@ export default {
 				</div>
 			</div>
 
-			<Message v-if="message" :message="message" :existingTags="existingTags" @load-messages="loadMessages">
+			<Message v-if="message" :message="message" :existingTags="existingTags" :uiConfig="uiConfig"
+				@load-messages="loadMessages">
 			</Message>
 		</div>
 		<div id="loading" v-if="loading">
@@ -1159,13 +1160,11 @@ export default {
 							<a class="btn btn-primary w-100" href="https://github.com/axllent/mailpit" target="_blank">
 								<i class="bi bi-github"></i>
 								Github
-								<i class="bi bi-box-arrow-up-right"></i>
 							</a>
 						</div>
 						<div class="col-sm-6">
 							<a class="btn btn-primary w-100" href="https://github.com/axllent/mailpit/wiki" target="_blank">
 								Documentation
-								<i class="bi bi-box-arrow-up-right"></i>
 							</a>
 						</div>
 						<div class="col-sm-6">
@@ -1195,7 +1194,7 @@ export default {
 
 	<!-- Modal -->
 	<div class="modal fade" id="ReleaseModal" tabindex="-1" aria-labelledby="AppInfoModalLabel" aria-hidden="true">
-		<MessageRelease v-if="releaseAddresses" :message="message" :relayConfig="relayConfig"
+		<MessageRelease v-if="releaseAddresses" :message="message" :uiConfig="uiConfig"
 			:releaseAddresses="releaseAddresses"></MessageRelease>
 	</div>
 

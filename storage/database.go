@@ -13,7 +13,6 @@ import (
 	"os/signal"
 	"path"
 	"path/filepath"
-	"regexp"
 	"sort"
 	"strings"
 	"syscall"
@@ -540,10 +539,7 @@ func GetMessage(id string) (*Message, error) {
 		Text:       env.Text,
 	}
 
-	// strip base tags
-	var re = regexp.MustCompile(`(?U)<base .*>`)
-	html := re.ReplaceAllString(env.HTML, "")
-	obj.HTML = html
+	obj.HTML = env.HTML
 	obj.Inline = []Attachment{}
 	obj.Attachments = []Attachment{}
 

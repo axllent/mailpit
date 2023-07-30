@@ -122,6 +122,43 @@
         }
       }
     },
+    "/api/v1/message/{ID}/html-check": {
+      "get": {
+        "description": "Returns the summary of HTML check.\n\nNOTE: This feature is currently in beta and is documented for reference only.\nPlease do not integrate with it (yet) as there may be changes.",
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "Other"
+        ],
+        "summary": "HTML check (beta)",
+        "operationId": "HTMLCheckResponse",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Database ID",
+            "name": "ID",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "HTMLCheckResponse",
+            "schema": {
+              "$ref": "#/definitions/HTMLCheckResponse"
+            }
+          },
+          "default": {
+            "$ref": "#/responses/ErrorResponse"
+          }
+        }
+      }
+    },
     "/api/v1/message/{ID}/part/{PartID}": {
       "get": {
         "description": "This will return the attachment part using the appropriate Content-Type.",
@@ -607,6 +644,183 @@
       "x-go-name": "deleteRequest",
       "x-go-package": "github.com/axllent/mailpit/server/apiv1"
     },
+    "HTMLCheckResponse": {
+      "description": "Response represents the HTML check response struct",
+      "type": "object",
+      "properties": {
+        "Platforms": {
+          "description": "All platforms tested, mainly for the web UI",
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "Total": {
+          "$ref": "#/definitions/HTMLCheckTotal"
+        },
+        "Warnings": {
+          "description": "List of warnings from tests",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/HTMLCheckWarning"
+          }
+        }
+      },
+      "x-go-name": "Response",
+      "x-go-package": "github.com/axllent/mailpit/utils/html-check"
+    },
+    "HTMLCheckResult": {
+      "description": "Result struct",
+      "type": "object",
+      "properties": {
+        "Family": {
+          "description": "Family eg: Outlook, Mozilla Thunderbird",
+          "type": "string"
+        },
+        "Name": {
+          "description": "Friendly name of result, combining family, platform \u0026 version",
+          "type": "string"
+        },
+        "NoteNumber": {
+          "description": "Note number for partially supported if applicable",
+          "type": "string"
+        },
+        "Platform": {
+          "description": "Platform eg: ios, android, windows",
+          "type": "string"
+        },
+        "Support": {
+          "description": "Support [yes, no, partial]",
+          "type": "string"
+        },
+        "Version": {
+          "description": "Family version eg: 4.7.1, 2019-10, 10.3",
+          "type": "string"
+        }
+      },
+      "x-go-name": "Result",
+      "x-go-package": "github.com/axllent/mailpit/utils/html-check"
+    },
+    "HTMLCheckScore": {
+      "description": "Score struct",
+      "type": "object",
+      "properties": {
+        "Found": {
+          "description": "Number of matches in the document",
+          "type": "integer",
+          "format": "int64"
+        },
+        "Partial": {
+          "description": "Total percentage partially supported",
+          "type": "number",
+          "format": "float"
+        },
+        "Supported": {
+          "description": "Total percentage supported",
+          "type": "number",
+          "format": "float"
+        },
+        "Unsupported": {
+          "description": "Total percentage unsupported",
+          "type": "number",
+          "format": "float"
+        }
+      },
+      "x-go-name": "Score",
+      "x-go-package": "github.com/axllent/mailpit/utils/html-check"
+    },
+    "HTMLCheckTotal": {
+      "description": "Total weighted result for all scores",
+      "type": "object",
+      "properties": {
+        "Nodes": {
+          "description": "Total number of HTML nodes detected in message",
+          "type": "integer",
+          "format": "int64"
+        },
+        "Partial": {
+          "description": "Overall percentage partially supported",
+          "type": "number",
+          "format": "float"
+        },
+        "Supported": {
+          "description": "Overall percentage supported",
+          "type": "number",
+          "format": "float"
+        },
+        "Tests": {
+          "description": "Total number of tests done",
+          "type": "integer",
+          "format": "int64"
+        },
+        "Unsupported": {
+          "description": "Overall percentage unsupported",
+          "type": "number",
+          "format": "float"
+        }
+      },
+      "x-go-name": "Total",
+      "x-go-package": "github.com/axllent/mailpit/utils/html-check"
+    },
+    "HTMLCheckWarning": {
+      "description": "Warning represents a failed test",
+      "type": "object",
+      "properties": {
+        "Category": {
+          "description": "Category [css, html]",
+          "type": "string"
+        },
+        "Description": {
+          "description": "Description",
+          "type": "string"
+        },
+        "Keywords": {
+          "description": "Keywords",
+          "type": "string"
+        },
+        "NotesByNumber": {
+          "description": "Notes based on results",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "Results": {
+          "description": "Test results",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/HTMLCheckResult"
+          }
+        },
+        "Score": {
+          "$ref": "#/definitions/HTMLCheckScore"
+        },
+        "Slug": {
+          "description": "Slug identifier",
+          "type": "string"
+        },
+        "Tags": {
+          "description": "Tags",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "Title": {
+          "description": "Friendly title",
+          "type": "string"
+        },
+        "URL": {
+          "description": "URL to caniemail.com",
+          "type": "string"
+        }
+      },
+      "x-go-name": "Warning",
+      "x-go-package": "github.com/axllent/mailpit/utils/html-check"
+    },
     "Message": {
       "description": "Message data excluding physical attachments",
       "type": "object",
@@ -897,6 +1111,10 @@
       "description": "Response includes global web UI settings",
       "type": "object",
       "properties": {
+        "DisableHTMLCheck": {
+          "description": "Whether the HTML check has been globally disabled",
+          "type": "boolean"
+        },
         "MessageRelay": {
           "description": "Message Relay information",
           "type": "object",
