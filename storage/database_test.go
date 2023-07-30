@@ -263,10 +263,10 @@ func assertEqual(t *testing.T, a interface{}, b interface{}, message string) {
 func assertEqualStats(t *testing.T, total int, unread int) {
 	s := StatsGet()
 	if total != s.Total {
-		t.Fatal(fmt.Sprintf("Incorrect total mailbox stats: \"%d\" != \"%d\"", total, s.Total))
+		t.Fatalf("Incorrect total mailbox stats: \"%d\" != \"%d\"", total, s.Total)
 	}
 
 	if unread != s.Unread {
-		t.Fatal(fmt.Sprintf("Incorrect unread mailbox stats: \"%d\" != \"%d\"", unread, s.Unread))
+		t.Fatalf("Incorrect unread mailbox stats: \"%d\" != \"%d\"", unread, s.Unread)
 	}
 }
