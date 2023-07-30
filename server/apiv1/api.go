@@ -1,3 +1,4 @@
+// Package apiv1 handles all the API responses
 package apiv1
 
 import (
