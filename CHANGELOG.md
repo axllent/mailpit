@@ -2,6 +2,30 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.8.0]
+
+### Docs
+- Update brew installation instructions
+
+### Feature
+- HTML check to test & score mail client compatibility with HTML emails
+
+### Fix
+- Add basePath to swagger.json if webroot is specified
+
+### Libs
+- Update node modules
+- Update Go modules
+
+### Swagger
+- Update swagger docs
+
+### UI
+- Add flag to block all access to remote CSS and fonts (CSP)
+- Remove `<base />` tag if set in HTML preview
+- Pagination support for search, all results
+
+
 ## [v1.7.1]
 
 ### Libs

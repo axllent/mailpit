@@ -125,7 +125,7 @@ func Run() {
 
 	msg, err := mail.ReadMessage(bytes.NewReader(body))
 	if err != nil {
-		fmt.Fprintln(os.Stderr, fmt.Sprintf("error parsing message body: %s", err))
+		fmt.Fprintf(os.Stderr, "error parsing message body: %si\n", err)
 		os.Exit(11)
 	}
 

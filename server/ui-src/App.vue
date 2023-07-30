@@ -26,6 +26,7 @@ export default {
 			limit: 50,
 			total: 0,
 			unread: 0,
+			messagesCount: 0,
 			start: 0,
 			count: 0,
 			tags: [],
@@ -43,7 +44,7 @@ export default {
 			tcStatus: 0,
 			appInfo: false,
 			lastLoaded: false,
-			relayConfig: {},
+			uiConfig: {},
 			releaseAddresses: false,
 			toastMessage: false,
 		}
@@ -75,7 +76,7 @@ export default {
 			return this.start > 0
 		},
 		canNext: function () {
-			return this.total > (this.start + this.count)
+			return this.messagesCount > (this.start + this.count)
 		},
 		unreadInSearch: function () {
 			if (!this.searching) {
@@ -146,11 +147,12 @@ export default {
 			let uri = 'api/v1/messages'
 			if (self.search) {
 				self.searching = true
-				self.items = []
 				uri = 'api/v1/search'
-				self.start = 0 // search is displayed on one page
 				params['query'] = self.search
-				params['limit'] = 200
+				params['limit'] = self.limit
+				if (self.start > 0) {
+					params['start'] = self.start
+				}
 			} else {
 				self.searching = false
 				params['limit'] = self.limit
@@ -162,7 +164,8 @@ export default {
 			self.get(uri, params, function (response) {
 				self.total = response.data.total
 				self.unread = response.data.unread
-				self.count = response.data.count
+				self.count = response.data.messages.length
+				self.messagesCount = response.data.messages_count
 				self.start = response.data.start
 				self.items = response.data.messages
 				self.tags = response.data.tags
@@ -188,12 +191,13 @@ export default {
 		getUISettings: function () {
 			let self = this
 			self.get('api/v1/webui', null, function (response) {
-				self.relayConfig = response.data
+				self.uiConfig = response.data
 			})
 		},
 
 		doSearch: function (e) {
 			e.preventDefault()
+			this.start = 0
 			this.loadMessages()
 		},
 
@@ -204,13 +208,14 @@ export default {
 			}
 			this.search = 'tag:' + tag
 			window.location.hash = ""
+			this.start = 0
 			this.loadMessages()
 		},
 
 		resetSearch: function (e) {
 			e.preventDefault()
 			this.search = ''
-			this.scrollInPlace = true
+			this.start = 0
 			this.loadMessages()
 		},
 
@@ -459,9 +464,9 @@ export default {
 
 		// websocket connect
 		connect: function () {
-			let wsproto = location.protocol == 'https:' ? 'wss' : 'ws'
+			let proto = location.protocol == 'https:' ? 'wss' : 'ws'
 			let ws = new WebSocket(
-				wsproto + "://" + document.location.host + document.location.pathname + "api/events"
+				proto + "://" + document.location.host + document.location.pathname + "api/events"
 			)
 			let self = this
 			ws.onmessage = function (e) {
@@ -711,7 +716,7 @@ export default {
 				<i class="bi bi-eye-slash"></i> <span class="d-none d-md-inline">Mark unread</span>
 			</button>
 			<button class="btn btn-outline-light me-2" title="Release message"
-				v-if="relayConfig.MessageRelay && relayConfig.MessageRelay.Enabled" v-on:click="initReleaseModal">
+				v-if="uiConfig.MessageRelay && uiConfig.MessageRelay.Enabled" v-on:click="initReleaseModal">
 				<i class="bi bi-send"></i> <span class="d-none d-md-inline">Release</span>
 			</button>
 			<button class="btn btn-outline-light me-2" title="Delete message" v-on:click="deleteMessages">
@@ -809,7 +814,7 @@ export default {
 				<i class="bi bi-check2-square"></i>
 			</button>
 
-			<select v-model="limit" v-on:change="loadMessages" v-if="!searching"
+			<select v-model="limit" v-on:change="loadMessages"
 				class="form-select form-select-sm d-none d-md-inline w-auto me-2">
 				<option value="25">25</option>
 				<option value="50">50</option>
@@ -817,23 +822,18 @@ export default {
 				<option value="200">200</option>
 			</select>
 
-			<span v-if="searching">
-				<b>{{ formatNumber(items.length) }} result<template v-if="items.length != 1">s</template></b>
-			</span>
-			<span v-else>
-				<small>
-					{{ formatNumber(start + 1) }}-{{ formatNumber(start + items.length) }} <small>of</small>
-					{{ formatNumber(total) }}
-				</small>
-				<button class="btn btn-outline-light ms-2 me-1" :disabled="!canPrev" v-on:click="viewPrev" v-if="!searching"
-					:title="'View previous ' + limit + ' messages'">
-					<i class="bi bi-caret-left-fill"></i>
-				</button>
-				<button class="btn btn-outline-light" :disabled="!canNext" v-on:click="viewNext" v-if="!searching"
-					:title="'View next ' + limit + ' messages'">
-					<i class="bi bi-caret-right-fill"></i>
-				</button>
-			</span>
+			<small>
+				{{ formatNumber(start + 1) }}-{{ formatNumber(start + items.length) }} <small>of</small>
+				{{ formatNumber(messagesCount) }}
+			</small>
+			<button class="btn btn-outline-light ms-2 me-1" :disabled="!canPrev" v-on:click="viewPrev"
+				:title="'View previous ' + limit + ' messages'">
+				<i class="bi bi-caret-left-fill"></i>
+			</button>
+			<button class="btn btn-outline-light" :disabled="!canNext" v-on:click="viewNext"
+				:title="'View next ' + limit + ' messages'">
+				<i class="bi bi-caret-right-fill"></i>
+			</button>
 		</div>
 	</div>
 	<div class="row flex-fill" style="min-height:0">
@@ -1006,7 +1006,8 @@ export default {
 				</div>
 			</div>
 
-			<Message v-if="message" :message="message" :existingTags="existingTags" @load-messages="loadMessages">
+			<Message v-if="message" :message="message" :existingTags="existingTags" :uiConfig="uiConfig"
+				@load-messages="loadMessages">
 			</Message>
 		</div>
 		<div id="loading" v-if="loading">
@@ -1159,13 +1160,11 @@ export default {
 							<a class="btn btn-primary w-100" href="https://github.com/axllent/mailpit" target="_blank">
 								<i class="bi bi-github"></i>
 								Github
-								<i class="bi bi-box-arrow-up-right"></i>
 							</a>
 						</div>
 						<div class="col-sm-6">
 							<a class="btn btn-primary w-100" href="https://github.com/axllent/mailpit/wiki" target="_blank">
 								Documentation
-								<i class="bi bi-box-arrow-up-right"></i>
 							</a>
 						</div>
 						<div class="col-sm-6">
@@ -1195,7 +1194,7 @@ export default {
 
 	<!-- Modal -->
 	<div class="modal fade" id="ReleaseModal" tabindex="-1" aria-labelledby="AppInfoModalLabel" aria-hidden="true">
-		<MessageRelease v-if="releaseAddresses" :message="message" :relayConfig="relayConfig"
+		<MessageRelease v-if="releaseAddresses" :message="message" :uiConfig="uiConfig"
 			:releaseAddresses="releaseAddresses"></MessageRelease>
 	</div>
 

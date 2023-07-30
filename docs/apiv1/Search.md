@@ -25,7 +25,7 @@ Matching messages are returned in the order of latest received to oldest.
 {
   "total": 500,
   "unread": 500,
-  "count": 25,
+  "messages_count": 25,
   "start": 0,
   "messages": [
     {
@@ -63,7 +63,7 @@ Matching messages are returned in the order of latest received to oldest.
 
 - `total` - Total messages in mailbox (all messages, not search)
 - `unread` - Total unread messages in mailbox (all messages, not search)
-- `count` - Number of messages returned in request
+- `messages_count` - Total number of messages matching search
 - `start` - The offset (default `0`) for pagination
 - `From` - Singular Name & Address, or null if none
 - `To`, `CC`, `BCC` - Array of Name & Address

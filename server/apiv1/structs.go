@@ -2,6 +2,7 @@ package apiv1
 
 import (
 	"github.com/axllent/mailpit/storage"
+	"github.com/axllent/mailpit/utils/htmlcheck"
 )
 
 // MessagesSummary is a summary of a list of messages
@@ -12,8 +13,16 @@ type MessagesSummary struct {
 	// Total number of unread messages in mailbox
 	Unread int `json:"unread"`
 
-	// Number of results returned
+	// Legacy - now undocumented in API specs but left for backwards compatibility.
+	// Removed from API documentation 2023-07-12
+	// swagger:ignore
 	Count int `json:"count"`
+
+	// Total number of messages matching current query
+	MessagesCount int `json:"messages_count"`
+
+	// // Number of results returned on current page
+	// Count int `json:"count"`
 
 	// Pagination offset
 	Start int `json:"start"`
@@ -37,3 +46,6 @@ type Message = storage.Message
 
 // Attachment summary
 type Attachment = storage.Attachment
+
+// HTMLCheckResponse summary
+type HTMLCheckResponse = htmlcheck.Response

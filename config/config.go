@@ -69,6 +69,12 @@ var (
 	// IgnoreDuplicateIDs will skip messages with the same ID
 	IgnoreDuplicateIDs bool
 
+	// DisableHTMLCheck used to disable the HTML check in bother the API and web UI
+	DisableHTMLCheck = false
+
+	// BlockRemoteCSSAndFonts used to disable remote CSS & fonts
+	BlockRemoteCSSAndFonts = false
+
 	// SMTPCLITags is used to map the CLI args
 	SMTPCLITags string
 
@@ -91,8 +97,8 @@ var (
 	// Use with extreme caution!
 	SMTPRelayAllIncoming = false
 
-	// ContentSecurityPolicy for HTTP server
-	ContentSecurityPolicy = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; frame-src 'self'; img-src * data: blob:; font-src 'self' data:; media-src 'self'; connect-src 'self' ws: wss:; object-src 'none'; base-uri 'self';"
+	// ContentSecurityPolicy for HTTP server - set via VerifyConfig()
+	ContentSecurityPolicy string
 
 	// Version is the default application version, updated on release
 	Version = "dev"
@@ -127,6 +133,15 @@ type smtpRelayConfigStruct struct {
 
 // VerifyConfig wil do some basic checking
 func VerifyConfig() error {
+	cssFontRestriction := "*"
+	if BlockRemoteCSSAndFonts {
+		cssFontRestriction = "'self'"
+	}
+
+	ContentSecurityPolicy = fmt.Sprintf("default-src 'self'; script-src 'self'; style-src %s 'unsafe-inline'; frame-src 'self'; img-src * data: blob:; font-src %s data:; media-src 'self'; connect-src 'self' ws: wss:; object-src 'none'; base-uri 'self';",
+		cssFontRestriction, cssFontRestriction,
+	)
+
 	if DataFile != "" && isDir(DataFile) {
 		DataFile = filepath.Join(DataFile, "mailpit.db")
 	}

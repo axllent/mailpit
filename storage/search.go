@@ -8,25 +8,14 @@ import (
 )
 
 // SearchParser returns the SQL syntax for the database search based on the search arguments
-func searchParser(args []string, start, limit int) *sqlf.Stmt {
-	if limit == 0 {
-		limit = 50
-	}
-
+func searchParser(args []string) *sqlf.Stmt {
 	q := sqlf.From("mailbox").
 		Select(`Created, ID, MessageID, Subject, Metadata, Size, Attachments, Read, Tags,
 			IFNULL(json_extract(Metadata, '$.To'), '{}') as ToJSON,
 			IFNULL(json_extract(Metadata, '$.From'), '{}') as FromJSON,
 			IFNULL(json_extract(Metadata, '$.Cc'), '{}') as CcJSON,
 			IFNULL(json_extract(Metadata, '$.Bcc'), '{}') as BccJSON
-		`).
-		OrderBy("Created DESC").
-		Limit(limit).
-		Offset(start)
-
-	if limit > 0 {
-		q = q.Limit(limit)
-	}
+		`).OrderBy("Created DESC")
 
 	for _, w := range args {
 		if cleanString(w) == "" {

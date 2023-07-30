@@ -195,7 +195,7 @@ func assertSearchEqual(t *testing.T, uri, query string, count int) {
 		return
 	}
 
-	assertEqual(t, count, m.Count, "wrong search results count")
+	assertEqual(t, count, m.MessagesCount, "wrong search results count")
 }
 
 func insertEmailData(t *testing.T) {

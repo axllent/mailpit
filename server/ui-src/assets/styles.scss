@@ -1,4 +1,4 @@
-@import "bootstrap";
+@import "./bootstrap";
 
 [v-cloak] {
     display: none !important;
@@ -43,6 +43,25 @@
         // font-size: 14px;
         padding-left: 10px;
         padding-right: 10px;
+    }
+}
+
+:not(.text-view) > a {
+    &[href^="http://"],
+    &[href^="https://"]
+    {
+        &:after {
+            content: "\f1c5";
+            display: inline-block;
+            font-family: "bootstrap-icons" !important;
+            font-style: normal;
+            font-weight: normal !important;
+            font-variant: normal;
+            text-transform: none;
+            line-height: 1;
+            vertical-align: -0.125em;
+            margin-left: 4px;
+        }
     }
 }
 

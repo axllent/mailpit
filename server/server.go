@@ -2,8 +2,10 @@
 package server
 
 import (
+	"bytes"
 	"compress/gzip"
 	"embed"
+	"fmt"
 	"io"
 	"io/fs"
 	"net/http"
@@ -90,9 +92,13 @@ func defaultRoutes() *mux.Router {
 	r.HandleFunc(config.Webroot+"api/v1/message/{id}/headers", middleWareFunc(apiv1.GetHeaders)).Methods("GET")
 	r.HandleFunc(config.Webroot+"api/v1/message/{id}/raw", middleWareFunc(apiv1.DownloadRaw)).Methods("GET")
 	r.HandleFunc(config.Webroot+"api/v1/message/{id}/release", middleWareFunc(apiv1.ReleaseMessage)).Methods("POST")
+	if !config.DisableHTMLCheck {
+		r.HandleFunc(config.Webroot+"api/v1/message/{id}/html-check", middleWareFunc(apiv1.HTMLCheck)).Methods("GET")
+	}
 	r.HandleFunc(config.Webroot+"api/v1/message/{id}", middleWareFunc(apiv1.GetMessage)).Methods("GET")
 	r.HandleFunc(config.Webroot+"api/v1/info", middleWareFunc(apiv1.AppInfo)).Methods("GET")
 	r.HandleFunc(config.Webroot+"api/v1/webui", middleWareFunc(apiv1.WebUIConfig)).Methods("GET")
+	r.HandleFunc(config.Webroot+"api/v1/swagger.json", middleWareFunc(swaggerBasePath)).Methods("GET")
 
 	// return blank 200 response for OPTIONS requests for CORS
 	r.PathPrefix(config.Webroot + "api/v1/").Handler(middleWareFunc(apiv1.GetOptions)).Methods("OPTIONS")
@@ -201,4 +207,22 @@ func addSlashToWebroot(w http.ResponseWriter, r *http.Request) {
 // Websocket to broadcast changes
 func apiWebsocket(w http.ResponseWriter, r *http.Request) {
 	websockets.ServeWs(websockets.MessageHub, w, r)
+}
+
+// Wrapper to artificially inject a basePath to the swagger.json if a webroot has been specified
+func swaggerBasePath(w http.ResponseWriter, _ *http.Request) {
+	f, err := embeddedFS.ReadFile("ui/api/v1/swagger.json")
+	if err != nil {
+		panic(err)
+	}
+
+	if config.Webroot != "/" {
+		// artificially inject a path at the start
+		replacement := fmt.Sprintf("{\n  \"basePath\": \"%s\",", strings.TrimRight(config.Webroot, "/"))
+
+		f = bytes.Replace(f, []byte("{"), []byte(replacement), 1)
+	}
+
+	w.Header().Add("Content-Type", "application/json")
+	_, _ = w.Write(f)
 }

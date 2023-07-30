@@ -168,9 +168,9 @@ func TestSearch(t *testing.T) {
 
 	for i := 1; i < 51; i++ {
 		// search a random something that will return a single result
-		searchIndx := rand.Intn(4) + 1
+		searchIdx := rand.Intn(4) + 1
 		var search string
-		switch searchIndx {
+		switch searchIdx {
 		case 1:
 			search = fmt.Sprintf("from-%d@example.com", i)
 		case 2:
@@ -181,7 +181,7 @@ func TestSearch(t *testing.T) {
 			search = fmt.Sprintf("\"the email body %d jdsauk dwqmdqw\"", i)
 		}
 
-		summaries, err := Search(search, 0, 100)
+		summaries, _, err := Search(search, 0, 100)
 		if err != nil {
 			t.Log("error ", err)
 			t.Fail()
@@ -196,8 +196,8 @@ func TestSearch(t *testing.T) {
 		assertEqual(t, summaries[0].Subject, fmt.Sprintf("Subject line %d end", i), "\"Subject\" does not match")
 	}
 
-	// search something that will return 200 rsults
-	summaries, err := Search("This is the email body", 0, testRuns)
+	// search something that will return 200 results
+	summaries, _, err := Search("This is the email body", 0, testRuns)
 	if err != nil {
 		t.Log("error ", err)
 		t.Fail()
@@ -263,10 +263,10 @@ func assertEqual(t *testing.T, a interface{}, b interface{}, message string) {
 func assertEqualStats(t *testing.T, total int, unread int) {
 	s := StatsGet()
 	if total != s.Total {
-		t.Fatal(fmt.Sprintf("Incorrect total mailbox stats: \"%d\" != \"%d\"", total, s.Total))
+		t.Fatalf("Incorrect total mailbox stats: \"%d\" != \"%d\"", total, s.Total)
 	}
 
 	if unread != s.Unread {
-		t.Fatal(fmt.Sprintf("Incorrect unread mailbox stats: \"%d\" != \"%d\"", unread, s.Unread))
+		t.Fatalf("Incorrect unread mailbox stats: \"%d\" != \"%d\"", unread, s.Unread)
 	}
 }
