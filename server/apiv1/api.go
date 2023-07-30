@@ -12,6 +12,7 @@ import (
 	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/server/smtpd"
 	"github.com/axllent/mailpit/storage"
+	"github.com/axllent/mailpit/utils/htmlcheck"
 	"github.com/axllent/mailpit/utils/logger"
 	"github.com/axllent/mailpit/utils/tools"
 	"github.com/gorilla/mux"
@@ -622,6 +623,58 @@ func ReleaseMessage(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Add("Content-Type", "text/plain")
 	_, _ = w.Write([]byte("ok"))
+}
+
+// HTMLCheck returns a summary of the HTML client support
+func HTMLCheck(w http.ResponseWriter, r *http.Request) {
+	// swagger:route GET /api/v1/message/{ID}/html-check Other HTMLCheckResponse
+	//
+	// # HTML check (beta)
+	//
+	// Returns the summary of HTML check.
+	//
+	// NOTE: This feature is currently in beta and is documented for reference only.
+	// Please do not integrate with it (yet) as there may be changes.
+	//
+	//	Produces:
+	//	- application/json
+	//
+	//	Schemes: http, https
+	//
+	//	Parameters:
+	//	  + name: ID
+	//	    in: path
+	//	    description: Database ID
+	//	    required: true
+	//	    type: string
+	//
+	//	Responses:
+	//		200: HTMLCheckResponse
+	//		default: ErrorResponse
+
+	vars := mux.Vars(r)
+	id := vars["id"]
+
+	msg, err := storage.GetMessage(id)
+	if err != nil {
+		fourOFour(w)
+		return
+	}
+
+	if msg.HTML == "" {
+		httpError(w, "message does not contain HTML")
+		return
+	}
+
+	checks, err := htmlcheck.RunTests(msg.HTML)
+	if err != nil {
+		httpError(w, err.Error())
+		return
+	}
+
+	bytes, _ := json.Marshal(checks)
+	w.Header().Add("Content-Type", "application/json")
+	_, _ = w.Write(bytes)
 }
 
 // FourOFour returns a basic 404 message

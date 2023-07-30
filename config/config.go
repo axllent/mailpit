@@ -69,6 +69,9 @@ var (
 	// IgnoreDuplicateIDs will skip messages with the same ID
 	IgnoreDuplicateIDs bool
 
+	// DisableHTMLCheck used to disable the HTML check in bother the API and web UI
+	DisableHTMLCheck = false
+
 	// BlockRemoteCSSAndFonts used to disable remote CSS & fonts
 	BlockRemoteCSSAndFonts = false
 

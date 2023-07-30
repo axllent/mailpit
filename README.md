@@ -20,6 +20,7 @@ Mailpit is inspired by [MailHog](#why-rewrite-mailhog), but modern and much, muc
 - Runs entirely from a single binary, no installation required
 - SMTP server (default `0.0.0.0:1025`)
 - Web UI to view emails (formatted HTML, highlighted HTML source, text, headers, raw source and MIME attachments including image thumbnails)
+- HTML check to test & score mail client compatibility with HTML emails
 - Light & dark web UI theme with auto-detect
 - Mobile and tablet HTML preview toggle in desktop mode
 - Advanced mail search ([see wiki](https://github.com/axllent/mailpit/wiki/Mail-search))
