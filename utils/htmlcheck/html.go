@@ -22,7 +22,7 @@ func runHTMLTests(html string) ([]Warning, int, error) {
 	}
 
 	// Almost all <script> is bad
-	scripts := len(doc.Find("script:not([type=\"application/ld+json\"])").Nodes)
+	scripts := len(doc.Find("script:not([type=\"application/ld+json\"]):not([type=\"application/json\"])").Nodes)
 	if scripts > 0 {
 		var result = Warning{}
 		result.Title = "<script> element"
