@@ -74,6 +74,12 @@ See [Docker instructions](https://github.com/axllent/mailpit/wiki/Docker-images)
 To build Mailpit from source see [building from source](https://github.com/axllent/mailpit/wiki/Building-from-source).
 
 
+## Usage
+
+Run `mailpit -h` to see options. More information can be seen in [the docs](https://github.com/axllent/mailpit/wiki/Runtime-options).
+
+
+
 ### Testing Mailpit
 
 Please refer to [the documentation](https://github.com/axllent/mailpit/wiki/Testing-Mailpit) of how to easily test email delivery to Mailpit.
