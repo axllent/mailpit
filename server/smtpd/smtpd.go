@@ -24,6 +24,8 @@ func mailHandler(origin net.Addr, from string, to []string, data []byte) error {
 		return err
 	}
 
+	data = append([]byte("Return-Path: <"+from+">\r\n"), data...)
+
 	messageID := strings.Trim(msg.Header.Get("Message-Id"), "<>")
 
 	// add a message ID if not set
