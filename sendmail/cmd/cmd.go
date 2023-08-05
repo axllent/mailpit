@@ -16,7 +16,7 @@ package cmd
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/mail"
 	"net/smtp"
 	"os"
@@ -93,6 +93,11 @@ func Run() {
 	// allow recipients to be passed as an argument
 	recipients = flag.Args()
 
+	// if run via `mailpit sendmail ...` then remove `sendmail` from "recipients"
+	if len(recipients) > 0 && recipients[0] == "sendmail" {
+		recipients = recipients[1:]
+	}
+
 	if showHelp {
 		flag.Usage()
 		os.Exit(0)
@@ -117,7 +122,7 @@ func Run() {
 		return
 	}
 
-	body, err := ioutil.ReadAll(os.Stdin)
+	body, err := io.ReadAll(os.Stdin)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "error reading stdin")
 		os.Exit(11)
