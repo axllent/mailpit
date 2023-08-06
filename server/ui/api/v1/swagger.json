@@ -467,6 +467,13 @@
           },
           {
             "type": "integer",
+            "default": 0,
+            "description": "Pagination offset",
+            "name": "start",
+            "in": "query"
+          },
+          {
+            "type": "integer",
             "default": 50,
             "description": "Limit results",
             "name": "limit",

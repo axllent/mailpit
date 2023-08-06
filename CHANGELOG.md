@@ -2,6 +2,21 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.8.1]
+
+### Docs
+- Add pagination to swagger search documentation
+
+### Fix
+- Check/set message Reply-To using SMTP FROM
+- Exclude "sendmail" from recipients list when using `mailpit sendmail <options>`
+- Exclude <script type="application/json"> from HTML check tests
+
+### Libs
+- Update node modules
+- Update Go modules
+
+
 ## [v1.8.0]
 
 ### Docs

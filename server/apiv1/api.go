@@ -94,6 +94,12 @@ func Search(w http.ResponseWriter, r *http.Request) {
 	//	    description: Search query
 	//	    required: true
 	//	    type: string
+	//	  + name: start
+	//	    in: query
+	//	    description: Pagination offset
+	//	    required: false
+	//	    type: integer
+	//	    default: 0
 	//	  + name: limit
 	//	    in: query
 	//	    description: Limit results

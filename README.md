@@ -26,7 +26,7 @@ Mailpit is inspired by [MailHog](#why-rewrite-mailhog), but modern and much, muc
 - Advanced mail search ([see wiki](https://github.com/axllent/mailpit/wiki/Mail-search))
 - Message tagging ([see wiki](https://github.com/axllent/mailpit/wiki/Tagging))
 - Real-time web UI updates using web sockets for new mail
-- Optional browser notifications for new mail (HTTPS and `localhost` only)
+- Optional browser notifications for new mail (when accessed via either HTTPS or `localhost` only)
 - Configurable automatic email pruning (default keeps the most recent 500 emails)
 - Email storage either in a temporary or persistent database ([see wiki](https://github.com/axllent/mailpit/wiki/Email-storage))
 - Fast SMTP processing & storing - approximately 70-100 emails per second depending on CPU, network speed & email size, easily handling tens of thousands of emails
@@ -72,6 +72,12 @@ See [Docker instructions](https://github.com/axllent/mailpit/wiki/Docker-images)
 ### Compile from source
 
 To build Mailpit from source see [building from source](https://github.com/axllent/mailpit/wiki/Building-from-source).
+
+
+## Usage
+
+Run `mailpit -h` to see options. More information can be seen in [the docs](https://github.com/axllent/mailpit/wiki/Runtime-options).
+
 
 
 ### Testing Mailpit
