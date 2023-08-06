@@ -24,6 +24,27 @@ func mailHandler(origin net.Addr, from string, to []string, data []byte) error {
 		return err
 	}
 
+	// check / set the Return-Path based on SMTP from
+	returnPath := strings.Trim(msg.Header.Get("Return-Path"), "<>")
+	if returnPath != from {
+		if returnPath != "" {
+			// replace Return-Path
+			re := regexp.MustCompile(`(?i)(^|\n)(Return\-Path: .*\n)`)
+			replaced := false
+			data = re.ReplaceAllFunc(data, func(r []byte) []byte {
+				if replaced {
+					return r
+				}
+				replaced = true // only replace first occurrence
+
+				return re.ReplaceAll(r, []byte("${1}Return-Path: <"+from+">\r\n"))
+			})
+		} else {
+			// add Return-Path
+			data = append([]byte("Return-Path: <"+from+">\r\n"), data...)
+		}
+	}
+
 	messageID := strings.Trim(msg.Header.Get("Message-Id"), "<>")
 
 	// add a message ID if not set
@@ -101,7 +122,7 @@ func mailHandler(origin net.Addr, from string, to []string, data []byte) error {
 	return nil
 }
 
-func authHandler(remoteAddr net.Addr, mechanism string, username []byte, password []byte, shared []byte) (bool, error) {
+func authHandler(remoteAddr net.Addr, mechanism string, username []byte, password []byte, _ []byte) (bool, error) {
 	allow := config.SMTPAuthConfig.Match(string(username), string(password))
 	if allow {
 		logger.Log().Debugf("[smtpd] allow %s login:%q from:%s", mechanism, string(username), cleanIP(remoteAddr))
@@ -113,7 +134,7 @@ func authHandler(remoteAddr net.Addr, mechanism string, username []byte, passwor
 }
 
 // Allow any username and password
-func authHandlerAny(remoteAddr net.Addr, mechanism string, username []byte, password []byte, shared []byte) (bool, error) {
+func authHandlerAny(remoteAddr net.Addr, mechanism string, username []byte, _ []byte, _ []byte) (bool, error) {
 	logger.Log().Debugf("[smtpd] allow %s login %q from %s", mechanism, string(username), cleanIP(remoteAddr))
 
 	return true, nil
