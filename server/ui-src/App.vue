@@ -1010,7 +1010,7 @@ export default {
 				</div>
 			</div>
 
-			<Message v-if="message" :message="message" :existingTags="existingTags" :uiConfig="uiConfig"
+			<Message v-if="message" :message="message" :existingTags="existingTags" :uiConfig="uiConfig" :key="message.ID"
 				@load-messages="loadMessages">
 			</Message>
 		</div>
