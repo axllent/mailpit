@@ -17,6 +17,12 @@ import (
 )
 
 func mailHandler(origin net.Addr, from string, to []string, data []byte) error {
+	if !config.SMTPStrictRFCHeaders {
+		// replace all <CR><CR><LF> (\r\r\n) with <CR><LF> (\r\n)
+		// @see https://github.com/axllent/mailpit/issues/87 & https://github.com/axllent/mailpit/issues/153
+		data = bytes.ReplaceAll(data, []byte("\r\r\n"), []byte("\r\n"))
+	}
+
 	msg, err := mail.ReadMessage(bytes.NewReader(data))
 	if err != nil {
 		logger.Log().Errorf("[smtpd] error parsing message: %s", err.Error())
