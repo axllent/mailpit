@@ -88,6 +88,10 @@ export default {
 	},
 
 	mounted() {
+
+		let title = document.title + ' - ' + location.hostname
+		document.title = title
+
 		this.currentPath = window.location.hash.slice(1)
 		window.addEventListener('hashchange', () => {
 			this.currentPath = window.location.hash.slice(1)
