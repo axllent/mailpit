@@ -100,6 +100,7 @@ func init() {
 	rootCmd.Flags().StringVar(&config.SMTPTLSCert, "smtp-tls-cert", config.SMTPTLSCert, "TLS certificate for SMTP (STARTTLS) - requires smtp-tls-key")
 	rootCmd.Flags().StringVar(&config.SMTPTLSKey, "smtp-tls-key", config.SMTPTLSKey, "TLS key for SMTP (STARTTLS) - requires smtp-tls-cert")
 	rootCmd.Flags().BoolVar(&config.SMTPAuthAllowInsecure, "smtp-auth-allow-insecure", config.SMTPAuthAllowInsecure, "Enable insecure PLAIN & LOGIN authentication")
+	rootCmd.Flags().BoolVar(&config.SMTPStrictRFCHeaders, "smtp-strict-rfc-headers", config.SMTPStrictRFCHeaders, "Return SMTP error if message headers contain <CR><CR><LF>")
 
 	rootCmd.Flags().StringVar(&config.SMTPRelayConfigFile, "smtp-relay-config", config.SMTPRelayConfigFile, "SMTP configuration file to allow releasing messages")
 	rootCmd.Flags().BoolVar(&config.SMTPRelayAllIncoming, "smtp-relay-all", config.SMTPRelayAllIncoming, "Relay all incoming messages via external SMTP server (caution!)")
@@ -184,6 +185,9 @@ func initConfigFromEnv() {
 	}
 	if getEnabledFromEnv("MP_SMTP_AUTH_ALLOW_INSECURE") {
 		config.SMTPAuthAllowInsecure = true
+	}
+	if getEnabledFromEnv("MP_STRICT_RFC_HEADERS") {
+		config.SMTPStrictRFCHeaders = true
 	}
 
 	// Relay server config

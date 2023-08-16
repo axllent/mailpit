@@ -3,6 +3,7 @@ package apiv1
 import (
 	"github.com/axllent/mailpit/storage"
 	"github.com/axllent/mailpit/utils/htmlcheck"
+	"github.com/axllent/mailpit/utils/linkcheck"
 )
 
 // MessagesSummary is a summary of a list of messages
@@ -49,3 +50,6 @@ type Attachment = storage.Attachment
 
 // HTMLCheckResponse summary
 type HTMLCheckResponse = htmlcheck.Response
+
+// LinkCheckResponse summary
+type LinkCheckResponse = linkcheck.Response

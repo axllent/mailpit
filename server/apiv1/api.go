@@ -14,6 +14,7 @@ import (
 	"github.com/axllent/mailpit/server/smtpd"
 	"github.com/axllent/mailpit/storage"
 	"github.com/axllent/mailpit/utils/htmlcheck"
+	"github.com/axllent/mailpit/utils/linkcheck"
 	"github.com/axllent/mailpit/utils/logger"
 	"github.com/axllent/mailpit/utils/tools"
 	"github.com/gorilla/mux"
@@ -638,7 +639,7 @@ func HTMLCheck(w http.ResponseWriter, r *http.Request) {
 	//
 	// # HTML check (beta)
 	//
-	// Returns the summary of HTML check.
+	// Returns the summary of the message HTML checker.
 	//
 	// NOTE: This feature is currently in beta and is documented for reference only.
 	// Please do not integrate with it (yet) as there may be changes.
@@ -680,6 +681,62 @@ func HTMLCheck(w http.ResponseWriter, r *http.Request) {
 	}
 
 	bytes, _ := json.Marshal(checks)
+	w.Header().Add("Content-Type", "application/json")
+	_, _ = w.Write(bytes)
+}
+
+// LinkCheck returns a summary of links in the email
+func LinkCheck(w http.ResponseWriter, r *http.Request) {
+	// swagger:route GET /api/v1/message/{ID}/link-check Other LinkCheckResponse
+	//
+	// # Link check (beta)
+	//
+	// Returns the summary of the message Link checker.
+	//
+	// NOTE: This feature is currently in beta and is documented for reference only.
+	// Please do not integrate with it (yet) as there may be changes.
+	//
+	//	Produces:
+	//	- application/json
+	//
+	//	Schemes: http, https
+	//
+	//	Parameters:
+	//	  + name: ID
+	//	    in: path
+	//	    description: Database ID
+	//	    required: true
+	//	    type: string
+	//	  + name: follow
+	//	    in: query
+	//	    description: Follow redirects
+	//	    required: false
+	//	    type: boolean
+	//	    default: false
+	//
+	//	Responses:
+	//		200: LinkCheckResponse
+	//		default: ErrorResponse
+
+	vars := mux.Vars(r)
+	id := vars["id"]
+
+	msg, err := storage.GetMessage(id)
+	if err != nil {
+		fourOFour(w)
+		return
+	}
+
+	f := r.URL.Query().Get("follow")
+	followRedirects := f == "true" || f == "1"
+
+	summary, err := linkcheck.RunTests(msg, followRedirects)
+	if err != nil {
+		httpError(w, err.Error())
+		return
+	}
+
+	bytes, _ := json.Marshal(summary)
 	w.Header().Add("Content-Type", "application/json")
 	_, _ = w.Write(bytes)
 }

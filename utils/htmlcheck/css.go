@@ -11,6 +11,7 @@ import (
 	"github.com/PuerkitoBio/goquery"
 	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/utils/logger"
+	"github.com/axllent/mailpit/utils/tools"
 	"github.com/vanng822/go-premailer/premailer"
 	"golang.org/x/net/html"
 	"golang.org/x/net/html/atom"
@@ -59,7 +60,7 @@ func runCSSTests(html string) ([]Warning, int, error) {
 	// get a list of all generated styles from all nodes
 	allNodeStyles := []string{}
 	for _, n := range doc.Find("*[style]").Nodes {
-		style, err := getHTMLAttributeVal(n, "style")
+		style, err := tools.GetHTMLAttributeVal(n, "style")
 		if err == nil {
 			allNodeStyles = append(allNodeStyles, style)
 		}
