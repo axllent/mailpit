@@ -6,11 +6,11 @@
 ![CodeQL](https://github.com/axllent/mailpit/actions/workflows/codeql-analysis.yml/badge.svg)
 [![Go Report Card](https://goreportcard.com/badge/github.com/axllent/mailpit)](https://goreportcard.com/report/github.com/axllent/mailpit)
 
-Mailpit is a multi-platform email testing tool & API for developers.
+Mailpit is a small, fast, low memory, zero-dependency, multi-platform email testing tool & API for developers.
 
-It acts as both an SMTP server, and provides a web interface to view all captured emails. It also contains an API for automated integration testing.
+It acts as an SMTP server, provides a modern web interface to view & test captured emails, and contains an API for automated integration testing.
 
-Mailpit is inspired by [MailHog](#why-rewrite-mailhog), but modern and much, much faster.
+Mailpit was originally **inspired** by MailHog which is now [no longer maintained](https://github.com/mailhog/MailHog/issues/442#issuecomment-1493415258) and hasn't seen active development for a few years now.
 
 ![Mailpit](https://raw.githubusercontent.com/axllent/mailpit/develop/docs/screenshot.png)
 
@@ -21,6 +21,7 @@ Mailpit is inspired by [MailHog](#why-rewrite-mailhog), but modern and much, muc
 - SMTP server (default `0.0.0.0:1025`)
 - Web UI to view emails (formatted HTML, highlighted HTML source, text, headers, raw source and MIME attachments including image thumbnails)
 - HTML check to test & score mail client compatibility with HTML emails
+- Link check to test message links (HTML & text) & linked images
 - Light & dark web UI theme with auto-detect
 - Mobile and tablet HTML preview toggle in desktop mode
 - Advanced mail search ([see wiki](https://github.com/axllent/mailpit/wiki/Mail-search))
@@ -88,12 +89,3 @@ Please refer to [the documentation](https://github.com/axllent/mailpit/wiki/Test
 ### Configuring sendmail
 
 Mailpit's SMTP server (by default on port 1025), so you will likely need to configure your sending application to deliver mail via that port. A common MTA (Mail Transfer Agent) that delivers system emails to a SMTP server is `sendmail`, used by many applications including PHP. Mailpit can also act as substitute for sendmail. For instructions of how to set this up, please refer to the [sendmail documentation](https://github.com/axllent/mailpit/wiki/Configuring-sendmail).
-
-
-## Why rewrite MailHog?
-
-I had been using MailHog for a few years to intercept and test emails, but experienced a number of severe performance issues. Many of the frontend and Go libraries are very out of date, and the project [is no longer maintained](https://github.com/mailhog/MailHog/issues/442#issuecomment-1493415258).
-
-Initially I tried to upgrade a fork of MailHog (the UI, the HTTP server and the API), but discovered that it is (with all due respect to its authors) far too complex. I found it over-engineered (split over 9 separate projects), and performs very poorly when dealing with large amounts of emails or emails with attachments (a single email with a 3MB attachment can take over a minute to ingest). Finally the API transmits a lot of duplicate & irrelevant data on every browser request, all without any HTTP compression.
-
-In order to improve it I felt it needed to be completely rewritten, and so Mailpit was born.
