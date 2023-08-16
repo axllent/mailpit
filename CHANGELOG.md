@@ -4,6 +4,9 @@ Notable changes to Mailpit will be documented in this file.
 
 ## [v1.8.2]
 
+### Build
+- Update wangyoucao577/go-release-action[@v1](https://github.com/v1).39
+
 ### Feature
 - Link check to test message links
 - Workaround for non-RFC-compliant message headers containing <CR><CR><LF>
