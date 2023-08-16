@@ -90,6 +90,10 @@ var (
 	// SMTPRelayConfig to parse a yaml file and store config of relay SMTP server
 	SMTPRelayConfig smtpRelayConfigStruct
 
+	// SMTPStrictRFCHeaders will return an error if the email headers contain <CR><CR><LF> (\r\r\n)
+	// @see https://github.com/axllent/mailpit/issues/87 & https://github.com/axllent/mailpit/issues/153
+	SMTPStrictRFCHeaders bool
+
 	// ReleaseEnabled is whether message releases are enabled, requires a valid SMTPRelayConfigFile
 	ReleaseEnabled = false
 

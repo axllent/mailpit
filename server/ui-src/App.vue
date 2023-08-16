@@ -88,6 +88,10 @@ export default {
 	},
 
 	mounted() {
+
+		let title = document.title + ' - ' + location.hostname
+		document.title = title
+
 		this.currentPath = window.location.hash.slice(1)
 		window.addEventListener('hashchange', () => {
 			this.currentPath = window.location.hash.slice(1)
@@ -1006,7 +1010,7 @@ export default {
 				</div>
 			</div>
 
-			<Message v-if="message" :message="message" :existingTags="existingTags" :uiConfig="uiConfig"
+			<Message v-if="message" :message="message" :existingTags="existingTags" :uiConfig="uiConfig" :key="message.ID"
 				@load-messages="loadMessages">
 			</Message>
 		</div>

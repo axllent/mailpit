@@ -39,14 +39,13 @@
 }
 
 .nav-tabs .nav-link {
-    @include media-breakpoint-down(sm) {
-        // font-size: 14px;
+    @include media-breakpoint-down(xl) {
         padding-left: 10px;
         padding-right: 10px;
     }
 }
 
-:not(.text-view) > a {
+:not(.text-view) > a:not(.no-icon) {
     &[href^="http://"],
     &[href^="https://"]
     {
