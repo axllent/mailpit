@@ -124,7 +124,7 @@
     },
     "/api/v1/message/{ID}/html-check": {
       "get": {
-        "description": "Returns the summary of HTML check.\n\nNOTE: This feature is currently in beta and is documented for reference only.\nPlease do not integrate with it (yet) as there may be changes.",
+        "description": "Returns the summary of the message HTML checker.\n\nNOTE: This feature is currently in beta and is documented for reference only.\nPlease do not integrate with it (yet) as there may be changes.",
         "produces": [
           "application/json"
         ],
@@ -151,6 +151,50 @@
             "description": "HTMLCheckResponse",
             "schema": {
               "$ref": "#/definitions/HTMLCheckResponse"
+            }
+          },
+          "default": {
+            "$ref": "#/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/api/v1/message/{ID}/link-check": {
+      "get": {
+        "description": "Returns the summary of the message Link checker.\n\nNOTE: This feature is currently in beta and is documented for reference only.\nPlease do not integrate with it (yet) as there may be changes.",
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "Other"
+        ],
+        "summary": "Link check (beta)",
+        "operationId": "LinkCheckResponse",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Database ID",
+            "name": "ID",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "boolean",
+            "default": false,
+            "description": "Follow redirects",
+            "name": "follow",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "LinkCheckResponse",
+            "schema": {
+              "$ref": "#/definitions/LinkCheckResponse"
             }
           },
           "default": {
@@ -827,6 +871,46 @@
       },
       "x-go-name": "Warning",
       "x-go-package": "github.com/axllent/mailpit/utils/htmlcheck"
+    },
+    "Link": {
+      "description": "Link struct",
+      "type": "object",
+      "properties": {
+        "Status": {
+          "description": "HTTP status definition",
+          "type": "string"
+        },
+        "StatusCode": {
+          "description": "HTTP status code",
+          "type": "integer",
+          "format": "int64"
+        },
+        "URL": {
+          "description": "Link URL",
+          "type": "string"
+        }
+      },
+      "x-go-package": "github.com/axllent/mailpit/utils/linkcheck"
+    },
+    "LinkCheckResponse": {
+      "description": "Response represents the Link check response",
+      "type": "object",
+      "properties": {
+        "Errors": {
+          "description": "Total number of errors",
+          "type": "integer",
+          "format": "int64"
+        },
+        "Links": {
+          "description": "Tested links",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Link"
+          }
+        }
+      },
+      "x-go-name": "Response",
+      "x-go-package": "github.com/axllent/mailpit/utils/linkcheck"
     },
     "Message": {
       "description": "Message data excluding physical attachments",

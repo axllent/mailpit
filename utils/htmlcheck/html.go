@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
-	"golang.org/x/net/html"
+	"github.com/axllent/mailpit/utils/tools"
 )
 
 // HTML tests
@@ -72,7 +72,7 @@ func runHTMLTests(html string) ([]Warning, int, error) {
 	totalTests = totalTests + len(imageRegexpTests)
 
 	for _, image := range images {
-		src, err := getHTMLAttributeVal(image, "src")
+		src, err := tools.GetHTMLAttributeVal(image, "src")
 		if err != nil {
 			continue
 		}
@@ -99,14 +99,4 @@ func runHTMLTests(html string) ([]Warning, int, error) {
 	}
 
 	return results, totalTests, nil
-}
-
-func getHTMLAttributeVal(e *html.Node, key string) (string, error) {
-	for _, a := range e.Attr {
-		if a.Key == key {
-			return a.Val, nil
-		}
-	}
-
-	return "", nil
 }
