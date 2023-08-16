@@ -2,6 +2,19 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.8.2]
+
+### Feature
+- Link check to test message links
+- Workaround for non-RFC-compliant message headers containing <CR><CR><LF>
+
+### Libs
+- Update Go libs
+
+### UI
+- Set hostname in page meta title to identify Mailpit instance
+
+
 ## [v1.8.1]
 
 ### Docs
