@@ -48,39 +48,15 @@ export default {
 	},
 
 	watch: {
-		// handle changes to the URL messageID
-		message: {
-			handler() {
-				let self = this
-				self.showTags = false
-				self.canSaveTags = false
-				self.messageTags = self.message.Tags
-				self.allTags = self.existingTags
-				self.loadHeaders = false
-				self.scaleHTMLPreview = 'display' // default view
-				// delay to select first tab and add HTML highlighting (prev/next)
-				self.$nextTick(function () {
-					self.renderUI()
-					self.showTags = true
-					self.$nextTick(function () {
-						Tags.init("select[multiple]")
-						window.setTimeout(function () {
-							self.canSaveTags = true
-						}, 200)
-					})
-				})
-			},
-			// force eager callback execution
-			immediate: true
-		},
 		messageTags() {
-			// save changes to tags
 			if (this.canSaveTags) {
+				// save changes to tags
 				this.saveTags()
 			}
 		},
-		scaleHTMLPreview() {
-			if (this.scaleHTMLPreview == 'display') {
+
+		scaleHTMLPreview(v) {
+			if (v == 'display') {
 				let self = this
 				window.setTimeout(function () {
 					self.resizeIFrames()
@@ -94,6 +70,9 @@ export default {
 		self.showTags = false
 		self.canSaveTags = false
 		self.allTags = self.existingTags
+		self.messageTags = self.message.Tags
+		self.renderUI()
+
 		window.addEventListener("resize", self.resizeIFrames)
 
 		let headersTab = document.getElementById('nav-headers-tab')
@@ -111,6 +90,7 @@ export default {
 		self.$nextTick(function () {
 			self.$nextTick(function () {
 				Tags.init('select[multiple]')
+				// delay tag change detection to allow Tags to load
 				window.setTimeout(function () {
 					self.canSaveTags = true
 				}, 200)
@@ -118,19 +98,16 @@ export default {
 		})
 	},
 
-	unmounted: function () {
-		window.removeEventListener("resize", this.resizeIFrames)
-	},
-
 	methods: {
 		isHTMLTabSelected: function () {
 			this.showMobileButtons = this.$refs.navhtml
 				&& this.$refs.navhtml.classList.contains('active')
 		},
+
 		renderUI: function () {
 			let self = this
 
-			// click the first non-disabled tab
+			// activate the first non-disabled tab
 			document.querySelector('#nav-tab button:not([disabled])').click()
 			document.activeElement.blur() // blur focus
 			document.getElementById('message-view').scrollTop = 0
@@ -317,7 +294,7 @@ export default {
 							<td>{{ messageDate(message.Date) }}</td>
 						</tr>
 
-						<tr class="small" v-if="showTags">
+						<tr class="small">
 							<th>Tags</th>
 							<td>
 								<select class="form-select small tag-selector" v-model="messageTags" multiple
@@ -329,7 +306,7 @@ export default {
 									<!-- you need at least one option with the placeholder -->
 									<option v-for="t in allTags" :value="t">{{ t }}</option>
 								</select>
-								<div class="invalid-feedback">Please select a valid tag.</div>
+								<div class="invalid-feedback">Invalid tag name</div>
 							</td>
 						</tr>
 					</tbody>
@@ -347,15 +324,31 @@ export default {
 
 		<nav>
 			<div class="nav nav-tabs my-3" id="nav-tab" role="tablist">
-				<button class="nav-link" id="nav-html-tab" data-bs-toggle="tab" data-bs-target="#nav-html" type="button"
-					role="tab" aria-controls="nav-html" aria-selected="true" v-if="message.HTML" ref="navhtml"
-					v-on:click="resizeIFrames()">
-					HTML
-				</button>
-				<button class="nav-link" id="nav-html-source-tab" data-bs-toggle="tab" data-bs-target="#nav-html-source"
-					type="button" role="tab" aria-controls="nav-html-source" aria-selected="false" v-if="message.HTML">
-					HTML <span class="d-sm-none">Src</span><span class="d-none d-sm-inline">Source</span>
-				</button>
+				<template v-if="message.HTML">
+					<div class="btn-group">
+						<button class="nav-link" id="nav-html-tab" data-bs-toggle="tab" data-bs-target="#nav-html"
+							type="button" role="tab" aria-controls="nav-html" aria-selected="true" ref="navhtml"
+							v-on:click="resizeIFrames()">
+							HTML
+						</button>
+						<button type="button" class="nav-link dropdown-toggle dropdown-toggle-split d-sm-none"
+							data-bs-toggle="dropdown" aria-expanded="false" data-bs-reference="parent">
+							<span class="visually-hidden">Toggle Dropdown</span>
+						</button>
+						<div class="dropdown-menu">
+							<button class="dropdown-item" data-bs-toggle="tab" data-bs-target="#nav-html-source"
+								type="button" role="tab" aria-controls="nav-html-source" aria-selected="false">
+								HTML Source
+							</button>
+						</div>
+					</div>
+					<button class="nav-link d-none d-sm-inline" id="nav-html-source-tab" data-bs-toggle="tab"
+						data-bs-target="#nav-html-source" type="button" role="tab" aria-controls="nav-html-source"
+						aria-selected="false">
+						HTML <span class="d-sm-none">Src</span><span class="d-none d-sm-inline">Source</span>
+					</button>
+				</template>
+
 				<button class="nav-link" id="nav-plain-text-tab" data-bs-toggle="tab" data-bs-target="#nav-plain-text"
 					type="button" role="tab" aria-controls="nav-plain-text" aria-selected="false"
 					:class="message.HTML == '' ? 'show' : ''">
