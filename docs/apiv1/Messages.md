@@ -137,7 +137,7 @@ The `read` status can be `true` or `false`.
 ```json
 {
   "ids": ["<ID>","<ID>"...],
-  "read": false
+  "status": false
 }
 ```
 
