@@ -24,7 +24,7 @@
   "devDependencies": {
     "@popperjs/core": "^2.11.5",
     "@vue/compiler-sfc": "^3.2.37",
-    "esbuild": "^0.18.10",
+    "esbuild": "^0.18.20",
     "esbuild-plugin-vue-next": "^0.1.4",
     "esbuild-sass-plugin": "^2.3.2"
   }
