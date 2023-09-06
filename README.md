@@ -22,8 +22,9 @@ Mailpit was originally **inspired** by MailHog which is now [no longer maintaine
 - Web UI to view emails (formatted HTML, highlighted HTML source, text, headers, raw source and MIME attachments including image thumbnails)
 - HTML check to test & score mail client compatibility with HTML emails
 - Link check to test message links (HTML & text) & linked images
-- Light & dark web UI theme with auto-detect
+- Screenshots of HTML messages via web UI
 - Mobile and tablet HTML preview toggle in desktop mode
+- Light & dark web UI theme with auto-detect
 - Advanced mail search ([see wiki](https://github.com/axllent/mailpit/wiki/Mail-search))
 - Message tagging ([see wiki](https://github.com/axllent/mailpit/wiki/Tagging))
 - Real-time web UI updates using web sockets for new mail
