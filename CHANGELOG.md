@@ -2,6 +2,18 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.8.3]
+
+### Feature
+- HTML screenshots
+
+### Libs
+- Update node modules
+
+### UI
+- Group message tabs on mobile
+
+
 ## [v1.8.2]
 
 ### Build

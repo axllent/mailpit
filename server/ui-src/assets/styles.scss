@@ -292,6 +292,11 @@ body.blur {
     }
 }
 
+// bootstrap5-tags
+.tags-badge {
+    display: flex;
+}
+
 #DownloadBtn {
     @include media-breakpoint-down(sm) {
         position: static;

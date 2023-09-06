@@ -3,6 +3,7 @@ import commonMixins from './mixins.js'
 import Message from './templates/Message.vue'
 import MessageSummary from './templates/MessageSummary.vue'
 import MessageRelease from './templates/MessageRelease.vue'
+import MessageScreenshot from './templates/MessageScreenshot.vue'
 import MessageToast from './templates/MessageToast.vue'
 import ThemeToggle from './templates/ThemeToggle.vue'
 import moment from 'moment'
@@ -15,6 +16,7 @@ export default {
 		Message,
 		MessageSummary,
 		MessageRelease,
+		MessageScreenshot,
 		MessageToast,
 		ThemeToggle,
 	},
@@ -697,6 +699,10 @@ export default {
 
 		clearMessageToast: function () {
 			this.toastMessage = false
+		},
+
+		screenshotMessageHTML: function () {
+			this.$refs.MessageScreenshotRef.initScreenshot()
 		}
 	}
 }
@@ -752,29 +758,42 @@ export default {
 							HTML body
 						</button>
 					</li>
+					<!-- <MessageScreenshot :message="message"></MessageScreenshot> -->
+					<li v-if="message.HTML">
+						<button class="dropdown-item" @click="screenshotMessageHTML()">
+							HTML screenshot
+						</button>
+					</li>
 					<li v-if="message.Text">
 						<button v-on:click="downloadMessageBody(message.Text, 'txt')" class="dropdown-item">
 							Text body
 						</button>
 					</li>
-					<li v-if="allAttachments(message).length">
-						<hr class="dropdown-divider">
-					</li>
-					<li v-for="part in allAttachments(message)">
-						<a :href="'api/v1/message/' + message.ID + '/part/' + part.PartID" type="button"
-							class="row m-0 dropdown-item d-flex" target="_blank"
-							:title="part.FileName != '' ? part.FileName : '[ unknown ]'" style="min-width: 350px">
-							<div class="col-auto p-0 pe-1">
-								<i class="bi" :class="attachmentIcon(part)"></i>
-							</div>
-							<div class="col text-truncate p-0 pe-1">
-								{{ part.FileName != '' ? part.FileName : '[ unknown ]' }}
-							</div>
-							<div class="col-auto text-muted small p-0">
-								{{ getFileSize(part.Size) }}
-							</div>
-						</a>
-					</li>
+					<template v-if="allAttachments(message).length">
+						<li>
+							<hr class="dropdown-divider">
+						</li>
+						<li>
+							<h6 class="dropdown-header">
+								Attachment<template v-if="allAttachments(message).length > 1">s</template>
+							</h6>
+						</li>
+						<li v-for="part in allAttachments(message)">
+							<a :href="'api/v1/message/' + message.ID + '/part/' + part.PartID" type="button"
+								class="row m-0 dropdown-item d-flex" target="_blank"
+								:title="part.FileName != '' ? part.FileName : '[ unknown ]'" style="min-width: 350px">
+								<div class="col-auto p-0 pe-1">
+									<i class="bi" :class="attachmentIcon(part)"></i>
+								</div>
+								<div class="col text-truncate p-0 pe-1">
+									{{ part.FileName != '' ? part.FileName : '[ unknown ]' }}
+								</div>
+								<div class="col-auto text-muted small p-0">
+									{{ getFileSize(part.Size) }}
+								</div>
+							</a>
+						</li>
+					</template>
 				</ul>
 			</div>
 		</div>
@@ -1203,4 +1222,6 @@ export default {
 	</div>
 
 	<MessageToast v-if="toastMessage" :message="toastMessage" @clearMessageToast="clearMessageToast"></MessageToast>
+
+	<MessageScreenshot ref="MessageScreenshotRef" :message="message"></MessageScreenshot>
 </template>
