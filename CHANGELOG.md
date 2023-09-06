@@ -2,6 +2,12 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.8.4]
+
+### Fix
+- Correctly decode proxy links containing HTML entities (screenshots)
+
+
 ## [v1.8.3]
 
 ### Feature
