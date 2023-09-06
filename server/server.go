@@ -45,8 +45,11 @@ func Listen() {
 	r := defaultRoutes()
 
 	// kubernetes probes
-	r.HandleFunc("/livez", handlers.HealthzHandler)
-	r.HandleFunc("/readyz", handlers.ReadyzHandler(isReady))
+	r.HandleFunc(config.Webroot+"livez", handlers.HealthzHandler)
+	r.HandleFunc(config.Webroot+"readyz", handlers.ReadyzHandler(isReady))
+
+	// proxy handler for screenshots
+	r.HandleFunc(config.Webroot+"proxy", middleWareFunc(handlers.ProxyHandler)).Methods("GET")
 
 	// web UI websocket
 	r.HandleFunc(config.Webroot+"api/events", apiWebsocket).Methods("GET")
