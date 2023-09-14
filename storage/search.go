@@ -109,6 +109,12 @@ func searchParser(args []string) *sqlf.Stmt {
 			} else {
 				q.Where("Read = 0")
 			}
+		} else if w == "is:tagged" {
+			if exclude {
+				q.Where("Tags = ?", "[]")
+			} else {
+				q.Where("Tags != ?", "[]")
+			}
 		} else if w == "has:attachment" || w == "has:attachments" {
 			if exclude {
 				q.Where("Attachments = 0")

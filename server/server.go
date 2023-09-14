@@ -12,6 +12,7 @@ import (
 	"os"
 	"strings"
 	"sync/atomic"
+	"text/template"
 
 	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/server/apiv1"
@@ -42,7 +43,7 @@ func Listen() {
 
 	go websockets.MessageHub.Run()
 
-	r := defaultRoutes()
+	r := apiRoutes()
 
 	// kubernetes probes
 	r.HandleFunc(config.Webroot+"livez", handlers.HealthzHandler)
@@ -51,18 +52,24 @@ func Listen() {
 	// proxy handler for screenshots
 	r.HandleFunc(config.Webroot+"proxy", middleWareFunc(handlers.ProxyHandler)).Methods("GET")
 
-	// web UI websocket
-	r.HandleFunc(config.Webroot+"api/events", apiWebsocket).Methods("GET")
-
-	// virtual filesystem for others
-	r.PathPrefix(config.Webroot).Handler(middlewareHandler(http.StripPrefix(config.Webroot, http.FileServer(http.FS(serverRoot)))))
+	// virtual filesystem for /dist/ & some individual files
+	r.PathPrefix(config.Webroot + "dist/").Handler(middlewareHandler(http.StripPrefix(config.Webroot, http.FileServer(http.FS(serverRoot)))))
+	r.PathPrefix(config.Webroot + "api/").Handler(middlewareHandler(http.StripPrefix(config.Webroot, http.FileServer(http.FS(serverRoot)))))
+	r.Path(config.Webroot + "favicon.ico").Handler(middlewareHandler(http.StripPrefix(config.Webroot, http.FileServer(http.FS(serverRoot)))))
+	r.Path(config.Webroot + "favicon.svg").Handler(middlewareHandler(http.StripPrefix(config.Webroot, http.FileServer(http.FS(serverRoot)))))
+	r.Path(config.Webroot + "mailpit.svg").Handler(middlewareHandler(http.StripPrefix(config.Webroot, http.FileServer(http.FS(serverRoot)))))
+	r.Path(config.Webroot + "notification.png").Handler(middlewareHandler(http.StripPrefix(config.Webroot, http.FileServer(http.FS(serverRoot)))))
 
 	// redirect to webroot if no trailing slash
 	if config.Webroot != "/" {
-		redir := strings.TrimRight(config.Webroot, "/")
-		r.HandleFunc(redir, middleWareFunc(addSlashToWebroot)).Methods("GET")
+		redirect := strings.TrimRight(config.Webroot, "/")
+		r.HandleFunc(redirect, middleWareFunc(addSlashToWebroot)).Methods("GET")
 	}
 
+	// handle everything else with the virtual index.html
+	r.PathPrefix(config.Webroot).Handler(middleWareFunc(index)).Methods("GET")
+
+	// put it all together
 	http.Handle("/", r)
 
 	if config.UIAuthFile != "" {
@@ -81,7 +88,7 @@ func Listen() {
 	}
 }
 
-func defaultRoutes() *mux.Router {
+func apiRoutes() *mux.Router {
 	r := mux.NewRouter()
 
 	// API V1
@@ -103,6 +110,9 @@ func defaultRoutes() *mux.Router {
 	r.HandleFunc(config.Webroot+"api/v1/info", middleWareFunc(apiv1.AppInfo)).Methods("GET")
 	r.HandleFunc(config.Webroot+"api/v1/webui", middleWareFunc(apiv1.WebUIConfig)).Methods("GET")
 	r.HandleFunc(config.Webroot+"api/v1/swagger.json", middleWareFunc(swaggerBasePath)).Methods("GET")
+
+	// web UI websocket
+	r.HandleFunc(config.Webroot+"api/events", apiWebsocket).Methods("GET")
 
 	// return blank 200 response for OPTIONS requests for CORS
 	r.PathPrefix(config.Webroot + "api/v1/").Handler(middleWareFunc(apiv1.GetOptions)).Methods("OPTIONS")
@@ -229,4 +239,60 @@ func swaggerBasePath(w http.ResponseWriter, _ *http.Request) {
 
 	w.Header().Add("Content-Type", "application/json")
 	_, _ = w.Write(f)
+}
+
+// Just returns the default HTML template
+func index(w http.ResponseWriter, _ *http.Request) {
+
+	var h = `<!DOCTYPE html>
+<html lang="en" class="h-100">
+
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width,initial-scale=1.0">
+	<meta name="referrer" content="no-referrer">
+	<meta name="robots" content="noindex, nofollow, noarchive">
+	<link rel="icon" href="{{ .Webroot }}favicon.svg">
+	<title>Mailpit</title>
+	<link rel=stylesheet href="{{ .Webroot }}dist/app.css?{{ .Version }}">
+</head>
+
+<body class="h-100">
+	<div class="container-fluid h-100 d-flex flex-column" id="app" data-webroot="{{ .Webroot }}">
+		<noscript>You require JavaScript to use this app.</noscript>
+	</div>
+
+	<script src="{{ .Webroot }}dist/app.js?{{ .Version }}"></script>
+</body>
+
+</html>`
+
+	t, err := template.New("index").Parse(h)
+	if err != nil {
+		panic(err)
+	}
+
+	data := struct {
+		Webroot string
+		Version string
+	}{
+		Webroot: config.Webroot,
+		Version: config.Version,
+	}
+
+	buff := new(bytes.Buffer)
+
+	err = t.Execute(buff, data)
+	if err != nil {
+		panic(err)
+	}
+
+	buff.Bytes()
+
+	// f, err := embeddedFS.ReadFile("public/index.html")
+	// if err != nil {
+	// 	panic(err)
+	// }
+	w.Header().Add("Content-Type", "text/html")
+	_, _ = w.Write(buff.Bytes())
 }

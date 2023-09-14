@@ -20,7 +20,8 @@
     "rapidoc": "^9.3.4",
     "tinycon": "^0.6.8",
     "vue": "^3.2.13",
-    "vue-css-donut-chart": "^2.0.0"
+    "vue-css-donut-chart": "^2.0.0",
+    "vue-router": "^4.2.4"
   },
   "devDependencies": {
     "@popperjs/core": "^2.11.5",

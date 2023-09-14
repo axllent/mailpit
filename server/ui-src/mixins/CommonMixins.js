@@ -14,17 +14,27 @@ FakeModal.prototype.show = function () { }
 const colorHash = new ColorHash({ lightness: 0.3, saturation: [0.35, 0.5, 0.65] });
 
 /* Common mixin functions used in apps */
-const commonMixins = {
+export default {
 	data() {
 		return {
 			loading: 0,
 			tagColorCache: {},
-			showTagColors: true
+			// showTagColors: true,
 		}
 	},
 
+	beforeMount() {
+		// this.baseURL = this.$router.resolve(`/`).href
+	},
+
 	mounted() {
-		this.showTagColors = localStorage.getItem('showTagsColors')
+		// this.showTagColors = localStorage.getItem('showTagsColors')
+	},
+
+	computed: {
+		baseURL() {
+			return window.baseURL
+		}
 	},
 
 	methods: {
@@ -39,6 +49,14 @@ const commonMixins = {
 
 		messageDate: function (d) {
 			return moment(d).format('ddd, D MMM YYYY, h:mm a');
+		},
+
+		tagEncodeURI: function (tag) {
+			if (tag.match(/ /)) {
+				tag = `"${tag}"`
+			}
+
+			return 'tag:' + encodeURIComponent(`${tag}`)
 		},
 
 		// Ajax error message
@@ -224,17 +242,17 @@ const commonMixins = {
 			return this.tagColorCache[s]
 		},
 
-		toggleTagColors: function () {
-			if (this.showTagColors) {
-				localStorage.removeItem('showTagsColors')
-				this.showTagColors = false
-			} else {
-				localStorage.setItem('showTagsColors', '1')
-				this.showTagColors = true
-			}
-		}
+		// toggleTagColors: function () {
+		// 	if (this.showTagColors) {
+		// 		localStorage.removeItem('showTagsColors')
+		// 		this.showTagColors = false
+		// 	} else {
+		// 		localStorage.setItem('showTagsColors', '1')
+		// 		this.showTagColors = true
+		// 	}
+		// }
 	}
 }
 
 
-export default commonMixins;
+// export default commonMixins;
