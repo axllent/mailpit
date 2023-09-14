@@ -392,7 +392,7 @@ func Search(search string, start, limit int) ([]MessageSummary, int, error) {
 		limit = 50
 	}
 
-	s := strings.ToLower(search)
+	s := escSearch(strings.ToLower(search))
 	// add another quote if missing closing quote
 	quotes := strings.Count(s, `"`)
 	if quotes%2 != 0 {

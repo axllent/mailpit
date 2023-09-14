@@ -61,7 +61,7 @@ func createSearchText(env *enmime.Envelope) string {
 // CleanString removes unwanted characters from stored search text and search queries
 func cleanString(str string) string {
 	// remove/replace new lines
-	re := regexp.MustCompile(`(\r?\n|\t|>|<|"|\,|;)`)
+	re := regexp.MustCompile(`(\r?\n|\t|>|<|"|\,|;\(\))`)
 	str = re.ReplaceAllString(str, " ")
 
 	// remove duplicate whitespace and trim
@@ -182,4 +182,45 @@ func inArray(k string, arr []string) bool {
 // escPercentChar replaces `%` with `%%` for SQL searches
 func escPercentChar(s string) string {
 	return strings.ReplaceAll(s, "%", "%%")
+}
+
+// Escape certain characters in search phrases
+func escSearch(str string) string {
+	str = strings.ReplaceAll(str, "(", " ")
+	str = strings.ReplaceAll(str, ")", " ")
+	dest := make([]byte, 0, 2*len(str))
+	var escape byte
+	for i := 0; i < len(str); i++ {
+		c := str[i]
+
+		escape = 0
+
+		switch c {
+		case 0: /* Must be escaped for 'mysql' */
+			escape = '0'
+			break
+		case '\n': /* Must be escaped for logs */
+			escape = 'n'
+			break
+		case '\r':
+			escape = 'r'
+			break
+		case '\\':
+			escape = '\\'
+			break
+		case '\'':
+			escape = '\''
+			break
+		case '\032': //十进制26,八进制32,十六进制1a, /* This gives problems on Win32 */
+			escape = 'Z'
+		}
+
+		if escape != 0 {
+			dest = append(dest, '\\', escape)
+		} else {
+			dest = append(dest, c)
+		}
+	}
+
+	return string(dest)
 }
