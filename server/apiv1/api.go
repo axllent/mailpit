@@ -131,8 +131,8 @@ func Search(w http.ResponseWriter, r *http.Request) {
 
 	res.Start = start
 	res.Messages = messages
-	res.Count = results // legacy - now undocumented in API specs
-	res.Total = stats.Total
+	res.Count = len(messages) // legacy - now undocumented in API specs
+	res.Total = stats.Total   // total messages in mailbox
 	res.MessagesCount = results
 	res.Unread = stats.Unread
 	res.Tags = stats.Tags
