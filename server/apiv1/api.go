@@ -142,6 +142,44 @@ func Search(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(bytes)
 }
 
+// DeleteSearch will delete all messages matching a search
+func DeleteSearch(w http.ResponseWriter, r *http.Request) {
+	// swagger:route DELETE /api/v1/search messages MessagesSummary
+	//
+	// # Delete messages by search
+	//
+	// Deletes messages matching a search.
+	//
+	//	Produces:
+	//	- application/json
+	//
+	//	Schemes: http, https
+	//
+	//	Parameters:
+	//	  + name: query
+	//	    in: query
+	//	    description: Search query
+	//	    required: true
+	//	    type: string
+	//
+	//	Responses:
+	//		200: OKResponse
+	//		default: ErrorResponse
+	search := strings.TrimSpace(r.URL.Query().Get("query"))
+	if search == "" {
+		httpError(w, "Error: no search query")
+		return
+	}
+
+	if err := storage.DeleteSearch(search); err != nil {
+		httpError(w, err.Error())
+		return
+	}
+
+	w.Header().Add("Content-Type", "text/plain")
+	_, _ = w.Write([]byte("ok"))
+}
+
 // GetMessage (method: GET) returns the Message as JSON
 func GetMessage(w http.ResponseWriter, r *http.Request) {
 	// swagger:route GET /api/v1/message/{ID} message Message
