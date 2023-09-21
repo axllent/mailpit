@@ -96,3 +96,7 @@ type okResponse struct {
 	// in: body
 	Body string
 }
+
+// Plain JSON array response
+// swagger:response ArrayResponse
+type arrayResponse []string

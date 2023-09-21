@@ -709,15 +709,8 @@ func DeleteAllMessages() error {
 	return err
 }
 
-// StatsGet returns the total/unread statistics for a mailbox
-func StatsGet() MailboxStats {
-	var (
-		total  = CountTotal()
-		unread = CountUnread()
-	)
-
-	dbLastAction = time.Now()
-
+// GetAllTags returns all used tags
+func GetAllTags() []string {
 	q := sqlf.From("mailbox").
 		Select(`DISTINCT Tags`).
 		Where("Tags != ?", "[]")
@@ -749,6 +742,19 @@ func StatsGet() MailboxStats {
 	}
 
 	sort.Strings(tags)
+
+	return tags
+}
+
+// StatsGet returns the total/unread statistics for a mailbox
+func StatsGet() MailboxStats {
+	var (
+		total  = CountTotal()
+		unread = CountUnread()
+		tags   = GetAllTags()
+	)
+
+	dbLastAction = time.Now()
 
 	return MailboxStats{
 		Total:  total,

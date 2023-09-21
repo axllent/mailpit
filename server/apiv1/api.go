@@ -451,6 +451,33 @@ func SetReadStatus(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write([]byte("ok"))
 }
 
+// GetTags (method: GET) will get all tags currently in use
+func GetTags(w http.ResponseWriter, _ *http.Request) {
+	// swagger:route GET /api/v1/tags tags SetTags
+	//
+	// # Get all current tags
+	//
+	//	Produces:
+	//	- application/json
+	//
+	//	Schemes: http, https
+	//
+	//	Responses:
+	//		200: ArrayResponse
+	//		default: ErrorResponse
+
+	tags := storage.GetAllTags()
+
+	data, err := json.Marshal(tags)
+	if err != nil {
+		httpError(w, err.Error())
+		return
+	}
+
+	w.Header().Add("Content-Type", "application/json")
+	_, _ = w.Write(data)
+}
+
 // SetTags (method: PUT) will set the tags for all provided IDs
 func SetTags(w http.ResponseWriter, r *http.Request) {
 	// swagger:route PUT /api/v1/tags tags SetTags
