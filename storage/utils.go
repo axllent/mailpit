@@ -186,8 +186,6 @@ func escPercentChar(s string) string {
 
 // Escape certain characters in search phrases
 func escSearch(str string) string {
-	str = strings.ReplaceAll(str, "(", " ")
-	str = strings.ReplaceAll(str, ")", " ")
 	dest := make([]byte, 0, 2*len(str))
 	var escape byte
 	for i := 0; i < len(str); i++ {

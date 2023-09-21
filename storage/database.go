@@ -25,7 +25,6 @@ import (
 	"github.com/jhillyerd/enmime"
 	"github.com/klauspost/compress/zstd"
 	"github.com/leporo/sqlf"
-	"github.com/mattn/go-shellwords"
 	uuid "github.com/satori/go.uuid"
 
 	// sqlite (native) - https://gitlab.com/cznic/sqlite
@@ -367,9 +366,6 @@ func List(start, limit int) ([]MessageSummary, error) {
 		em.Read = read == 1
 
 		results = append(results, em)
-
-		// logger.PrettyPrint(em)
-
 	}); err != nil {
 		return results, err
 	}
@@ -377,96 +373,6 @@ func List(start, limit int) ([]MessageSummary, error) {
 	dbLastAction = time.Now()
 
 	return results, nil
-}
-
-// Search will search a mailbox for search terms.
-// The search is broken up by segments (exact phrases can be quoted), and interprets specific terms such as:
-// is:read, is:unread, has:attachment, to:<term>, from:<term> & subject:<term>
-// Negative searches also also included by prefixing the search term with a `-` or `!`
-func Search(search string, start, limit int) ([]MessageSummary, int, error) {
-	results := []MessageSummary{}
-	allResults := []MessageSummary{}
-	tsStart := time.Now()
-	nrResults := 0
-	if limit < 0 {
-		limit = 50
-	}
-
-	s := escSearch(strings.ToLower(search))
-	// add another quote if missing closing quote
-	quotes := strings.Count(s, `"`)
-	if quotes%2 != 0 {
-		s += `"`
-	}
-
-	p := shellwords.NewParser()
-	args, err := p.Parse(s)
-	if err != nil {
-		return results, nrResults, errors.New("Your search contains invalid characters")
-	}
-
-	// generate the SQL based on arguments
-	q := searchParser(args)
-
-	if err := q.QueryAndClose(nil, db, func(row *sql.Rows) {
-		var created int64
-		var id string
-		var messageID string
-		var subject string
-		var metadata string
-		var size int
-		var attachments int
-		var tags string
-		var read int
-		var ignore string
-		em := MessageSummary{}
-
-		if err := row.Scan(&created, &id, &messageID, &subject, &metadata, &size, &attachments, &read, &tags, &ignore, &ignore, &ignore, &ignore); err != nil {
-			logger.Log().Error(err)
-			return
-		}
-
-		if err := json.Unmarshal([]byte(metadata), &em); err != nil {
-			logger.Log().Error(err)
-			return
-		}
-
-		if err := json.Unmarshal([]byte(tags), &em.Tags); err != nil {
-			logger.Log().Error(err)
-			return
-		}
-
-		em.Created = time.UnixMilli(created)
-		em.ID = id
-		em.MessageID = messageID
-		em.Subject = subject
-		em.Size = size
-		em.Attachments = attachments
-		em.Read = read == 1
-
-		allResults = append(allResults, em)
-	}); err != nil {
-		return results, nrResults, err
-	}
-
-	dbLastAction = time.Now()
-
-	nrResults = len(allResults)
-
-	if nrResults > start {
-		end := nrResults
-		if nrResults >= start+limit {
-			end = start + limit
-		}
-
-		results = allResults[start:end]
-	}
-
-	elapsed := time.Since(tsStart)
-
-	logger.Log().Debugf("[db] search for \"%s\" in %s", search, elapsed)
-
-	return results, nrResults, err
 }
 
 // GetMessage returns a Message generated from the mailbox_data collection.
