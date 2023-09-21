@@ -495,6 +495,8 @@ func GetTags(w http.ResponseWriter, _ *http.Request) {
 	//
 	// # Get all current tags
 	//
+	// Returns a JSON array of all unique message tags.
+	//
 	//	Produces:
 	//	- application/json
 	//
