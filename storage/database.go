@@ -431,7 +431,6 @@ func GetMessage(id string) (*Message, error) {
 	obj := Message{
 		ID:         id,
 		MessageID:  messageID,
-		Read:       true,
 		From:       from,
 		Date:       date,
 		To:         addressToSlice(env, "To"),
