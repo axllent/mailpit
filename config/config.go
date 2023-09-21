@@ -12,7 +12,6 @@ import (
 
 	"github.com/axllent/mailpit/utils/logger"
 	"github.com/axllent/mailpit/utils/tools"
-	"github.com/mattn/go-shellwords"
 	"github.com/tg123/go-htpasswd"
 	"gopkg.in/yaml.v3"
 )
@@ -228,13 +227,8 @@ func VerifyConfig() error {
 
 	SMTPTags = []AutoTag{}
 
-	p := shellwords.NewParser()
-
 	if SMTPCLITags != "" {
-		args, err := p.Parse(SMTPCLITags)
-		if err != nil {
-			return fmt.Errorf("Error parsing tags (%s)", err)
-		}
+		args := tools.ArgsParser(SMTPCLITags)
 
 		for _, a := range args {
 			t := strings.Split(a, "=")
