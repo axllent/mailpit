@@ -406,7 +406,7 @@ func DeleteMessages(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	w.Header().Add("Content-Type", "text/plain")
+	w.Header().Add("Content-Type", "application/json")
 	_, _ = w.Write([]byte("ok"))
 }
 
@@ -843,7 +843,7 @@ func getStartLimit(req *http.Request) (start int, limit int) {
 }
 
 // GetOptions returns a blank response
-func GetOptions(w http.ResponseWriter, r *http.Request) {
+func GetOptions(w http.ResponseWriter, _ *http.Request) {
 
 	w.Header().Set("Content-Type", "text/plain")
 	_, _ = w.Write([]byte(""))
