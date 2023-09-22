@@ -1,7 +1,7 @@
 <script>
-import CommonMixins from "../mixins/CommonMixins"
-import { pagination } from "../stores/pagination.js"
-import { mailbox } from "../stores/mailbox.js"
+import CommonMixins from '../mixins/CommonMixins'
+import { mailbox } from '../stores/mailbox'
+import { pagination } from '../stores/pagination'
 
 export default {
 
@@ -13,7 +13,6 @@ export default {
 
 	emits: ['loadMessages'],
 
-
 	data() {
 		return {
 			pagination,
@@ -23,41 +22,41 @@ export default {
 
 	computed: {
 		canPrev: function () {
-			return this.pagination.start > 0
+			return pagination.start > 0
 		},
 
 		canNext: function () {
-			return this.total > (this.pagination.start + this.mailbox.messages.length)
+			return this.total > (pagination.start + mailbox.messages.length)
 		},
 
 		// returns the number of next X messages
 		nextMessages: function () {
-			let t = pagination.start + parseInt(pagination.limit, 10);
+			let t = pagination.start + parseInt(pagination.limit, 10)
 			if (t > this.total) {
 				t = this.total
 			}
 
 			return t
-		}
+		},
 	},
 
 	methods: {
 		changeLimit: function () {
-			this.pagination.start = 0
+			pagination.start = 0
 			this.$emit('loadMessages')
 		},
 
 		viewNext: function () {
-			this.pagination.start = parseInt(this.pagination.start, 10) + parseInt(this.pagination.limit, 10)
+			pagination.start = parseInt(pagination.start, 10) + parseInt(pagination.limit, 10)
 			this.$emit('loadMessages')
 		},
 
 		viewPrev: function () {
-			let s = this.pagination.start - this.pagination.limit
+			let s = pagination.start - pagination.limit
 			if (s < 0) {
 				s = 0
 			}
-			this.pagination.start = s
+			pagination.start = s
 			this.$emit('loadMessages')
 		},
 	}
@@ -65,8 +64,8 @@ export default {
 
 </script>
 <template>
-	<select v-model="pagination.limit" @change="changeLimit"
-		class="form-select form-select-sm d-none d-md-inline w-auto me-2">
+	<select v-model="pagination.limit" @change="changeLimit" class="form-select form-select-sm d-inline w-auto me-2"
+		:disabled="total == 0">
 		<option value="25">25</option>
 		<option value="50">50</option>
 		<option value="100">100</option>
@@ -74,9 +73,12 @@ export default {
 	</select>
 
 	<small>
-		{{ formatNumber(pagination.start + 1) }}-{{ formatNumber(nextMessages) }}
-		<small>of</small>
-		{{ formatNumber(total) }}
+		<template v-if="total > 0">
+			{{ formatNumber(pagination.start + 1) }}-{{ formatNumber(nextMessages) }}
+			<small>of</small>
+			{{ formatNumber(total) }}
+		</template>
+		<span v-else class="text-muted">0 of 0</span>
 	</small>
 
 	<button class="btn btn-outline-light ms-2 me-1" :disabled="!canPrev" v-on:click="viewPrev"

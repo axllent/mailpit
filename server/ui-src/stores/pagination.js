@@ -5,8 +5,4 @@ export const pagination = reactive({
 	limit: 50, 	// per page
 	total: 0,  	// total results of current view / filter
 	count: 0, 	// number of messages currently displayed
-
-	// increment() {
-	//     this.count++
-	// }
 })

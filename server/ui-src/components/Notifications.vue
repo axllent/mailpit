@@ -1,19 +1,27 @@
 <script>
-import { mailbox } from "../stores/mailbox.js"
-import { pagination } from "../stores/pagination.js"
+import CommonMixins from '../mixins/CommonMixins'
 import { Toast } from 'bootstrap'
+import { mailbox } from '../stores/mailbox'
+import { pagination } from '../stores/pagination'
 
 export default {
+	mixins: [CommonMixins],
+
 	data() {
 		return {
 			pagination,
 			mailbox,
-			toastMessage: false, // 
+			toastMessage: false,
 			reconnectRefresh: false,
+			socketURI: false,
+			pauseNotifications: false, // prevent spamming
 		}
 	},
 
 	mounted() {
+		let proto = location.protocol == 'https:' ? 'wss' : 'ws'
+		this.socketURI = proto + "://" + document.location.host + this.resolve(`/api/events`)
+
 		this.connect()
 
 		mailbox.notificationsSupported = window.isSecureContext
@@ -24,10 +32,7 @@ export default {
 	methods: {
 		// websocket connect
 		connect: function () {
-			let proto = location.protocol == 'https:' ? 'wss' : 'ws'
-			let ws = new WebSocket(
-				proto + "://" + document.location.host + this.$router.resolve(`api/events`).href
-			)
+			let ws = new WebSocket(this.socketURI)
 			let self = this
 			ws.onmessage = function (e) {
 				let response = JSON.parse(e.data)
@@ -38,18 +43,16 @@ export default {
 				if (response.Type == "new" && response.Data) {
 					if (!mailbox.searching) {
 						if (pagination.start < 1) {
-							// first page
+							// push results directly into first page
 							mailbox.messages.unshift(response.Data)
 							if (mailbox.messages.length > pagination.limit) {
 								mailbox.messages.pop()
 							}
 						} else {
+							// update pagination offset
 							pagination.start++
 						}
 					}
-
-					mailbox.total++
-					mailbox.unread++
 
 					for (let i in response.Data.Tags) {
 						if (mailbox.tags.indexOf(response.Data.Tags[i]) < 0) {
@@ -59,14 +62,23 @@ export default {
 					}
 
 					// send notifications
-					let from = response.Data.From != null ? response.Data.From.Address : '[unknown]'
-					self.browserNotify("New mail from: " + from, response.Data.Subject)
-					self.setMessageToast(response.Data)
+					if (!self.pauseNotifications) {
+						self.pauseNotifications = true
+						let from = response.Data.From != null ? response.Data.From.Address : '[unknown]'
+						self.browserNotify("New mail from: " + from, response.Data.Subject)
+						self.setMessageToast(response.Data)
+						// delay notifications by 2s
+						window.setTimeout(() => { self.pauseNotifications = false }, 2000)
+					}
 				} else if (response.Type == "prune") {
 					// messages have been deleted, reload messages to adjust
 					window.scrollInPlace = true
 					mailbox.refresh = true // trigger refresh
 					window.setTimeout(() => { mailbox.refresh = false }, 500)
+				} else if (response.Type == "stats" && response.Data) {
+					// refresh mailbox stats
+					mailbox.total = response.Data.Total
+					mailbox.unread = response.Data.Unread
 				}
 			}
 
@@ -102,7 +114,7 @@ export default {
 				let b = message.Subject
 				let options = {
 					body: message,
-					icon: 'notification.png'
+					icon: this.resolve('/notification.png')
 				}
 				new Notification(title, options)
 			}
@@ -160,4 +172,5 @@ export default {
 				</div>
 			</div>
 		</div>
-	</div></template>
+	</div>
+</template>

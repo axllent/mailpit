@@ -1,6 +1,6 @@
 <script>
-import CommonMixins from '../mixins/CommonMixins.js'
-import { mailbox } from '../stores/mailbox.js'
+import { mailbox } from '../stores/mailbox'
+import CommonMixins from '../mixins/CommonMixins'
 import moment from 'moment'
 
 export default {
@@ -54,6 +54,53 @@ export default {
 		isSelected: function (id) {
 			return mailbox.selected.indexOf(id) != -1
 		},
+
+		toggleSelected: function (e, id) {
+			e.preventDefault()
+
+			if (this.isSelected(id)) {
+				mailbox.selected = mailbox.selected.filter(function (ele) {
+					return ele != id
+				})
+			} else {
+				mailbox.selected.push(id)
+			}
+		},
+
+		selectRange: function (e, id) {
+			e.preventDefault()
+
+			let selecting = false
+			let lastSelected = mailbox.selected.length > 0 && mailbox.selected[mailbox.selected.length - 1]
+			if (lastSelected == id) {
+				mailbox.selected = mailbox.selected.filter(function (ele) {
+					return ele != id
+				})
+				return
+			}
+
+			if (lastSelected === false) {
+				mailbox.selected.push(id)
+				return
+			}
+
+			for (let d of mailbox.messages) {
+				if (selecting) {
+					if (!this.isSelected(d.ID)) {
+						mailbox.selected.push(d.ID)
+					}
+					if (d.ID == lastSelected || d.ID == id) {
+						// reached backwards select
+						break
+					}
+				} else if (d.ID == id || d.ID == lastSelected) {
+					if (!this.isSelected(d.ID)) {
+						mailbox.selected.push(d.ID)
+					}
+					selecting = true
+				}
+			}
+		},
 	}
 }
 </script>
@@ -61,13 +108,10 @@ export default {
 <template>
 	<template v-if="mailbox.messages && mailbox.messages.length">
 		<div class="list-group my-2">
-			<RouterLink v-for="message in mailbox.messages" :to="'/view/' + message.ID" :key="message.ID"
+			<RouterLink v-for="message in mailbox.messages" :to="'/view/' + message.ID" :key="message.ID" :id="message.ID"
 				class="row gx-1 message d-flex small list-group-item list-group-item-action border-start-0 border-end-0"
-				:class="message.Read ? 'read' : '', isSelected(message.ID) ? 'selected' : ''">
-				<!-- <a v-for="message in messages" :href="'#' + message.ID" :key="message.ID"
-				Av-on:click.ctrl="toggleSelected($event, message.ID)" Av-on:click.shift="selectRange($event, message.ID)"
-				class="row gx-1 message d-flex small list-group-item list-group-item-action border-start-0 border-end-0"
-				:class="message.Read ? 'read' : '', isSelected(message.ID) ? 'selected' : ''"> -->
+				:class="message.Read ? 'read' : '', isSelected(message.ID) ? 'selected' : ''"
+				v-on:click.ctrl="toggleSelected($event, message.ID)" v-on:click.shift="selectRange($event, message.ID)">
 				<div class="col-lg-3">
 					<div class="d-lg-none float-end text-muted text-nowrap small">
 						<i class="bi bi-paperclip h6 me-1" v-if="message.Attachments"></i>
@@ -114,6 +158,9 @@ export default {
 		</div>
 	</template>
 	<template v-else>
-		<p class="text-center mt-5">There are no messages</p>
+		<p class="text-center mt-5">
+			<template v-if="getSearch()">No results for <code>{{ getSearch() }}</code></template>
+			<template v-else>No messages in your mailbox</template>
+		</p>
 	</template>
 </template>

@@ -1,12 +1,14 @@
 <script>
-import CommonMixins from '../mixins/CommonMixins.js'
+import CommonMixins from '../mixins/CommonMixins'
+import { pagination } from '../stores/pagination'
 
 export default {
 	mixins: [CommonMixins],
 
 	data() {
 		return {
-			search: ''
+			search: '',
+			pagination
 		}
 	},
 
@@ -22,12 +24,12 @@ export default {
 
 	methods: {
 		searchFromURL: function () {
-			const urlParams = new URLSearchParams(window.location.search);
-			this.search = urlParams.get('q') ? urlParams.get('q') : '';
+			const urlParams = new URLSearchParams(window.location.search)
+			this.search = urlParams.get('q') ? urlParams.get('q') : ''
 		},
 
 		doSearch: function (e) {
-			// let u = this.$router.resolve(`/search`).href;
+			pagination.start = 0
 			if (this.search == '') {
 				this.$router.push('/')
 			} else {
@@ -47,10 +49,7 @@ export default {
 
 <template>
 	<form v-on:submit="doSearch">
-		<div class="input-group">
-			<RouterLink to="/" class="navbar-brand d-md-none">
-				<img :src="baseURL + 'mailpit.svg'" alt="Mailpit">
-			</RouterLink>
+		<div class="input-group flex-nowrap">
 			<div class="ms-md-2 d-flex border bg-body rounded-start flex-fill position-relative">
 				<input type="text" class="form-control border-0" aria-label="Search" v-model.trim="search"
 					placeholder="Search mailbox">

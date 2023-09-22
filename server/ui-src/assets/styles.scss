@@ -86,6 +86,13 @@
 	}
 }
 
+.about-mailpit {
+	@include media-breakpoint-down(md) {
+		width: var(--bs-offcanvas-width);
+		margin-left: -1rem !important;
+	}
+}
+
 .message {
 	&.read {
 		color: $text-muted;

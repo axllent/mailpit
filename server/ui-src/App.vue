@@ -1,12 +1,8 @@
 <script>
-import { RouterLink, RouterView } from 'vue-router'
-import CommonMixins from './mixins/CommonMixins.js'
-// import WebsocketMixin from './mixins/WebsocketMixin.js'
-import Notifications from "./components/Notifications.vue"
+import CommonMixins from './mixins/CommonMixins'
+import Notifications from './components/Notifications.vue'
+import { RouterView } from 'vue-router'
 import { mailbox } from "./stores/mailbox"
-// import RepoSelector from "./components/RepoSelector.vue"
-// import ThemeToggle from "./components/ThemeToggle.vue"
-// import Loading from './components/Loading.vue'
 
 export default {
 	mixins: [CommonMixins],
@@ -17,11 +13,19 @@ export default {
 
 	beforeMount() {
 		document.title = document.title + ' - ' + location.hostname
-		window.baseURL = this.$router.resolve(`/`).href
 		mailbox.showTagColors = localStorage.getItem('showTagsColors') == '1'
+
+		// load global config
+		this.get(this.resolve('/api/v1/webui'), false, function (response) {
+			mailbox.uiConfig = response.data
+		})
 	},
 
-	mounted() {
+	watch: {
+		$route(to, from) {
+			// hide mobile menu on URL change
+			this.hideNav()
+		}
 	},
 
 }

@@ -1,6 +1,6 @@
 import CommonMixins from './CommonMixins.js'
-import { mailbox } from "../stores/mailbox.js"
-import { pagination } from "../stores/pagination.js"
+import { mailbox } from '../stores/mailbox.js'
+import { pagination } from '../stores/pagination.js'
 
 export default {
 	mixins: [CommonMixins],
@@ -26,7 +26,7 @@ export default {
 
 	methods: {
 		reloadMailbox: function () {
-			pagination.start = 0;
+			pagination.start = 0
 			this.loadMessages()
 		},
 
@@ -54,16 +54,29 @@ export default {
 				// ensure the pagination remains consistent
 				pagination.start = response.data.start
 
-				// pagination.total = response.data.messages_count
-				// self.existingTags = JSON.parse(JSON.stringify(self.tags))
-
-				// if pagination > 0 && results == 0 reload first page (prune)
 				if (response.data.count == 0 && response.data.start > 0) {
 					pagination.start = 0
 					return self.loadMessages()
 				}
 
-				if (!window.scrollInPlace) {
+				if (mailbox.lastMessage) {
+					window.setTimeout(() => {
+						let m = document.getElementById(mailbox.lastMessage)
+						if (m) {
+							m.focus()
+							// m.scrollIntoView({ behavior: 'smooth', block: 'center' })
+							m.scrollIntoView({ block: 'center' })
+						} else {
+							let mp = document.getElementById('message-page')
+							if (mp) {
+								mp.scrollTop = 0
+							}
+						}
+
+						mailbox.lastMessage = false
+					}, 50)
+
+				} else if (!window.scrollInPlace) {
 					let mp = document.getElementById('message-page')
 					if (mp) {
 						mp.scrollTop = 0

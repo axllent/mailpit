@@ -18,6 +18,7 @@ import (
 	"github.com/axllent/mailpit/server/apiv1"
 	"github.com/axllent/mailpit/server/handlers"
 	"github.com/axllent/mailpit/server/websockets"
+	"github.com/axllent/mailpit/storage"
 	"github.com/axllent/mailpit/utils/logger"
 	"github.com/gorilla/mux"
 )
@@ -223,6 +224,7 @@ func addSlashToWebroot(w http.ResponseWriter, r *http.Request) {
 // Websocket to broadcast changes
 func apiWebsocket(w http.ResponseWriter, r *http.Request) {
 	websockets.ServeWs(websockets.MessageHub, w, r)
+	storage.BroadcastMailboxStats()
 }
 
 // Wrapper to artificially inject a basePath to the swagger.json if a webroot has been specified

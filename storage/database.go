@@ -316,6 +316,8 @@ func Store(body []byte) (string, error) {
 
 	dbLastAction = time.Now()
 
+	BroadcastMailboxStats()
+
 	return id, nil
 }
 
@@ -556,6 +558,8 @@ func MarkRead(id string) error {
 		logger.Log().Debugf("[db] marked message %s as read", id)
 	}
 
+	BroadcastMailboxStats()
+
 	return err
 }
 
@@ -576,6 +580,8 @@ func MarkAllRead() error {
 
 	elapsed := time.Since(start)
 	logger.Log().Debugf("[db] marked %d messages as read in %s", total, elapsed)
+
+	BroadcastMailboxStats()
 
 	dbLastAction = time.Now()
 
@@ -600,6 +606,8 @@ func MarkAllUnread() error {
 	elapsed := time.Since(start)
 	logger.Log().Debugf("[db] marked %d messages as unread in %s", total, elapsed)
 
+	BroadcastMailboxStats()
+
 	dbLastAction = time.Now()
 
 	return nil
@@ -621,6 +629,8 @@ func MarkUnread(id string) error {
 	}
 
 	dbLastAction = time.Now()
+
+	BroadcastMailboxStats()
 
 	return err
 }
@@ -655,6 +665,8 @@ func DeleteOneMessage(id string) error {
 
 	dbLastAction = time.Now()
 	dbDataDeleted = true
+
+	BroadcastMailboxStats()
 
 	return err
 }
@@ -704,6 +716,7 @@ func DeleteAllMessages() error {
 	dbDataDeleted = false
 
 	websockets.Broadcast("prune", nil)
+	BroadcastMailboxStats()
 
 	return err
 }

@@ -1,10 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import MailboxView from '../views/MailboxView.vue'
-import SearchView from '../views/SearchView.vue'
+import MessageView from '../views/MessageView.vue'
 import NotFoundView from '../views/NotFoundView.vue'
-// import EditView from '../views/EditView.vue'
-// import StatsView from '../views/StatsView.vue'
-// import NotFound from '../views/NotFound.vue'
+import SearchView from '../views/SearchView.vue'
 
 let d = document.getElementById('app')
 let webroot = '/'
@@ -18,19 +16,16 @@ const router = createRouter({
 	routes: [
 		{
 			path: '/',
-			// name: 'home',
 			component: MailboxView
 		},
 		{
 			path: '/search',
-			// name: 'edit',
 			component: SearchView
 		},
-		// {
-		//     path: '/view/:id',
-		//     name: 'view',
-		//     component: StatsView
-		// },
+		{
+			path: '/view/:id',
+			component: MessageView
+		},
 		{
 			path: '/:pathMatch(.*)*',
 			name: 'NotFound',

@@ -1,17 +1,15 @@
 <script>
-import CommonMixins from '../mixins/CommonMixins.js'
-import MessagesMixins from '../mixins/MessagesMixins.js'
-
-import AboutMailpit from "../components/AboutMailpit.vue"
+import AboutMailpit from '../components/AboutMailpit.vue'
 import AjaxLoader from '../components/AjaxLoader.vue'
-import ListMessages from "../components/ListMessages.vue"
-import SearchActions from "../components/SearchActions.vue"
-import MailboxTags from "../components/MailboxTags.vue"
-import Pagination from "../components/Pagination.vue"
-import SearchForm from "../components/SearchForm.vue"
-
-import { mailbox } from "../stores/mailbox"
-import { pagination } from "../stores/pagination"
+import CommonMixins from '../mixins/CommonMixins'
+import ListMessages from '../components/ListMessages.vue'
+import MessagesMixins from '../mixins/MessagesMixins'
+import NavSearch from '../components/NavSearch.vue'
+import NavTags from '../components/NavTags.vue'
+import Pagination from '../components/Pagination.vue'
+import SearchForm from '../components/SearchForm.vue'
+import { mailbox } from '../stores/mailbox'
+import { pagination } from '../stores/pagination'
 
 export default {
 	mixins: [CommonMixins, MessagesMixins],
@@ -20,8 +18,8 @@ export default {
 		AboutMailpit,
 		AjaxLoader,
 		ListMessages,
-		SearchActions,
-		MailboxTags,
+		NavSearch,
+		NavTags,
 		Pagination,
 		SearchForm,
 	},
@@ -40,25 +38,27 @@ export default {
 	},
 
 	mounted() {
-		this.mailbox.searching = true
+		mailbox.searching = this.getSearch()
 		this.doSearch(false)
 	},
 
 	methods: {
 		doSearch: function (resetPagination) {
-			const urlParams = new URLSearchParams(window.location.search);
-			let s = urlParams.get('q') ? urlParams.get('q') : '';
+			let s = this.getSearch()
 
-			if (s == '') {
+			if (!s) {
+				mailbox.searching = false
 				this.$router.push('/')
 				return
 			}
+
+			mailbox.searching = s
 
 			if (resetPagination) {
 				pagination.start = 0
 			}
 
-			this.apiURI = this.$router.resolve(`/api/v1/search`).href + '?query=' + encodeURIComponent(s)
+			this.apiURI = this.resolve(`/api/v1/search`) + '?query=' + encodeURIComponent(s)
 			this.loadMessages()
 		}
 	}
@@ -67,25 +67,45 @@ export default {
 
 <template>
 	<div class="navbar navbar-expand-lg navbar-dark row flex-shrink-0 bg-primary text-white">
-		<div class="col-lg-2 col-md-3 d-none d-md-block">
-			<RouterLink to="/" class="navbar-brand text-white">
-				<img :src="baseURL + 'mailpit.svg'" alt=" Mailpit">
-				<span class="ms-2">Mailpit</span>
+		<div class="col-xl-2 col-md-3 col-auto pe-0">
+			<RouterLink to="/" class="navbar-brand text-white me-0" @click="pagination.start = 0">
+				<img :src="resolve('/mailpit.svg')" alt="Mailpit">
+				<span class="ms-2 d-none d-sm-inline">Mailpit</span>
 			</RouterLink>
 		</div>
-		<div class="col col-md-9 col-lg-5">
+		<div class="col col-md-4k col-lg-5 col-xl-6">
 			<SearchForm />
 		</div>
-		<div class="col-12 col-lg-5 text-end mt-2 mt-lg-0">
+		<div class="col-12 col-md-auto col-lg-4 col-xl-4 text-end mt-2 mt-lg-0">
+			<div class="float-start d-md-none">
+				<button class="btn btn-outline-light me-2" type="button" data-bs-toggle="offcanvas"
+					data-bs-target="#offcanvas" aria-controls="offcanvas">
+					<i class="bi bi-list"></i>
+				</button>
+			</div>
 			<Pagination @loadMessages="loadMessages" :total="mailbox.count" />
+		</div>
+	</div>
+
+	<div class="offcanvas-md offcanvas-start d-md-none" data-bs-scroll="true" tabindex="-1" id="offcanvas"
+		aria-labelledby="offcanvasLabel">
+		<div class="offcanvas-header">
+			<h5 class="offcanvas-title" id="offcanvasLabel">Mailpit</h5>
+			<button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#offcanvas"
+				aria-label="Close"></button>
+		</div>
+		<div class="offcanvas-body">
+			<NavSearch @loadMessages="loadMessages" />
+			<NavTags />
+			<AboutMailpit />
 		</div>
 	</div>
 
 	<div class="row flex-fill" style="min-height:0">
 		<div class="d-none d-md-block col-lg-2 col-md-3 mh-100 position-relative"
 			style="overflow-y: auto; overflow-x: hidden;">
-			<SearchActions @loadMessages="loadMessages" />
-			<MailboxTags />
+			<NavSearch @loadMessages="loadMessages" />
+			<NavTags />
 			<AboutMailpit />
 		</div>
 
@@ -96,5 +116,7 @@ export default {
 		</div>
 	</div>
 
+	<NavSearch @loadMessages="loadMessages" modals />
+	<AboutMailpit modals />
 	<AjaxLoader :loading="loading" />
 </template>

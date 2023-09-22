@@ -5,6 +5,7 @@ export default {
 	},
 }
 </script>
+
 <template>
 	<div class="loader" v-if="loading > 0">
 		<div class="d-flex justify-content-center align-items-center h-100">
