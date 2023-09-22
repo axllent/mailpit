@@ -1,6 +1,6 @@
 
 <script>
-import commonMixins from '../mixins.js';
+import commonMixins from '../../mixins/CommonMixins'
 
 export default {
 	props: {
@@ -14,9 +14,9 @@ export default {
 
 <template>
 	<div class="mt-4 border-top pt-4">
-		<a v-for="part in attachments" :href="'api/v1/message/' + message.ID + '/part/' + part.PartID"
+		<a v-for="part in attachments" :href="resolve('/api/v1/message/' + message.ID + '/part/' + part.PartID)"
 			class="card attachment float-start me-3 mb-3" target="_blank" style="width: 180px">
-			<img v-if="isImage(part)" :src="'api/v1/message/' + message.ID + '/part/' + part.PartID + '/thumb'"
+			<img v-if="isImage(part)" :src="resolve('/api/v1/message/' + message.ID + '/part/' + part.PartID + '/thumb')"
 				class="card-img-top" alt="">
 			<img v-else
 				src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALQAAAB4AQMAAABhKUq+AAAAA1BMVEX///+nxBvIAAAAGUlEQVQYGe3BgQAAAADDoPtTT+EA1QAAgFsLQAAB12s2WgAAAABJRU5ErkJggg=="

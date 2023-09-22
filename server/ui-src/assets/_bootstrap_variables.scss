@@ -1,9 +1,21 @@
 // Removed "Noto Color Emoji" from list re: https://github.com/axllent/mailpit/issues/92
-$font-family-sans-serif: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans",
-    Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+$font-family-sans-serif:
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    Roboto,
+    "Helvetica Neue",
+    "Noto Sans",
+    "Liberation Sans",
+    Arial,
+    sans-serif,
+    "Apple Color Emoji",
+    "Segoe UI Emoji",
+    "Segoe UI Symbol";
 
 $link-decoration: none;
 $primary: #2c3e50;
 $list-group-disabled-color: #adb5bd;
 $enable-negative-margins: true;
 $body-color-dark: #e7eaed;
+$offcanvas-border-width: 0;

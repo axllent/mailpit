@@ -1,6 +1,6 @@
 <script>
 import axios from 'axios'
-import commonMixins from '../mixins.js'
+import commonMixins from '../../mixins/CommonMixins'
 
 export default {
 	props: {
@@ -116,13 +116,13 @@ export default {
 	methods: {
 		doCheck: function () {
 			this.check = false
-			let self = this
 			this.loading = true
-			let uri = 'api/v1/message/' + self.message.ID + '/link-check'
+			let uri = this.resolve('/api/v1/message/' + this.message.ID + '/link-check')
 			if (this.followRedirects) {
 				uri += '?follow=true'
 			}
 
+			let self = this
 			// ignore any error, do not show loader
 			axios.get(uri, null)
 				.then(function (result) {

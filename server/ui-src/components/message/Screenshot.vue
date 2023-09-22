@@ -1,5 +1,7 @@
 
 <script>
+import AjaxLoader from '../AjaxLoader.vue'
+import CommonMixins from '../../mixins/CommonMixins'
 import { domToPng } from 'modern-screenshot'
 
 export default {
@@ -7,19 +9,26 @@ export default {
         message: Object,
     },
 
+    mixins: [CommonMixins],
+
+    components: {
+        AjaxLoader,
+    },
+
     data() {
         return {
             html: false,
-            loading: false
+            loading: 0
         }
     },
 
     methods: {
         initScreenshot: function () {
-            this.loading = true
+            this.loading = 1
             let self = this
             // remove base tag, if set
             let h = this.message.HTML.replace(/<base .*>/mi, '')
+            let proxy = this.resolve('/proxy')
 
             // Outlook hacks - else screenshot returns blank image
             h = h.replace(/<html [^>]+>/mgi, '<html>') // remove html attributes
@@ -31,9 +40,9 @@ export default {
             const urlRegex = /(url\((\'|\")?(https?:\/\/[^\)\'\"]+)(\'|\")?\))/mgi;
             h = h.replaceAll(urlRegex, function (match, p1, p2, p3) {
                 if (typeof p2 === 'string') {
-                    return `url(${p2}proxy?url=` + encodeURIComponent(self.decodeEntities(p3)) + `${p2})`
+                    return `url(${p2}${proxy}?url=` + encodeURIComponent(self.decodeEntities(p3)) + `${p2})`
                 }
-                return `url(proxy?url=` + encodeURIComponent(self.decodeEntities(p3)) + `)`
+                return `url(${proxy}?url=` + encodeURIComponent(self.decodeEntities(p3)) + `)`
             })
 
             // create temporary document to manipulate
@@ -54,7 +63,7 @@ export default {
                 let src = i.getAttribute('href')
 
                 if (src && src.match(/^https?:\/\//i) && src.indexOf(window.location.origin + window.location.pathname) !== 0) {
-                    i.setAttribute('href', 'proxy?url=' + encodeURIComponent(self.decodeEntities(src)))
+                    i.setAttribute('href', `${proxy}?url=` + encodeURIComponent(self.decodeEntities(src)))
                 }
             }
 
@@ -63,7 +72,7 @@ export default {
             for (let i of images) {
                 let src = i.getAttribute('src')
                 if (src && src.match(/^https?:\/\//i) && src.indexOf(window.location.origin + window.location.pathname) !== 0) {
-                    i.setAttribute('src', 'proxy?url=' + encodeURIComponent(self.decodeEntities(src)))
+                    i.setAttribute('src', `${proxy}?url=` + encodeURIComponent(self.decodeEntities(src)))
                 }
             }
 
@@ -74,7 +83,7 @@ export default {
 
                 if (src && src.match(/^https?:\/\//i) && src.indexOf(window.location.origin + window.location.pathname) !== 0) {
                     // replace with proxy link
-                    i.setAttribute('background', 'proxy?url=' + encodeURIComponent(self.decodeEntities(src)))
+                    i.setAttribute('background', `${proxy}?url=` + encodeURIComponent(self.decodeEntities(src)))
                 }
             }
 
@@ -121,7 +130,7 @@ export default {
                 link.download = self.message.ID + '.png'
                 link.href = dataUrl
                 link.click()
-                self.loading = false
+                self.loading = 0
                 self.html = false
             })
         }
@@ -134,11 +143,5 @@ export default {
         style="position: absolute; margin-left: -100000px;">
     </iframe>
 
-    <div id="loading" v-if="loading">
-        <div class="d-flex justify-content-center align-items-center h-100">
-            <div class="spinner-border text-secondary" role="status">
-                <span class="visually-hidden">Loading...</span>
-            </div>
-        </div>
-    </div>
+    <AjaxLoader :loading="loading" />
 </template>

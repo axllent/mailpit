@@ -25,7 +25,6 @@ import (
 	"github.com/jhillyerd/enmime"
 	"github.com/klauspost/compress/zstd"
 	"github.com/leporo/sqlf"
-	"github.com/mattn/go-shellwords"
 	uuid "github.com/satori/go.uuid"
 
 	// sqlite (native) - https://gitlab.com/cznic/sqlite
@@ -317,6 +316,8 @@ func Store(body []byte) (string, error) {
 
 	dbLastAction = time.Now()
 
+	BroadcastMailboxStats()
+
 	return id, nil
 }
 
@@ -367,9 +368,6 @@ func List(start, limit int) ([]MessageSummary, error) {
 		em.Read = read == 1
 
 		results = append(results, em)
-
-		// logger.PrettyPrint(em)
-
 	}); err != nil {
 		return results, err
 	}
@@ -377,96 +375,6 @@ func List(start, limit int) ([]MessageSummary, error) {
 	dbLastAction = time.Now()
 
 	return results, nil
-}
-
-// Search will search a mailbox for search terms.
-// The search is broken up by segments (exact phrases can be quoted), and interprets specific terms such as:
-// is:read, is:unread, has:attachment, to:<term>, from:<term> & subject:<term>
-// Negative searches also also included by prefixing the search term with a `-` or `!`
-func Search(search string, start, limit int) ([]MessageSummary, int, error) {
-	results := []MessageSummary{}
-	allResults := []MessageSummary{}
-	tsStart := time.Now()
-	nrResults := 0
-	if limit < 0 {
-		limit = 50
-	}
-
-	s := strings.ToLower(search)
-	// add another quote if missing closing quote
-	quotes := strings.Count(s, `"`)
-	if quotes%2 != 0 {
-		s += `"`
-	}
-
-	p := shellwords.NewParser()
-	args, err := p.Parse(s)
-	if err != nil {
-		return results, nrResults, errors.New("Your search contains invalid characters")
-	}
-
-	// generate the SQL based on arguments
-	q := searchParser(args)
-
-	if err := q.QueryAndClose(nil, db, func(row *sql.Rows) {
-		var created int64
-		var id string
-		var messageID string
-		var subject string
-		var metadata string
-		var size int
-		var attachments int
-		var tags string
-		var read int
-		var ignore string
-		em := MessageSummary{}
-
-		if err := row.Scan(&created, &id, &messageID, &subject, &metadata, &size, &attachments, &read, &tags, &ignore, &ignore, &ignore, &ignore); err != nil {
-			logger.Log().Error(err)
-			return
-		}
-
-		if err := json.Unmarshal([]byte(metadata), &em); err != nil {
-			logger.Log().Error(err)
-			return
-		}
-
-		if err := json.Unmarshal([]byte(tags), &em.Tags); err != nil {
-			logger.Log().Error(err)
-			return
-		}
-
-		em.Created = time.UnixMilli(created)
-		em.ID = id
-		em.MessageID = messageID
-		em.Subject = subject
-		em.Size = size
-		em.Attachments = attachments
-		em.Read = read == 1
-
-		allResults = append(allResults, em)
-	}); err != nil {
-		return results, nrResults, err
-	}
-
-	dbLastAction = time.Now()
-
-	nrResults = len(allResults)
-
-	if nrResults > start {
-		end := nrResults
-		if nrResults >= start+limit {
-			end = start + limit
-		}
-
-		results = allResults[start:end]
-	}
-
-	elapsed := time.Since(tsStart)
-
-	logger.Log().Debugf("[db] search for \"%s\" in %s", search, elapsed)
-
-	return results, nrResults, err
 }
 
 // GetMessage returns a Message generated from the mailbox_data collection.
@@ -525,7 +433,6 @@ func GetMessage(id string) (*Message, error) {
 	obj := Message{
 		ID:         id,
 		MessageID:  messageID,
-		Read:       true,
 		From:       from,
 		Date:       date,
 		To:         addressToSlice(env, "To"),
@@ -651,6 +558,8 @@ func MarkRead(id string) error {
 		logger.Log().Debugf("[db] marked message %s as read", id)
 	}
 
+	BroadcastMailboxStats()
+
 	return err
 }
 
@@ -671,6 +580,8 @@ func MarkAllRead() error {
 
 	elapsed := time.Since(start)
 	logger.Log().Debugf("[db] marked %d messages as read in %s", total, elapsed)
+
+	BroadcastMailboxStats()
 
 	dbLastAction = time.Now()
 
@@ -695,6 +606,8 @@ func MarkAllUnread() error {
 	elapsed := time.Since(start)
 	logger.Log().Debugf("[db] marked %d messages as unread in %s", total, elapsed)
 
+	BroadcastMailboxStats()
+
 	dbLastAction = time.Now()
 
 	return nil
@@ -716,6 +629,8 @@ func MarkUnread(id string) error {
 	}
 
 	dbLastAction = time.Now()
+
+	BroadcastMailboxStats()
 
 	return err
 }
@@ -750,6 +665,8 @@ func DeleteOneMessage(id string) error {
 
 	dbLastAction = time.Now()
 	dbDataDeleted = true
+
+	BroadcastMailboxStats()
 
 	return err
 }
@@ -799,19 +716,13 @@ func DeleteAllMessages() error {
 	dbDataDeleted = false
 
 	websockets.Broadcast("prune", nil)
+	BroadcastMailboxStats()
 
 	return err
 }
 
-// StatsGet returns the total/unread statistics for a mailbox
-func StatsGet() MailboxStats {
-	var (
-		total  = CountTotal()
-		unread = CountUnread()
-	)
-
-	dbLastAction = time.Now()
-
+// GetAllTags returns all used tags
+func GetAllTags() []string {
 	q := sqlf.From("mailbox").
 		Select(`DISTINCT Tags`).
 		Where("Tags != ?", "[]")
@@ -843,6 +754,19 @@ func StatsGet() MailboxStats {
 	}
 
 	sort.Strings(tags)
+
+	return tags
+}
+
+// StatsGet returns the total/unread statistics for a mailbox
+func StatsGet() MailboxStats {
+	var (
+		total  = CountTotal()
+		unread = CountUnread()
+		tags   = GetAllTags()
+	)
+
+	dbLastAction = time.Now()
 
 	return MailboxStats{
 		Total:  total,

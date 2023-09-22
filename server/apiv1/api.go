@@ -131,8 +131,8 @@ func Search(w http.ResponseWriter, r *http.Request) {
 
 	res.Start = start
 	res.Messages = messages
-	res.Count = results // legacy - now undocumented in API specs
-	res.Total = stats.Total
+	res.Count = len(messages) // legacy - now undocumented in API specs
+	res.Total = stats.Total   // total messages in mailbox
 	res.MessagesCount = results
 	res.Unread = stats.Unread
 	res.Tags = stats.Tags
@@ -140,6 +140,44 @@ func Search(w http.ResponseWriter, r *http.Request) {
 	bytes, _ := json.Marshal(res)
 	w.Header().Add("Content-Type", "application/json")
 	_, _ = w.Write(bytes)
+}
+
+// DeleteSearch will delete all messages matching a search
+func DeleteSearch(w http.ResponseWriter, r *http.Request) {
+	// swagger:route DELETE /api/v1/search messages MessagesSummary
+	//
+	// # Delete messages by search
+	//
+	// Deletes messages matching a search.
+	//
+	//	Produces:
+	//	- application/json
+	//
+	//	Schemes: http, https
+	//
+	//	Parameters:
+	//	  + name: query
+	//	    in: query
+	//	    description: Search query
+	//	    required: true
+	//	    type: string
+	//
+	//	Responses:
+	//		200: OKResponse
+	//		default: ErrorResponse
+	search := strings.TrimSpace(r.URL.Query().Get("query"))
+	if search == "" {
+		httpError(w, "Error: no search query")
+		return
+	}
+
+	if err := storage.DeleteSearch(search); err != nil {
+		httpError(w, err.Error())
+		return
+	}
+
+	w.Header().Add("Content-Type", "text/plain")
+	_, _ = w.Write([]byte("ok"))
 }
 
 // GetMessage (method: GET) returns the Message as JSON
@@ -368,7 +406,7 @@ func DeleteMessages(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	w.Header().Add("Content-Type", "text/plain")
+	w.Header().Add("Content-Type", "application/json")
 	_, _ = w.Write([]byte("ok"))
 }
 
@@ -449,6 +487,35 @@ func SetReadStatus(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Add("Content-Type", "text/plain")
 	_, _ = w.Write([]byte("ok"))
+}
+
+// GetTags (method: GET) will get all tags currently in use
+func GetTags(w http.ResponseWriter, _ *http.Request) {
+	// swagger:route GET /api/v1/tags tags SetTags
+	//
+	// # Get all current tags
+	//
+	// Returns a JSON array of all unique message tags.
+	//
+	//	Produces:
+	//	- application/json
+	//
+	//	Schemes: http, https
+	//
+	//	Responses:
+	//		200: ArrayResponse
+	//		default: ErrorResponse
+
+	tags := storage.GetAllTags()
+
+	data, err := json.Marshal(tags)
+	if err != nil {
+		httpError(w, err.Error())
+		return
+	}
+
+	w.Header().Add("Content-Type", "application/json")
+	_, _ = w.Write(data)
 }
 
 // SetTags (method: PUT) will set the tags for all provided IDs
@@ -778,7 +845,7 @@ func getStartLimit(req *http.Request) (start int, limit int) {
 }
 
 // GetOptions returns a blank response
-func GetOptions(w http.ResponseWriter, r *http.Request) {
+func GetOptions(w http.ResponseWriter, _ *http.Request) {
 
 	w.Header().Set("Content-Type", "text/plain")
 	_, _ = w.Write([]byte(""))
