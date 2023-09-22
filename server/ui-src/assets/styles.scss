@@ -228,6 +228,12 @@
 	}
 }
 
+.messageHeaders {
+	th {
+		vertical-align: top;
+	}
+}
+
 .list-group-item.message:first-child {
 	border-top: 0;
 }

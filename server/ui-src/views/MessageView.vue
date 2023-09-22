@@ -195,17 +195,17 @@ export default {
 			</RouterLink>
 		</div>
 		<div class="col col-md-4k col-lg-5 col-xl-6">
-			<button @click="goBack()" class="btn btn-outline-light me-4 d-md-none" title="Return to messages">
+			<button @click="goBack()" class="btn btn-outline-light me-3 me-sm-4 d-md-none" title="Return to messages">
 				<i class="bi bi-arrow-return-left"></i>
 			</button>
-			<button class="btn btn-outline-light me-2" title="Mark unread" v-on:click="markUnread">
+			<button class="btn btn-outline-light me-1 me-sm-2" title="Mark unread" v-on:click="markUnread">
 				<i class="bi bi-eye-slash"></i> <span class="d-none d-md-inline">Mark unread</span>
 			</button>
-			<button class="btn btn-outline-light me-2" title="Release message"
+			<button class="btn btn-outline-light me-1 me-sm-2" title="Release message"
 				v-if="mailbox.uiConfig.MessageRelay && mailbox.uiConfig.MessageRelay.Enabled" v-on:click="initReleaseModal">
 				<i class="bi bi-send"></i> <span class="d-none d-md-inline">Release</span>
 			</button>
-			<button class="btn btn-outline-light me-2" title="Delete message" v-on:click="deleteMessage">
+			<button class="btn btn-outline-light me-1 me-sm-2" title="Delete message" v-on:click="deleteMessage">
 				<i class="bi bi-trash-fill"></i> <span class="d-none d-md-inline">Delete</span>
 			</button>
 		</div>
@@ -267,7 +267,7 @@ export default {
 				</ul>
 			</div>
 
-			<RouterLink :to="'/view/' + prevLink" class="btn btn-outline-light ms-2 me-1"
+			<RouterLink :to="'/view/' + prevLink" class="btn btn-outline-light ms-1 ms-sm-2 me-1"
 				:class="prevLink ? '' : 'disabled'" title="View previous message">
 				<i class="bi bi-caret-left-fill"></i>
 			</RouterLink>

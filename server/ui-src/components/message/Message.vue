@@ -245,7 +245,7 @@ export default {
 							<td class="privacy">
 								<span v-if="message.To && message.To.length" v-for="(t, i) in message.To">
 									<template v-if="i > 0">, </template>
-									<span class="text-nowrap">{{ t.Name + " &lt;" + t.Address + "&gt;" }}</span>
+									<span>{{ t.Name + " &lt;" + t.Address + "&gt;" }}</span>
 								</span>
 								<span v-else class="text-body-secondary">[Undisclosed recipients]</span>
 							</td>
@@ -269,7 +269,7 @@ export default {
 						</tr>
 						<tr v-if="message.ReplyTo && message.ReplyTo.length" class="small">
 							<th class="text-nowrap">Reply-To</th>
-							<td class="privacy text-body-secondary">
+							<td class="privacy text-body-secondary text-break">
 								<span v-for="(t, i) in message.ReplyTo">
 									<template v-if="i > 0">,</template>
 									{{ t.Name + " &lt;" + t.Address + "&gt;" }} </span>
@@ -277,7 +277,7 @@ export default {
 						</tr>
 						<tr v-if="message.ReturnPath && message.ReturnPath != message.From.Address" class="small">
 							<th class="text-nowrap">Return-Path</th>
-							<td class="privacy text-body-secondary">&lt;{{ message.ReturnPath }}&gt;</td>
+							<td class="privacy text-body-secondary text-break">&lt;{{ message.ReturnPath }}&gt;</td>
 						</tr>
 						<tr>
 							<th class="small">Subject</th>
