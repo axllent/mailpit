@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -29,7 +29,7 @@ func Test_APIv1(t *testing.T) {
 	setup()
 	defer storage.Close()
 
-	r := defaultRoutes()
+	r := apiRoutes()
 
 	ts := httptest.NewServer(r)
 	defer ts.Close()
@@ -57,8 +57,8 @@ func Test_APIv1(t *testing.T) {
 	// read first 10
 	t.Log("Read first 10 messages including raw & headers")
 	putIDS := []string{}
-	for indx, msg := range m.Messages {
-		if indx == 10 {
+	for idx, msg := range m.Messages {
+		if idx == 10 {
 			break
 		}
 
@@ -253,7 +253,7 @@ func clientGet(url string) ([]byte, error) {
 
 	defer resp.Body.Close()
 
-	data, err := ioutil.ReadAll(resp.Body)
+	data, err := io.ReadAll(resp.Body)
 
 	return data, err
 }
@@ -278,7 +278,7 @@ func clientDelete(url, body string) ([]byte, error) {
 		return nil, fmt.Errorf("%s returned status %d", url, resp.StatusCode)
 	}
 
-	data, err := ioutil.ReadAll(resp.Body)
+	data, err := io.ReadAll(resp.Body)
 
 	return data, err
 }
@@ -303,7 +303,7 @@ func clientPut(url, body string) ([]byte, error) {
 		return nil, fmt.Errorf("%s returned status %d", url, resp.StatusCode)
 	}
 
-	data, err := ioutil.ReadAll(resp.Body)
+	data, err := io.ReadAll(resp.Body)
 
 	return data, err
 }

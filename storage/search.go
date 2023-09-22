@@ -1,14 +1,193 @@
 package storage
 
 import (
+	"context"
+	"database/sql"
+	"encoding/json"
 	"regexp"
 	"strings"
+	"time"
 
+	"github.com/axllent/mailpit/utils/logger"
+	"github.com/axllent/mailpit/utils/tools"
 	"github.com/leporo/sqlf"
 )
 
+// Search will search a mailbox for search terms.
+// The search is broken up by segments (exact phrases can be quoted), and interprets specific terms such as:
+// is:read, is:unread, has:attachment, to:<term>, from:<term> & subject:<term>
+// Negative searches also also included by prefixing the search term with a `-` or `!`
+func Search(search string, start, limit int) ([]MessageSummary, int, error) {
+	results := []MessageSummary{}
+	allResults := []MessageSummary{}
+	tsStart := time.Now()
+	nrResults := 0
+	if limit < 0 {
+		limit = 50
+	}
+
+	q := searchParser(search)
+	var err error
+
+	if err := q.QueryAndClose(nil, db, func(row *sql.Rows) {
+		var created int64
+		var id string
+		var messageID string
+		var subject string
+		var metadata string
+		var size int
+		var attachments int
+		var tags string
+		var read int
+		var ignore string
+		em := MessageSummary{}
+
+		if err := row.Scan(&created, &id, &messageID, &subject, &metadata, &size, &attachments, &read, &tags, &ignore, &ignore, &ignore, &ignore); err != nil {
+			logger.Log().Error(err)
+			return
+		}
+
+		if err := json.Unmarshal([]byte(metadata), &em); err != nil {
+			logger.Log().Error(err)
+			return
+		}
+
+		if err := json.Unmarshal([]byte(tags), &em.Tags); err != nil {
+			logger.Log().Error(err)
+			return
+		}
+
+		em.Created = time.UnixMilli(created)
+		em.ID = id
+		em.MessageID = messageID
+		em.Subject = subject
+		em.Size = size
+		em.Attachments = attachments
+		em.Read = read == 1
+
+		allResults = append(allResults, em)
+	}); err != nil {
+		return results, nrResults, err
+	}
+
+	dbLastAction = time.Now()
+
+	nrResults = len(allResults)
+
+	if nrResults > start {
+		end := nrResults
+		if nrResults >= start+limit {
+			end = start + limit
+		}
+
+		results = allResults[start:end]
+	}
+
+	elapsed := time.Since(tsStart)
+
+	logger.Log().Debugf("[db] search for \"%s\" in %s", search, elapsed)
+
+	return results, nrResults, err
+}
+
+// DeleteSearch will delete all messages for search terms.
+// The search is broken up by segments (exact phrases can be quoted), and interprets specific terms such as:
+// is:read, is:unread, has:attachment, to:<term>, from:<term> & subject:<term>
+// Negative searches also also included by prefixing the search term with a `-` or `!`
+func DeleteSearch(search string) error {
+	q := searchParser(search)
+
+	ids := []string{}
+
+	if err := q.QueryAndClose(nil, db, func(row *sql.Rows) {
+		var created int64
+		var id string
+		var messageID string
+		var subject string
+		var metadata string
+		var size int
+		var attachments int
+		var tags string
+		var read int
+		var ignore string
+
+		if err := row.Scan(&created, &id, &messageID, &subject, &metadata, &size, &attachments, &read, &tags, &ignore, &ignore, &ignore, &ignore); err != nil {
+			logger.Log().Error(err)
+			return
+		}
+
+		ids = append(ids, id)
+	}); err != nil {
+		return err
+	}
+
+	if len(ids) > 0 {
+		total := len(ids)
+
+		// split ids into chunks
+		var chunks [][]string
+		if total > 1000 {
+			chunkSize := 1000
+			chunks = make([][]string, 0, (len(ids)+chunkSize-1)/chunkSize)
+			for chunkSize < len(ids) {
+				ids, chunks = ids[chunkSize:], append(chunks, ids[0:chunkSize:chunkSize])
+			}
+		} else {
+			chunks = append(chunks, ids)
+		}
+
+		// begin a transaction to ensure both the message
+		// and data are deleted successfully
+		tx, err := db.BeginTx(context.Background(), nil)
+		if err != nil {
+			return err
+		}
+
+		// roll back if it fails
+		defer tx.Rollback()
+
+		for _, ids := range chunks {
+			delIDs := make([]interface{}, len(ids))
+			for i, id := range ids {
+				delIDs[i] = id
+			}
+
+			sqlDelete1 := `DELETE FROM mailbox WHERE ID IN (?` + strings.Repeat(",?", len(ids)-1) + `)`
+
+			_, err = tx.Exec(sqlDelete1, delIDs...)
+			if err != nil {
+				return err
+			}
+
+			sqlDelete2 := `DELETE FROM mailbox_data WHERE ID IN (?` + strings.Repeat(",?", len(ids)-1) + `)`
+
+			_, err = tx.Exec(sqlDelete2, delIDs...)
+			if err != nil {
+				return err
+			}
+		}
+
+		err = tx.Commit()
+
+		if err == nil {
+			logger.Log().Debugf("[db] deleted %d messages matching %s", total, search)
+		}
+
+		dbLastAction = time.Now()
+		dbDataDeleted = true
+
+		BroadcastMailboxStats()
+	}
+
+	return nil
+}
+
 // SearchParser returns the SQL syntax for the database search based on the search arguments
-func searchParser(args []string) *sqlf.Stmt {
+func searchParser(searchString string) *sqlf.Stmt {
+	searchString = strings.ToLower(searchString)
+	// group strings with quotes as a single argument and remove quotes
+	args := tools.ArgsParser(searchString)
+
 	q := sqlf.From("mailbox").
 		Select(`Created, ID, MessageID, Subject, Metadata, Size, Attachments, Read, Tags,
 			IFNULL(json_extract(Metadata, '$.To'), '{}') as ToJSON,
@@ -71,7 +250,7 @@ func searchParser(args []string) *sqlf.Stmt {
 				}
 			}
 		} else if strings.HasPrefix(w, "subject:") {
-			w = cleanString(w[8:])
+			w = w[8:]
 			if w != "" {
 				if exclude {
 					q.Where("Subject NOT LIKE ?", "%"+escPercentChar(w)+"%")
@@ -108,6 +287,12 @@ func searchParser(args []string) *sqlf.Stmt {
 				q.Where("Read = 1")
 			} else {
 				q.Where("Read = 0")
+			}
+		} else if w == "is:tagged" {
+			if exclude {
+				q.Where("Tags = ?", "[]")
+			} else {
+				q.Where("Tags != ?", "[]")
 			}
 		} else if w == "has:attachment" || w == "has:attachments" {
 			if exclude {

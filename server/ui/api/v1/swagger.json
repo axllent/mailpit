@@ -532,9 +532,64 @@
             "$ref": "#/responses/ErrorResponse"
           }
         }
+      },
+      "delete": {
+        "description": "Deletes messages matching a search.",
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "messages"
+        ],
+        "summary": "Delete messages by search",
+        "operationId": "MessagesSummary",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Search query",
+            "name": "query",
+            "in": "query",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/OKResponse"
+          },
+          "default": {
+            "$ref": "#/responses/ErrorResponse"
+          }
+        }
       }
     },
     "/api/v1/tags": {
+      "get": {
+        "description": "Returns a JSON array of all unique message tags.",
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "tags"
+        ],
+        "summary": "Get all current tags",
+        "operationId": "SetTags",
+        "responses": {
+          "200": {
+            "$ref": "#/responses/ArrayResponse"
+          },
+          "default": {
+            "$ref": "#/responses/ErrorResponse"
+          }
+        }
+      },
       "put": {
         "description": "To remove all tags from a message, pass an empty tags array.",
         "consumes": [
@@ -964,10 +1019,6 @@
           "description": "Message ID",
           "type": "string"
         },
-        "Read": {
-          "description": "Read status",
-          "type": "boolean"
-        },
         "ReplyTo": {
           "description": "ReplyTo addresses",
           "type": "array",
@@ -1234,6 +1285,15 @@
     }
   },
   "responses": {
+    "ArrayResponse": {
+      "description": "Plain JSON array response",
+      "schema": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    },
     "BinaryResponse": {
       "description": "Binary data response inherits the attachment's content type"
     },

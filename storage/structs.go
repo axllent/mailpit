@@ -15,8 +15,6 @@ type Message struct {
 	ID string
 	// Message ID
 	MessageID string
-	// Read status
-	Read bool
 	// From address
 	From *mail.Address
 	// To addresses

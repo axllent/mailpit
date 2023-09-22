@@ -1,44 +1,66 @@
 import axios from 'axios'
-import { Modal } from 'bootstrap'
 import moment from 'moment'
 import ColorHash from 'color-hash'
+import { Modal, Offcanvas } from 'bootstrap'
 
-
-// FakeModal is used to return a fake Bootstrap modal
+// BootstrapElement is used to return a fake Bootstrap element
 // if the ID returns nothing to prevent errors.
-function FakeModal() { }
-FakeModal.prototype.hide = function () { }
-FakeModal.prototype.show = function () { }
+class BootstrapElement {
+	constructor() { }
+	hide() { }
+	show() { }
+}
 
 // Set up the color hash generator lightness and hue to ensure darker colors
-const colorHash = new ColorHash({ lightness: 0.3, saturation: [0.35, 0.5, 0.65] });
+const colorHash = new ColorHash({ lightness: 0.3, saturation: [0.35, 0.5, 0.65] })
 
 /* Common mixin functions used in apps */
-const commonMixins = {
+export default {
 	data() {
 		return {
 			loading: 0,
 			tagColorCache: {},
-			showTagColors: true
 		}
 	},
 
-	mounted() {
-		this.showTagColors = localStorage.getItem('showTagsColors')
-	},
-
 	methods: {
+		resolve: function (u) {
+			return this.$router.resolve(u).href
+		},
+
 		getFileSize: function (bytes) {
-			var i = Math.floor(Math.log(bytes) / Math.log(1024));
-			return (bytes / Math.pow(1024, i)).toFixed(1) * 1 + ' ' + ['B', 'kB', 'MB', 'GB', 'TB'][i];
+			var i = Math.floor(Math.log(bytes) / Math.log(1024))
+			return (bytes / Math.pow(1024, i)).toFixed(1) * 1 + ' ' + ['B', 'kB', 'MB', 'GB', 'TB'][i]
 		},
 
 		formatNumber: function (nr) {
-			return new Intl.NumberFormat().format(nr);
+			return new Intl.NumberFormat().format(nr)
 		},
 
 		messageDate: function (d) {
-			return moment(d).format('ddd, D MMM YYYY, h:mm a');
+			return moment(d).format('ddd, D MMM YYYY, h:mm a')
+		},
+
+		tagEncodeURI: function (tag) {
+			if (tag.match(/ /)) {
+				tag = `"${tag}"`
+			}
+
+			return encodeURIComponent(`tag:${tag}`)
+		},
+
+		getSearch: function () {
+			if (!window.location.search) {
+				return false
+			}
+
+			const urlParams = new URLSearchParams(window.location.search)
+			const q = urlParams.get('q').trim()
+			if (q == '') {
+				return false
+			}
+
+			return q
 		},
 
 		// Ajax error message
@@ -48,29 +70,37 @@ const commonMixins = {
 				// The request was made and the server responded with a status code
 				// that falls out of the range of 2xx
 				if (error.response.data.Error) {
-					alert(error.response.data.Error);
+					alert(error.response.data.Error)
 				} else {
-					alert(error.response.data);
+					alert(error.response.data)
 				}
 			} else if (error.request) {
 				// The request was made but no response was received
 				// `error.request` is an instance of XMLHttpRequest in the browser and an instance of
 				// http.ClientRequest in node.js
-				alert('Error sending data to the server. Please try again.');
+				alert('Error sending data to the server. Please try again.')
 			} else {
 				// Something happened in setting up the request that triggered an Error
-				alert(error.message);
+				alert(error.message)
 			}
 		},
 
 		// generic modal get/set function
 		modal: function (id) {
-			let e = document.getElementById(id);
+			let e = document.getElementById(id)
 			if (e) {
-				return Modal.getOrCreateInstance(e);
+				return Modal.getOrCreateInstance(e)
 			}
 			// in case there are open/close actions
-			return new FakeModal();
+			return new BootstrapElement()
+		},
+
+		// close mobile navigation
+		hideNav: function () {
+			let e = document.getElementById('offcanvas')
+			if (e) {
+				Offcanvas.getOrCreateInstance(e).hide()
+			}
 		},
 
 		/**
@@ -81,17 +111,17 @@ const commonMixins = {
 		 * @params function callback function
 		 */
 		get: function (url, values, callback) {
-			let self = this;
-			self.loading++;
+			let self = this
+			self.loading++
 			axios.get(url, { params: values })
 				.then(callback)
 				.catch(self.handleError)
 				.then(function () {
 					// always executed
 					if (self.loading > 0) {
-						self.loading--;
+						self.loading--
 					}
-				});
+				})
 		},
 
 		/**
@@ -102,17 +132,17 @@ const commonMixins = {
 		 * @params function callback function
 		 */
 		post: function (url, data, callback) {
-			let self = this;
-			self.loading++;
+			let self = this
+			self.loading++
 			axios.post(url, data)
 				.then(callback)
 				.catch(self.handleError)
 				.then(function () {
 					// always executed
 					if (self.loading > 0) {
-						self.loading--;
+						self.loading--
 					}
-				});
+				})
 		},
 
 		/**
@@ -123,17 +153,17 @@ const commonMixins = {
 		 * @params function callback function
 		 */
 		delete: function (url, data, callback) {
-			let self = this;
-			self.loading++;
+			let self = this
+			self.loading++
 			axios.delete(url, { data: data })
 				.then(callback)
 				.catch(self.handleError)
 				.then(function () {
 					// always executed
 					if (self.loading > 0) {
-						self.loading--;
+						self.loading--
 					}
-				});
+				})
 		},
 
 		/**
@@ -144,73 +174,73 @@ const commonMixins = {
 		 * @params function callback function
 		 */
 		put: function (url, data, callback) {
-			let self = this;
-			self.loading++;
+			let self = this
+			self.loading++
 			axios.put(url, data)
 				.then(callback)
 				.catch(self.handleError)
 				.then(function () {
 					// always executed
 					if (self.loading > 0) {
-						self.loading--;
+						self.loading--
 					}
-				});
+				})
 		},
 
 		allAttachments: function (message) {
-			let a = [];
+			let a = []
 			for (let i in message.Attachments) {
-				a.push(message.Attachments[i]);
+				a.push(message.Attachments[i])
 			}
 			for (let i in message.OtherParts) {
-				a.push(message.OtherParts[i]);
+				a.push(message.OtherParts[i])
 			}
 			for (let i in message.Inline) {
-				a.push(message.Inline[i]);
+				a.push(message.Inline[i])
 			}
 
-			return a.length ? a : false;
+			return a.length ? a : false
 		},
 
 		isImage(a) {
-			return a.ContentType.match(/^image\//);
+			return a.ContentType.match(/^image\//)
 		},
 
 		attachmentIcon: function (a) {
-			let ext = a.FileName.split('.').pop().toLowerCase();
+			let ext = a.FileName.split('.').pop().toLowerCase()
 
 			if (a.ContentType.match(/^image\//)) {
-				return 'bi-file-image-fill';
+				return 'bi-file-image-fill'
 			}
 			if (a.ContentType.match(/\/pdf$/) || ext == 'pdf') {
-				return 'bi-file-pdf-fill';
+				return 'bi-file-pdf-fill'
 			}
 			if (['doc', 'docx', 'odt', 'rtf'].includes(ext)) {
-				return 'bi-file-word-fill';
+				return 'bi-file-word-fill'
 			}
 			if (['xls', 'xlsx', 'ods'].includes(ext)) {
-				return 'bi-file-spreadsheet-fill';
+				return 'bi-file-spreadsheet-fill'
 			}
 			if (['ppt', 'pptx', 'key', 'ppt', 'odp'].includes(ext)) {
-				return 'bi-file-slides-fill';
+				return 'bi-file-slides-fill'
 			}
 			if (['zip', 'tar', 'rar', 'bz2', 'gz', 'xz'].includes(ext)) {
-				return 'bi-file-zip-fill';
+				return 'bi-file-zip-fill'
 			}
 			if (a.ContentType.match(/^audio\//)) {
-				return 'bi-file-music-fill';
+				return 'bi-file-music-fill'
 			}
 			if (a.ContentType.match(/^video\//)) {
-				return 'bi-file-play-fill';
+				return 'bi-file-play-fill'
 			}
 			if (a.ContentType.match(/\/calendar$/)) {
-				return 'bi-file-check-fill';
+				return 'bi-file-check-fill'
 			}
 			if (a.ContentType.match(/^text\//) || ['txt', 'sh', 'log'].includes(ext)) {
-				return 'bi-file-text-fill';
+				return 'bi-file-text-fill'
 			}
 
-			return 'bi-file-arrow-down-fill';
+			return 'bi-file-arrow-down-fill'
 		},
 
 		// Returns a hex color based on a string.
@@ -223,18 +253,5 @@ const commonMixins = {
 
 			return this.tagColorCache[s]
 		},
-
-		toggleTagColors: function () {
-			if (this.showTagColors) {
-				localStorage.removeItem('showTagsColors')
-				this.showTagColors = false
-			} else {
-				localStorage.setItem('showTagsColors', '1')
-				this.showTagColors = true
-			}
-		}
 	}
 }
-
-
-export default commonMixins;

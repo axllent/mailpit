@@ -1,7 +1,7 @@
 <script>
-import axios from 'axios'
 import Donut from 'vue-css-donut-chart/src/components/Donut.vue'
-import commonMixins from '../mixins.js'
+import axios from 'axios'
+import commonMixins from '../../mixins/CommonMixins'
 import { Tooltip } from 'bootstrap'
 
 export default {
@@ -225,7 +225,7 @@ export default {
 			let self = this
 
 			// ignore any error, do not show loader
-			axios.get('api/v1/message/' + self.message.ID + '/html-check', null)
+			axios.get(self.resolve('/api/v1/message/' + self.message.ID + '/html-check'), null)
 				.then(function (result) {
 					self.check = result.data
 					self.error = false

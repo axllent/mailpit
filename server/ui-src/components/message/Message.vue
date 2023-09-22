@@ -1,18 +1,17 @@
 
 <script>
-import commonMixins from '../mixins.js'
-import Prism from "prismjs"
-import Tags from "bootstrap5-tags"
 import Attachments from './Attachments.vue'
+import HTMLCheck from './HTMLCheck.vue'
 import Headers from './Headers.vue'
-import HTMLCheck from './MessageHTMLCheck.vue'
-import LinkCheck from './MessageLinkCheck.vue'
+import LinkCheck from './LinkCheck.vue'
+import Prism from 'prismjs'
+import Tags from 'bootstrap5-tags'
+import commonMixins from '../../mixins/CommonMixins'
+import { mailbox } from '../../stores/mailbox'
 
 export default {
 	props: {
 		message: Object,
-		existingTags: Array,
-		uiConfig: Object
 	},
 
 	components: {
@@ -26,12 +25,11 @@ export default {
 
 	data() {
 		return {
+			mailbox,
 			srcURI: false,
 			iframes: [], // for resizing
-			showTags: false, // to force re-rendering of component
 			canSaveTags: false, // prevent auto-saving tags on render
 			messageTags: [],
-			allTags: [],
 			loadHeaders: false,
 			htmlScore: false,
 			htmlScoreColor: false,
@@ -67,9 +65,7 @@ export default {
 
 	mounted() {
 		let self = this
-		self.showTags = false
 		self.canSaveTags = false
-		self.allTags = self.existingTags
 		self.messageTags = self.message.Tags
 		self.renderUI()
 
@@ -82,12 +78,13 @@ export default {
 
 		let rawTab = document.getElementById('nav-raw-tab')
 		rawTab.addEventListener('shown.bs.tab', function (event) {
-			self.srcURI = 'api/v1/message/' + self.message.ID + '/raw'
+			self.srcURI = self.resolve('/api/v1/message/' + self.message.ID + '/raw')
 			self.resizeIFrames()
 		})
 
-		self.showTags = true
-		self.$nextTick(function () {
+		// manually refresh tags
+		self.get(self.resolve(`/api/v1/tags`), false, function (response) {
+			mailbox.tags = response.data
 			self.$nextTick(function () {
 				Tags.init('select[multiple]')
 				// delay tag change detection to allow Tags to load
@@ -188,8 +185,8 @@ export default {
 				tags: this.messageTags
 			}
 
-			self.put('api/v1/tags', data, function (response) {
-				self.scrollInPlace = true
+			self.put(self.resolve('/api/v1/tags'), data, function (response) {
+				window.scrollInPlace = true
 				self.$emit('loadMessages')
 			})
 		},
@@ -304,7 +301,7 @@ export default {
 									data-separator="|,|">
 									<option value="">Type a tag...</option>
 									<!-- you need at least one option with the placeholder -->
-									<option v-for="t in allTags" :value="t">{{ t }}</option>
+									<option v-for="t in mailbox.tags" :value="t">{{ t }}</option>
 								</select>
 								<div class="invalid-feedback">Invalid tag name</div>
 							</td>
@@ -362,7 +359,7 @@ export default {
 					role="tab" aria-controls="nav-raw" aria-selected="false">
 					Raw
 				</button>
-				<div class="dropdown d-lg-none">
+				<div class="dropdown d-xl-none">
 					<button class="nav-link dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
 						Checks
 					</button>
@@ -370,7 +367,7 @@ export default {
 						<li>
 							<button class="dropdown-item" id="nav-html-check-tab" data-bs-toggle="tab"
 								data-bs-target="#nav-html-check" type="button" role="tab" aria-controls="nav-html"
-								aria-selected="false" v-if="!uiConfig.DisableHTMLCheck && message.HTML != ''">
+								aria-selected="false" v-if="!mailbox.uiConfig.DisableHTMLCheck && message.HTML != ''">
 								HTML Check
 								<span class="badge rounded-pill p-1" :class="htmlScoreColor" v-if="htmlScore !== false">
 									<small>{{ Math.floor(htmlScore) }}%</small>
@@ -390,15 +387,15 @@ export default {
 						</li>
 					</ul>
 				</div>
-				<button class="d-none d-lg-inline-block nav-link position-relative" id="nav-html-check-tab"
+				<button class="d-none d-xl-inline-block nav-link position-relative" id="nav-html-check-tab"
 					data-bs-toggle="tab" data-bs-target="#nav-html-check" type="button" role="tab" aria-controls="nav-html"
-					aria-selected="false" v-if="!uiConfig.DisableHTMLCheck && message.HTML != ''">
+					aria-selected="false" v-if="!mailbox.uiConfig.DisableHTMLCheck && message.HTML != ''">
 					HTML Check
 					<span class="badge rounded-pill p-1" :class="htmlScoreColor" v-if="htmlScore !== false">
 						<small>{{ Math.floor(htmlScore) }}%</small>
 					</span>
 				</button>
-				<button class="d-none d-lg-inline-block nav-link" id="nav-link-check-tab" data-bs-toggle="tab"
+				<button class="d-none d-xl-inline-block nav-link" id="nav-link-check-tab" data-bs-toggle="tab"
 					data-bs-target="#nav-link-check" type="button" role="tab" aria-controls="nav-link-check"
 					aria-selected="false">
 					Link Check
@@ -449,7 +446,7 @@ export default {
 			</div>
 			<div class="tab-pane fade" id="nav-html-check" role="tabpanel" aria-labelledby="nav-html-check-tab"
 				tabindex="0">
-				<HTMLCheck v-if="!uiConfig.DisableHTMLCheck && message.HTML != ''" :message="message"
+				<HTMLCheck v-if="!mailbox.uiConfig.DisableHTMLCheck && message.HTML != ''" :message="message"
 					@setHtmlScore="(n) => htmlScore = n" @set-badge-style="(v) => htmlScoreColor = v" />
 			</div>
 			<div class="tab-pane fade" id="nav-link-check" role="tabpanel" aria-labelledby="nav-html-check-tab"
