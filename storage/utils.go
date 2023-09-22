@@ -61,7 +61,7 @@ func createSearchText(env *enmime.Envelope) string {
 // CleanString removes unwanted characters from stored search text and search queries
 func cleanString(str string) string {
 	// remove/replace new lines
-	re := regexp.MustCompile(`(\r?\n|\t|>|<|"|\,|;\(\))`)
+	re := regexp.MustCompile(`(\r?\n|\t|>|<|"|\,|;|\(|\))`)
 	str = re.ReplaceAllString(str, " ")
 
 	// remove duplicate whitespace and trim
