@@ -1,6 +1,6 @@
 module github.com/axllent/mailpit
 
-go 1.18
+go 1.20
 
 require (
 	github.com/GuiaBolso/darwin v0.0.0-20191218124601-fd6d2aa3d244
