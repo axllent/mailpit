@@ -2,6 +2,32 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.9.0]
+
+### API
+- Remove redundant `Read` status from message (always true)
+- Delete by search filter
+- Add endpoint to return all tags in use
+
+### Feature
+- Improved search parser
+- New search filter `[!]is:tagged`
+
+### Fix
+- Correctly escape certain characters in search (eg: `'`)
+
+### Libs
+- Update minimum Go version to 1.20
+- Update Go modules
+- Update node modules
+
+### Tests
+- Bump Go version to 1.21
+
+### UI
+- Rewrite web UI, add URL routing and components
+
+
 ## [v1.8.4]
 
 ### Fix
