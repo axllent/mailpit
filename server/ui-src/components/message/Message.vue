@@ -232,7 +232,9 @@ export default {
 								<span v-if="message.From">
 									<span v-if="message.From.Name">{{ message.From.Name + " " }}</span>
 									<span v-if="message.From.Address" class="small">
-										&lt;{{ message.From.Address }}&gt;
+										&lt;<a :href="searchURI(message.From.Address)" class="text-body">
+											{{ message.From.Address }}
+										</a>&gt;
 									</span>
 								</span>
 								<span v-else>
@@ -245,7 +247,12 @@ export default {
 							<td class="privacy">
 								<span v-if="message.To && message.To.length" v-for="(t, i) in message.To">
 									<template v-if="i > 0">, </template>
-									<span>{{ t.Name + " &lt;" + t.Address + "&gt;" }}</span>
+									<span>
+										{{ t.Name }}
+										&lt;<a :href="searchURI(t.Address)" class="text-body">
+											{{ t.Address }}
+										</a>&gt;
+									</span>
 								</span>
 								<span v-else class="text-body-secondary">[Undisclosed recipients]</span>
 							</td>
@@ -255,7 +262,11 @@ export default {
 							<td class="privacy">
 								<span v-for="(t, i) in message.Cc">
 									<template v-if="i > 0">,</template>
-									{{ t.Name + " &lt;" + t.Address + "&gt;" }} </span>
+									{{ t.Name }}
+									&lt;<a :href="searchURI(t.Address)" class="text-body">
+										{{ t.Address }}
+									</a>&gt;
+								</span>
 							</td>
 						</tr>
 						<tr v-if="message.Bcc && message.Bcc.length" class="small">
@@ -263,7 +274,10 @@ export default {
 							<td class="privacy">
 								<span v-for="(t, i) in message.Bcc">
 									<template v-if="i > 0">,</template>
-									{{ t.Name + " &lt;" + t.Address + "&gt;" }}
+									{{ t.Name }}
+									&lt;<a :href="searchURI(t.Address)" class="text-body">
+										{{ t.Address }}
+									</a>&gt;
 								</span>
 							</td>
 						</tr>
@@ -272,12 +286,20 @@ export default {
 							<td class="privacy text-body-secondary text-break">
 								<span v-for="(t, i) in message.ReplyTo">
 									<template v-if="i > 0">,</template>
-									{{ t.Name + " &lt;" + t.Address + "&gt;" }} </span>
+									{{ t.Name }}
+									&lt;<a :href="searchURI(t.Address)" class="text-body-secondary">
+										{{ t.Address }}
+									</a>&gt;
+								</span>
 							</td>
 						</tr>
 						<tr v-if="message.ReturnPath && message.ReturnPath != message.From.Address" class="small">
 							<th class="text-nowrap">Return-Path</th>
-							<td class="privacy text-body-secondary text-break">&lt;{{ message.ReturnPath }}&gt;</td>
+							<td class="privacy text-body-secondary text-break">
+								&lt;<a :href="searchURI(message.ReturnPath)" class="text-body-secondary">
+									{{ message.ReturnPath }}
+								</a>&gt;
+							</td>
 						</tr>
 						<tr>
 							<th class="small">Subject</th>

@@ -28,6 +28,10 @@ export default {
 			return this.$router.resolve(u).href
 		},
 
+		searchURI: function (s) {
+			return this.resolve('/search') + '?q=' + encodeURIComponent(s)
+		},
+
 		getFileSize: function (bytes) {
 			var i = Math.floor(Math.log(bytes) / Math.log(1024))
 			return (bytes / Math.pow(1024, i)).toFixed(1) * 1 + ' ' + ['B', 'kB', 'MB', 'GB', 'TB'][i]
