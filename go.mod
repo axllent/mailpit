@@ -7,7 +7,7 @@ require (
 	github.com/PuerkitoBio/goquery v1.8.1
 	github.com/axllent/semver v0.0.1
 	github.com/disintegration/imaging v1.6.2
-	github.com/gomarkdown/markdown v0.0.0-20230916125811-7478c230c7cd
+	github.com/gomarkdown/markdown v0.0.0-20230922112808-5421fefb8386
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/websocket v1.5.0
 	github.com/jhillyerd/enmime v1.0.1
