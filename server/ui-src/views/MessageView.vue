@@ -26,6 +26,7 @@ export default {
 			message: false,
 			prevLink: false,
 			nextLink: false,
+			errorMessage: false,
 		}
 	},
 
@@ -45,6 +46,8 @@ export default {
 			this.message = false
 			let uri = self.resolve('/api/v1/message/' + this.$route.params.id)
 			self.get(uri, false, function (response) {
+				self.errorMessage = false
+
 				let d = response.data
 
 				if (self.wasUnread(d.ID)) {
@@ -94,7 +97,23 @@ export default {
 				self.message = d
 
 				self.detectPrevNext()
-			})
+			},
+				function (error) {
+					self.errorMessage = true
+					if (error.response && error.response.data) {
+						if (error.response.data.Error) {
+							self.errorMessage = error.response.data.Error
+						} else {
+							self.errorMessage = error.response.data
+						}
+					} else if (error.request) {
+						// The request was made but no response was received
+						self.errorMessage = 'Error sending data to the server. Please refresh the page.'
+					} else {
+						// Something happened in setting up the request that triggered an Error
+						self.errorMessage = error.message
+					}
+				})
 		},
 
 		// try detect whether this message was unread based on messages listing
@@ -194,23 +213,22 @@ export default {
 				<span class="ms-2 d-none d-sm-inline">Mailpit</span>
 			</RouterLink>
 		</div>
-		<div class="col col-md-4k col-lg-5 col-xl-6">
-			<button @click="goBack()" class="btn btn-outline-light me-4 d-md-none" title="Return to messages">
+		<div class="col col-md-4k col-lg-5 col-xl-6" v-if="!errorMessage">
+			<button @click="goBack()" class="btn btn-outline-light me-3 me-sm-4 d-md-none" title="Return to messages">
 				<i class="bi bi-arrow-return-left"></i>
 			</button>
-			<button class="btn btn-outline-light me-2" title="Mark unread" v-on:click="markUnread">
+			<button class="btn btn-outline-light me-1 me-sm-2" title="Mark unread" v-on:click="markUnread">
 				<i class="bi bi-eye-slash"></i> <span class="d-none d-md-inline">Mark unread</span>
 			</button>
-			<button class="btn btn-outline-light me-2" title="Release message"
+			<button class="btn btn-outline-light me-1 me-sm-2" title="Release message"
 				v-if="mailbox.uiConfig.MessageRelay && mailbox.uiConfig.MessageRelay.Enabled" v-on:click="initReleaseModal">
 				<i class="bi bi-send"></i> <span class="d-none d-md-inline">Release</span>
 			</button>
-			<button class="btn btn-outline-light me-2" title="Delete message" v-on:click="deleteMessage">
+			<button class="btn btn-outline-light me-1 me-sm-2" title="Delete message" v-on:click="deleteMessage">
 				<i class="bi bi-trash-fill"></i> <span class="d-none d-md-inline">Delete</span>
 			</button>
 		</div>
-		<div class="col-auto col-lg-4 col-xl-4 text-end">
-
+		<div class="col-auto col-lg-4 col-xl-4 text-end" v-if="!errorMessage">
 			<div class="dropdown d-inline-block" id="DownloadBtn">
 				<button type="button" class="btn btn-outline-light dropdown-toggle" data-bs-toggle="dropdown"
 					aria-expanded="false">
@@ -267,7 +285,7 @@ export default {
 				</ul>
 			</div>
 
-			<RouterLink :to="'/view/' + prevLink" class="btn btn-outline-light ms-2 me-1"
+			<RouterLink :to="'/view/' + prevLink" class="btn btn-outline-light ms-1 ms-sm-2 me-1"
 				:class="prevLink ? '' : 'disabled'" title="View previous message">
 				<i class="bi bi-caret-left-fill"></i>
 			</RouterLink>
@@ -286,13 +304,13 @@ export default {
 					<i class="bi bi-arrow-return-left me-1"></i>
 					<span class="ms-1">Return</span>
 					<span class="badge rounded-pill ms-1 float-end text-bg-secondary" title="Unread messages"
-						v-if="mailbox.unread">
+						v-if="mailbox.unread && !errorMessage">
 						{{ formatNumber(mailbox.unread) }}
 					</span>
 				</button>
 			</div>
 
-			<div class="card mt-4">
+			<div class="card mt-4" v-if="!errorMessage">
 				<div class="card-body text-body-secondary small">
 					<p class="card-text">
 						<b>Message date:</b><br>
@@ -311,7 +329,12 @@ export default {
 
 		<div class="col-xl-10 col-md-9 mh-100 ps-0 ps-md-2 pe-0">
 			<div class="mh-100" style="overflow-y: auto;" id="message-page">
-				<Message v-if="message" :key="message.ID" :message="message" />
+				<template v-if="errorMessage">
+					<h3 class="text-center my-3">
+						{{ errorMessage }}
+					</h3>
+				</template>
+				<Message v-else-if="message" :key="message.ID" :message="message" />
 			</div>
 		</div>
 	</div>

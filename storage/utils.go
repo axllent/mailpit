@@ -37,6 +37,8 @@ func createSearchText(env *enmime.Envelope) string {
 	b.WriteString(env.GetHeader("To") + " ")
 	b.WriteString(env.GetHeader("Cc") + " ")
 	b.WriteString(env.GetHeader("Bcc") + " ")
+	b.WriteString(env.GetHeader("Reply-To") + " ")
+	b.WriteString(env.GetHeader("Return-Path") + " ")
 	h := strings.TrimSpace(
 		html2text.HTML2TextWithOptions(
 			env.HTML,

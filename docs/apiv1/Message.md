@@ -16,7 +16,6 @@ Returns a JSON summary of the message and attachments.
 {
   "ID": "d7a5543b-96dd-478b-9b60-2b465c9884de",
   "MessageID": "12345.67890@localhost",
-  "Read": true,
   "From": {
     "Name": "John Doe",
     "Address": "john@example.com"
@@ -58,7 +57,6 @@ Returns a JSON summary of the message and attachments.
 ```
 ### Notes
 
-- `Read` - always true (message marked read on open)
 - `From` - Name & Address, or null
 - `To`, `CC`, `BCC`, `ReplyTo` - Array of Names & Address
 - `Date` - Parsed email local date & time from headers
