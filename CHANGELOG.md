@@ -2,6 +2,20 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.9.1]
+
+### Chore
+- Update caniemail data
+
+### Libs
+- Update Go modules
+
+### UI
+- Set 404 page when loading a non-existent message
+- Link email addresses in message summary to search
+- Better support for mobile screen sizes
+
+
 ## [v1.9.0]
 
 ### API
