@@ -124,13 +124,17 @@ func DeleteSearch(search string) error {
 	if len(ids) > 0 {
 		total := len(ids)
 
-		// split ids into chunks
+		// split ids into chunks of 1000 ids
 		var chunks [][]string
 		if total > 1000 {
 			chunkSize := 1000
 			chunks = make([][]string, 0, (len(ids)+chunkSize-1)/chunkSize)
 			for chunkSize < len(ids) {
 				ids, chunks = ids[chunkSize:], append(chunks, ids[0:chunkSize:chunkSize])
+			}
+			if len(ids) > 0 {
+				// add remaining ids <= 1000
+				chunks = append(chunks, ids)
 			}
 		} else {
 			chunks = append(chunks, ids)
