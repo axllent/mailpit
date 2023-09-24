@@ -203,7 +203,8 @@ func Close() {
 	}
 }
 
-// Store will save an email to the database tables
+// Store will save an email to the database tables.
+// Returns the database ID of the saved message.
 func Store(body []byte) (string, error) {
 	// Parse message body with enmime
 	env, err := enmime.ReadEnvelope(bytes.NewReader(body))
