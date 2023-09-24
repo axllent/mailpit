@@ -1,4 +1,4 @@
-Delivered-To: recipient@example.com
+Delivered-To: recipient2@example.com
 Received: by 2002:a0c:fe87:0:0:0:0:0 with SMTP id d7csp145570qvs;
         Tue, 26 Jul 2022 20:42:36 -0700 (PDT)
 X-Received: by 2002:a17:902:f788:b0:16c:f48b:905e with SMTP id q8-20020a170902f78800b0016cf48b905emr19885972pln.60.1658893355881;
@@ -23,18 +23,18 @@ ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc
          uSfA==
 ARC-Authentication-Results: i=1; mx.google.com;
        dkim=pass header.i=@gmail.com header.s=20210112 header.b=mywi6bMa;
-       spf=pass (google.com: domain of sender@example.com designates 209.85.220.41 as permitted sender) smtp.mailfrom=sender@example.com;
+       spf=pass (google.com: domain of sender2@example.com designates 209.85.220.41 as permitted sender) smtp.mailfrom=sender2@example.com;
        dmarc=pass (p=NONE sp=QUARANTINE dis=NONE) header.from=gmail.com
-Return-Path: <sender@example.com>
+Return-Path: <sender2@example.com>
 Received: from mail-sor-f41.google.com (mail-sor-f41.google.com. [209.85.220.41])
         by mx.google.com with SMTPS id 11-20020aa7914b000000b0052ab192de4fsor8543241pfi.101.2022.07.26.20.42.35
-        for <recipient@example.com>
+        for <recipient2@example.com>
         (Google Transport Security);
         Tue, 26 Jul 2022 20:42:35 -0700 (PDT)
-Received-SPF: pass (google.com: domain of sender@example.com designates 209.85.220.41 as permitted sender) client-ip=209.85.220.41;
+Received-SPF: pass (google.com: domain of sender2@example.com designates 209.85.220.41 as permitted sender) client-ip=209.85.220.41;
 Authentication-Results: mx.google.com;
        dkim=pass header.i=@gmail.com header.s=20210112 header.b=mywi6bMa;
-       spf=pass (google.com: domain of sender@example.com designates 209.85.220.41 as permitted sender) smtp.mailfrom=sender@example.com;
+       spf=pass (google.com: domain of sender2@example.com designates 209.85.220.41 as permitted sender) smtp.mailfrom=sender2@example.com;
        dmarc=pass (p=NONE sp=QUARANTINE dis=NONE) header.from=gmail.com
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=20210112;
@@ -63,10 +63,10 @@ X-Gm-Message-State: AJIora/WUqr3biShTHQBjSlCKazFbrLxeYpxmr1VF0TpBUbjnJrcLT77
 X-Google-Smtp-Source: AGRyM1tai6X1Bx130Y1yHG5w2e0r8wx6bbI+H+YppWmQoT28TV3dSoYCqmeQK5VViW8WuvdOpQzhPQ==
 X-Received: by 2002:a62:29c3:0:b0:52b:f774:7242 with SMTP id p186-20020a6229c3000000b0052bf7747242mr12504553pfp.67.1658893354675;
         Tue, 26 Jul 2022 20:42:34 -0700 (PDT)
-Return-Path: <sender@example.com>
+Return-Path: <sender2@example.com>
 Received: from [192.168.1.2] ([8.8.8.8])
         by smtp.gmail.com with ESMTPSA id oj16-20020a17090b4d9000b001f291c9d3bdsm387578pjb.48.2022.07.26.20.42.32
-        for <recipient@example.com>
+        for <recipient2@example.com>
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
         Tue, 26 Jul 2022 20:42:33 -0700 (PDT)
 Content-Type: multipart/mixed; boundary="------------ae0qIOkrNQLQHe1YyfTsUXrk"
@@ -76,8 +76,8 @@ MIME-Version: 1.0
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
  Thunderbird/91.11.0
 Content-Language: en-NZ
-To: "Recipient Ross" <recipient@example.com>
-From: Sender Smith <sender@example.com>
+To: "Recipient Ross" <recipient2@example.com>
+From: Sender Smith <sender2@example.com>
 Subject: inline + attachment
 
 This is a multi-part message in MIME format.

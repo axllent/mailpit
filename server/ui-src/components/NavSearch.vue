@@ -55,7 +55,7 @@ export default {
 <template>
 	<template v-if="!modals">
 		<div class="list-group my-2">
-			<RouterLink to="/" class="list-group-item list-group-item-action">
+			<RouterLink to="/" class="list-group-item list-group-item-action" @click="pagination.start = 0">
 				<i class="bi bi-arrow-return-left me-1"></i>
 				<span class="ms-1">Inbox</span>
 				<span class="badge rounded-pill ms-1 float-end text-bg-secondary" title="Unread messages"
@@ -70,18 +70,6 @@ export default {
 					Delete all
 				</button>
 			</template>
-
-			<!-- <button class="list-group-item list-group-item-action" data-bs-toggle="modal" data-bs-target="#MarkAllReadModal"
-				:disabled="!mailbox.unread">
-				<i class="bi bi-eye-fill me-1"></i>
-				Mark all read
-			</button>
-	
-			<button class="list-group-item list-group-item-action" data-bs-toggle="modal" data-bs-target="#DeleteAllModal"
-				:disabled="!mailbox.total">
-				<i class="bi bi-trash-fill me-1 text-danger"></i>
-				Delete all
-			</button> -->
 
 			<NavSelected @loadMessages="loadMessages" />
 		</div>
