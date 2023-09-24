@@ -9,7 +9,7 @@ func TestTags(t *testing.T) {
 	setup()
 	defer Close()
 
-	t.Log("Testing setting & getting tags")
+	t.Log("Testing tags")
 
 	ids := []string{}
 
