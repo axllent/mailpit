@@ -2,6 +2,22 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.9.2]
+
+### Fix
+- Delete all messages matching search when more than 1000 results
+
+### Libs
+- Update node modules
+
+### Tests
+- Add message tag tests
+- Add search delete tests
+
+### UI
+- Reset pagination when returning to inbox from search
+
+
 ## [v1.9.1]
 
 ### Chore
