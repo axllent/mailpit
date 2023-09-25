@@ -63,22 +63,10 @@ func Send(from string, to []string, msg []byte) error {
 		}
 	}
 
-	var a smtp.Auth
+	auth := relayAuthFromConfig()
 
-	if config.SMTPRelayConfig.Auth == "plain" {
-		a = smtp.PlainAuth("", config.SMTPRelayConfig.Username, config.SMTPRelayConfig.Password, config.SMTPRelayConfig.Host)
-	}
-
-	if config.SMTPRelayConfig.Auth == "login" {
-		a = LoginAuth(config.SMTPRelayConfig.Username, config.SMTPRelayConfig.Password)
-	}
-
-	if config.SMTPRelayConfig.Auth == "cram-md5" {
-		a = smtp.CRAMMD5Auth(config.SMTPRelayConfig.Username, config.SMTPRelayConfig.Secret)
-	}
-
-	if a != nil {
-		if err = c.Auth(a); err != nil {
+	if auth != nil {
+		if err = c.Auth(auth); err != nil {
 			return fmt.Errorf("error response to AUTH command: %s", err.Error())
 		}
 	}
@@ -107,6 +95,25 @@ func Send(from string, to []string, msg []byte) error {
 	}
 
 	return c.Quit()
+}
+
+// Return the SMTP relay authentication based on config
+func relayAuthFromConfig() smtp.Auth {
+	var a smtp.Auth
+
+	if config.SMTPRelayConfig.Auth == "plain" {
+		a = smtp.PlainAuth("", config.SMTPRelayConfig.Username, config.SMTPRelayConfig.Password, config.SMTPRelayConfig.Host)
+	}
+
+	if config.SMTPRelayConfig.Auth == "login" {
+		a = LoginAuth(config.SMTPRelayConfig.Username, config.SMTPRelayConfig.Password)
+	}
+
+	if config.SMTPRelayConfig.Auth == "cram-md5" {
+		a = smtp.CRAMMD5Auth(config.SMTPRelayConfig.Username, config.SMTPRelayConfig.Secret)
+	}
+
+	return a
 }
 
 // Custom implementation of LOGIN SMTP authentication
