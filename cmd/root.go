@@ -8,10 +8,10 @@ import (
 	"strings"
 
 	"github.com/axllent/mailpit/config"
+	"github.com/axllent/mailpit/internal/logger"
+	"github.com/axllent/mailpit/internal/storage"
 	"github.com/axllent/mailpit/server"
 	"github.com/axllent/mailpit/server/smtpd"
-	"github.com/axllent/mailpit/storage"
-	"github.com/axllent/mailpit/utils/logger"
 	"github.com/spf13/cobra"
 )
 
@@ -142,7 +142,7 @@ func init() {
 
 // Load settings from environment
 func initConfigFromEnv() {
-	// defaults from envars if provided
+	// inherit from environment if provided
 	if len(os.Getenv("MP_DATA_FILE")) > 0 {
 		config.DataFile = os.Getenv("MP_DATA_FILE")
 	}

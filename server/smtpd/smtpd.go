@@ -10,8 +10,8 @@ import (
 	"strings"
 
 	"github.com/axllent/mailpit/config"
-	"github.com/axllent/mailpit/storage"
-	"github.com/axllent/mailpit/utils/logger"
+	"github.com/axllent/mailpit/internal/logger"
+	"github.com/axllent/mailpit/internal/storage"
 	"github.com/mhale/smtpd"
 	uuid "github.com/satori/go.uuid"
 )

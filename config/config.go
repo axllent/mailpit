@@ -10,8 +10,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/axllent/mailpit/utils/logger"
-	"github.com/axllent/mailpit/utils/tools"
+	"github.com/axllent/mailpit/internal/logger"
+	"github.com/axllent/mailpit/internal/tools"
 	"github.com/tg123/go-htpasswd"
 	"gopkg.in/yaml.v3"
 )

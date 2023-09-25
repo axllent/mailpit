@@ -24,8 +24,8 @@ jobs:
         key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
         restore-keys: |
           ${{ runner.os }}-go-
-    - run: go test ./storage ./server ./utils/tools -v
-    - run: go test ./storage -bench=.
+    - run: go test ./internal/storage ./server ./internal/tools -v
+    - run: go test ./internal/storage -bench=.
     
     # build the assets
     - uses: actions/setup-node@v3

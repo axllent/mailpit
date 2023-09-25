@@ -10,8 +10,8 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/axllent/mailpit/config"
-	"github.com/axllent/mailpit/utils/logger"
-	"github.com/axllent/mailpit/utils/tools"
+	"github.com/axllent/mailpit/internal/logger"
+	"github.com/axllent/mailpit/internal/tools"
 	"github.com/vanng822/go-premailer/premailer"
 	"golang.org/x/net/html"
 	"golang.org/x/net/html/atom"

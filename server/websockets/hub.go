@@ -7,7 +7,7 @@ package websockets
 import (
 	"encoding/json"
 
-	"github.com/axllent/mailpit/utils/logger"
+	"github.com/axllent/mailpit/internal/logger"
 )
 
 // Hub maintains the set of active clients and broadcasts messages to the
