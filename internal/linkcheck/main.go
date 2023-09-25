@@ -6,8 +6,8 @@ import (
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
+	"github.com/axllent/mailpit/internal/tools"
 	"github.com/axllent/mailpit/storage"
-	"github.com/axllent/mailpit/utils/tools"
 )
 
 var linkRe = regexp.MustCompile(`(?m)\b(http|ftp|https):\/\/([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:'!\/~+#-]*[\w@?^=%&\/~+#-])`)

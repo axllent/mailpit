@@ -8,10 +8,10 @@ import (
 	"strings"
 
 	"github.com/axllent/mailpit/config"
+	"github.com/axllent/mailpit/internal/logger"
 	"github.com/axllent/mailpit/server"
 	"github.com/axllent/mailpit/server/smtpd"
 	"github.com/axllent/mailpit/storage"
-	"github.com/axllent/mailpit/utils/logger"
 	"github.com/spf13/cobra"
 )
 

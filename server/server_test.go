@@ -12,9 +12,9 @@ import (
 	"testing"
 
 	"github.com/axllent/mailpit/config"
+	"github.com/axllent/mailpit/internal/logger"
 	"github.com/axllent/mailpit/server/apiv1"
 	"github.com/axllent/mailpit/storage"
-	"github.com/axllent/mailpit/utils/logger"
 	"github.com/jhillyerd/enmime"
 )
 

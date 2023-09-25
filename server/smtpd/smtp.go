@@ -8,7 +8,7 @@ import (
 	"net/smtp"
 
 	"github.com/axllent/mailpit/config"
-	"github.com/axllent/mailpit/utils/logger"
+	"github.com/axllent/mailpit/internal/logger"
 )
 
 func allowedRecipients(to []string) []string {

@@ -20,8 +20,8 @@ import (
 
 	"github.com/GuiaBolso/darwin"
 	"github.com/axllent/mailpit/config"
+	"github.com/axllent/mailpit/internal/logger"
 	"github.com/axllent/mailpit/server/websockets"
-	"github.com/axllent/mailpit/utils/logger"
 	"github.com/jhillyerd/enmime"
 	"github.com/klauspost/compress/zstd"
 	"github.com/leporo/sqlf"

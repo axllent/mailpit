@@ -776,7 +776,7 @@
         }
       },
       "x-go-name": "Response",
-      "x-go-package": "github.com/axllent/mailpit/utils/htmlcheck"
+      "x-go-package": "github.com/axllent/mailpit/internal/htmlcheck"
     },
     "HTMLCheckResult": {
       "description": "Result struct",
@@ -808,7 +808,7 @@
         }
       },
       "x-go-name": "Result",
-      "x-go-package": "github.com/axllent/mailpit/utils/htmlcheck"
+      "x-go-package": "github.com/axllent/mailpit/internal/htmlcheck"
     },
     "HTMLCheckScore": {
       "description": "Score struct",
@@ -836,7 +836,7 @@
         }
       },
       "x-go-name": "Score",
-      "x-go-package": "github.com/axllent/mailpit/utils/htmlcheck"
+      "x-go-package": "github.com/axllent/mailpit/internal/htmlcheck"
     },
     "HTMLCheckTotal": {
       "description": "Total weighted result for all scores",
@@ -869,7 +869,7 @@
         }
       },
       "x-go-name": "Total",
-      "x-go-package": "github.com/axllent/mailpit/utils/htmlcheck"
+      "x-go-package": "github.com/axllent/mailpit/internal/htmlcheck"
     },
     "HTMLCheckWarning": {
       "description": "Warning represents a failed test",
@@ -925,7 +925,7 @@
         }
       },
       "x-go-name": "Warning",
-      "x-go-package": "github.com/axllent/mailpit/utils/htmlcheck"
+      "x-go-package": "github.com/axllent/mailpit/internal/htmlcheck"
     },
     "Link": {
       "description": "Link struct",
@@ -945,7 +945,7 @@
           "type": "string"
         }
       },
-      "x-go-package": "github.com/axllent/mailpit/utils/linkcheck"
+      "x-go-package": "github.com/axllent/mailpit/internal/linkcheck"
     },
     "LinkCheckResponse": {
       "description": "Response represents the Link check response",
@@ -965,7 +965,7 @@
         }
       },
       "x-go-name": "Response",
-      "x-go-package": "github.com/axllent/mailpit/utils/linkcheck"
+      "x-go-package": "github.com/axllent/mailpit/internal/linkcheck"
     },
     "Message": {
       "description": "Message data excluding physical attachments",

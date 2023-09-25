@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/axllent/mailpit/config"
-	"github.com/axllent/mailpit/utils/logger"
+	"github.com/axllent/mailpit/internal/logger"
 )
 
 var linkRe = regexp.MustCompile(`(?i)^https?:\/\/`)
