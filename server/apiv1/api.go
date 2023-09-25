@@ -14,9 +14,9 @@ import (
 	"github.com/axllent/mailpit/internal/htmlcheck"
 	"github.com/axllent/mailpit/internal/linkcheck"
 	"github.com/axllent/mailpit/internal/logger"
+	"github.com/axllent/mailpit/internal/storage"
 	"github.com/axllent/mailpit/internal/tools"
 	"github.com/axllent/mailpit/server/smtpd"
-	"github.com/axllent/mailpit/storage"
 	"github.com/gorilla/mux"
 	uuid "github.com/satori/go.uuid"
 )

@@ -732,7 +732,7 @@
           "format": "int64"
         }
       },
-      "x-go-package": "github.com/axllent/mailpit/storage"
+      "x-go-package": "github.com/axllent/mailpit/internal/storage"
     },
     "DeleteRequest": {
       "description": "Delete request",
@@ -1058,7 +1058,7 @@
           }
         }
       },
-      "x-go-package": "github.com/axllent/mailpit/storage"
+      "x-go-package": "github.com/axllent/mailpit/internal/storage"
     },
     "MessageHeaders": {
       "description": "Message headers",
@@ -1139,7 +1139,7 @@
           }
         }
       },
-      "x-go-package": "github.com/axllent/mailpit/storage"
+      "x-go-package": "github.com/axllent/mailpit/internal/storage"
     },
     "MessagesSummary": {
       "description": "MessagesSummary is a summary of a list of messages",

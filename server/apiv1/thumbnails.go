@@ -11,7 +11,7 @@ import (
 	"strings"
 
 	"github.com/axllent/mailpit/internal/logger"
-	"github.com/axllent/mailpit/storage"
+	"github.com/axllent/mailpit/internal/storage"
 	"github.com/disintegration/imaging"
 	"github.com/gorilla/mux"
 	"github.com/jhillyerd/enmime"

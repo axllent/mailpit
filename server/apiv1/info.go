@@ -7,8 +7,8 @@ import (
 	"runtime"
 
 	"github.com/axllent/mailpit/config"
+	"github.com/axllent/mailpit/internal/storage"
 	"github.com/axllent/mailpit/internal/updater"
-	"github.com/axllent/mailpit/storage"
 )
 
 // Response includes the current and latest Mailpit version, database info, and memory usage

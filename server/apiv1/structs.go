@@ -3,7 +3,7 @@ package apiv1
 import (
 	"github.com/axllent/mailpit/internal/htmlcheck"
 	"github.com/axllent/mailpit/internal/linkcheck"
-	"github.com/axllent/mailpit/storage"
+	"github.com/axllent/mailpit/internal/storage"
 )
 
 // MessagesSummary is a summary of a list of messages
