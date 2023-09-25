@@ -1,7 +1,7 @@
 name: Tests
 on:
   pull_request:
-    branches: [ develop ]
+    branches: [ develop, 'feature/**' ]
   push:
     branches: [ develop, 'feature/**' ]
 jobs:
@@ -24,7 +24,7 @@ jobs:
         key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
         restore-keys: |
           ${{ runner.os }}-go-
-    - run: go test ./storage ./server -v
+    - run: go test ./storage ./server ./utils/tools -v
     - run: go test ./storage -bench=.
     
     # build the assets
