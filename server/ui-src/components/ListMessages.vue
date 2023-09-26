@@ -8,6 +8,10 @@ export default {
 		CommonMixins
 	],
 
+	props: {
+		loadingMessages: Number, // use different name to `loading` as that is already in use in CommonMixins
+	},
+
 	data() {
 		return {
 			mailbox,
@@ -153,13 +157,15 @@ export default {
 				<div class="d-none d-lg-block col-2 col-xxl-1 small text-end text-muted">
 					{{ getRelativeCreated(message) }}
 				</div>
-				<!-- </a> -->
 			</RouterLink>
 		</div>
 	</template>
 	<template v-else>
 		<p class="text-center mt-5">
-			<template v-if="getSearch()">No results for <code>{{ getSearch() }}</code></template>
+			<span v-if="loadingMessages > 0" class="text-secondary">
+				Loading messages...
+			</span>
+			<template v-else-if="getSearch()">No results for <code>{{ getSearch() }}</code></template>
 			<template v-else>No messages in your mailbox</template>
 		</p>
 	</template>
