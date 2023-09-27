@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/axllent/mailpit/utils/logger"
-	"github.com/axllent/mailpit/utils/tools"
+	"github.com/axllent/mailpit/internal/logger"
+	"github.com/axllent/mailpit/internal/tools"
 	"github.com/leporo/sqlf"
 )
 
@@ -26,7 +26,7 @@ func Search(search string, start, limit int) ([]MessageSummary, int, error) {
 		limit = 50
 	}
 
-	q := searchParser(search)
+	q := searchQueryBuilder(search)
 	var err error
 
 	if err := q.QueryAndClose(nil, db, func(row *sql.Rows) {
@@ -95,7 +95,7 @@ func Search(search string, start, limit int) ([]MessageSummary, int, error) {
 // is:read, is:unread, has:attachment, to:<term>, from:<term> & subject:<term>
 // Negative searches also also included by prefixing the search term with a `-` or `!`
 func DeleteSearch(search string) error {
-	q := searchParser(search)
+	q := searchQueryBuilder(search)
 
 	ids := []string{}
 
@@ -187,7 +187,7 @@ func DeleteSearch(search string) error {
 }
 
 // SearchParser returns the SQL syntax for the database search based on the search arguments
-func searchParser(searchString string) *sqlf.Stmt {
+func searchQueryBuilder(searchString string) *sqlf.Stmt {
 	searchString = strings.ToLower(searchString)
 	// group strings with quotes as a single argument and remove quotes
 	args := tools.ArgsParser(searchString)

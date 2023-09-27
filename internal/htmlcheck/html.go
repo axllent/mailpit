@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/axllent/mailpit/utils/tools"
+	"github.com/axllent/mailpit/internal/tools"
 )
 
 // HTML tests

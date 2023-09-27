@@ -15,11 +15,11 @@ import (
 	"text/template"
 
 	"github.com/axllent/mailpit/config"
+	"github.com/axllent/mailpit/internal/logger"
+	"github.com/axllent/mailpit/internal/storage"
 	"github.com/axllent/mailpit/server/apiv1"
 	"github.com/axllent/mailpit/server/handlers"
 	"github.com/axllent/mailpit/server/websockets"
-	"github.com/axllent/mailpit/storage"
-	"github.com/axllent/mailpit/utils/logger"
 	"github.com/gorilla/mux"
 )
 
@@ -67,8 +67,14 @@ func Listen() {
 		r.HandleFunc(redirect, middleWareFunc(addSlashToWebroot)).Methods("GET")
 	}
 
-	// handle everything else with the virtual index.html
-	r.PathPrefix(config.Webroot).Handler(middleWareFunc(index)).Methods("GET")
+	// frontend testing
+	r.HandleFunc(config.Webroot+"view/{id}.html", handlers.GetMessageHTML).Methods("GET")
+	r.HandleFunc(config.Webroot+"view/{id}.txt", handlers.GetMessageText).Methods("GET")
+
+	// web UI via virtual index.html
+	r.PathPrefix(config.Webroot + "view/").Handler(middleWareFunc(index)).Methods("GET")
+	r.Path(config.Webroot + "search").Handler(middleWareFunc(index)).Methods("GET")
+	r.Path(config.Webroot).Handler(middleWareFunc(index)).Methods("GET")
 
 	// put it all together
 	http.Handle("/", r)
@@ -293,10 +299,6 @@ func index(w http.ResponseWriter, _ *http.Request) {
 
 	buff.Bytes()
 
-	// f, err := embeddedFS.ReadFile("public/index.html")
-	// if err != nil {
-	// 	panic(err)
-	// }
 	w.Header().Add("Content-Type", "text/html")
 	_, _ = w.Write(buff.Bytes())
 }

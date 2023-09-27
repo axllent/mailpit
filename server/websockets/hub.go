@@ -7,7 +7,7 @@ package websockets
 import (
 	"encoding/json"
 
-	"github.com/axllent/mailpit/utils/logger"
+	"github.com/axllent/mailpit/internal/logger"
 )
 
 // Hub maintains the set of active clients and broadcasts messages to the
@@ -69,7 +69,7 @@ func (h *Hub) Run() {
 
 // Broadcast will spawn a broadcast message to all connected clients
 func Broadcast(t string, msg interface{}) {
-	if MessageHub == nil {
+	if MessageHub == nil || len(MessageHub.Clients) == 0 {
 		return
 	}
 

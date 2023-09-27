@@ -2,6 +2,27 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.9.3]
+
+### Chore
+- Update internal/storage import paths
+- Move storage package to internal/storage
+- Update internal import paths
+- Move utils/* packages to internal/*
+
+### Testing
+- Add endpoints for integration tests
+
+### Tests
+- Add more API tests
+- Add tests for ArgsParser & CleanTag
+
+### UI
+- Do not show excluded search tags as "current" in nav
+- Display "Loading messages" instead of "No results" while loading results
+- Only queue broadcast events if clients are connected
+
+
 ## [v1.9.2]
 
 ### Fix

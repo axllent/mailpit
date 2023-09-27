@@ -111,7 +111,7 @@ export default {
 
 		<div class="col-lg-10 col-md-9 mh-100 ps-0 ps-md-2 pe-0">
 			<div class="mh-100" style="overflow-y: auto;" id="message-page">
-				<ListMessages />
+				<ListMessages :loading-messages="loading" />
 			</div>
 		</div>
 	</div>

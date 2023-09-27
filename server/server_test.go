@@ -12,9 +12,9 @@ import (
 	"testing"
 
 	"github.com/axllent/mailpit/config"
+	"github.com/axllent/mailpit/internal/logger"
+	"github.com/axllent/mailpit/internal/storage"
 	"github.com/axllent/mailpit/server/apiv1"
-	"github.com/axllent/mailpit/storage"
-	"github.com/axllent/mailpit/utils/logger"
 	"github.com/jhillyerd/enmime"
 )
 
@@ -25,7 +25,7 @@ var (
 	}
 )
 
-func Test_APIv1(t *testing.T) {
+func TestAPIv1Messages(t *testing.T) {
 	setup()
 	defer storage.Close()
 
@@ -54,7 +54,7 @@ func Test_APIv1(t *testing.T) {
 		t.Errorf(err.Error())
 	}
 
-	// read first 10
+	// read first 10 messages
 	t.Log("Read first 10 messages including raw & headers")
 	putIDS := []string{}
 	for idx, msg := range m.Messages {
@@ -66,12 +66,12 @@ func Test_APIv1(t *testing.T) {
 			t.Errorf(err.Error())
 		}
 
-		// test RAW
+		// get RAW
 		if _, err := clientGet(ts.URL + "/api/v1/message/" + msg.ID + "/raw"); err != nil {
 			t.Errorf(err.Error())
 		}
 
-		// test headers
+		// het headers
 		if _, err := clientGet(ts.URL + "/api/v1/message/" + msg.ID + "/headers"); err != nil {
 			t.Errorf(err.Error())
 		}
@@ -79,11 +79,63 @@ func Test_APIv1(t *testing.T) {
 		// store for later
 		putIDS = append(putIDS, msg.ID)
 	}
+
+	// 10 should be marked as read
 	assertStatsEqual(t, ts.URL+"/api/v1/messages", 90, 100)
 
+	// delete all
+	t.Log("Delete all messages")
+	_, err = clientDelete(ts.URL+"/api/v1/messages", "{}")
+	if err != nil {
+		t.Errorf("Expected nil, received %s", err.Error())
+	}
+	assertStatsEqual(t, ts.URL+"/api/v1/messages", 0, 0)
+}
+
+func TestAPIv1ToggleReadStatus(t *testing.T) {
+	setup()
+	defer storage.Close()
+
+	r := apiRoutes()
+
+	ts := httptest.NewServer(r)
+	defer ts.Close()
+
+	m, err := fetchMessages(ts.URL + "/api/v1/messages")
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+
+	// check count of empty database
+	assertStatsEqual(t, ts.URL+"/api/v1/messages", 0, 0)
+
+	// insert 100
+	t.Log("Insert 100 messages")
+	insertEmailData(t)
+	assertStatsEqual(t, ts.URL+"/api/v1/messages", 100, 100)
+
+	m, err = fetchMessages(ts.URL + "/api/v1/messages")
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+
+	// read first 10 IDs
+	t.Log("Get first 10 IDs")
+	putIDS := []string{}
+	for idx, msg := range m.Messages {
+		if idx == 10 {
+			break
+		}
+
+		// store for later
+		putIDS = append(putIDS, msg.ID)
+	}
+	assertStatsEqual(t, ts.URL+"/api/v1/messages", 100, 100)
+
 	// mark first 10 as unread
-	t.Log("Mark first 10 as unread")
+	t.Log("Mark first 10 as read")
 	putData := putDataStruct
+	putData.Read = true
 	putData.IDs = putIDS
 	j, err := json.Marshal(putData)
 	if err != nil {
@@ -93,11 +145,11 @@ func Test_APIv1(t *testing.T) {
 	if err != nil {
 		t.Errorf(err.Error())
 	}
-	assertStatsEqual(t, ts.URL+"/api/v1/messages", 100, 100)
+	assertStatsEqual(t, ts.URL+"/api/v1/messages", 90, 100)
 
 	// mark first 10 as read
-	t.Log("Mark first 10 as read")
-	putData.Read = true
+	t.Log("Mark first 10 as unread")
+	putData.Read = false
 	j, err = json.Marshal(putData)
 	if err != nil {
 		t.Errorf(err.Error())
@@ -106,25 +158,7 @@ func Test_APIv1(t *testing.T) {
 	if err != nil {
 		t.Errorf(err.Error())
 	}
-	assertStatsEqual(t, ts.URL+"/api/v1/messages", 90, 100)
-
-	// search
-	assertSearchEqual(t, ts.URL+"/api/v1/search", "from-1@example.com", 1)
-	assertSearchEqual(t, ts.URL+"/api/v1/search", "to:from-1@example.com", 0)
-	assertSearchEqual(t, ts.URL+"/api/v1/search", "from:@example.com", 100)
-	assertSearchEqual(t, ts.URL+"/api/v1/search", "subject:\"Subject line\"", 100)
-	assertSearchEqual(t, ts.URL+"/api/v1/search", "subject:\"Subject line 17 end\"", 1)
-	assertSearchEqual(t, ts.URL+"/api/v1/search", "!thisdoesnotexist", 100)
-	assertSearchEqual(t, ts.URL+"/api/v1/search", "-thisdoesnotexist", 100)
-	assertSearchEqual(t, ts.URL+"/api/v1/search", "thisdoesnotexist", 0)
-
-	// delete first 10
-	t.Log("Delete first 10")
-	_, err = clientDelete(ts.URL+"/api/v1/messages", string(j))
-	if err != nil {
-		t.Errorf(err.Error())
-	}
-	assertStatsEqual(t, ts.URL+"/api/v1/messages", 90, 90)
+	assertStatsEqual(t, ts.URL+"/api/v1/messages", 100, 100)
 
 	// mark all as read
 	putData.Read = true
@@ -139,15 +173,34 @@ func Test_APIv1(t *testing.T) {
 	if err != nil {
 		t.Errorf(err.Error())
 	}
-	assertStatsEqual(t, ts.URL+"/api/v1/messages", 0, 90)
+	assertStatsEqual(t, ts.URL+"/api/v1/messages", 0, 100)
+}
 
-	// delete all
-	t.Log("Delete all messages")
-	_, err = clientDelete(ts.URL+"/api/v1/messages", "{}")
-	if err != nil {
-		t.Errorf("Expected nil, received %s", err.Error())
-	}
-	assertStatsEqual(t, ts.URL+"/api/v1/messages", 0, 0)
+func TestAPIv1Search(t *testing.T) {
+	setup()
+	defer storage.Close()
+
+	r := apiRoutes()
+
+	ts := httptest.NewServer(r)
+	defer ts.Close()
+
+	// insert 100
+	t.Log("Insert 100 messages")
+	insertEmailData(t)
+	assertStatsEqual(t, ts.URL+"/api/v1/messages", 100, 100)
+
+	// search
+	assertSearchEqual(t, ts.URL+"/api/v1/search", "from-1@example.com", 1)
+	assertSearchEqual(t, ts.URL+"/api/v1/search", "from:from-1@example.com", 1)
+	assertSearchEqual(t, ts.URL+"/api/v1/search", "-from:from-1@example.com", 99)
+	assertSearchEqual(t, ts.URL+"/api/v1/search", "to:from-1@example.com", 0)
+	assertSearchEqual(t, ts.URL+"/api/v1/search", "from:@example.com", 100)
+	assertSearchEqual(t, ts.URL+"/api/v1/search", "subject:\"Subject line\"", 100)
+	assertSearchEqual(t, ts.URL+"/api/v1/search", "subject:\"Subject line 17 end\"", 1)
+	assertSearchEqual(t, ts.URL+"/api/v1/search", "!thisdoesnotexist", 100)
+	assertSearchEqual(t, ts.URL+"/api/v1/search", "-thisdoesnotexist", 100)
+	assertSearchEqual(t, ts.URL+"/api/v1/search", "thisdoesnotexist", 0)
 }
 
 func setup() {

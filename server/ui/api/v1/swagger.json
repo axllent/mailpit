@@ -654,6 +654,74 @@
           }
         }
       }
+    },
+    "/view/{ID}.html": {
+      "get": {
+        "description": "Renders just the message's HTML part which can be used for UI integration testing.\nAttached inline images are modified to link to the API provided they exist.\nNote that is the message does not contain a HTML part then an 404 error is returned.\n\nThe ID can be set to `latest` to return the latest message.",
+        "produces": [
+          "text/html"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "testing"
+        ],
+        "summary": "Render message HTML part",
+        "operationId": "GetMessageHTML",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Database ID or latest",
+            "name": "ID",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/HTMLResponse"
+          },
+          "default": {
+            "$ref": "#/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/view/{ID}.txt": {
+      "get": {
+        "description": "Renders just the message's text part which can be used for UI integration testing.\n\nThe ID can be set to `latest` to return the latest message.",
+        "produces": [
+          "text/plain"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "testing"
+        ],
+        "summary": "Render message text part",
+        "operationId": "GetMessageText",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Database ID or latest",
+            "name": "ID",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/TextResponse"
+          },
+          "default": {
+            "$ref": "#/responses/ErrorResponse"
+          }
+        }
+      }
     }
   },
   "definitions": {
@@ -732,7 +800,7 @@
           "format": "int64"
         }
       },
-      "x-go-package": "github.com/axllent/mailpit/storage"
+      "x-go-package": "github.com/axllent/mailpit/internal/storage"
     },
     "DeleteRequest": {
       "description": "Delete request",
@@ -776,7 +844,7 @@
         }
       },
       "x-go-name": "Response",
-      "x-go-package": "github.com/axllent/mailpit/utils/htmlcheck"
+      "x-go-package": "github.com/axllent/mailpit/internal/htmlcheck"
     },
     "HTMLCheckResult": {
       "description": "Result struct",
@@ -808,7 +876,7 @@
         }
       },
       "x-go-name": "Result",
-      "x-go-package": "github.com/axllent/mailpit/utils/htmlcheck"
+      "x-go-package": "github.com/axllent/mailpit/internal/htmlcheck"
     },
     "HTMLCheckScore": {
       "description": "Score struct",
@@ -836,7 +904,7 @@
         }
       },
       "x-go-name": "Score",
-      "x-go-package": "github.com/axllent/mailpit/utils/htmlcheck"
+      "x-go-package": "github.com/axllent/mailpit/internal/htmlcheck"
     },
     "HTMLCheckTotal": {
       "description": "Total weighted result for all scores",
@@ -869,7 +937,7 @@
         }
       },
       "x-go-name": "Total",
-      "x-go-package": "github.com/axllent/mailpit/utils/htmlcheck"
+      "x-go-package": "github.com/axllent/mailpit/internal/htmlcheck"
     },
     "HTMLCheckWarning": {
       "description": "Warning represents a failed test",
@@ -925,7 +993,7 @@
         }
       },
       "x-go-name": "Warning",
-      "x-go-package": "github.com/axllent/mailpit/utils/htmlcheck"
+      "x-go-package": "github.com/axllent/mailpit/internal/htmlcheck"
     },
     "Link": {
       "description": "Link struct",
@@ -945,7 +1013,7 @@
           "type": "string"
         }
       },
-      "x-go-package": "github.com/axllent/mailpit/utils/linkcheck"
+      "x-go-package": "github.com/axllent/mailpit/internal/linkcheck"
     },
     "LinkCheckResponse": {
       "description": "Response represents the Link check response",
@@ -965,7 +1033,7 @@
         }
       },
       "x-go-name": "Response",
-      "x-go-package": "github.com/axllent/mailpit/utils/linkcheck"
+      "x-go-package": "github.com/axllent/mailpit/internal/linkcheck"
     },
     "Message": {
       "description": "Message data excluding physical attachments",
@@ -1058,7 +1126,7 @@
           }
         }
       },
-      "x-go-package": "github.com/axllent/mailpit/storage"
+      "x-go-package": "github.com/axllent/mailpit/internal/storage"
     },
     "MessageHeaders": {
       "description": "Message headers",
@@ -1139,7 +1207,7 @@
           }
         }
       },
-      "x-go-package": "github.com/axllent/mailpit/storage"
+      "x-go-package": "github.com/axllent/mailpit/internal/storage"
     },
     "MessagesSummary": {
       "description": "MessagesSummary is a summary of a list of messages",
@@ -1299,6 +1367,9 @@
     },
     "ErrorResponse": {
       "description": "Error response"
+    },
+    "HTMLResponse": {
+      "description": "HTML response"
     },
     "InfoResponse": {
       "description": "Application information",
