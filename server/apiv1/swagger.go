@@ -81,6 +81,13 @@ type textResponse struct {
 	Body string
 }
 
+// HTML response
+// swagger:response HTMLResponse
+type htmlResponse struct {
+	// in: body
+	Body string
+}
+
 // Error response
 // swagger:response ErrorResponse
 type errorResponse struct {
