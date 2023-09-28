@@ -14,9 +14,12 @@ export default {
 		AjaxLoader,
 	},
 
+	emits: ['delete'],
+
 	data() {
 		return {
 			addresses: [],
+			deleteAfterRelease: false,
 			mailbox,
 			allAddresses: [],
 		}
@@ -62,6 +65,9 @@ export default {
 
 				self.post(self.resolve('/api/v1/message/' + self.message.ID + '/release'), data, function (response) {
 					self.modal("ReleaseModal").hide()
+					if (self.deleteAfterRelease) {
+						self.$emit('delete')
+					}
 				})
 			}, 100)
 		}
@@ -106,6 +112,18 @@ export default {
 								<option v-for="t in allAddresses" :value="t">{{ t }}</option>
 							</select>
 							<div class="invalid-feedback">Invalid email address</div>
+						</div>
+					</div>
+					<div class="row mb-3">
+						<div class="col-sm-10 offset-sm-2">
+							<div class="form-check">
+								<input class="form-check-input" type="checkbox" v-model="deleteAfterRelease"
+									id="DeleteAfterRelease">
+								<label class="form-check-label" for="DeleteAfterRelease">
+									Delete the message after release
+								</label>
+							</div>
+
 						</div>
 					</div>
 					<div class="form-text text-center" v-if="mailbox.uiConfig.MessageRelay.RecipientAllowlist != ''">
