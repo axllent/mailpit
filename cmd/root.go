@@ -110,22 +110,6 @@ func init() {
 	rootCmd.Flags().BoolVarP(&logger.QuietLogging, "quiet", "q", logger.QuietLogging, "Quiet logging (errors only)")
 	rootCmd.Flags().BoolVarP(&logger.VerboseLogging, "verbose", "v", logger.VerboseLogging, "Verbose logging")
 
-	// deprecated flags 2022/08/06
-	rootCmd.Flags().StringVarP(&config.UIAuthFile, "auth-file", "a", config.UIAuthFile, "A password file for web UI authentication")
-	rootCmd.Flags().StringVar(&config.UITLSCert, "ssl-cert", config.UITLSCert, "SSL certificate - requires ssl-key")
-	rootCmd.Flags().StringVar(&config.UITLSKey, "ssl-key", config.UITLSKey, "SSL key - requires ssl-cert")
-	rootCmd.Flags().Lookup("auth-file").Hidden = true
-	rootCmd.Flags().Lookup("auth-file").Deprecated = "use --ui-auth-file"
-	rootCmd.Flags().Lookup("ssl-cert").Hidden = true
-	rootCmd.Flags().Lookup("ssl-cert").Deprecated = "use --ui-tls-cert"
-	rootCmd.Flags().Lookup("ssl-key").Hidden = true
-	rootCmd.Flags().Lookup("ssl-key").Deprecated = "use --ui-tls-key"
-
-	// deprecated flags 2022/08/30
-	rootCmd.Flags().StringVar(&config.DataFile, "data", config.DataFile, "Database file to store persistent data")
-	rootCmd.Flags().Lookup("data").Hidden = true
-	rootCmd.Flags().Lookup("data").Deprecated = "use --db-file"
-
 	// deprecated flags 2023/03/12
 	rootCmd.Flags().StringVar(&config.UITLSCert, "ui-ssl-cert", config.UITLSCert, "SSL certificate for web UI - requires ui-ssl-key")
 	rootCmd.Flags().StringVar(&config.UITLSKey, "ui-ssl-key", config.UITLSKey, "SSL key for web UI - requires ui-ssl-cert")
@@ -214,26 +198,6 @@ func initConfigFromEnv() {
 
 // load deprecated settings from environment and warn
 func initDeprecatedConfigFromEnv() {
-	// deprecated 2022/08/06
-	if len(os.Getenv("MP_AUTH_FILE")) > 0 {
-		fmt.Println("ENV MP_AUTH_FILE has been deprecated, use MP_UI_AUTH_FILE")
-		config.UIAuthFile = os.Getenv("MP_AUTH_FILE")
-	}
-	// deprecated 2022/08/06
-	if len(os.Getenv("MP_SSL_CERT")) > 0 {
-		fmt.Println("ENV MP_SSL_CERT has been deprecated, use MP_UI_TLS_CERT")
-		config.UITLSCert = os.Getenv("MP_SSL_CERT")
-	}
-	// deprecated 2022/08/06
-	if len(os.Getenv("MP_SSL_KEY")) > 0 {
-		fmt.Println("ENV MP_SSL_KEY has been deprecated, use MP_UI_TLS_KEY")
-		config.UITLSKey = os.Getenv("MP_TLS_KEY")
-	}
-	// deprecated 2022/08/28
-	if len(os.Getenv("MP_DATA_DIR")) > 0 {
-		fmt.Println("ENV MP_DATA_DIR has been deprecated, use MP_DATA_FILE")
-		config.DataFile = os.Getenv("MP_DATA_DIR")
-	}
 	// deprecated 2023/03/12
 	if len(os.Getenv("MP_UI_SSL_CERT")) > 0 {
 		fmt.Println("ENV MP_UI_SSL_CERT has been deprecated, use MP_UI_TLS_CERT")
