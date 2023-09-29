@@ -15,6 +15,7 @@ import (
 	"text/template"
 
 	"github.com/axllent/mailpit/config"
+	"github.com/axllent/mailpit/internal/auth"
 	"github.com/axllent/mailpit/internal/logger"
 	"github.com/axllent/mailpit/internal/storage"
 	"github.com/axllent/mailpit/server/apiv1"
@@ -79,8 +80,8 @@ func Listen() {
 	// put it all together
 	http.Handle("/", r)
 
-	if config.UIAuthFile != "" {
-		logger.Log().Info("[http] enabling web UI basic authentication")
+	if auth.UICredentials != nil {
+		logger.Log().Info("[http] enabling basic authentication")
 	}
 
 	// Mark the application here as ready
@@ -158,7 +159,7 @@ func middleWareFunc(fn http.HandlerFunc) http.HandlerFunc {
 			w.Header().Set("Access-Control-Allow-Headers", "*")
 		}
 
-		if config.UIAuthFile != "" {
+		if auth.UICredentials != nil {
 			user, pass, ok := r.BasicAuth()
 
 			if !ok {
@@ -166,7 +167,21 @@ func middleWareFunc(fn http.HandlerFunc) http.HandlerFunc {
 				return
 			}
 
-			if !config.UIAuth.Match(user, pass) {
+			if !auth.UICredentials.Match(user, pass) {
+				basicAuthResponse(w)
+				return
+			}
+		}
+
+		if auth.UICredentials != nil {
+			user, pass, ok := r.BasicAuth()
+
+			if !ok {
+				basicAuthResponse(w)
+				return
+			}
+
+			if !auth.UICredentials.Match(user, pass) {
 				basicAuthResponse(w)
 				return
 			}
@@ -197,7 +212,7 @@ func middlewareHandler(h http.Handler) http.Handler {
 			w.Header().Set("Access-Control-Allow-Headers", "*")
 		}
 
-		if config.UIAuthFile != "" {
+		if auth.UICredentials != nil {
 			user, pass, ok := r.BasicAuth()
 
 			if !ok {
@@ -205,7 +220,7 @@ func middlewareHandler(h http.Handler) http.Handler {
 				return
 			}
 
-			if !config.UIAuth.Match(user, pass) {
+			if !auth.UICredentials.Match(user, pass) {
 				basicAuthResponse(w)
 				return
 			}

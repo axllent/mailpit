@@ -341,6 +341,6 @@ export default {
 
 	<AboutMailpit modals />
 	<AjaxLoader :loading="loading" />
-	<Release v-if="message" ref="ReleaseRef" :message="message" />
+	<Release v-if="message" ref="ReleaseRef" :message="message" @delete="deleteMessage" />
 	<Screenshot v-if="message" ref="ScreenshotRef" :message="message" />
 </template>
