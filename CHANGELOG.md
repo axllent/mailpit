@@ -2,6 +2,22 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.9.4]
+
+### Chore
+- Remove some flags deprecated 08/2022
+
+### Feature
+- Set auth credentials directly from environment variables
+
+### Libs
+- Update node modules
+- Update Go modules
+
+### UI
+- Add option to delete a message after release
+
+
 ## [v1.9.3]
 
 ### Chore
