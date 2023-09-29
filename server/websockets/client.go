@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/axllent/mailpit/config"
+	"github.com/axllent/mailpit/internal/auth"
 	"github.com/axllent/mailpit/internal/logger"
 	"github.com/gorilla/websocket"
 )
@@ -99,19 +99,17 @@ func (c *Client) writePump() {
 
 // ServeWs handles websocket requests from the peer.
 func ServeWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
-	if config.UIAuthFile != "" {
-		if config.UIAuthFile != "" {
-			user, pass, ok := r.BasicAuth()
+	if auth.UICredentials != nil {
+		user, pass, ok := r.BasicAuth()
 
-			if !ok {
-				basicAuthResponse(w)
-				return
-			}
+		if !ok {
+			basicAuthResponse(w)
+			return
+		}
 
-			if !config.UIAuth.Match(user, pass) {
-				basicAuthResponse(w)
-				return
-			}
+		if !auth.UICredentials.Match(user, pass) {
+			basicAuthResponse(w)
+			return
 		}
 	}
 
