@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/axllent/mailpit/config"
+	"github.com/axllent/mailpit/internal/auth"
 	"github.com/axllent/mailpit/internal/logger"
 	"github.com/axllent/mailpit/internal/storage"
 	"github.com/mhale/smtpd"
@@ -129,7 +130,7 @@ func mailHandler(origin net.Addr, from string, to []string, data []byte) error {
 }
 
 func authHandler(remoteAddr net.Addr, mechanism string, username []byte, password []byte, _ []byte) (bool, error) {
-	allow := config.SMTPAuthConfig.Match(string(username), string(password))
+	allow := auth.SMTPCredentials.Match(string(username), string(password))
 	if allow {
 		logger.Log().Debugf("[smtpd] allow %s login:%q from:%s", mechanism, string(username), cleanIP(remoteAddr))
 	} else {
@@ -149,14 +150,14 @@ func authHandlerAny(remoteAddr net.Addr, mechanism string, username []byte, _ []
 // Listen starts the SMTPD server
 func Listen() error {
 	if config.SMTPAuthAllowInsecure {
-		if config.SMTPAuthFile != "" {
-			logger.Log().Infof("[smtpd] enabling login auth via %s (insecure)", config.SMTPAuthFile)
+		if auth.SMTPCredentials != nil {
+			logger.Log().Info("[smtpd] enabling login auth (insecure)")
 		} else if config.SMTPAuthAcceptAny {
 			logger.Log().Info("[smtpd] enabling all auth (insecure)")
 		}
 	} else {
-		if config.SMTPAuthFile != "" {
-			logger.Log().Infof("[smtpd] enabling login auth via %s (TLS)", config.SMTPAuthFile)
+		if auth.SMTPCredentials != nil {
+			logger.Log().Info("[smtpd] enabling login auth (TLS)")
 		} else if config.SMTPAuthAcceptAny {
 			logger.Log().Info("[smtpd] enabling any auth (TLS)")
 		}
@@ -181,7 +182,7 @@ func listenAndServe(addr string, handler smtpd.Handler, authHandler smtpd.AuthHa
 		srv.AuthMechs = map[string]bool{"CRAM-MD5": false, "PLAIN": true, "LOGIN": true}
 	}
 
-	if config.SMTPAuthFile != "" {
+	if auth.SMTPCredentials != nil {
 		srv.AuthMechs = map[string]bool{"CRAM-MD5": false, "PLAIN": true, "LOGIN": true}
 		srv.AuthHandler = authHandler
 		srv.AuthRequired = true

@@ -10,9 +10,9 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/axllent/mailpit/internal/auth"
 	"github.com/axllent/mailpit/internal/logger"
 	"github.com/axllent/mailpit/internal/tools"
-	"github.com/tg123/go-htpasswd"
 	"gopkg.in/yaml.v3"
 )
 
@@ -38,11 +38,8 @@ var (
 	// UITLSKey file
 	UITLSKey string
 
-	// UIAuthFile for basic authentication
+	// UIAuthFile for UI & API authentication
 	UIAuthFile string
-
-	// UIAuth used for authentication
-	UIAuth *htpasswd.File
 
 	// Webroot to define the base path for the UI and API
 	Webroot = "/"
@@ -55,9 +52,6 @@ var (
 
 	// SMTPAuthFile for SMTP authentication
 	SMTPAuthFile string
-
-	// SMTPAuthConfig used for authentication auto-generated from SMTPAuthFile
-	SMTPAuthConfig *htpasswd.File
 
 	// SMTPAuthAllowInsecure allows PLAIN & LOGIN unencrypted authentication
 	SMTPAuthAllowInsecure bool
@@ -161,12 +155,13 @@ func VerifyConfig() error {
 		if !isFile(UIAuthFile) {
 			return fmt.Errorf("HTTP password file not found: %s", UIAuthFile)
 		}
-
-		a, err := htpasswd.New(UIAuthFile, htpasswd.DefaultSystems, nil)
+		b, err := os.ReadFile(UIAuthFile)
 		if err != nil {
 			return err
 		}
-		UIAuth = a
+		if err := auth.SetUIAuth(string(b)); err != nil {
+			return err
+		}
 	}
 
 	if UITLSCert != "" && UITLSKey == "" || UITLSCert == "" && UITLSKey != "" {
@@ -202,18 +197,21 @@ func VerifyConfig() error {
 			return fmt.Errorf("SMTP password file not found: %s", SMTPAuthFile)
 		}
 
-		if SMTPAuthAcceptAny {
-			return errors.New("SMTP authentication can either use --smtp-auth-file or --smtp-auth-accept-any")
-		}
-
-		a, err := htpasswd.New(SMTPAuthFile, htpasswd.DefaultSystems, nil)
+		b, err := os.ReadFile(SMTPAuthFile)
 		if err != nil {
 			return err
 		}
-		SMTPAuthConfig = a
+
+		if err := auth.SetSMTPAuth(string(b)); err != nil {
+			return err
+		}
 	}
 
-	if SMTPTLSCert == "" && (SMTPAuthFile != "" || SMTPAuthAcceptAny) && !SMTPAuthAllowInsecure {
+	if auth.SMTPCredentials != nil && SMTPAuthAcceptAny {
+		return errors.New("SMTP authentication cannot use both credentials and --smtp-auth-accept-any")
+	}
+
+	if SMTPTLSCert == "" && (auth.SMTPCredentials != nil || SMTPAuthAcceptAny) && !SMTPAuthAllowInsecure {
 		return errors.New("SMTP authentication requires TLS encryption, run with `--smtp-auth-allow-insecure` to allow insecure authentication")
 	}
 
