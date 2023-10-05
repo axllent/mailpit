@@ -141,7 +141,10 @@ export default {
 					</div>
 				</div>
 				<div class="col-lg-6 col-xxl-7 mt-2 mt-lg-0">
-					<div><b>{{ message.Subject != "" ? message.Subject : "[ no subject ]" }}</b></div>
+					<div class="subject">
+						<b>{{ message.Subject != "" ? message.Subject : "[ no subject ]" }}</b>
+						<small v-if="message.Snippet != ''" class="small">&nbsp; {{ message.Snippet }}</small>
+					</div>
 					<div>
 						<RouterLink class="badge me-1" v-for="t in message.Tags" :to="'/search?q=' + tagEncodeURI(t)"
 							:style="mailbox.showTagColors ? { backgroundColor: colorHash(t) } : { backgroundColor: '#6c757d' }"

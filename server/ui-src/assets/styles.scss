@@ -94,11 +94,33 @@
 }
 
 .message {
+	.subject {
+		display: -webkit-box;
+		-webkit-box-orient: vertical;
+		-webkit-line-clamp: 1;
+		overflow: hidden;
+		color: $text-muted;
+
+		b {
+			color: $list-group-color;
+		}
+
+		small {
+			opacity: 0.5;
+		}
+	}
+
 	&.read {
 		color: $text-muted;
 
 		b {
+			opacity: 0.7;
 			font-weight: normal;
+			color: $list-group-color;
+		}
+
+		small {
+			opacity: 0.5;
 		}
 	}
 	&.selected {

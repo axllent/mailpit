@@ -108,10 +108,9 @@ Content-Transfer-Encoding: 7bit
     <meta http-equiv="content-type" content="text/html; charset=UTF-8">
   </head>
   <body>
-    Message with inline image and attachment:<br>
+    <h1>Message with inline image and attachment:</h1>
     <br>
-    <img src="cid:part1.845LaYlX.wtWMpWwa@gmail.com"
-      moz-do-not-send="false"><br>
+    <p><img src="cid:part1.845LaYlX.wtWMpWwa@gmail.com"></p>
     <br>
     <br>
   </body>

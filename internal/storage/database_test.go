@@ -117,6 +117,38 @@ func TestRetrieveMimeEmail(t *testing.T) {
 	assertEqual(t, len(inlineData.Content), msg.Inline[0].Size, "inline attachment size does not match")
 }
 
+func TestMessageSummary(t *testing.T) {
+	setup()
+	defer Close()
+
+	t.Log("Testing message summary")
+
+	if _, err := Store(testMimeEmail); err != nil {
+		t.Log("error ", err)
+		t.Fail()
+	}
+
+	summaries, err := List(0, 1)
+	if err != nil {
+		t.Log("error ", err)
+		t.Fail()
+	}
+
+	assertEqual(t, len(summaries), 1, "Expected 1 result")
+
+	msg := summaries[0]
+
+	assertEqual(t, msg.From.Name, "Sender Smith", "\"From\" name does not match")
+	assertEqual(t, msg.From.Address, "sender2@example.com", "\"From\" address does not match")
+	assertEqual(t, msg.Subject, "inline + attachment", "subject does not match")
+	assertEqual(t, len(msg.To), 1, "incorrect number of recipients")
+	assertEqual(t, msg.To[0].Name, "Recipient Ross", "\"To\" name does not match")
+	assertEqual(t, msg.To[0].Address, "recipient2@example.com", "\"To\" address does not match")
+	assertEqual(t, msg.Snippet, "Message with inline image and attachment:", "\"Snippet\" does does not match")
+	assertEqual(t, msg.Attachments, 1, "Expected 1 attachment")
+	assertEqual(t, msg.MessageID, "33af2ac1-c33d-9738-35e3-a6daf90bbd89@gmail.com", "\"MessageID\" does not match")
+}
+
 func BenchmarkImportText(b *testing.B) {
 	setup()
 	defer Close()
