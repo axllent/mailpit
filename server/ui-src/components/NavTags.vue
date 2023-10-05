@@ -19,7 +19,7 @@ export default {
 				return false
 			}
 
-			let re = new RegExp(`\\b[^\-!]tag:"?${tag}"?\\b`, 'i')
+			let re = new RegExp(`(^|\\s)tag:"?${tag}"?($|\\s)`, 'i')
 			return query.match(re)
 		}
 	}

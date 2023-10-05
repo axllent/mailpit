@@ -443,7 +443,7 @@ export default {
 				aria-labelledby="nav-html-tab" tabindex="0">
 				<div id="responsive-view" :class="scaleHTMLPreview" :style="responsiveSizes[scaleHTMLPreview]">
 					<iframe target-blank="" class="tab-pane d-block" id="preview-html" :srcdoc="sanitizeHTML(message.HTML)"
-						v-on:load="resizeIframe" frameborder="0" style="width: 100%; height: 100%;">
+						v-on:load="resizeIframe" frameborder="0" style="width: 100%; height: 100%; background: #fff;">
 					</iframe>
 				</div>
 				<Attachments v-if="allAttachments(message).length" :message="message"

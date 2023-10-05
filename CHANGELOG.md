@@ -2,6 +2,21 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.9.5]
+
+### Feature
+- Add `reindex` subcommand to reindex all messages
+- Display email previews ([#175](https://github.com/axllent/mailpit/issues/175))
+
+### Fix
+- HTML message preview background color when switching themes in Chrome
+- Correctly detect tags in search (UI)
+
+### Tests
+- Add message summary tests
+- Add snippet tests
+
+
 ## [v1.9.4]
 
 ### Chore
