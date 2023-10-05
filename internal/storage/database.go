@@ -18,9 +18,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/GuiaBolso/darwin"
 	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/internal/logger"
+	"github.com/axllent/mailpit/internal/tools"
 	"github.com/axllent/mailpit/server/websockets"
 	"github.com/jhillyerd/enmime"
 	"github.com/klauspost/compress/zstd"
@@ -42,80 +42,7 @@ var (
 	// zstd compression encoder & decoder
 	dbEncoder, _ = zstd.NewWriter(nil)
 	dbDecoder, _ = zstd.NewReader(nil)
-
-	dbMigrations = []darwin.Migration{
-		{
-			Version:     1.0,
-			Description: "Creating tables",
-			Script: `CREATE TABLE IF NOT EXISTS mailbox (
-				Sort INTEGER PRIMARY KEY AUTOINCREMENT,
-				ID TEXT NOT NULL,
-				Data BLOB,
-				Search TEXT,
-				Read INTEGER
-			);
-			CREATE INDEX IF NOT EXISTS idx_sort ON mailbox (Sort);
-			CREATE UNIQUE INDEX IF NOT EXISTS idx_id ON mailbox (ID);
-			CREATE INDEX IF NOT EXISTS idx_read ON mailbox (Read);
-			
-			CREATE TABLE IF NOT EXISTS mailbox_data (
-				ID TEXT KEY NOT NULL,
-				Email BLOB
-			);
-			CREATE UNIQUE INDEX IF NOT EXISTS idx_data_id ON mailbox_data (ID);`,
-		},
-		{
-			Version:     1.1,
-			Description: "Create tags column",
-			Script: `ALTER TABLE mailbox ADD COLUMN Tags Text  NOT NULL DEFAULT '[]';
-			CREATE INDEX IF NOT EXISTS idx_tags ON mailbox (Tags);`,
-		},
-		{
-			Version:     1.2,
-			Description: "Creating new mailbox format",
-			Script: `CREATE TABLE IF NOT EXISTS mailboxtmp (
-				Created INTEGER NOT NULL,
-				ID TEXT NOT NULL,
-				MessageID TEXT NOT NULL,
-				Subject TEXT NOT NULL,
-				Metadata TEXT,
-				Size INTEGER NOT NULL,
-				Inline INTEGER NOT NULL,
-				Attachments INTEGER NOT NULL,
-				Read INTEGER,
-				Tags TEXT,
-				SearchText TEXT
-			);
-			INSERT INTO mailboxtmp 
-				(Created, ID, MessageID, Subject, Metadata, Size, Inline, Attachments, SearchText, Read, Tags) 
-			SELECT 
-				Sort, ID, '', json_extract(Data, '$.Subject'),Data, 
-				json_extract(Data, '$.Size'), json_extract(Data, '$.Inline'), json_extract(Data, '$.Attachments'), 
-				Search, Read, Tags
-			FROM mailbox;
-
-			DROP TABLE IF EXISTS mailbox;
-			ALTER TABLE mailboxtmp RENAME TO mailbox;
-			CREATE INDEX IF NOT EXISTS idx_created ON mailbox (Created);
-			CREATE UNIQUE INDEX IF NOT EXISTS idx_id ON mailbox (ID);
-			CREATE INDEX IF NOT EXISTS idx_message_id ON mailbox (MessageID);
-			CREATE INDEX IF NOT EXISTS idx_subject ON mailbox (Subject);
-			CREATE INDEX IF NOT EXISTS idx_size ON mailbox (Size);
-			CREATE INDEX IF NOT EXISTS idx_inline ON mailbox (Inline);
-			CREATE INDEX IF NOT EXISTS idx_attachments ON mailbox (Attachments);
-			CREATE INDEX IF NOT EXISTS idx_read ON mailbox (Read);
-			CREATE INDEX IF NOT EXISTS idx_tags ON mailbox (Tags);`,
-		},
-	}
 )
-
-// DBMailSummary struct for storing mail summary
-type DBMailSummary struct {
-	From *mail.Address
-	To   []*mail.Address
-	Cc   []*mail.Address
-	Bcc  []*mail.Address
-}
 
 // InitDB will initialise the database
 func InitDB() error {
@@ -176,15 +103,6 @@ func InitDB() error {
 	go dataMigrations()
 
 	return nil
-}
-
-// Create tables and apply migrations if required
-func dbApplyMigrations() error {
-	driver := darwin.NewGenericDriver(db, darwin.SqliteDialect{})
-
-	d := darwin.New(driver, dbMigrations, nil)
-
-	return d.Migrate()
 }
 
 // Close will close the database, and delete if a temporary table
@@ -281,10 +199,11 @@ func Store(body []byte) (string, error) {
 	size := len(body)
 	inline := len(env.Inlines)
 	attachments := len(env.Attachments)
+	snippet := tools.CreateSnippet(env.Text, env.HTML)
 
 	// insert mail summary data
-	_, err = tx.Exec("INSERT INTO mailbox(Created, ID, MessageID, Subject, Metadata, Size, Inline, Attachments, SearchText, Tags, Read) values(?,?,?,?,?,?,?,?,?,?,0)",
-		created.UnixMilli(), id, messageID, subject, string(summaryJSON), size, inline, attachments, searchText, string(tagJSON))
+	_, err = tx.Exec("INSERT INTO mailbox(Created, ID, MessageID, Subject, Metadata, Size, Inline, Attachments, SearchText, Tags, Read, Snippet) values(?,?,?,?,?,?,?,?,?,?,0, ?)",
+		created.UnixMilli(), id, messageID, subject, string(summaryJSON), size, inline, attachments, searchText, string(tagJSON), snippet)
 	if err != nil {
 		return "", err
 	}
@@ -312,6 +231,7 @@ func Store(body []byte) (string, error) {
 	c.Subject = subject
 	c.Size = size
 	c.Tags = tagData
+	c.Snippet = snippet
 
 	websockets.Broadcast("new", c)
 
@@ -328,7 +248,7 @@ func List(start, limit int) ([]MessageSummary, error) {
 	results := []MessageSummary{}
 
 	q := sqlf.From("mailbox").
-		Select(`Created, ID, MessageID, Subject, Metadata, Size, Attachments, Read, Tags`).
+		Select(`Created, ID, MessageID, Subject, Metadata, Size, Attachments, Read, Tags, Snippet`).
 		OrderBy("Created DESC").
 		Limit(limit).
 		Offset(start)
@@ -343,9 +263,10 @@ func List(start, limit int) ([]MessageSummary, error) {
 		var attachments int
 		var tags string
 		var read int
+		var snippet string
 		em := MessageSummary{}
 
-		if err := row.Scan(&created, &id, &messageID, &subject, &metadata, &size, &attachments, &read, &tags); err != nil {
+		if err := row.Scan(&created, &id, &messageID, &subject, &metadata, &size, &attachments, &read, &tags, &snippet); err != nil {
 			logger.Log().Error(err)
 			return
 		}
@@ -367,6 +288,7 @@ func List(start, limit int) ([]MessageSummary, error) {
 		em.Size = size
 		em.Attachments = attachments
 		em.Read = read == 1
+		em.Snippet = snippet
 
 		results = append(results, em)
 	}); err != nil {

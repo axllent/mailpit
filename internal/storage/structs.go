@@ -89,6 +89,8 @@ type MessageSummary struct {
 	Size int
 	// Whether the message has any attachments
 	Attachments int
+	// Message snippet includes up to 250 characters
+	Snippet string
 }
 
 // MailboxStats struct for quick mailbox total/read lookups
@@ -96,6 +98,14 @@ type MailboxStats struct {
 	Total  int
 	Unread int
 	Tags   []string
+}
+
+// DBMailSummary struct for storing mail summary
+type DBMailSummary struct {
+	From *mail.Address
+	To   []*mail.Address
+	Cc   []*mail.Address
+	Bcc  []*mail.Address
 }
 
 // AttachmentSummary returns a summary of the attachment without any binary data

@@ -38,11 +38,12 @@ func Search(search string, start, limit int) ([]MessageSummary, int, error) {
 		var size int
 		var attachments int
 		var tags string
+		var snippet string
 		var read int
 		var ignore string
 		em := MessageSummary{}
 
-		if err := row.Scan(&created, &id, &messageID, &subject, &metadata, &size, &attachments, &read, &tags, &ignore, &ignore, &ignore, &ignore); err != nil {
+		if err := row.Scan(&created, &id, &messageID, &subject, &metadata, &size, &attachments, &read, &tags, &snippet, &ignore, &ignore, &ignore, &ignore); err != nil {
 			logger.Log().Error(err)
 			return
 		}
@@ -64,6 +65,7 @@ func Search(search string, start, limit int) ([]MessageSummary, int, error) {
 		em.Size = size
 		em.Attachments = attachments
 		em.Read = read == 1
+		em.Snippet = snippet
 
 		allResults = append(allResults, em)
 	}); err != nil {
@@ -109,9 +111,10 @@ func DeleteSearch(search string) error {
 		var attachments int
 		var tags string
 		var read int
+		var snippet string
 		var ignore string
 
-		if err := row.Scan(&created, &id, &messageID, &subject, &metadata, &size, &attachments, &read, &tags, &ignore, &ignore, &ignore, &ignore); err != nil {
+		if err := row.Scan(&created, &id, &messageID, &subject, &metadata, &size, &attachments, &read, &tags, &snippet, &ignore, &ignore, &ignore, &ignore); err != nil {
 			logger.Log().Error(err)
 			return
 		}
@@ -193,7 +196,7 @@ func searchQueryBuilder(searchString string) *sqlf.Stmt {
 	args := tools.ArgsParser(searchString)
 
 	q := sqlf.From("mailbox").
-		Select(`Created, ID, MessageID, Subject, Metadata, Size, Attachments, Read, Tags,
+		Select(`Created, ID, MessageID, Subject, Metadata, Size, Attachments, Read, Tags, Snippet,
 			IFNULL(json_extract(Metadata, '$.To'), '{}') as ToJSON,
 			IFNULL(json_extract(Metadata, '$.From'), '{}') as FromJSON,
 			IFNULL(json_extract(Metadata, '$.Cc'), '{}') as CcJSON,
