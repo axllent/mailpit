@@ -2,6 +2,16 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.9.6]
+
+### Libs
+- Update node modules
+- Update Go modules
+
+### UI
+- Display message previews on separate line ([#175](https://github.com/axllent/mailpit/issues/175))
+
+
 ## [v1.9.5]
 
 ### Feature
