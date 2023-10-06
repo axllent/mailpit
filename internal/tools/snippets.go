@@ -6,11 +6,11 @@ import (
 )
 
 // CreateSnippet returns a message snippet. It will use the HTML version (if it exists)
-// and fall back to the text version.
+// otherwise the text version.
 func CreateSnippet(text, html string) string {
 	text = strings.TrimSpace(text)
 	html = strings.TrimSpace(html)
-	characters := 200
+	limit := 200
 	spaceRe := regexp.MustCompile(`\s+`)
 	nlRe := regexp.MustCompile(`\r?\n`)
 
@@ -20,22 +20,26 @@ func CreateSnippet(text, html string) string {
 
 	if html != "" {
 		data := nlRe.ReplaceAllString(stripHTML(html), " ")
+		// replace \uFEFF with space, see https://github.com/golang/go/issues/42274#issuecomment-1017258184
+		data = strings.ReplaceAll(data, string('\uFEFF'), " ")
 		data = strings.TrimSpace(spaceRe.ReplaceAllString(data, " "))
 
-		if len(data) <= characters {
+		if len(data) <= limit {
 			return data
 		}
 
-		return data[0:characters] + "..."
+		return data[0:limit] + "..."
 	}
 
 	if text != "" {
-		text = spaceRe.ReplaceAllString(text, " ")
-		if len(text) <= characters {
+		// replace \uFEFF with space, see https://github.com/golang/go/issues/42274#issuecomment-1017258184
+		text = strings.ReplaceAll(text, string('\uFEFF'), " ")
+		text = strings.TrimSpace(spaceRe.ReplaceAllString(text, " "))
+		if len(text) <= limit {
 			return text
 		}
 
-		return text[0:characters] + "..."
+		return text[0:limit] + "..."
 	}
 
 	return ""

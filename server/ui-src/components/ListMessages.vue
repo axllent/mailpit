@@ -141,11 +141,13 @@ export default {
 					</div>
 				</div>
 				<div class="col-lg-6 col-xxl-7 mt-2 mt-lg-0">
-					<div class="subject">
+					<div class="subject text-truncate">
 						<b>{{ message.Subject != "" ? message.Subject : "[ no subject ]" }}</b>
-						<small v-if="message.Snippet != ''" class="small">&nbsp; {{ message.Snippet }}</small>
 					</div>
-					<div>
+					<div v-if="message.Snippet != ''" class="small text-muted text-truncate">
+						{{ message.Snippet }}
+					</div>
+					<div v-if="message.Tags.length">
 						<RouterLink class="badge me-1" v-for="t in message.Tags" :to="'/search?q=' + tagEncodeURI(t)"
 							:style="mailbox.showTagColors ? { backgroundColor: colorHash(t) } : { backgroundColor: '#6c757d' }"
 							:title="'Filter messages tagged with ' + t">
