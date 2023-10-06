@@ -62,6 +62,9 @@ func createSearchText(env *enmime.Envelope) string {
 
 // CleanString removes unwanted characters from stored search text and search queries
 func cleanString(str string) string {
+	// replace \uFEFF with space, see https://github.com/golang/go/issues/42274#issuecomment-1017258184
+	str = strings.ReplaceAll(str, string('\uFEFF'), " ")
+
 	// remove/replace new lines
 	re := regexp.MustCompile(`(\r?\n|\t|>|<|"|\,|;|\(|\))`)
 	str = re.ReplaceAllString(str, " ")
