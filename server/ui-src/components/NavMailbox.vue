@@ -81,7 +81,7 @@ export default {
 				</button>
 
 				<button class="list-group-item list-group-item-action" data-bs-toggle="modal"
-					data-bs-target="#DeleteAllModal" :disabled="!mailbox.count">
+					data-bs-target="#DeleteAllModal" :disabled="!mailbox.total">
 					<i class="bi bi-trash-fill me-1 text-danger"></i>
 					Delete all
 				</button>

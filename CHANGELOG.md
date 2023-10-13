@@ -2,6 +2,17 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.9.7]
+
+### Fix
+- Enable delete button when new messages arrive
+
+### Libs
+- Update node modules
+- Downgrade microcosm-cc/bluemonday, revert to Go 1.20
+- Update Go modules & minimum Go version (1.21)
+
+
 ## [v1.9.6]
 
 ### Libs
