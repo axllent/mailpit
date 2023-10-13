@@ -51,6 +51,8 @@ Mailpit runs as a single binary and can be installed in different ways:
 
 Install Mailpit with `brew install mailpit`.
 
+To run automatically run mailpit in the background, run `brew services start mailpit`.
+
 
 ### Install via bash script (Linux & Mac)
 
@@ -80,7 +82,7 @@ To build Mailpit from source see [building from source](https://github.com/axlle
 
 Run `mailpit -h` to see options. More information can be seen in [the docs](https://github.com/axllent/mailpit/wiki/Runtime-options).
 
-
+If installed using homebrew, you may run `brew services start mailpit` to run always run mailpit automatically.
 
 ### Testing Mailpit
 
