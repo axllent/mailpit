@@ -78,6 +78,7 @@ export default {
 				} else if (response.Type == "stats" && response.Data) {
 					// refresh mailbox stats
 					mailbox.total = response.Data.Total
+					mailbox.count = response.Data.Total
 					mailbox.unread = response.Data.Unread
 				}
 			}
