@@ -1,8 +1,6 @@
 module github.com/axllent/mailpit
 
-go 1.21
-
-toolchain go1.21.2
+go 1.20
 
 require (
 	github.com/GuiaBolso/darwin v0.0.0-20191218124601-fd6d2aa3d244
@@ -17,7 +15,7 @@ require (
 	github.com/klauspost/compress v1.17.0
 	github.com/leporo/sqlf v1.4.0
 	github.com/mhale/smtpd v0.8.0
-	github.com/microcosm-cc/bluemonday v1.0.26
+	github.com/microcosm-cc/bluemonday v1.0.25
 	github.com/reiver/go-telnet v0.0.0-20180421082511-9ff0b2ab096e
 	github.com/satori/go.uuid v1.2.0
 	github.com/sirupsen/logrus v1.9.3
