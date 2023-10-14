@@ -11,11 +11,9 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/websocket v1.5.0
 	github.com/jhillyerd/enmime v1.0.1
-	github.com/k3a/html2text v1.2.1
 	github.com/klauspost/compress v1.17.0
 	github.com/leporo/sqlf v1.4.0
 	github.com/mhale/smtpd v0.8.0
-	github.com/microcosm-cc/bluemonday v1.0.25
 	github.com/reiver/go-telnet v0.0.0-20180421082511-9ff0b2ab096e
 	github.com/satori/go.uuid v1.2.0
 	github.com/sirupsen/logrus v1.9.3
@@ -33,7 +31,6 @@ require (
 	github.com/DATA-DOG/go-sqlmock v1.5.0 // indirect
 	github.com/GehirnInc/crypt v0.0.0-20230320061759-8cc1b52080c5 // indirect
 	github.com/andybalholm/cascadia v1.3.2 // indirect
-	github.com/aymerick/douceur v0.2.0 // indirect
 	github.com/cention-sany/utf7 v0.0.0-20170124080048-26cad61bd60a // indirect
 	github.com/cznic/ql v1.2.0 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
