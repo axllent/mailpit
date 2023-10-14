@@ -11,9 +11,9 @@ import (
 
 	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/internal/logger"
+	"github.com/axllent/mailpit/internal/tools/html2text"
 	"github.com/axllent/mailpit/server/websockets"
 	"github.com/jhillyerd/enmime"
-	"github.com/k3a/html2text"
 	"github.com/leporo/sqlf"
 )
 
@@ -39,12 +39,8 @@ func createSearchText(env *enmime.Envelope) string {
 	b.WriteString(env.GetHeader("Bcc") + " ")
 	b.WriteString(env.GetHeader("Reply-To") + " ")
 	b.WriteString(env.GetHeader("Return-Path") + " ")
-	h := strings.TrimSpace(
-		html2text.HTML2TextWithOptions(
-			env.HTML,
-			html2text.WithLinksInnerText(),
-		),
-	)
+
+	h := html2text.Strip(env.HTML, true)
 	if h != "" {
 		b.WriteString(h + " ")
 	} else {
