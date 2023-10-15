@@ -6,6 +6,8 @@ package apiv1
 // swagger:response InfoResponse
 type infoResponse struct {
 	// Application information
+	//
+	// in: body
 	Body appInformation
 }
 
@@ -13,6 +15,8 @@ type infoResponse struct {
 // swagger:response WebUIConfigurationResponse
 type webUIConfigurationResponse struct {
 	// Web UI configuration settings
+	//
+	// in: body
 	Body webUIConfiguration
 }
 
@@ -28,81 +32,137 @@ type messagesSummaryResponse struct {
 // swagger:model MessageHeaders
 type messageHeaders map[string][]string
 
+// swagger:parameters DeleteMessages
+type deleteMessagesParams struct {
+	// in: body
+	Body *deleteMessagesRequestBody
+}
+
 // Delete request
 // swagger:model DeleteRequest
-type deleteRequest struct {
-	// ids
-	// in:body
+type deleteMessagesRequestBody struct {
+	// Array of message database IDs
+	//
+	// required: false
+	// example: ["5dec4247-812e-4b77-9101-e25ad406e9ea", "8ac66bbc-2d9a-4c41-ad99-00aa75fa674e"]
 	IDs []string `json:"ids"`
+}
+
+// swagger:parameters SetReadStatus
+type setReadStatusParams struct {
+	// in: body
+	Body *setReadStatusRequestBody
 }
 
 // Set read status request
-// swagger:model SetReadStatusRequest
-type setReadStatusRequest struct {
+// swagger:model setReadStatusRequestBody
+type setReadStatusRequestBody struct {
 	// Read status
+	//
+	// required: false
+	// default: false
+	// example: true
 	Read bool `json:"read"`
 
-	// ids
-	// in:body
+	// Array of message database IDs
+	//
+	// required: false
+	// example: ["5dec4247-812e-4b77-9101-e25ad406e9ea", "8ac66bbc-2d9a-4c41-ad99-00aa75fa674e"]
 	IDs []string `json:"ids"`
+}
+
+// swagger:parameters SetTags
+type setTagsParams struct {
+	// in: body
+	Body *setTagsRequestBody
 }
 
 // Set tags request
-// swagger:model SetTagsRequest
-type setTagsRequest struct {
-	// Tags
-	// in:body
+// swagger:model setTagsRequestBody
+type setTagsRequestBody struct {
+	// Array of tag names to set
+	//
+	// required: true
+	// example: ["Tag 1", "Tag 2"]
 	Tags []string `json:"tags"`
 
-	// IDs
-	// in:body
+	// Array of message database IDs
+	//
+	// required: true
+	// example: ["5dec4247-812e-4b77-9101-e25ad406e9ea", "8ac66bbc-2d9a-4c41-ad99-00aa75fa674e"]
 	IDs []string `json:"ids"`
 }
 
+// swagger:parameters ReleaseMessage
+type releaseMessageParams struct {
+	// Message database ID
+	//
+	// in: path
+	// description: Message database ID
+	// required: true
+	ID string
+
+	// in: body
+	Body *releaseMessageRequestBody
+}
+
 // Release request
-// swagger:model ReleaseMessageRequest
-type releaseMessageRequest struct {
-	// To
-	// in:body
+// swagger:model releaseMessageRequestBody
+type releaseMessageRequestBody struct {
+	// Array of email addresses to relay the message to
+	//
+	// required: true
+	// example: ["user1@example.com", "user2@example.com"]
 	To []string `json:"to"`
+}
+
+// swagger:parameters HTMLCheck
+type htmlCheckParams struct {
+	// Message database ID
+	//
+	// in: path
+	// description: Message database ID
+	// required: true
+	ID string
+}
+
+// swagger:parameters LinkCheck
+type linkCheckParams struct {
+	// Message database ID
+	//
+	// in: path
+	// description: Message database ID
+	// required: true
+	ID string
+
+	// Follow redirects
+	//
+	// in: query
+	// description: Follow redirects
+	// required: false
+	// default: false
+	Follow string `json:"follow"`
 }
 
 // Binary data response inherits the attachment's content type
 // swagger:response BinaryResponse
-type binaryResponse struct {
-	// in: body
-	Body string
-}
+type binaryResponse string
 
 // Plain text response
 // swagger:response TextResponse
-type textResponse struct {
-	// in: body
-	Body string
-}
+type textResponse string
 
 // HTML response
 // swagger:response HTMLResponse
-type htmlResponse struct {
-	// in: body
-	Body string
-}
+type htmlResponse string
 
 // Error response
 // swagger:response ErrorResponse
-type errorResponse struct {
-	// The error message
-	// in: body
-	Body string
-}
+type errorResponse string
 
 // Plain text "ok" response
 // swagger:response OKResponse
-type okResponse struct {
-	// Default response
-	// in: body
-	Body string
-}
+type okResponse string
 
 // Plain JSON array response
 // swagger:response ArrayResponse

@@ -22,9 +22,6 @@ type MessagesSummary struct {
 	// Total number of messages matching current query
 	MessagesCount int `json:"messages_count"`
 
-	// // Number of results returned on current page
-	// Count int `json:"count"`
-
 	// Pagination offset
 	Start int `json:"start"`
 
@@ -32,7 +29,7 @@ type MessagesSummary struct {
 	Tags []string `json:"tags"`
 
 	// Messages summary
-	// in:body
+	// in: body
 	Messages []storage.MessageSummary `json:"messages"`
 }
 
