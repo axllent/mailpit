@@ -13,8 +13,8 @@ import (
 	"github.com/axllent/mailpit/internal/auth"
 	"github.com/axllent/mailpit/internal/logger"
 	"github.com/axllent/mailpit/internal/storage"
+	"github.com/google/uuid"
 	"github.com/mhale/smtpd"
-	uuid "github.com/satori/go.uuid"
 )
 
 func mailHandler(origin net.Addr, from string, to []string, data []byte) error {
@@ -57,7 +57,7 @@ func mailHandler(origin net.Addr, from string, to []string, data []byte) error {
 	// add a message ID if not set
 	if messageID == "" {
 		// generate unique ID
-		messageID = uuid.NewV4().String() + "@mailpit"
+		messageID = uuid.New().String() + "@mailpit"
 		// add unique ID
 		data = append([]byte("Message-Id: <"+messageID+">\r\n"), data...)
 	} else if config.IgnoreDuplicateIDs {
