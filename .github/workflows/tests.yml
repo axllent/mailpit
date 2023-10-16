@@ -16,7 +16,8 @@ jobs:
       with:
         go-version: ${{ matrix.go-version }}
     - uses: actions/checkout@v4
-    - uses: actions/cache@v3
+    - name: Run Go tests
+      uses: actions/cache@v3
       with:
         path: |
           ~/.cache/go-build
@@ -24,13 +25,20 @@ jobs:
         key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
         restore-keys: |
           ${{ runner.os }}-go-
-    - run: go test ./internal/storage ./server ./internal/tools -v
-    - run: go test ./internal/storage -bench=.
+    - run: go test ./internal/storage ./server ./internal/tools ./internal/tools/html2text -v
+    - run: go test ./internal/storage ./internal/tools/html2text -bench=.
     
     # build the assets
-    - uses: actions/setup-node@v3
+    - name: Build web UI
+      uses: actions/setup-node@v3
       with:
         node-version: 18
         cache: 'npm'
     - run: npm install
     - run: npm run package
+
+    # validate the swagger file
+    - name: Validate OpenAPI definition
+      uses: char0n/swagger-editor-validate@v1
+      with:
+        definition-file: server/ui/api/v1/swagger.json
