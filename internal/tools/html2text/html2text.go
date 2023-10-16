@@ -6,6 +6,7 @@ import (
 	"log"
 	"regexp"
 	"strings"
+	"unicode"
 
 	"golang.org/x/net/html"
 )
@@ -67,6 +68,15 @@ func extract(node *html.Node, buff *bytes.Buffer, includeLinks bool) {
 func clean(text string) string {
 	// replace \uFEFF with space, see https://github.com/golang/go/issues/42274#issuecomment-1017258184
 	text = strings.ReplaceAll(text, string('\uFEFF'), " ")
+
+	// remove non-printable characters
+	text = strings.Map(func(r rune) rune {
+		if unicode.IsPrint(r) {
+			return r
+		}
+		return []rune(" ")[0]
+	}, text)
+
 	text = re.ReplaceAllString(text, " ")
 	return strings.TrimSpace(text)
 }

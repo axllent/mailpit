@@ -66,7 +66,7 @@
         "parameters": [
           {
             "type": "string",
-            "description": "Database ID",
+            "description": "Message database ID",
             "name": "ID",
             "in": "path",
             "required": true
@@ -136,11 +136,11 @@
           "Other"
         ],
         "summary": "HTML check (beta)",
-        "operationId": "HTMLCheckResponse",
+        "operationId": "HTMLCheck",
         "parameters": [
           {
             "type": "string",
-            "description": "Database ID",
+            "description": "Message database ID",
             "name": "ID",
             "in": "path",
             "required": true
@@ -173,18 +173,19 @@
           "Other"
         ],
         "summary": "Link check (beta)",
-        "operationId": "LinkCheckResponse",
+        "operationId": "LinkCheck",
         "parameters": [
           {
             "type": "string",
-            "description": "Database ID",
+            "description": "Message database ID",
             "name": "ID",
             "in": "path",
             "required": true
           },
           {
-            "type": "boolean",
-            "default": false,
+            "type": "string",
+            "default": "false",
+            "x-go-name": "Follow",
             "description": "Follow redirects",
             "name": "follow",
             "in": "query"
@@ -223,7 +224,7 @@
         "parameters": [
           {
             "type": "string",
-            "description": "Database ID",
+            "description": "Message database ID",
             "name": "ID",
             "in": "path",
             "required": true
@@ -323,7 +324,7 @@
     },
     "/api/v1/message/{ID}/release": {
       "post": {
-        "description": "Release a message via a pre-configured external SMTP server..",
+        "description": "Release a message via a pre-configured external SMTP server. This is only enabled if message relaying has been configured.",
         "consumes": [
           "application/json"
         ],
@@ -338,24 +339,20 @@
           "message"
         ],
         "summary": "Release message",
-        "operationId": "Release",
+        "operationId": "ReleaseMessage",
         "parameters": [
           {
             "type": "string",
-            "description": "Database ID",
+            "description": "Message database ID",
             "name": "ID",
             "in": "path",
             "required": true
           },
           {
-            "description": "Array of email addresses to release message to",
-            "name": "to",
+            "name": "Body",
             "in": "body",
-            "required": true,
             "schema": {
-              "description": "Array of email addresses to release message to",
-              "type": "object",
-              "$ref": "#/definitions/ReleaseMessageRequest"
+              "$ref": "#/definitions/releaseMessageRequestBody"
             }
           }
         ],
@@ -428,13 +425,10 @@
         "operationId": "SetReadStatus",
         "parameters": [
           {
-            "description": "Database IDs to update",
-            "name": "ids",
+            "name": "Body",
             "in": "body",
             "schema": {
-              "description": "Database IDs to update",
-              "type": "object",
-              "$ref": "#/definitions/SetReadStatusRequest"
+              "$ref": "#/definitions/setReadStatusRequestBody"
             }
           }
         ],
@@ -448,7 +442,7 @@
         }
       },
       "delete": {
-        "description": "If no IDs are provided then all messages are deleted.",
+        "description": "Delete individual or all messages. If no IDs are provided then all messages are deleted.",
         "consumes": [
           "application/json"
         ],
@@ -463,15 +457,12 @@
           "messages"
         ],
         "summary": "Delete messages",
-        "operationId": "Delete",
+        "operationId": "DeleteMessages",
         "parameters": [
           {
-            "description": "Database IDs to delete",
-            "name": "ids",
+            "name": "Body",
             "in": "body",
             "schema": {
-              "description": "Database IDs to delete",
-              "type": "object",
               "$ref": "#/definitions/DeleteRequest"
             }
           }
@@ -534,7 +525,7 @@
         }
       },
       "delete": {
-        "description": "Deletes messages matching a search.",
+        "description": "Delete all messages matching a search.",
         "produces": [
           "application/json"
         ],
@@ -546,7 +537,7 @@
           "messages"
         ],
         "summary": "Delete messages by search",
-        "operationId": "MessagesSummary",
+        "operationId": "DeleteSearch",
         "parameters": [
           {
             "type": "string",
@@ -580,7 +571,7 @@
           "tags"
         ],
         "summary": "Get all current tags",
-        "operationId": "SetTags",
+        "operationId": "GetTags",
         "responses": {
           "200": {
             "$ref": "#/responses/ArrayResponse"
@@ -591,7 +582,7 @@
         }
       },
       "put": {
-        "description": "To remove all tags from a message, pass an empty tags array.",
+        "description": "This will overwrite any existing tags for selected message database IDs. To remove all tags from a message, pass an empty tags array.",
         "consumes": [
           "application/json"
         ],
@@ -609,14 +600,10 @@
         "operationId": "SetTags",
         "parameters": [
           {
-            "description": "Database IDs to update",
-            "name": "ids",
+            "name": "Body",
             "in": "body",
-            "required": true,
             "schema": {
-              "description": "Database IDs to update",
-              "type": "object",
-              "$ref": "#/definitions/SetTagsRequest"
+              "$ref": "#/definitions/setTagsRequestBody"
             }
           }
         ],
@@ -807,16 +794,25 @@
       "type": "object",
       "properties": {
         "ids": {
-          "description": "ids\nin:body",
+          "description": "Array of message database IDs",
           "type": "array",
           "items": {
             "type": "string"
           },
-          "x-go-name": "IDs"
+          "x-go-name": "IDs",
+          "example": [
+            "5dec4247-812e-4b77-9101-e25ad406e9ea",
+            "8ac66bbc-2d9a-4c41-ad99-00aa75fa674e"
+          ]
         }
       },
-      "x-go-name": "deleteRequest",
+      "x-go-name": "deleteMessagesRequestBody",
       "x-go-package": "github.com/axllent/mailpit/server/apiv1"
+    },
+    "File": {
+      "type": "object",
+      "title": "File represents an open file descriptor.",
+      "x-go-package": "os"
     },
     "HTMLCheckResponse": {
       "description": "Response represents the HTML check response struct",
@@ -1188,6 +1184,10 @@
           "type": "integer",
           "format": "int64"
         },
+        "Snippet": {
+          "description": "Message snippet includes up to 250 characters",
+          "type": "string"
+        },
         "Subject": {
           "description": "Email subject",
           "type": "string"
@@ -1214,7 +1214,7 @@
       "type": "object",
       "properties": {
         "messages": {
-          "description": "Messages summary\nin:body",
+          "description": "Messages summary\nin: body",
           "type": "array",
           "items": {
             "$ref": "#/definitions/MessageSummary"
@@ -1256,67 +1256,6 @@
       },
       "x-go-package": "github.com/axllent/mailpit/server/apiv1"
     },
-    "ReleaseMessageRequest": {
-      "description": "Release request",
-      "type": "object",
-      "properties": {
-        "to": {
-          "description": "To\nin:body",
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "x-go-name": "To"
-        }
-      },
-      "x-go-name": "releaseMessageRequest",
-      "x-go-package": "github.com/axllent/mailpit/server/apiv1"
-    },
-    "SetReadStatusRequest": {
-      "description": "Set read status request",
-      "type": "object",
-      "properties": {
-        "ids": {
-          "description": "ids\nin:body",
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "x-go-name": "IDs"
-        },
-        "read": {
-          "description": "Read status",
-          "type": "boolean",
-          "x-go-name": "Read"
-        }
-      },
-      "x-go-name": "setReadStatusRequest",
-      "x-go-package": "github.com/axllent/mailpit/server/apiv1"
-    },
-    "SetTagsRequest": {
-      "description": "Set tags request",
-      "type": "object",
-      "properties": {
-        "ids": {
-          "description": "IDs\nin:body",
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "x-go-name": "IDs"
-        },
-        "tags": {
-          "description": "Tags\nin:body",
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "x-go-name": "Tags"
-        }
-      },
-      "x-go-name": "setTagsRequest",
-      "x-go-package": "github.com/axllent/mailpit/server/apiv1"
-    },
     "WebUIConfiguration": {
       "description": "Response includes global web UI settings",
       "type": "object",
@@ -1350,6 +1289,89 @@
       },
       "x-go-name": "webUIConfiguration",
       "x-go-package": "github.com/axllent/mailpit/server/apiv1"
+    },
+    "releaseMessageRequestBody": {
+      "description": "Release request",
+      "type": "object",
+      "required": [
+        "to"
+      ],
+      "properties": {
+        "to": {
+          "description": "Array of email addresses to relay the message to",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "To",
+          "example": [
+            "user1@example.com",
+            "user2@example.com"
+          ]
+        }
+      },
+      "x-go-package": "github.com/axllent/mailpit/server/apiv1"
+    },
+    "setReadStatusRequestBody": {
+      "description": "Set read status request",
+      "type": "object",
+      "properties": {
+        "ids": {
+          "description": "Array of message database IDs",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "IDs",
+          "example": [
+            "5dec4247-812e-4b77-9101-e25ad406e9ea",
+            "8ac66bbc-2d9a-4c41-ad99-00aa75fa674e"
+          ]
+        },
+        "read": {
+          "description": "Read status",
+          "type": "boolean",
+          "default": false,
+          "x-go-name": "Read",
+          "example": true
+        }
+      },
+      "x-go-package": "github.com/axllent/mailpit/server/apiv1"
+    },
+    "setTagsRequestBody": {
+      "description": "Set tags request",
+      "type": "object",
+      "required": [
+        "tags",
+        "ids"
+      ],
+      "properties": {
+        "ids": {
+          "description": "Array of message database IDs",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "IDs",
+          "example": [
+            "5dec4247-812e-4b77-9101-e25ad406e9ea",
+            "8ac66bbc-2d9a-4c41-ad99-00aa75fa674e"
+          ]
+        },
+        "tags": {
+          "description": "Array of tag names to set",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "Tags",
+          "example": [
+            "Tag 1",
+            "Tag 2"
+          ]
+        }
+      },
+      "x-go-package": "github.com/axllent/mailpit/server/apiv1"
     }
   },
   "responses": {
@@ -1363,23 +1385,27 @@
       }
     },
     "BinaryResponse": {
-      "description": "Binary data response inherits the attachment's content type"
+      "description": "Binary data response inherits the attachment's content type",
+      "schema": {
+        "$ref": "#/definitions/File"
+      }
     },
     "ErrorResponse": {
-      "description": "Error response"
+      "description": "Error response",
+      "schema": {
+        "type": "string"
+      }
     },
     "HTMLResponse": {
-      "description": "HTML response"
+      "description": "HTML response",
+      "schema": {
+        "type": "string"
+      }
     },
     "InfoResponse": {
       "description": "Application information",
       "schema": {
         "$ref": "#/definitions/AppInformation"
-      },
-      "headers": {
-        "Body": {
-          "description": "Application information"
-        }
       }
     },
     "MessagesSummaryResponse": {
@@ -1389,20 +1415,21 @@
       }
     },
     "OKResponse": {
-      "description": "Plain text \"ok\" response"
+      "description": "Plain text \"ok\" response",
+      "schema": {
+        "type": "string"
+      }
     },
     "TextResponse": {
-      "description": "Plain text response"
+      "description": "Plain text response",
+      "schema": {
+        "type": "string"
+      }
     },
     "WebUIConfigurationResponse": {
       "description": "Web UI configuration",
       "schema": {
         "$ref": "#/definitions/WebUIConfiguration"
-      },
-      "headers": {
-        "Body": {
-          "description": "Web UI configuration settings"
-        }
       }
     }
   }

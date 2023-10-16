@@ -144,11 +144,11 @@ func Search(w http.ResponseWriter, r *http.Request) {
 
 // DeleteSearch will delete all messages matching a search
 func DeleteSearch(w http.ResponseWriter, r *http.Request) {
-	// swagger:route DELETE /api/v1/search messages MessagesSummary
+	// swagger:route DELETE /api/v1/search messages DeleteSearch
 	//
 	// # Delete messages by search
 	//
-	// Deletes messages matching a search.
+	// Delete all messages matching a search.
 	//
 	//	Produces:
 	//	- application/json
@@ -196,7 +196,7 @@ func GetMessage(w http.ResponseWriter, r *http.Request) {
 	//	Parameters:
 	//	  + name: ID
 	//	    in: path
-	//	    description: Database ID
+	//	    description: Message database ID
 	//	    required: true
 	//	    type: string
 	//
@@ -237,7 +237,7 @@ func DownloadAttachment(w http.ResponseWriter, r *http.Request) {
 	//	Parameters:
 	//	  + name: ID
 	//	    in: path
-	//	    description: Database ID
+	//	    description: Message database ID
 	//	    required: true
 	//	    type: string
 	//	  + name: PartID
@@ -362,11 +362,11 @@ func DownloadRaw(w http.ResponseWriter, r *http.Request) {
 
 // DeleteMessages (method: DELETE) deletes all messages matching IDS.
 func DeleteMessages(w http.ResponseWriter, r *http.Request) {
-	// swagger:route DELETE /api/v1/messages messages Delete
+	// swagger:route DELETE /api/v1/messages messages DeleteMessages
 	//
 	// # Delete messages
 	//
-	// If no IDs are provided then all messages are deleted.
+	// Delete individual or all messages. If no IDs are provided then all messages are deleted.
 	//
 	//	Consumes:
 	//	- application/json
@@ -375,13 +375,6 @@ func DeleteMessages(w http.ResponseWriter, r *http.Request) {
 	//	- text/plain
 	//
 	//	Schemes: http, https
-	//
-	//	Parameters:
-	//	  + name: ids
-	//	    in: body
-	//	    description: Database IDs to delete
-	//	    required: false
-	//	    type: DeleteRequest
 	//
 	//	Responses:
 	//		200: OKResponse
@@ -406,7 +399,7 @@ func DeleteMessages(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	w.Header().Add("Content-Type", "application/json")
+	w.Header().Add("Content-Type", "application/plain")
 	_, _ = w.Write([]byte("ok"))
 }
 
@@ -426,13 +419,6 @@ func SetReadStatus(w http.ResponseWriter, r *http.Request) {
 	//	- text/plain
 	//
 	//	Schemes: http, https
-	//
-	//	Parameters:
-	//	  + name: ids
-	//	    in: body
-	//	    description: Database IDs to update
-	//	    required: false
-	//	    type: SetReadStatusRequest
 	//
 	//	Responses:
 	//		200: OKResponse
@@ -491,7 +477,7 @@ func SetReadStatus(w http.ResponseWriter, r *http.Request) {
 
 // GetTags (method: GET) will get all tags currently in use
 func GetTags(w http.ResponseWriter, _ *http.Request) {
-	// swagger:route GET /api/v1/tags tags SetTags
+	// swagger:route GET /api/v1/tags tags GetTags
 	//
 	// # Get all current tags
 	//
@@ -524,7 +510,7 @@ func SetTags(w http.ResponseWriter, r *http.Request) {
 	//
 	// # Set message tags
 	//
-	// To remove all tags from a message, pass an empty tags array.
+	// This will overwrite any existing tags for selected message database IDs. To remove all tags from a message, pass an empty tags array.
 	//
 	//	Consumes:
 	//	- application/json
@@ -533,13 +519,6 @@ func SetTags(w http.ResponseWriter, r *http.Request) {
 	//	- text/plain
 	//
 	//	Schemes: http, https
-	//
-	//	Parameters:
-	//	  + name: ids
-	//	    in: body
-	//	    description: Database IDs to update
-	//	    required: true
-	//	    type: SetTagsRequest
 	//
 	//	Responses:
 	//		200: OKResponse
@@ -576,11 +555,11 @@ func SetTags(w http.ResponseWriter, r *http.Request) {
 // ReleaseMessage (method: POST) will release a message via a pre-configured external SMTP server.
 // If no IDs are provided then all messages are updated.
 func ReleaseMessage(w http.ResponseWriter, r *http.Request) {
-	// swagger:route POST /api/v1/message/{ID}/release message Release
+	// swagger:route POST /api/v1/message/{ID}/release message ReleaseMessage
 	//
 	// # Release message
 	//
-	// Release a message via a pre-configured external SMTP server..
+	// Release a message via a pre-configured external SMTP server. This is only enabled if message relaying has been configured.
 	//
 	//	Consumes:
 	//	- application/json
@@ -589,18 +568,6 @@ func ReleaseMessage(w http.ResponseWriter, r *http.Request) {
 	//	- text/plain
 	//
 	//	Schemes: http, https
-	//
-	//	Parameters:
-	//	  + name: ID
-	//	    in: path
-	//	    description: Database ID
-	//	    required: true
-	//	    type: string
-	//		+ name: to
-	//	    in: body
-	//	    description: Array of email addresses to release message to
-	//	    required: true
-	//	    type: ReleaseMessageRequest
 	//
 	//	Responses:
 	//		200: OKResponse
@@ -618,7 +585,7 @@ func ReleaseMessage(w http.ResponseWriter, r *http.Request) {
 
 	decoder := json.NewDecoder(r.Body)
 
-	data := releaseMessageRequest{}
+	data := releaseMessageRequestBody{}
 
 	if err := decoder.Decode(&data); err != nil {
 		httpError(w, err.Error())
@@ -702,7 +669,7 @@ func ReleaseMessage(w http.ResponseWriter, r *http.Request) {
 
 // HTMLCheck returns a summary of the HTML client support
 func HTMLCheck(w http.ResponseWriter, r *http.Request) {
-	// swagger:route GET /api/v1/message/{ID}/html-check Other HTMLCheckResponse
+	// swagger:route GET /api/v1/message/{ID}/html-check Other HTMLCheck
 	//
 	// # HTML check (beta)
 	//
@@ -715,13 +682,6 @@ func HTMLCheck(w http.ResponseWriter, r *http.Request) {
 	//	- application/json
 	//
 	//	Schemes: http, https
-	//
-	//	Parameters:
-	//	  + name: ID
-	//	    in: path
-	//	    description: Database ID
-	//	    required: true
-	//	    type: string
 	//
 	//	Responses:
 	//		200: HTMLCheckResponse
@@ -754,7 +714,7 @@ func HTMLCheck(w http.ResponseWriter, r *http.Request) {
 
 // LinkCheck returns a summary of links in the email
 func LinkCheck(w http.ResponseWriter, r *http.Request) {
-	// swagger:route GET /api/v1/message/{ID}/link-check Other LinkCheckResponse
+	// swagger:route GET /api/v1/message/{ID}/link-check Other LinkCheck
 	//
 	// # Link check (beta)
 	//
@@ -767,19 +727,6 @@ func LinkCheck(w http.ResponseWriter, r *http.Request) {
 	//	- application/json
 	//
 	//	Schemes: http, https
-	//
-	//	Parameters:
-	//	  + name: ID
-	//	    in: path
-	//	    description: Database ID
-	//	    required: true
-	//	    type: string
-	//	  + name: follow
-	//	    in: query
-	//	    description: Follow redirects
-	//	    required: false
-	//	    type: boolean
-	//	    default: false
 	//
 	//	Responses:
 	//		200: LinkCheckResponse
