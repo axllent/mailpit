@@ -809,6 +809,11 @@
       "x-go-name": "deleteMessagesRequestBody",
       "x-go-package": "github.com/axllent/mailpit/server/apiv1"
     },
+    "File": {
+      "type": "object",
+      "title": "File represents an open file descriptor.",
+      "x-go-package": "os"
+    },
     "HTMLCheckResponse": {
       "description": "Response represents the HTML check response struct",
       "type": "object",
@@ -1382,7 +1387,7 @@
     "BinaryResponse": {
       "description": "Binary data response inherits the attachment's content type",
       "schema": {
-        "type": "string"
+        "$ref": "#/definitions/File"
       }
     },
     "ErrorResponse": {

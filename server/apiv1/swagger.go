@@ -1,5 +1,7 @@
 package apiv1
 
+import "os"
+
 // These structs are for the purpose of defining swagger HTTP responses
 
 // Application information
@@ -146,7 +148,10 @@ type linkCheckParams struct {
 
 // Binary data response inherits the attachment's content type
 // swagger:response BinaryResponse
-type binaryResponse string
+type binaryResponse struct {
+	// in: body
+	File os.File
+}
 
 // Plain text response
 // swagger:response TextResponse
