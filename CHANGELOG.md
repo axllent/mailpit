@@ -2,6 +2,24 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.9.8]
+
+### Chore
+- Replace satori/go.uuid with github.com/google/uuid ([#190](https://github.com/axllent/mailpit/issues/190))
+- Replace html2text modules with simplified internal function
+
+### Libs
+- Update node modules
+- Update Go modules
+
+### Swagger
+- Update swagger documentation
+
+### Tests
+- Add test to validate swagger.json
+- Add html2text tests
+
+
 ## [v1.9.7]
 
 ### Fix
