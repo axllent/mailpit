@@ -47,15 +47,12 @@ The Mailpit web UI listens by default on `http://0.0.0.0:8025`, and the SMTP por
 Mailpit runs as a single binary and can be installed in different ways:
 
 
-### Install via Brew (Mac)
+### Install via package managers
 
-Install Mailpit with `brew install mailpit`.
+- **Mac**: `brew install mailpit` (to run automatically in background `brew services start mailpit`)
+- **Arch Linux**: available in the AUR as `mailpit`
+- **FreeBSD**: `pkg install mailpit`
 
-To run automatically run mailpit in the background, run `brew services start mailpit`.
-
-### Install via package manager (Linux)
-
-* Arch Linux: Available in the AUR as `mailpit`
 
 ### Install via bash script (Linux & Mac)
 
@@ -86,6 +83,7 @@ To build Mailpit from source see [building from source](https://github.com/axlle
 Run `mailpit -h` to see options. More information can be seen in [the docs](https://github.com/axllent/mailpit/wiki/Runtime-options).
 
 If installed using homebrew, you may run `brew services start mailpit` to run always run mailpit automatically.
+
 
 ### Testing Mailpit
 
