@@ -25,8 +25,8 @@ jobs:
         key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
         restore-keys: |
           ${{ runner.os }}-go-
-    - run: go test ./internal/storage ./server ./internal/tools ./internal/tools/html2text -v
-    - run: go test ./internal/storage ./internal/tools/html2text -bench=.
+    - run: go test ./internal/storage ./server ./internal/tools ./internal/html2text -v
+    - run: go test ./internal/storage ./internal/html2text -bench=.
     
     # build the assets
     - name: Build web UI
