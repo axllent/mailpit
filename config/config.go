@@ -4,6 +4,7 @@ package config
 import (
 	"errors"
 	"fmt"
+	"net/url"
 	"os"
 	"path"
 	"path/filepath"
@@ -93,6 +94,9 @@ var (
 	// SMTPRelayAllIncoming is whether to relay all incoming messages via pre-configured SMTP server.
 	// Use with extreme caution!
 	SMTPRelayAllIncoming = false
+
+	// WebhookURL for calling
+	WebhookURL string
 
 	// ContentSecurityPolicy for HTTP server - set via VerifyConfig()
 	ContentSecurityPolicy string
@@ -223,6 +227,10 @@ func VerifyConfig() error {
 	s := strings.TrimRight(path.Join("/", Webroot, "/"), "/") + "/"
 	Webroot = s
 
+	if WebhookURL != "" && !isValidURL(WebhookURL) {
+		return fmt.Errorf("Webhook URL does not appear to be a valid URL (%s)", WebhookURL)
+	}
+
 	SMTPTags = []AutoTag{}
 
 	if SMTPCLITags != "" {
@@ -348,4 +356,13 @@ func isDir(path string) bool {
 	}
 
 	return true
+}
+
+func isValidURL(s string) bool {
+	u, err := url.ParseRequestURI(s)
+	if err != nil {
+		return false
+	}
+
+	return strings.HasPrefix(u.Scheme, "http")
 }

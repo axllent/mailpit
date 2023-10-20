@@ -13,6 +13,7 @@ import (
 	"github.com/axllent/mailpit/internal/storage"
 	"github.com/axllent/mailpit/server"
 	"github.com/axllent/mailpit/server/smtpd"
+	"github.com/axllent/mailpit/server/webhook"
 	"github.com/spf13/cobra"
 )
 
@@ -105,6 +106,8 @@ func init() {
 
 	rootCmd.Flags().StringVar(&config.SMTPRelayConfigFile, "smtp-relay-config", config.SMTPRelayConfigFile, "SMTP configuration file to allow releasing messages")
 	rootCmd.Flags().BoolVar(&config.SMTPRelayAllIncoming, "smtp-relay-all", config.SMTPRelayAllIncoming, "Relay all incoming messages via external SMTP server (caution!)")
+	rootCmd.Flags().StringVar(&config.WebhookURL, "webhook-url", config.WebhookURL, "Send a webhook request for new messages")
+	rootCmd.Flags().IntVar(&webhook.RateLimit, "webhook-limit", webhook.RateLimit, "Limit webhook requests per second")
 
 	rootCmd.Flags().StringVarP(&config.SMTPCLITags, "tag", "t", config.SMTPCLITags, "Tag new messages matching filters")
 	rootCmd.Flags().BoolVarP(&logger.QuietLogging, "quiet", "q", logger.QuietLogging, "Quiet logging (errors only)")
@@ -167,6 +170,14 @@ func initConfigFromEnv() {
 	config.SMTPRelayConfigFile = os.Getenv("MP_SMTP_RELAY_CONFIG")
 	if getEnabledFromEnv("MP_SMTP_RELAY_ALL") {
 		config.SMTPRelayAllIncoming = true
+	}
+
+	// Webhook
+	if len(os.Getenv("MP_WEBHOOK_URL")) > 0 {
+		config.WebhookURL = os.Getenv("MP_WEBHOOK_URL")
+	}
+	if len(os.Getenv("MP_WEBHOOK_LIMIT")) > 0 {
+		webhook.RateLimit, _ = strconv.Atoi(os.Getenv("MP_WEBHOOK_LIMIT"))
 	}
 
 	// Misc options

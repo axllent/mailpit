@@ -37,6 +37,7 @@ Mailpit was originally **inspired** by MailHog which is now [no longer maintaine
 - Optional HTTPS for web UI ([see wiki](https://github.com/axllent/mailpit/wiki/HTTPS))
 - Optional basic authentication for web UI ([see wiki](https://github.com/axllent/mailpit/wiki/Basic-authentication))
 - A simple REST API ([see docs](docs/apiv1/README.md))
+- Optional webhook for received messages ([see docs](https://github.com/axllent/mailpit/wiki/Webhook))
 - Multi-architecture [Docker images](https://github.com/axllent/mailpit/wiki/Docker-images)
 
 
