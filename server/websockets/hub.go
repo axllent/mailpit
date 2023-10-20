@@ -80,6 +80,7 @@ func Broadcast(t string, msg interface{}) {
 
 	if err != nil {
 		logger.Log().Errorf("[websocket] broadcast received invalid data: %s", err)
+		return
 	}
 
 	go func() { MessageHub.Broadcast <- b }()

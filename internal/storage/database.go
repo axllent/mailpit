@@ -21,6 +21,7 @@ import (
 	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/internal/logger"
 	"github.com/axllent/mailpit/internal/tools"
+	"github.com/axllent/mailpit/server/webhook"
 	"github.com/axllent/mailpit/server/websockets"
 	"github.com/google/uuid"
 	"github.com/jhillyerd/enmime"
@@ -234,6 +235,7 @@ func Store(body []byte) (string, error) {
 	c.Snippet = snippet
 
 	websockets.Broadcast("new", c)
+	webhook.Send(c)
 
 	dbLastAction = time.Now()
 

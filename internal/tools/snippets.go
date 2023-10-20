@@ -4,7 +4,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/axllent/mailpit/internal/tools/html2text"
+	"github.com/axllent/mailpit/internal/html2text"
 )
 
 // CreateSnippet returns a message snippet. It will use the HTML version (if it exists)

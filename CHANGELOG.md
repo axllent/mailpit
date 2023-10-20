@@ -2,6 +2,20 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.9.9]
+
+### Chore
+- Move html2text module to internal/html2text
+
+### Feature
+- Set optional webhook for received messages ([#195](https://github.com/axllent/mailpit/issues/195))
+- Reset message date on release ([#194](https://github.com/axllent/mailpit/issues/194))
+
+### Libs
+- update node modules
+- Update Go modules
+
+
 ## [v1.9.8]
 
 ### Chore

@@ -9,6 +9,7 @@ import (
 	"net/mail"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/internal/htmlcheck"
@@ -632,7 +633,7 @@ func ReleaseMessage(w http.ResponseWriter, r *http.Request) {
 		from = senders[0].Address
 	}
 
-	msg, err = tools.RemoveMessageHeaders(msg, []string{"Bcc", "Message-Id"})
+	msg, err = tools.RemoveMessageHeaders(msg, []string{"Bcc"})
 	if err != nil {
 		httpError(w, err.Error())
 		return
@@ -652,10 +653,21 @@ func ReleaseMessage(w http.ResponseWriter, r *http.Request) {
 		from = config.SMTPRelayConfig.ReturnPath
 	}
 
+	// update message date
+	msg, err = tools.UpdateMessageHeader(msg, "Date", time.Now().Format(time.RFC1123Z))
+	if err != nil {
+		httpError(w, err.Error())
+		return
+	}
+
 	// generate unique ID
 	uid := uuid.New().String() + "@mailpit"
-	// add unique ID
-	msg = append([]byte("Message-Id: <"+uid+">\r\n"), msg...)
+	// update Message-Id with unique ID
+	msg, err = tools.UpdateMessageHeader(msg, "Message-Id", "<"+uid+">")
+	if err != nil {
+		httpError(w, err.Error())
+		return
+	}
 
 	if err := smtpd.Send(from, tos, msg); err != nil {
 		logger.Log().Errorf("[smtp] error sending message: %s", err.Error())
