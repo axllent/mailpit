@@ -83,7 +83,7 @@ To build Mailpit from source see [building from source](https://github.com/axlle
 
 Run `mailpit -h` to see options. More information can be seen in [the docs](https://github.com/axllent/mailpit/wiki/Runtime-options).
 
-If installed using homebrew, you may run `brew services start mailpit` to run always run mailpit automatically.
+If installed using homebrew, you may run `brew services start mailpit` to always run mailpit automatically.
 
 
 ### Testing Mailpit
