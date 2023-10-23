@@ -102,14 +102,14 @@ export default {
 	</div>
 
 	<div class="row flex-fill" style="min-height:0">
-		<div class="d-none d-md-block col-lg-2 col-md-3 mh-100 position-relative"
+		<div class="d-none d-md-block col-xl-2 col-md-3 mh-100 position-relative"
 			style="overflow-y: auto; overflow-x: hidden;">
 			<NavSearch @loadMessages="loadMessages" />
 			<NavTags />
 			<AboutMailpit />
 		</div>
 
-		<div class="col-lg-10 col-md-9 mh-100 ps-0 ps-md-2 pe-0">
+		<div class="col-xl-10 col-md-9 mh-100 ps-0 ps-md-2 pe-0">
 			<div class="mh-100" style="overflow-y: auto;" id="message-page">
 				<ListMessages :loading-messages="loading" />
 			</div>
