@@ -179,8 +179,7 @@ export default {
 								</a>
 							</div>
 							<div class="col-sm-6">
-								<a class="btn btn-primary w-100" href="https://github.com/axllent/mailpit/wiki"
-									target="_blank">
+								<a class="btn btn-primary w-100" href="https://mailpit.axllent.org/docs/" target="_blank">
 									Documentation
 								</a>
 							</div>

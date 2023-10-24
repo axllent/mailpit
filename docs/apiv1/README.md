@@ -4,7 +4,7 @@ Mailpit provides a simple REST API to access and delete stored messages.
 
 If the Mailpit server is set to use Basic Authentication, then API requests must use Basic Authentication too.
 
-You can view the Swagger API documentation directly within Mailpit by going to `http://0.0.0.0:8025/api/v1/`.
+You can view the Swagger API documentation directly within Mailpit by going to https://mailpit.axllent.org/docs/api-v1/.
 
 The API is split into four main parts:
 

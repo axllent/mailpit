@@ -29,7 +29,7 @@ It acts as an SMTP server, and provides a web interface to view all captured ema
 
 Documentation:
   https://github.com/axllent/mailpit
-  https://github.com/axllent/mailpit/wiki`,
+  https://mailpit.axllent.org/docs/`,
 	Run: func(_ *cobra.Command, _ []string) {
 		if err := config.VerifyConfig(); err != nil {
 			logger.Log().Error(err.Error())

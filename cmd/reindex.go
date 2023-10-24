@@ -1,7 +1,3 @@
-/*
-Copyright © 2022-Now() Ralph Slooten
-This file is part of a CLI application.
-*/
 package cmd
 
 import (
