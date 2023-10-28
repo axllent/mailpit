@@ -159,8 +159,12 @@ export default {
 						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 					</div>
 					<div class="modal-body">
+
+						<div class="alert alert-warning mb-3" v-if="mailbox.appInfo.LatestVersion == ''">
+							There might be a newer version available. The check failed.
+						</div>
 						<a class="btn btn-warning d-block mb-3"
-							v-if="mailbox.appInfo.Version != mailbox.appInfo.LatestVersion"
+							v-else-if="mailbox.appInfo.Version != mailbox.appInfo.LatestVersion"
 							:href="'https://github.com/axllent/mailpit/releases/tag/' + mailbox.appInfo.LatestVersion">
 							A new version of Mailpit ({{ mailbox.appInfo.LatestVersion }}) is available.
 						</a>
