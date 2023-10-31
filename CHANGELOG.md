@@ -2,6 +2,23 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.9.10]
+
+### Docs
+- Update documentation links
+
+### Fix
+- Correctly display "About" modal when update check fails (resolves [#199](https://github.com/axllent/mailpit/issues/199))
+
+### Libs
+- Update node modules
+- Update Go modules
+- Update caniemail test data
+
+### UI
+- Fix column width in search view
+
+
 ## [v1.9.9]
 
 ### Chore
