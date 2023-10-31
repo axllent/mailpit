@@ -30,7 +30,7 @@ type appInformation struct {
 }
 
 // AppInfo returns some basic details about the running app, and latest release.
-func AppInfo(w http.ResponseWriter, r *http.Request) {
+func AppInfo(w http.ResponseWriter, _ *http.Request) {
 	// swagger:route GET /api/v1/info application AppInformation
 	//
 	// # Get application information

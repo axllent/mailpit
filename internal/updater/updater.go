@@ -1,3 +1,4 @@
+// package Updater checks and downloads new versions
 package updater
 
 import (
@@ -6,13 +7,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"time"
 
+	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/internal/logger"
 	"github.com/axllent/semver"
 )
@@ -49,13 +51,27 @@ type Release struct {
 func GithubLatest(repo, name string) (string, string, string, error) {
 	releaseURL := fmt.Sprintf("https://api.github.com/repos/%s/releases", repo)
 
-	resp, err := http.Get(releaseURL) // #nosec
+	timeout := time.Duration(5 * time.Second)
+
+	client := http.Client{
+		Timeout: timeout,
+	}
+
+	req, err := http.NewRequest("GET", releaseURL, nil)
 	if err != nil {
 		return "", "", "", err
 	}
+
+	req.Header.Set("User-Agent", "Mailpit/"+config.Version)
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", "", "", err
+	}
+
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 
 	if err != nil {
 		return "", "", "", err

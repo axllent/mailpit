@@ -1,6 +1,6 @@
 {
 	"api_version":"1.0.4",
-	"last_update_date":"2023-09-22 13:57:52 +0000",
+	"last_update_date":"2023-10-10 15:06:18 +0000",
 	"nicenames":{"family":{"gmail":"Gmail","outlook":"Outlook","yahoo":"Yahoo! Mail","apple-mail":"Apple Mail","aol":"AOL","thunderbird":"Mozilla Thunderbird","microsoft":"Microsoft","samsung-email":"Samsung Email","sfr":"SFR","orange":"Orange","protonmail":"ProtonMail","hey":"HEY","mail-ru":"Mail.ru","fastmail":"Fastmail","laposte":"LaPoste.net","t-online-de":"T-online.de","free-fr":"Free.fr","gmx":"GMX","web-de":"WEB.DE","ionos-1and1":"1&1","rainloop":"RainLoop"},"platform":{"desktop-app":"Desktop","desktop-webmail":"Desktop Webmail","mobile-webmail":"Mobile Webmail","webmail":"Webmail","ios":"iOS","android":"Android","windows":"Windows","macos":"macOS","windows-mail":"Windows Mail","outlook-com":"Outlook.com"},"support":{"supported":"Supported","mitigated":"Partially supported","unsupported":"Not supported","unknown":"Support unknown","mixed":"Mixed support"},"category":{"html":"HTML","css":"CSS","image":"Image formats","others":"Others"}},
 	"data":[
 		{
@@ -169,7 +169,7 @@
 			"description":"This media query tests whether the user's input device[s] (i.e mouse, trackpad etc.) can hover over elements",
 			"url":"https://www.caniemail.com/features/css-at-media-hover/",
 			"category":"css",
-			"tags":[],
+			"tags":["accessibility"],
 			"keywords":"media, media query, hover, any-hover",
 			"last_test_date":"2022-08-29",
 			"test_url":"https://www.caniemail.com/tests/css-media-hover.html",
@@ -201,7 +201,7 @@
 			"description":"This media query allows to theme for system light and dark mode.",
 			"url":"https://www.caniemail.com/features/css-at-media-prefers-color-scheme/",
 			"category":"css",
-			"tags":[],
+			"tags":["accessibility"],
 			"keywords":"media queries, media query, media feature, dark mode, light mode",
 			"last_test_date":"2023-03-08",
 			"test_url":"https://www.caniemail.com/tests/css-media-prefers-color-scheme.html",
@@ -1561,7 +1561,7 @@
 			"description":null,
 			"url":"https://www.caniemail.com/features/css-pseudo-class-active/",
 			"category":"css",
-			"tags":[],
+			"tags":["accessibility"],
 			"keywords":"pseudo-class",
 			"last_test_date":"2019-10-28",
 			"test_url":"https://www.caniemail.com/tests/css-selectors-pseudo-classes.html",
@@ -1625,7 +1625,7 @@
 			"description":null,
 			"url":"https://www.caniemail.com/features/css-pseudo-class-focus/",
 			"category":"css",
-			"tags":[],
+			"tags":["accessibility"],
 			"keywords":"pseudo-class",
 			"last_test_date":"2019-10-28",
 			"test_url":"https://www.caniemail.com/tests/css-selectors-pseudo-classes.html",
@@ -1657,7 +1657,7 @@
 			"description":null,
 			"url":"https://www.caniemail.com/features/css-pseudo-class-hover/",
 			"category":"css",
-			"tags":[],
+			"tags":["accessibility"],
 			"keywords":"rollover, pseudo-class",
 			"last_test_date":"2019-10-23",
 			"test_url":"https://www.caniemail.com/tests/css-selectors-pseudo-classes.html",
@@ -2683,10 +2683,10 @@
 			"category":"css",
 			"tags":[],
 			"keywords":"unit, vh",
-			"last_test_date":"2020-02-25",
+			"last_test_date":"2023-10-01",
 			"test_url":"https://www.caniemail.com/tests/css-units.html",
-			"test_results_url":"",
-			"stats":{"apple-mail":{"macos":{"13":"y"},"ios":{"13":"y"}},"gmail":{"desktop-webmail":{"2020-02":"y"},"ios":{"2020-02":"y"},"android":{"2020-02":"y"},"mobile-webmail":{"2020-02":"y"}},"outlook":{"windows":{"2003":"n","2007":"n","2010":"n","2013":"n","2016":"n","2019":"n"},"windows-mail":{"2020-02":"n"},"macos":{"2016":"y"},"outlook-com":{"2020-02":"y"},"ios":{"2020-02":"y"},"android":{"2020-02":"y"}},"samsung-email":{"android":{"9.0":"y"}},"thunderbird":{"windows":{"2020-02":"y"},"macos":{"68.4":"y"}},"aol":{"desktop-webmail":{"2020-02":"y"},"ios":{"2020-02":"y"},"android":{"2020-02":"y"}},"yahoo":{"desktop-webmail":{"2020-02":"y"},"ios":{"2020-02":"y"},"android":{"2020-02":"y"}},"orange":{"desktop-webmail":{"2020-02":"y","2021-03":"n"},"ios":{"2020-02":"y"},"android":{"2020-02":"y"}},"sfr":{"desktop-webmail":{"2020-02":"y"},"ios":{"2020-02":"y"},"android":{"2020-02":"n"}},"protonmail":{"desktop-webmail":{"2020-03":"y"},"ios":{"2020-03":"y"},"android":{"2020-03":"y"}},"hey":{"desktop-webmail":{"2020-06":"y"}},"mail-ru":{"desktop-webmail":{"2020-10":"y"}},"fastmail":{"desktop-webmail":{"2021-07":"n"}},"laposte":{"desktop-webmail":{"2021-08":"y"}},"gmx":{"desktop-webmail":{"2022-08":"n"},"ios":{"2022-08":"y"},"android":{"2022-08":"a #2"}},"web-de":{"desktop-webmail":{"2022-08":"n"},"ios":{"2022-08":"y"},"android":{"2022-08":"a #2"}},"ionos-1and1":{"desktop-webmail":{"2022-08":"y #1"},"android":{"2022-08":"y"}}},
+			"test_results_url":"https://app.emailonacid.com/app/acidtest/AhzTJnsoWULAInwe2B8h7uzlsa6vGOgAkVK1VA6BbuKaW/list",
+			"stats":{"apple-mail":{"macos":{"13":"y"},"ios":{"13":"y","15":"a #2","17":"a #2"}},"gmail":{"desktop-webmail":{"2020-02":"y"},"ios":{"2020-02":"y"},"android":{"2020-02":"y"},"mobile-webmail":{"2020-02":"y"}},"outlook":{"windows":{"2003":"n","2007":"n","2010":"n","2013":"n","2016":"n","2019":"n"},"windows-mail":{"2020-02":"n"},"macos":{"2016":"y"},"outlook-com":{"2020-02":"y"},"ios":{"2020-02":"y"},"android":{"2020-02":"y"}},"samsung-email":{"android":{"9.0":"y"}},"thunderbird":{"windows":{"2020-02":"y"},"macos":{"68.4":"y"}},"aol":{"desktop-webmail":{"2020-02":"y"},"ios":{"2020-02":"y"},"android":{"2020-02":"y"}},"yahoo":{"desktop-webmail":{"2020-02":"y"},"ios":{"2020-02":"y"},"android":{"2020-02":"y"}},"orange":{"desktop-webmail":{"2020-02":"y","2021-03":"n"},"ios":{"2020-02":"y"},"android":{"2020-02":"y"}},"sfr":{"desktop-webmail":{"2020-02":"y"},"ios":{"2020-02":"y"},"android":{"2020-02":"n"}},"protonmail":{"desktop-webmail":{"2020-03":"y"},"ios":{"2020-03":"y"},"android":{"2020-03":"y"}},"hey":{"desktop-webmail":{"2020-06":"y"}},"mail-ru":{"desktop-webmail":{"2020-10":"y"}},"fastmail":{"desktop-webmail":{"2021-07":"n"}},"laposte":{"desktop-webmail":{"2021-08":"y"}},"gmx":{"desktop-webmail":{"2022-08":"n"},"ios":{"2022-08":"y"},"android":{"2022-08":"a #2"}},"web-de":{"desktop-webmail":{"2022-08":"n"},"ios":{"2022-08":"y"},"android":{"2022-08":"a #2"}},"ionos-1and1":{"desktop-webmail":{"2022-08":"y #1"},"android":{"2022-08":"y"}}},
 			"notes":"",
 			"notes_by_num":{"1":"Buggy. Can affect the preview window size, meaning content can get lost.","2":"Buggy. Value resolves to zero"}
 		},
@@ -2865,6 +2865,22 @@
 			"stats":{"apple-mail":{"macos":{"14":"y"},"ios":{"14.5":"y"}},"gmail":{"desktop-webmail":{"2021-05":"n"},"ios":{"2021-05":"n"},"android":{"2021-05":"n"},"mobile-webmail":{"2021-05":"n"}},"orange":{"desktop-webmail":{"2021-05":"y"},"ios":{"2021-05":"y"},"android":{"2021-05":"y"}},"outlook":{"windows":{"2007":"n","2010":"n","2013":"n","2016":"n","2019":"n"},"windows-mail":{"2021-05":"n"},"macos":{"2011":"y","2016":"y"},"outlook-com":{"2021-05":"y"},"ios":{"2021-05":"y"},"android":{"2021-05":"y"}},"samsung-email":{"android":{"6.0":"y"}},"sfr":{"desktop-webmail":{"2021-05":"y"},"ios":{"2021-05":"y"},"android":{"2021-05":"y"}},"thunderbird":{"macos":{"78.10":"y"}},"aol":{"desktop-webmail":{"2021-05":"y"},"ios":{"2021-05":"y"},"android":{"2021-05":"y"}},"yahoo":{"desktop-webmail":{"2021-05":"y"},"ios":{"2021-05":"y"},"android":{"2021-05":"y"}},"protonmail":{"desktop-webmail":{"2021-05":"y"},"ios":{"2021-05":"y"},"android":{"2021-05":"y"}},"hey":{"desktop-webmail":{"2021-05":"y"}},"mail-ru":{"desktop-webmail":{"2021-05":"n"}},"fastmail":{"desktop-webmail":{"2021-07":"y"}},"laposte":{"desktop-webmail":{"2021-08":"y"}},"gmx":{"desktop-webmail":{"2022-09":"y"},"ios":{"2022-09":"y"},"android":{"2022-09":"y"}},"web-de":{"desktop-webmail":{"2022-09":"y"},"ios":{"2022-09":"y"},"android":{"2022-09":"y"}},"ionos-1and1":{"desktop-webmail":{"2022-09":"y"},"android":{"2022-09":"y"}}},
 			"notes":null,
 			"notes_by_num":null
+		},
+	
+		{
+			"slug":"html-abbr",
+			"title":"<abbr> element",
+			"description":"Represents an abbreviation or acronym.",
+			"url":"https://www.caniemail.com/features/html-abbr/",
+			"category":"html",
+			"tags":[],
+			"keywords":null,
+			"last_test_date":"2023-09-13",
+			"test_url":"https://www.caniemail.com/tests/html-abbr.html",
+			"test_results_url":"https://testi.at/proj/xlp4una8f926u48oco8",
+			"stats":{"apple-mail":{"macos":{"2023-09":"y"},"ios":{"2023-09":"y"}},"gmail":{"desktop-webmail":{"2023-09":"y"},"ios":{"2023-09":"y"},"android":{"2023-09":"y"},"mobile-webmail":{"2023-09":"y"}},"orange":{"desktop-webmail":{"2023-10":"n"},"ios":{"2023-10":"n"},"android":{"2023-09":"u"}},"outlook":{"windows":{"2013":"n #1","2016":"n #1","2019":"n #1","2021":"n #1"},"windows-mail":{"2023-09":"n #1"},"macos":{"2023-09":"y"},"outlook-com":{"2023-09":"y"},"ios":{"2023-09":"y"},"android":{"2023-09":"y"}},"samsung-email":{"android":{"2023-09":"y"}},"sfr":{"desktop-webmail":{"2023-10":"y"},"ios":{"2023-10":"y"},"android":{"2023-09":"u"}},"thunderbird":{"macos":{"2023-09":"y"}},"aol":{"desktop-webmail":{"2023-09":"n"},"ios":{"2023-09":"n"},"android":{"2023-09":"n"}},"yahoo":{"desktop-webmail":{"2023-09":"n"},"ios":{"2023-09":"n"},"android":{"2023-09":"n"}},"protonmail":{"desktop-webmail":{"2023-10":"y"},"ios":{"2023-10":"y"},"android":{"2023-09":"u"}},"hey":{"desktop-webmail":{"2023-10":"n"}},"mail-ru":{"desktop-webmail":{"2023-09":"n"}},"fastmail":{"desktop-webmail":{"2023-10":"y"}},"laposte":{"desktop-webmail":{"2023-10":"y"}},"free-fr":{"desktop-webmail":{"2023-10":"y"}},"t-online-de":{"desktop-webmail":{"2023-09":"y"}},"gmx":{"desktop-webmail":{"2023-09":"y"}},"web-de":{"desktop-webmail":{"2023-09":"y"}}},
+			"notes":null,
+			"notes_by_num":{"1":"Buggy. Element's content are still kept."}
 		},
 	
 		{
@@ -3153,6 +3169,22 @@
 			"stats":{"apple-mail":{"macos":{"12.4":"y"},"ios":{"12.1":"y"}},"gmail":{"desktop-webmail":{"2019-02":"y"},"ios":{"2019-02":"a #1","2023-03":"y"},"android":{"2019-02":"a #1","2023-03":"y"},"mobile-webmail":{"2020-02":"y"}},"orange":{"desktop-webmail":{"2020-01":"y","2021-03":"y"},"ios":{"2020-01":"y"},"android":{"2020-01":"y"}},"outlook":{"windows":{"2007":"y","2010":"y","2013":"y","2016":"y","2019":"y"},"windows-mail":{"2019-02":"y"},"macos":{"2019-02":"y"},"outlook-com":{"2019-02":"y"},"ios":{"2019-02":"y"},"android":{"2019-02":"y"}},"yahoo":{"desktop-webmail":{"2019-02":"y"},"ios":{"2019-02":"y"},"android":{"2019-02":"y"}},"aol":{"desktop-webmail":{"2019-02":"y"},"ios":{"2019-02":"y"},"android":{"2019-02":"y"}},"samsung-email":{"android":{"5.0.10.2":"y"}},"sfr":{"desktop-webmail":{"2020-01":"y"},"ios":{"2020-01":"y"},"android":{"2020-01":"y"}},"thunderbird":{"macos":{"68.4":"y"}},"protonmail":{"desktop-webmail":{"2020-03":"y"},"ios":{"2020-03":"y"},"android":{"2020-03":"y"}},"hey":{"desktop-webmail":{"2020-06":"y"}},"mail-ru":{"desktop-webmail":{"2020-10":"y"}},"fastmail":{"desktop-webmail":{"2021-07":"y"}},"laposte":{"desktop-webmail":{"2021-08":"y"}},"gmx":{"desktop-webmail":{"2022-11":"y"},"ios":{"2022-11":"y"},"android":{"2022-11":"y"}},"web-de":{"desktop-webmail":{"2022-11":"y"},"ios":{"2022-11":"y"},"android":{"2022-11":"y"}},"ionos-1and1":{"desktop-webmail":{"2022-11":"y"},"android":{"2022-11":"y"}}},
 			"notes":null,
 			"notes_by_num":{"1":"Partial. Not supported with non Gmail accounts."}
+		},
+	
+		{
+			"slug":"html-dfn",
+			"title":"<def> element",
+			"description":"It is used to identify a term that is going to be described within the content.",
+			"url":"https://www.caniemail.com/features/html-dfn/",
+			"category":"html",
+			"tags":[],
+			"keywords":null,
+			"last_test_date":"2023-09-11",
+			"test_url":"https://www.caniemail.com/tests/html-dfn.html",
+			"test_results_url":"https://testi.at/proj/gy2dfo4j19d4176d08y",
+			"stats":{"apple-mail":{"macos":{"2023-09":"y"},"ios":{"2023-09":"y"}},"gmail":{"desktop-webmail":{"2023-09":"y"},"ios":{"2023-09":"y"},"android":{"2023-09":"y"},"mobile-webmail":{"2023-09":"y"}},"orange":{"desktop-webmail":{"2023-09":"u"},"ios":{"2023-09":"u"},"android":{"2023-09":"u"}},"outlook":{"windows":{"2013":"a #1","2016":"a #1","2019":"a #1","2021":"a #1"},"windows-mail":{"2023-09":"a #1"},"macos":{"16.56":"y"},"outlook-com":{"2023-09":"y"},"ios":{"2023-09":"y"},"android":{"2023-09":"y"}},"samsung-email":{"android":{"2023-09":"y"}},"sfr":{"desktop-webmail":{"2023-09":"u"},"ios":{"2023-09":"u"},"android":{"2023-09":"u"}},"thunderbird":{"macos":{"2023-09":"y"}},"aol":{"desktop-webmail":{"2023-09":"y"},"ios":{"2023-09":"y"},"android":{"2023-09":"y"}},"yahoo":{"desktop-webmail":{"2023-09":"y"},"ios":{"2023-09":"y"},"android":{"2023-09":"y"}},"protonmail":{"desktop-webmail":{"2023-09":"u"},"ios":{"2023-09":"u"},"android":{"2023-09":"u"}},"hey":{"desktop-webmail":{"2023-09":"u"}},"mail-ru":{"desktop-webmail":{"2023-09":"n"}},"fastmail":{"desktop-webmail":{"2023-09":"u"}},"laposte":{"desktop-webmail":{"2023-09":"u"}},"free-fr":{"desktop-webmail":{"2023-09":"u"}},"t-online-de":{"desktop-webmail":{"2023-09":"n"}},"gmx":{"desktop-webmail":{"2023-09":"y"}},"web-de":{"desktop-webmail":{"2023-09":"y"}}},
+			"notes":null,
+			"notes_by_num":{"1":"Partial. The `title` attribute is removed."}
 		},
 	
 		{
