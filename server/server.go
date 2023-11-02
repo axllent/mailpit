@@ -68,6 +68,9 @@ func Listen() {
 		r.HandleFunc(redirect, middleWareFunc(addSlashToWebroot)).Methods("GET")
 	}
 
+	// UI shortcut
+	r.HandleFunc(config.Webroot+"view/latest", handlers.RedirectToLatestMessage).Methods("GET")
+
 	// frontend testing
 	r.HandleFunc(config.Webroot+"view/{id}.html", handlers.GetMessageHTML).Methods("GET")
 	r.HandleFunc(config.Webroot+"view/{id}.txt", handlers.GetMessageText).Methods("GET")

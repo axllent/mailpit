@@ -3,6 +3,7 @@ package handlers
 import (
 	"fmt"
 	"net/http"
+	"net/url"
 	"regexp"
 	"strings"
 
@@ -10,6 +11,27 @@ import (
 	"github.com/axllent/mailpit/internal/storage"
 	"github.com/gorilla/mux"
 )
+
+// RedirectToLatestMessage (method: GET) redirects the web UI to the latest message
+func RedirectToLatestMessage(w http.ResponseWriter, r *http.Request) {
+	messages, err := storage.List(0, 1)
+	if err != nil {
+		httpError(w, err.Error())
+		return
+	}
+
+	uri := config.Webroot
+
+	if len(messages) == 1 {
+		uri, err = url.JoinPath(uri, "/view/"+messages[0].ID)
+		if err != nil {
+			httpError(w, err.Error())
+			return
+		}
+	}
+
+	http.Redirect(w, r, uri, 302)
+}
 
 // GetMessageHTML (method: GET) returns a rendered version of a message's HTML part
 func GetMessageHTML(w http.ResponseWriter, r *http.Request) {
