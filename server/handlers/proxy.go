@@ -2,6 +2,7 @@
 package handlers
 
 import (
+	"crypto/tls"
 	"fmt"
 	"io"
 	"net/http"
@@ -31,8 +32,15 @@ func ProxyHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	tr := &http.Transport{}
+
+	if config.AllowUntrustedTLS {
+		tr.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+	}
+
 	client := &http.Client{
-		Timeout: 10 * time.Second,
+		Transport: tr,
+		Timeout:   10 * time.Second,
 	}
 
 	req, err := http.NewRequest("GET", uri, nil)

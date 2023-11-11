@@ -2,6 +2,21 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.10.0]
+
+### Feature
+- Support search query params to /latest endpoints ([#206](https://github.com/axllent/mailpit/issues/206))
+- Option to allow untrusted HTTPS certificates for screenshots & link checking ([#204](https://github.com/axllent/mailpit/issues/204))
+- Add URL redirect (`/view/latest`) to view latest message in web UI ([#166](https://github.com/axllent/mailpit/issues/166))
+
+### Fix
+- Correctly close websockets on client disconnect ([#207](https://github.com/axllent/mailpit/issues/207))
+
+### Libs
+- Update node modules
+- Update Go modules
+
+
 ## [v1.9.10]
 
 ### Docs

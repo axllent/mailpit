@@ -1,7 +1,4 @@
-// Copyright 2013 The Gorilla WebSocket Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
+// Package websockets is used to broadcast messages to connected clients
 package websockets
 
 import (
@@ -47,14 +44,17 @@ func (h *Hub) Run() {
 	for {
 		select {
 		case client := <-h.register:
-			h.Clients[client] = true
+			if _, ok := h.Clients[client]; !ok {
+				logger.Log().Debugf("[websocket] client %s connected", client.conn.RemoteAddr().String())
+				h.Clients[client] = true
+			}
 		case client := <-h.unregister:
 			if _, ok := h.Clients[client]; ok {
+				logger.Log().Debugf("[websocket] client %s disconnected", client.conn.RemoteAddr().String())
 				delete(h.Clients, client)
 				close(client.send)
 			}
 		case message := <-h.Broadcast:
-			// logger.Log().Debugf("[broadcast] %s", message)
 			for client := range h.Clients {
 				select {
 				case client.send <- message:

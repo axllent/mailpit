@@ -101,6 +101,9 @@ var (
 	// ContentSecurityPolicy for HTTP server - set via VerifyConfig()
 	ContentSecurityPolicy string
 
+	// AllowUntrustedTLS allows untrusted HTTPS connections link checking & screenshot generation
+	AllowUntrustedTLS bool
+
 	// Version is the default application version, updated on release
 	Version = "dev"
 
