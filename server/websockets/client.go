@@ -53,7 +53,24 @@ type Client struct {
 	send chan []byte
 }
 
-// writePump pumps messages from the hub to the websocket connection.
+// ReadPump is used here solely to monitor the connection, not to actually receive messages.
+func (c *Client) readPump() {
+	defer func() {
+		c.hub.unregister <- c
+	}()
+
+	for {
+		_, _, err := c.conn.ReadMessage()
+		if err != nil {
+			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
+				logger.Log().Errorf("[websocket] error: %v", err)
+			}
+			break
+		}
+	}
+}
+
+// WritePump pumps messages from the hub to the websocket connection.
 //
 // A goroutine running writePump is started for each connection. The
 // application ensures that there is at most one writer to a connection by
@@ -62,7 +79,7 @@ func (c *Client) writePump() {
 	ticker := time.NewTicker(pingPeriod)
 	defer func() {
 		ticker.Stop()
-		_ = c.conn.Close()
+		c.hub.unregister <- c
 	}()
 	for {
 		select {
@@ -122,8 +139,8 @@ func ServeWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
 	client := &Client{hub: hub, conn: conn, send: make(chan []byte, 256)}
 	client.hub.register <- client
 
-	// Allow collection of memory referenced by the caller by doing all work in
-	// new goroutines.
+	// Allow collection of memory referenced by the caller by doing all work in new goroutines.
+	go client.readPump()
 	go client.writePump()
 }
 
