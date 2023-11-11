@@ -109,6 +109,8 @@ func init() {
 	rootCmd.Flags().StringVar(&config.WebhookURL, "webhook-url", config.WebhookURL, "Send a webhook request for new messages")
 	rootCmd.Flags().IntVar(&webhook.RateLimit, "webhook-limit", webhook.RateLimit, "Limit webhook requests per second")
 
+	rootCmd.Flags().BoolVar(&config.AllowUntrustedTLS, "allow-untrusted-tls", config.AllowUntrustedTLS, "Do not verify HTTPS certificates (link checker & screenshots)")
+
 	rootCmd.Flags().StringVarP(&config.SMTPCLITags, "tag", "t", config.SMTPCLITags, "Tag new messages matching filters")
 	rootCmd.Flags().BoolVarP(&logger.QuietLogging, "quiet", "q", logger.QuietLogging, "Quiet logging (errors only)")
 	rootCmd.Flags().BoolVarP(&logger.VerboseLogging, "verbose", "v", logger.VerboseLogging, "Verbose logging")
@@ -198,6 +200,9 @@ func initConfigFromEnv() {
 	}
 	if getEnabledFromEnv("MP_BLOCK_REMOTE_CSS_AND_FONTS") {
 		config.BlockRemoteCSSAndFonts = true
+	}
+	if getEnabledFromEnv("MP_ALLOW_UNTRUSTED_TLS") {
+		config.AllowUntrustedTLS = true
 	}
 	if getEnabledFromEnv("MP_QUIET") {
 		logger.QuietLogging = true

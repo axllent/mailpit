@@ -1,6 +1,7 @@
 package linkcheck
 
 import (
+	"crypto/tls"
 	"net/http"
 	"regexp"
 	"sync"
@@ -59,8 +60,15 @@ func doHead(link string, followRedirects bool) (int, error) {
 
 	timeout := time.Duration(10 * time.Second)
 
+	tr := &http.Transport{}
+
+	if config.AllowUntrustedTLS {
+		tr.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+	}
+
 	client := http.Client{
-		Timeout: timeout,
+		Timeout:   timeout,
+		Transport: tr,
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			if followRedirects {
 				return nil
