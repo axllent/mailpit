@@ -14,10 +14,22 @@ import (
 
 // RedirectToLatestMessage (method: GET) redirects the web UI to the latest message
 func RedirectToLatestMessage(w http.ResponseWriter, r *http.Request) {
-	messages, err := storage.List(0, 1)
-	if err != nil {
-		httpError(w, err.Error())
-		return
+	messages := []storage.MessageSummary{}
+	var err error
+
+	search := strings.TrimSpace(r.URL.Query().Get("query"))
+	if search != "" {
+		messages, _, err = storage.Search(search, 0, 1)
+		if err != nil {
+			httpError(w, err.Error())
+			return
+		}
+	} else {
+		messages, err = storage.List(0, 1)
+		if err != nil {
+			httpError(w, err.Error())
+			return
+		}
 	}
 
 	uri := config.Webroot
@@ -66,10 +78,22 @@ func GetMessageHTML(w http.ResponseWriter, r *http.Request) {
 	id := vars["id"]
 
 	if id == "latest" {
-		messages, err := storage.List(0, 1)
-		if err != nil {
-			httpError(w, err.Error())
-			return
+		messages := []storage.MessageSummary{}
+		var err error
+
+		search := strings.TrimSpace(r.URL.Query().Get("query"))
+		if search != "" {
+			messages, _, err = storage.Search(search, 0, 1)
+			if err != nil {
+				httpError(w, err.Error())
+				return
+			}
+		} else {
+			messages, err = storage.List(0, 1)
+			if err != nil {
+				httpError(w, err.Error())
+				return
+			}
 		}
 
 		if len(messages) == 0 {
@@ -93,7 +117,7 @@ func GetMessageHTML(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	html := linkInlinedImages(msg)
+	html := linkInlineImages(msg)
 	w.Header().Add("Content-Type", "text/html; charset=utf-8")
 	_, _ = w.Write([]byte(html))
 }
@@ -129,10 +153,22 @@ func GetMessageText(w http.ResponseWriter, r *http.Request) {
 	id := vars["id"]
 
 	if id == "latest" {
-		messages, err := storage.List(0, 1)
-		if err != nil {
-			httpError(w, err.Error())
-			return
+		messages := []storage.MessageSummary{}
+		var err error
+
+		search := strings.TrimSpace(r.URL.Query().Get("query"))
+		if search != "" {
+			messages, _, err = storage.Search(search, 0, 1)
+			if err != nil {
+				httpError(w, err.Error())
+				return
+			}
+		} else {
+			messages, err = storage.List(0, 1)
+			if err != nil {
+				httpError(w, err.Error())
+				return
+			}
 		}
 
 		if len(messages) == 0 {
@@ -155,8 +191,8 @@ func GetMessageText(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write([]byte(msg.Text))
 }
 
-// This will remap all attachment images with relative paths
-func linkInlinedImages(msg *storage.Message) string {
+// This will rewrite all inline image paths to API URLs
+func linkInlineImages(msg *storage.Message) string {
 	html := msg.HTML
 
 	for _, a := range msg.Inline {
