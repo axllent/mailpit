@@ -293,7 +293,8 @@ export default {
 								</span>
 							</td>
 						</tr>
-						<tr v-if="message.ReturnPath && message.ReturnPath != message.From.Address" class="small">
+						<tr v-if="message.ReturnPath && message.From && message.ReturnPath != message.From.Address"
+							class="small">
 							<th class="text-nowrap">Return-Path</th>
 							<td class="privacy text-body-secondary text-break">
 								&lt;<a :href="searchURI(message.ReturnPath)" class="text-body-secondary">
