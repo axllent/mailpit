@@ -89,7 +89,7 @@ export default {
 						<label class="col-sm-2 col-form-label text-body-secondary">From</label>
 						<div class="col-sm-10">
 							<input type="text" aria-label="From address" readonly class="form-control-plaintext"
-								:value="message.From.Address">
+								:value="message.From ? message.From.Address : ''">
 						</div>
 					</div>
 					<div class="row">
