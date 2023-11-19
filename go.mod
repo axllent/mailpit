@@ -7,12 +7,12 @@ require (
 	github.com/PuerkitoBio/goquery v1.8.1
 	github.com/axllent/semver v0.0.1
 	github.com/disintegration/imaging v1.6.2
-	github.com/gomarkdown/markdown v0.0.0-20230922112808-5421fefb8386
+	github.com/gomarkdown/markdown v0.0.0-20231115200524-a660076da3fd
 	github.com/google/uuid v1.4.0
 	github.com/gorilla/mux v1.8.1
 	github.com/gorilla/websocket v1.5.1
 	github.com/jhillyerd/enmime v1.0.1
-	github.com/klauspost/compress v1.17.2
+	github.com/klauspost/compress v1.17.3
 	github.com/leporo/sqlf v1.4.0
 	github.com/mhale/smtpd v0.8.0
 	github.com/reiver/go-telnet v0.0.0-20180421082511-9ff0b2ab096e
@@ -60,7 +60,7 @@ require (
 	lukechampine.com/uint128 v1.3.0 // indirect
 	modernc.org/cc/v3 v3.41.0 // indirect
 	modernc.org/ccgo/v3 v3.16.15 // indirect
-	modernc.org/libc v1.32.0 // indirect
+	modernc.org/libc v1.34.5 // indirect
 	modernc.org/mathutil v1.6.0 // indirect
 	modernc.org/memory v1.7.2 // indirect
 	modernc.org/opt v0.1.3 // indirect
