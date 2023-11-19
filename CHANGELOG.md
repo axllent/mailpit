@@ -2,6 +2,22 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.10.1]
+
+### Chore
+- Use NextReader() instead of ReadMessage() for websocket reading ([#207](https://github.com/axllent/mailpit/issues/207))
+
+### Fix
+- Prevent JavaScript error if message is missing `From` header ([#209](https://github.com/axllent/mailpit/issues/209))
+
+### Libs
+- Update node modules
+- Update Go modules
+
+### Swagger
+- Revert BinaryResponse type to string
+
+
 ## [v1.10.0]
 
 ### Feature
