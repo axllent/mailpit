@@ -17,7 +17,7 @@ export const mailbox = reactive({
 	count: 0, 				// total in mailbox or search
 	messages: [],			// current messages
 	tags: [], 				// all tags
-	showTagColors: false, 	// show tag colors?
+	showTagColors: true, 	// show/hide tag colors
 	selected: [], 			// currently selected
 	connected: false, 		// websocket connection
 	searching: false,		// current search, false for none
@@ -51,9 +51,9 @@ watch(
 	() => mailbox.showTagColors,
 	(v) => {
 		if (v) {
-			localStorage.setItem('showTagsColors', '1')
+			localStorage.removeItem('hideTagColors')
 		} else {
-			localStorage.removeItem('showTagsColors')
+			localStorage.setItem('hideTagColors', '1')
 		}
 	}
 )
