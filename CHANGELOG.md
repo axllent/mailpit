@@ -2,6 +2,23 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.10.2]
+
+### Chore
+- Add favicon fallback font (sans-serif) for unread count
+- Clearer log messages for bound SMTP & HTTP addresses
+
+### Feature
+- Allow port binding using hostname
+
+### Libs
+- Update node modules
+- Update Go modules
+
+### UI
+- Enable tag colors by default
+
+
 ## [v1.10.1]
 
 ### Chore

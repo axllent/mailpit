@@ -13,7 +13,7 @@ export default {
 
 	beforeMount() {
 		document.title = document.title + ' - ' + location.hostname
-		mailbox.showTagColors = localStorage.getItem('showTagsColors') == '1'
+		mailbox.showTagColors = !localStorage.getItem('hideTagColors') == '1'
 
 		// load global config
 		this.get(this.resolve('/api/v1/webui'), false, function (response) {

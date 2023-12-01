@@ -163,7 +163,7 @@ func Listen() error {
 		}
 	}
 
-	logger.Log().Infof("[smtpd] starting on %s", logger.CleanIP(config.SMTPListen))
+	logger.Log().Infof("[smtpd] starting on %s", config.SMTPListen)
 
 	return listenAndServe(config.SMTPListen, mailHandler, authHandler)
 }

@@ -150,7 +150,7 @@ func VerifyConfig() error {
 		DataFile = filepath.Join(DataFile, "mailpit.db")
 	}
 
-	re := regexp.MustCompile(`^((\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})|(\[([\da-fA-F:])+\])):\d+$`)
+	re := regexp.MustCompile(`.*:\d+$`)
 	if !re.MatchString(SMTPListen) {
 		return errors.New("SMTP bind should be in the format of <ip>:<port>")
 	}
