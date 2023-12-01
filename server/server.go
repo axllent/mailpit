@@ -90,11 +90,13 @@ func Listen() {
 	// Mark the application here as ready
 	isReady.Store(true)
 
+	logger.Log().Infof("[http] starting on %s", config.HTTPListen)
+
 	if config.UITLSCert != "" && config.UITLSKey != "" {
-		logger.Log().Infof("[http] starting secure server on https://%s%s", logger.CleanHTTPIP(config.HTTPListen), config.Webroot)
+		logger.Log().Infof("[http] accessible via https://%s%s", logger.CleanHTTPIP(config.HTTPListen), config.Webroot)
 		logger.Log().Fatal(http.ListenAndServeTLS(config.HTTPListen, config.UITLSCert, config.UITLSKey, nil))
 	} else {
-		logger.Log().Infof("[http] starting server on http://%s%s", logger.CleanHTTPIP(config.HTTPListen), config.Webroot)
+		logger.Log().Infof("[http] accessible via http://%s%s", logger.CleanHTTPIP(config.HTTPListen), config.Webroot)
 		logger.Log().Fatal(http.ListenAndServe(config.HTTPListen, nil))
 	}
 }
