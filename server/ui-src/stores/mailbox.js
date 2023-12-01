@@ -7,7 +7,7 @@ Tinycon.setOptions({
 	height: 11,
 	background: '#dd0000',
 	fallback: false,
-	font: '9px arial',
+	font: '9px arial, sans-serif',
 })
 
 // global mailbox info
