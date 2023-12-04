@@ -1,5 +1,6 @@
 <script>
 import CommonMixins from './mixins/CommonMixins'
+import Favicon from './components/Favicon.vue'
 import Notifications from './components/Notifications.vue'
 import { RouterView } from 'vue-router'
 import { mailbox } from "./stores/mailbox"
@@ -8,6 +9,7 @@ export default {
 	mixins: [CommonMixins],
 
 	components: {
+		Favicon,
 		Notifications,
 	},
 
@@ -33,5 +35,6 @@ export default {
 
 <template>
 	<RouterView />
+	<Favicon />
 	<Notifications />
 </template>

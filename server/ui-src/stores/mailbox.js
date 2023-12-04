@@ -1,14 +1,6 @@
 // State Management
 
 import { reactive, watch } from 'vue'
-import Tinycon from 'tinycon'
-
-Tinycon.setOptions({
-	height: 11,
-	background: '#dd0000',
-	fallback: false,
-	font: '9px arial, sans-serif',
-})
 
 // global mailbox info
 export const mailbox = reactive({
@@ -28,17 +20,6 @@ export const mailbox = reactive({
 	uiConfig: {},			// configuration for UI
 	lastMessage: false,		// return scrolling
 })
-
-watch(
-	() => mailbox.unread,
-	(v) => {
-		if (v == 0) {
-			Tinycon.reset()
-		} else {
-			Tinycon.setBubble(v)
-		}
-	}
-)
 
 watch(
 	() => mailbox.count,
