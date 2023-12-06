@@ -222,9 +222,9 @@ func VerifyConfig() error {
 		return errors.New("SMTP authentication requires TLS encryption, run with `--smtp-auth-allow-insecure` to allow insecure authentication")
 	}
 
-	validWebrootRe := regexp.MustCompile(`[^0-9a-zA-Z\/\-\_\.]`)
+	validWebrootRe := regexp.MustCompile(`[^0-9a-zA-Z\/\-\_\.@]`)
 	if validWebrootRe.MatchString(Webroot) {
-		return fmt.Errorf("Invalid characters in Webroot (%s). Valid chars include: [a-z A-Z 0-9 _ . - /]", Webroot)
+		return fmt.Errorf("Invalid characters in Webroot (%s). Valid chars include: [a-z A-Z 0-9 _ . - / @]", Webroot)
 	}
 
 	s := strings.TrimRight(path.Join("/", Webroot, "/"), "/") + "/"
