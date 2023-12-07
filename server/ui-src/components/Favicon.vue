@@ -72,8 +72,6 @@ export default {
                 fontSize = strlen > 3 ? 30 : 36
             }
 
-            console.log(fontSize)
-
             let canvas = document.createElement('canvas')
             canvas.width = 64
             canvas.height = 64
