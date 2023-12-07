@@ -9,6 +9,7 @@ var htmlTests = map[string]string{
 	// HTML tests
 	"html-object":         "object, embed, image, pdf",
 	"html-link":           "link",
+	"html-hr":             "hr",
 	"html-dialog":         "dialog",
 	"html-srcset":         "[srcset]",
 	"html-picture":        "picture",
