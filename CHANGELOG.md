@@ -2,6 +2,12 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.10.4]
+
+### Fix
+- Remove JS debug information for favicon
+
+
 ## [v1.10.3]
 
 ### Chore
