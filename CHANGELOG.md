@@ -2,6 +2,22 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.10.3]
+
+### Chore
+- Update caniemail library & add `hr` element test
+
+### Feature
+- Add @ as valid character for webroot ([#215](https://github.com/axllent/mailpit/issues/215))
+
+### Fix
+- New favicon notification badge to fix rendering issues ([#210](https://github.com/axllent/mailpit/issues/210))
+
+### Libs
+- Update node modules
+- Update Go modules
+
+
 ## [v1.10.2]
 
 ### Chore
