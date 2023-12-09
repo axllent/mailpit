@@ -78,31 +78,13 @@ func GetMessageHTML(w http.ResponseWriter, r *http.Request) {
 	id := vars["id"]
 
 	if id == "latest" {
-		messages := []storage.MessageSummary{}
 		var err error
-
-		search := strings.TrimSpace(r.URL.Query().Get("query"))
-		if search != "" {
-			messages, _, err = storage.Search(search, 0, 1)
-			if err != nil {
-				httpError(w, err.Error())
-				return
-			}
-		} else {
-			messages, err = storage.List(0, 1)
-			if err != nil {
-				httpError(w, err.Error())
-				return
-			}
-		}
-
-		if len(messages) == 0 {
+		id, err = storage.LatestID()
+		if err != nil {
 			w.WriteHeader(404)
-			fmt.Fprint(w, "Message not found")
+			fmt.Fprint(w, err.Error())
 			return
 		}
-
-		id = messages[0].ID
 	}
 
 	msg, err := storage.GetMessage(id)
@@ -153,31 +135,13 @@ func GetMessageText(w http.ResponseWriter, r *http.Request) {
 	id := vars["id"]
 
 	if id == "latest" {
-		messages := []storage.MessageSummary{}
 		var err error
-
-		search := strings.TrimSpace(r.URL.Query().Get("query"))
-		if search != "" {
-			messages, _, err = storage.Search(search, 0, 1)
-			if err != nil {
-				httpError(w, err.Error())
-				return
-			}
-		} else {
-			messages, err = storage.List(0, 1)
-			if err != nil {
-				httpError(w, err.Error())
-				return
-			}
-		}
-
-		if len(messages) == 0 {
+		id, err = storage.LatestID()
+		if err != nil {
 			w.WriteHeader(404)
-			fmt.Fprint(w, "Message not found")
+			fmt.Fprint(w, err.Error())
 			return
 		}
-
-		id = messages[0].ID
 	}
 
 	msg, err := storage.GetMessage(id)

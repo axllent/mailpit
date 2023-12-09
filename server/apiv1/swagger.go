@@ -1,6 +1,6 @@
 package apiv1
 
-// These structs are for the purpose of defining swagger HTTP responses
+// These structs are for the purpose of defining swagger HTTP parameters & responses
 
 // Application information
 // swagger:response InfoResponse
@@ -118,20 +118,20 @@ type releaseMessageRequestBody struct {
 
 // swagger:parameters HTMLCheck
 type htmlCheckParams struct {
-	// Message database ID
+	// Message database ID or "latest"
 	//
 	// in: path
-	// description: Message database ID
+	// description: Message database ID or "latest"
 	// required: true
 	ID string
 }
 
 // swagger:parameters LinkCheck
 type linkCheckParams struct {
-	// Message database ID
+	// Message database ID or "latest"
 	//
 	// in: path
-	// description: Message database ID
+	// description: Message database ID or "latest"
 	// required: true
 	ID string
 
