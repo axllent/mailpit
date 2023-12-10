@@ -2,7 +2,6 @@
 package cmd
 
 import (
-	"fmt"
 	"os"
 	"strconv"
 	"strings"
@@ -164,7 +163,7 @@ func initConfigFromEnv() {
 	if getEnabledFromEnv("MP_SMTP_AUTH_ALLOW_INSECURE") {
 		config.SMTPAuthAllowInsecure = true
 	}
-	if getEnabledFromEnv("MP_STRICT_RFC_HEADERS") {
+	if getEnabledFromEnv("MP_SMTP_STRICT_RFC_HEADERS") {
 		config.SMTPStrictRFCHeaders = true
 	}
 
@@ -216,23 +215,28 @@ func initConfigFromEnv() {
 func initDeprecatedConfigFromEnv() {
 	// deprecated 2023/03/12
 	if len(os.Getenv("MP_UI_SSL_CERT")) > 0 {
-		fmt.Println("ENV MP_UI_SSL_CERT has been deprecated, use MP_UI_TLS_CERT")
+		logger.Log().Warn("ENV MP_UI_SSL_CERT has been deprecated, use MP_UI_TLS_CERT")
 		config.UITLSCert = os.Getenv("MP_UI_SSL_CERT")
 	}
 	// deprecated 2023/03/12
 	if len(os.Getenv("MP_UI_SSL_KEY")) > 0 {
-		fmt.Println("ENV MP_UI_SSL_KEY has been deprecated, use MP_UI_TLS_KEY")
+		logger.Log().Warn("ENV MP_UI_SSL_KEY has been deprecated, use MP_UI_TLS_KEY")
 		config.UITLSKey = os.Getenv("MP_UI_SSL_KEY")
 	}
 	// deprecated 2023/03/12
 	if len(os.Getenv("MP_SMTP_SSL_CERT")) > 0 {
-		fmt.Println("ENV MP_SMTP_CERT has been deprecated, use MP_SMTP_TLS_CERT")
+		logger.Log().Warn("ENV MP_SMTP_CERT has been deprecated, use MP_SMTP_TLS_CERT")
 		config.SMTPTLSCert = os.Getenv("MP_SMTP_SSL_CERT")
 	}
 	// deprecated 2023/03/12
 	if len(os.Getenv("MP_SMTP_SSL_KEY")) > 0 {
-		fmt.Println("ENV MP_SMTP_KEY has been deprecated, use MP_SMTP_TLS_KEY")
+		logger.Log().Warn("ENV MP_SMTP_KEY has been deprecated, use MP_SMTP_TLS_KEY")
 		config.SMTPTLSKey = os.Getenv("MP_SMTP_SMTP_KEY")
+	}
+	// deprecated 2023/12/10
+	if getEnabledFromEnv("MP_STRICT_RFC_HEADERS") {
+		logger.Log().Warn("ENV MP_STRICT_RFC_HEADERS has been deprecated, use MP_SMTP_STRICT_RFC_HEADERS")
+		config.SMTPStrictRFCHeaders = true
 	}
 }
 
