@@ -170,12 +170,13 @@ func Listen() error {
 
 func listenAndServe(addr string, handler smtpd.Handler, authHandler smtpd.AuthHandler) error {
 	srv := &smtpd.Server{
-		Addr:         addr,
-		Handler:      handler,
-		Appname:      "Mailpit",
-		Hostname:     "",
-		AuthHandler:  nil,
-		AuthRequired: false,
+		Addr:          addr,
+		Handler:       handler,
+		Appname:       "Mailpit",
+		Hostname:      "",
+		AuthHandler:   nil,
+		AuthRequired:  false,
+		MaxRecipients: config.SMTPMaxRecipients,
 	}
 
 	if config.SMTPAuthAllowInsecure {

@@ -102,6 +102,7 @@ func init() {
 	rootCmd.Flags().StringVar(&config.SMTPTLSKey, "smtp-tls-key", config.SMTPTLSKey, "TLS key for SMTP (STARTTLS) - requires smtp-tls-cert")
 	rootCmd.Flags().BoolVar(&config.SMTPAuthAllowInsecure, "smtp-auth-allow-insecure", config.SMTPAuthAllowInsecure, "Enable insecure PLAIN & LOGIN authentication")
 	rootCmd.Flags().BoolVar(&config.SMTPStrictRFCHeaders, "smtp-strict-rfc-headers", config.SMTPStrictRFCHeaders, "Return SMTP error if message headers contain <CR><CR><LF>")
+	rootCmd.Flags().IntVar(&config.SMTPMaxRecipients, "smtp-max-recipients", config.SMTPMaxRecipients, "Maximum SMTP recipients allowed")
 
 	rootCmd.Flags().StringVar(&config.SMTPRelayConfigFile, "smtp-relay-config", config.SMTPRelayConfigFile, "SMTP configuration file to allow releasing messages")
 	rootCmd.Flags().BoolVar(&config.SMTPRelayAllIncoming, "smtp-relay-all", config.SMTPRelayAllIncoming, "Relay all incoming messages via external SMTP server (caution!)")
@@ -165,6 +166,9 @@ func initConfigFromEnv() {
 	}
 	if getEnabledFromEnv("MP_SMTP_STRICT_RFC_HEADERS") {
 		config.SMTPStrictRFCHeaders = true
+	}
+	if len(os.Getenv("MP_SMTP_MAX_RECIPIENTS")) > 0 {
+		config.SMTPMaxRecipients, _ = strconv.Atoi(os.Getenv("MP_SMTP_MAX_RECIPIENTS"))
 	}
 
 	// Relay server config

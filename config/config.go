@@ -60,6 +60,11 @@ var (
 	// SMTPAuthAcceptAny accepts any username/password including none
 	SMTPAuthAcceptAny bool
 
+	// SMTPMaxRecipients is the maximum number of recipients a message may have.
+	// The SMTP RFC states that an server must handle a minimum of 100 recipients
+	// however some servers accept more.
+	SMTPMaxRecipients = 100
+
 	// IgnoreDuplicateIDs will skip messages with the same ID
 	IgnoreDuplicateIDs bool
 
