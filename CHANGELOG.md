@@ -2,6 +2,19 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.11.0]
+
+### API
+- Allow ID "latest" for message summary, headers, raw version & HTML/link checks
+
+### Feature
+- Add configuration option to set maximum SMTP recipients ([#205](https://github.com/axllent/mailpit/issues/205))
+
+### Libs
+- Update node modules
+- Update Go modules
+
+
 ## [v1.10.4]
 
 ### Fix
