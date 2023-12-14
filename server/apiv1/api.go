@@ -189,6 +189,8 @@ func GetMessage(w http.ResponseWriter, r *http.Request) {
 	//
 	// Returns the summary of a message, marking the message as read.
 	//
+	// The ID can be set to `latest` to return the latest message.
+	//
 	//	Produces:
 	//	- application/json
 	//
@@ -197,7 +199,7 @@ func GetMessage(w http.ResponseWriter, r *http.Request) {
 	//	Parameters:
 	//	  + name: ID
 	//	    in: path
-	//	    description: Message database ID
+	//	    description: Message database ID or "latest"
 	//	    required: true
 	//	    type: string
 	//
@@ -208,6 +210,16 @@ func GetMessage(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
 	id := vars["id"]
+
+	if id == "latest" {
+		var err error
+		id, err = storage.LatestID()
+		if err != nil {
+			w.WriteHeader(404)
+			fmt.Fprint(w, err.Error())
+			return
+		}
+	}
 
 	msg, err := storage.GetMessage(id)
 	if err != nil {
@@ -279,6 +291,8 @@ func GetHeaders(w http.ResponseWriter, r *http.Request) {
 	//
 	// Returns the message headers as an array.
 	//
+	// The ID can be set to `latest` to return the latest message headers.
+	//
 	//	Produces:
 	//	- application/json
 	//
@@ -287,7 +301,7 @@ func GetHeaders(w http.ResponseWriter, r *http.Request) {
 	//	Parameters:
 	//	  + name: ID
 	//	    in: path
-	//	    description: Database ID
+	//	    description: Message database ID or "latest"
 	//	    required: true
 	//	    type: string
 	//
@@ -298,6 +312,16 @@ func GetHeaders(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
 	id := vars["id"]
+
+	if id == "latest" {
+		var err error
+		id, err = storage.LatestID()
+		if err != nil {
+			w.WriteHeader(404)
+			fmt.Fprint(w, err.Error())
+			return
+		}
+	}
 
 	data, err := storage.GetMessageRaw(id)
 	if err != nil {
@@ -326,6 +350,8 @@ func DownloadRaw(w http.ResponseWriter, r *http.Request) {
 	//
 	// Returns the full email source as plain text.
 	//
+	// The ID can be set to `latest` to return the latest message source.
+	//
 	//	Produces:
 	//	- text/plain
 	//
@@ -334,7 +360,7 @@ func DownloadRaw(w http.ResponseWriter, r *http.Request) {
 	//	Parameters:
 	//	  + name: ID
 	//	    in: path
-	//	    description: Database ID
+	//	    description: Message database ID or "latest"
 	//	    required: true
 	//	    type: string
 	//
@@ -345,8 +371,17 @@ func DownloadRaw(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
 	id := vars["id"]
-
 	dl := r.FormValue("dl")
+
+	if id == "latest" {
+		var err error
+		id, err = storage.LatestID()
+		if err != nil {
+			w.WriteHeader(404)
+			fmt.Fprint(w, err.Error())
+			return
+		}
+	}
 
 	data, err := storage.GetMessageRaw(id)
 	if err != nil {
@@ -554,7 +589,6 @@ func SetTags(w http.ResponseWriter, r *http.Request) {
 }
 
 // ReleaseMessage (method: POST) will release a message via a pre-configured external SMTP server.
-// If no IDs are provided then all messages are updated.
 func ReleaseMessage(w http.ResponseWriter, r *http.Request) {
 	// swagger:route POST /api/v1/message/{ID}/release message ReleaseMessage
 	//
@@ -702,6 +736,16 @@ func HTMLCheck(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
 
+	if id == "latest" {
+		var err error
+		id, err = storage.LatestID()
+		if err != nil {
+			w.WriteHeader(404)
+			fmt.Fprint(w, err.Error())
+			return
+		}
+	}
+
 	msg, err := storage.GetMessage(id)
 	if err != nil {
 		fourOFour(w)
@@ -746,6 +790,16 @@ func LinkCheck(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
 	id := vars["id"]
+
+	if id == "latest" {
+		var err error
+		id, err = storage.LatestID()
+		if err != nil {
+			w.WriteHeader(404)
+			fmt.Fprint(w, err.Error())
+			return
+		}
+	}
 
 	msg, err := storage.GetMessage(id)
 	if err != nil {

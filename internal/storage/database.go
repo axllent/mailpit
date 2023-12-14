@@ -468,6 +468,23 @@ func GetAttachmentPart(id, partID string) (*enmime.Part, error) {
 	return nil, errors.New("attachment not found")
 }
 
+// LatestID returns the latest message ID
+func LatestID() (string, error) {
+	messages := []MessageSummary{}
+	var err error
+
+	messages, err = List(0, 1)
+	if err != nil {
+		return "", err
+	}
+
+	if len(messages) == 0 {
+		return "", errors.New("Message not found")
+	}
+
+	return messages[0].ID, nil
+}
+
 // MarkRead will mark a message as read
 func MarkRead(id string) error {
 	if !IsUnread(id) {

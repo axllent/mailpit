@@ -50,7 +50,7 @@
     },
     "/api/v1/message/{ID}": {
       "get": {
-        "description": "Returns the summary of a message, marking the message as read.",
+        "description": "Returns the summary of a message, marking the message as read.\n\nThe ID can be set to `latest` to return the latest message.",
         "produces": [
           "application/json"
         ],
@@ -66,7 +66,7 @@
         "parameters": [
           {
             "type": "string",
-            "description": "Message database ID",
+            "description": "Message database ID or \"latest\"",
             "name": "ID",
             "in": "path",
             "required": true
@@ -87,7 +87,7 @@
     },
     "/api/v1/message/{ID}/headers": {
       "get": {
-        "description": "Returns the message headers as an array.",
+        "description": "Returns the message headers as an array.\n\nThe ID can be set to `latest` to return the latest message headers.",
         "produces": [
           "application/json"
         ],
@@ -103,7 +103,7 @@
         "parameters": [
           {
             "type": "string",
-            "description": "Database ID",
+            "description": "Message database ID or \"latest\"",
             "name": "ID",
             "in": "path",
             "required": true
@@ -140,7 +140,7 @@
         "parameters": [
           {
             "type": "string",
-            "description": "Message database ID",
+            "description": "Message database ID or \"latest\"",
             "name": "ID",
             "in": "path",
             "required": true
@@ -177,7 +177,7 @@
         "parameters": [
           {
             "type": "string",
-            "description": "Message database ID",
+            "description": "Message database ID or \"latest\"",
             "name": "ID",
             "in": "path",
             "required": true
@@ -290,7 +290,7 @@
     },
     "/api/v1/message/{ID}/raw": {
       "get": {
-        "description": "Returns the full email source as plain text.",
+        "description": "Returns the full email source as plain text.\n\nThe ID can be set to `latest` to return the latest message source.",
         "produces": [
           "text/plain"
         ],
@@ -306,7 +306,7 @@
         "parameters": [
           {
             "type": "string",
-            "description": "Database ID",
+            "description": "Message database ID or \"latest\"",
             "name": "ID",
             "in": "path",
             "required": true
