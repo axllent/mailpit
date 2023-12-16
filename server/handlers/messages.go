@@ -79,7 +79,7 @@ func GetMessageHTML(w http.ResponseWriter, r *http.Request) {
 
 	if id == "latest" {
 		var err error
-		id, err = storage.LatestID()
+		id, err = storage.LatestID(r)
 		if err != nil {
 			w.WriteHeader(404)
 			fmt.Fprint(w, err.Error())
@@ -136,7 +136,7 @@ func GetMessageText(w http.ResponseWriter, r *http.Request) {
 
 	if id == "latest" {
 		var err error
-		id, err = storage.LatestID()
+		id, err = storage.LatestID(r)
 		if err != nil {
 			w.WriteHeader(404)
 			fmt.Fprint(w, err.Error())

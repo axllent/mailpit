@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 	"net/mail"
 	"os"
 	"os/signal"
@@ -469,15 +470,25 @@ func GetAttachmentPart(id, partID string) (*enmime.Part, error) {
 }
 
 // LatestID returns the latest message ID
-func LatestID() (string, error) {
+//
+// If a query argument is set in the request the function will return the
+// latest message matching the search
+func LatestID(r *http.Request) (string, error) {
 	messages := []MessageSummary{}
 	var err error
 
-	messages, err = List(0, 1)
-	if err != nil {
-		return "", err
+	search := strings.TrimSpace(r.URL.Query().Get("query"))
+	if search != "" {
+		messages, _, err = Search(search, 0, 1)
+		if err != nil {
+			return "", err
+		}
+	} else {
+		messages, err = List(0, 1)
+		if err != nil {
+			return "", err
+		}
 	}
-
 	if len(messages) == 0 {
 		return "", errors.New("Message not found")
 	}
