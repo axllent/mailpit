@@ -2,6 +2,22 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.11.1]
+
+### Fix
+- Fix regression to support for search query params to all `/latest` endpoints ([#206](https://github.com/axllent/mailpit/issues/206))
+
+### Libs
+- Update node modules
+- Update Go modules
+
+### Testing
+- Add new `ingest` subcommand to import an email file or maildir folder over SMTP
+
+### UI
+- Allow multiple tags  to be searched using Ctrl-click ([#216](https://github.com/axllent/mailpit/issues/216))
+
+
 ## [v1.11.0]
 
 ### API
