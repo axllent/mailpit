@@ -213,7 +213,7 @@ func GetMessage(w http.ResponseWriter, r *http.Request) {
 
 	if id == "latest" {
 		var err error
-		id, err = storage.LatestID()
+		id, err = storage.LatestID(r)
 		if err != nil {
 			w.WriteHeader(404)
 			fmt.Fprint(w, err.Error())
@@ -315,7 +315,7 @@ func GetHeaders(w http.ResponseWriter, r *http.Request) {
 
 	if id == "latest" {
 		var err error
-		id, err = storage.LatestID()
+		id, err = storage.LatestID(r)
 		if err != nil {
 			w.WriteHeader(404)
 			fmt.Fprint(w, err.Error())
@@ -375,7 +375,7 @@ func DownloadRaw(w http.ResponseWriter, r *http.Request) {
 
 	if id == "latest" {
 		var err error
-		id, err = storage.LatestID()
+		id, err = storage.LatestID(r)
 		if err != nil {
 			w.WriteHeader(404)
 			fmt.Fprint(w, err.Error())
@@ -738,7 +738,7 @@ func HTMLCheck(w http.ResponseWriter, r *http.Request) {
 
 	if id == "latest" {
 		var err error
-		id, err = storage.LatestID()
+		id, err = storage.LatestID(r)
 		if err != nil {
 			w.WriteHeader(404)
 			fmt.Fprint(w, err.Error())
@@ -793,7 +793,7 @@ func LinkCheck(w http.ResponseWriter, r *http.Request) {
 
 	if id == "latest" {
 		var err error
-		id, err = storage.LatestID()
+		id, err = storage.LatestID(r)
 		if err != nil {
 			w.WriteHeader(404)
 			fmt.Fprint(w, err.Error())
