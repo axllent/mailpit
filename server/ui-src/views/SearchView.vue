@@ -74,7 +74,7 @@ export default {
 			</RouterLink>
 		</div>
 		<div class="col col-md-4k col-lg-5 col-xl-6">
-			<SearchForm />
+			<SearchForm @loadMessages="loadMessages" />
 		</div>
 		<div class="col-12 col-md-auto col-lg-4 col-xl-4 text-end mt-2 mt-lg-0">
 			<div class="float-start d-md-none">
@@ -96,7 +96,7 @@ export default {
 		</div>
 		<div class="offcanvas-body">
 			<NavSearch @loadMessages="loadMessages" />
-			<NavTags />
+			<NavTags @loadMessages="loadMessages" />
 			<AboutMailpit />
 		</div>
 	</div>
@@ -105,7 +105,7 @@ export default {
 		<div class="d-none d-md-block col-xl-2 col-md-3 mh-100 position-relative"
 			style="overflow-y: auto; overflow-x: hidden;">
 			<NavSearch @loadMessages="loadMessages" />
-			<NavTags />
+			<NavTags @loadMessages="loadMessages" />
 			<AboutMailpit />
 		</div>
 
