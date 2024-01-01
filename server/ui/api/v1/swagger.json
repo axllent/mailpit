@@ -571,7 +571,7 @@
           "tags"
         ],
         "summary": "Get all current tags",
-        "operationId": "GetTags",
+        "operationId": "GetAllTags",
         "responses": {
           "200": {
             "$ref": "#/responses/ArrayResponse"
