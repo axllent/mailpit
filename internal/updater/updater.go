@@ -221,7 +221,7 @@ func downloadToFile(url, fileName string) error {
 
 	defer func() {
 		if err := out.Close(); err != nil {
-			logger.Log().Errorf("Error closing file: %s\n", err)
+			logger.Log().Errorf("error closing file: %s", err.Error())
 		}
 	}()
 
@@ -305,11 +305,7 @@ func replaceFile(dst, src string) error {
 	}
 
 	// remove the src file
-	if err := os.Remove(src); err != nil {
-		return err
-	}
-
-	return nil
+	return os.Remove(src)
 }
 
 // GetTempDir will create & return a temporary directory if one has not been specified
@@ -323,7 +319,7 @@ func getTempDir() string {
 	}
 	if err := mkDirIfNotExists(tempDir); err != nil {
 		// need a better way to exit
-		logger.Log().Errorf("Error: %v", err)
+		logger.Log().Errorf("error: %s", err.Error())
 		os.Exit(2)
 	}
 

@@ -142,9 +142,9 @@ func dbCron() {
 			err = tx.Commit()
 
 			if err != nil {
-				logger.Log().Errorf(err.Error())
+				logger.Log().Errorf("[db] %s", err.Error())
 				if err := tx.Rollback(); err != nil {
-					logger.Log().Errorf(err.Error())
+					logger.Log().Errorf("[db] %s", err.Error())
 				}
 			}
 

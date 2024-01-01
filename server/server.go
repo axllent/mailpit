@@ -37,7 +37,7 @@ func Listen() {
 
 	serverRoot, err := fs.Sub(embeddedFS, "ui")
 	if err != nil {
-		logger.Log().Errorf("[http] %s", err)
+		logger.Log().Errorf("[http] %s", err.Error())
 		os.Exit(1)
 	}
 
