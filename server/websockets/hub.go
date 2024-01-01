@@ -79,7 +79,7 @@ func Broadcast(t string, msg interface{}) {
 	b, err := json.Marshal(w)
 
 	if err != nil {
-		logger.Log().Errorf("[websocket] broadcast received invalid data: %s", err)
+		logger.Log().Errorf("[websocket] broadcast received invalid data: %s", err.Error())
 		return
 	}
 

@@ -41,13 +41,13 @@ func Send(msg interface{}) {
 		rl.Do(func() {
 			b, err := json.Marshal(msg)
 			if err != nil {
-				logger.Log().Errorf("[webhook] invalid data: %s", err)
+				logger.Log().Errorf("[webhook] invalid data: %s", err.Error())
 				return
 			}
 
 			req, err := http.NewRequest("POST", config.WebhookURL, bytes.NewBuffer(b))
 			if err != nil {
-				logger.Log().Errorf("[webhook] error: %s", err)
+				logger.Log().Errorf("[webhook] error: %s", err.Error())
 				return
 			}
 
@@ -57,12 +57,12 @@ func Send(msg interface{}) {
 			client := &http.Client{}
 			resp, err := client.Do(req)
 			if err != nil {
-				logger.Log().Errorf("[webhook] error sending data: %s", err)
+				logger.Log().Errorf("[webhook] error sending data: %s", err.Error())
 				return
 			}
 
 			if resp.StatusCode < 200 || resp.StatusCode > 299 {
-				logger.Log().Warningf("[webhook] %s returned a %d status", config.WebhookURL, resp.StatusCode)
+				logger.Log().Warnf("[webhook] %s returned a %d status", config.WebhookURL, resp.StatusCode)
 				return
 			}
 

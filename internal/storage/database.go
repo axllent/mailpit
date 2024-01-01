@@ -14,7 +14,6 @@ import (
 	"os/signal"
 	"path"
 	"path/filepath"
-	"sort"
 	"strings"
 	"syscall"
 	"time"
@@ -181,11 +180,6 @@ func Store(body []byte) (string, error) {
 
 	tagData := uniqueTagsFromString(tagStr)
 
-	tagJSON, err := json.Marshal(tagData)
-	if err != nil {
-		return "", err
-	}
-
 	// begin a transaction to ensure both the message
 	// and data are stored successfully
 	ctx := context.Background()
@@ -204,8 +198,8 @@ func Store(body []byte) (string, error) {
 	snippet := tools.CreateSnippet(env.Text, env.HTML)
 
 	// insert mail summary data
-	_, err = tx.Exec("INSERT INTO mailbox(Created, ID, MessageID, Subject, Metadata, Size, Inline, Attachments, SearchText, Tags, Read, Snippet) values(?,?,?,?,?,?,?,?,?,?,0, ?)",
-		created.UnixMilli(), id, messageID, subject, string(summaryJSON), size, inline, attachments, searchText, string(tagJSON), snippet)
+	_, err = tx.Exec("INSERT INTO mailbox(Created, ID, MessageID, Subject, Metadata, Size, Inline, Attachments, SearchText, Read, Snippet) values(?,?,?,?,?,?,?,?,?,0,?)",
+		created.UnixMilli(), id, messageID, subject, string(summaryJSON), size, inline, attachments, searchText, snippet)
 	if err != nil {
 		return "", err
 	}
@@ -219,6 +213,13 @@ func Store(body []byte) (string, error) {
 
 	if err := tx.Commit(); err != nil {
 		return "", err
+	}
+
+	if len(tagData) > 0 {
+		// set tags after tx.Commit()
+		if err := SetMessageTags(id, tagData); err != nil {
+			return "", err
+		}
 	}
 
 	c := &MessageSummary{}
@@ -249,10 +250,11 @@ func Store(body []byte) (string, error) {
 // sorted latest to oldest
 func List(start, limit int) ([]MessageSummary, error) {
 	results := []MessageSummary{}
+	tsStart := time.Now()
 
-	q := sqlf.From("mailbox").
-		Select(`Created, ID, MessageID, Subject, Metadata, Size, Attachments, Read, Tags, Snippet`).
-		OrderBy("Created DESC").
+	q := sqlf.From("mailbox m").
+		Select(`m.Created, m.ID, m.MessageID, m.Subject, m.Metadata, m.Size, m.Attachments, m.Read, m.Snippet`).
+		OrderBy("m.Created DESC").
 		Limit(limit).
 		Offset(start)
 
@@ -264,22 +266,16 @@ func List(start, limit int) ([]MessageSummary, error) {
 		var metadata string
 		var size int
 		var attachments int
-		var tags string
 		var read int
 		var snippet string
 		em := MessageSummary{}
 
-		if err := row.Scan(&created, &id, &messageID, &subject, &metadata, &size, &attachments, &read, &tags, &snippet); err != nil {
+		if err := row.Scan(&created, &id, &messageID, &subject, &metadata, &size, &attachments, &read, &snippet); err != nil {
 			logger.Log().Error(err)
 			return
 		}
 
 		if err := json.Unmarshal([]byte(metadata), &em); err != nil {
-			logger.Log().Error(err)
-			return
-		}
-
-		if err := json.Unmarshal([]byte(tags), &em.Tags); err != nil {
 			logger.Log().Error(err)
 			return
 		}
@@ -298,7 +294,16 @@ func List(start, limit int) ([]MessageSummary, error) {
 		return results, err
 	}
 
+	// set tags for listed messages only
+	for i, m := range results {
+		results[i].Tags = getMessageTags(m.ID)
+	}
+
 	dbLastAction = time.Now()
+
+	elapsed := time.Since(tsStart)
+
+	logger.Log().Debugf("[db] list INBOX in %s", elapsed)
 
 	return results, nil
 }
@@ -616,6 +621,10 @@ func DeleteOneMessage(id string) error {
 		logger.Log().Debugf("[db] deleted message %s", id)
 	}
 
+	if err := DeleteAllMessageTags(id); err != nil {
+		return err
+	}
+
 	dbLastAction = time.Now()
 	dbDataDeleted = true
 
@@ -655,6 +664,16 @@ func DeleteAllMessages() error {
 		return err
 	}
 
+	_, err = tx.Exec("DELETE FROM tags")
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.Exec("DELETE FROM message_tags")
+	if err != nil {
+		return err
+	}
+
 	if err := tx.Commit(); err != nil {
 		return err
 	}
@@ -676,37 +695,18 @@ func DeleteAllMessages() error {
 
 // GetAllTags returns all used tags
 func GetAllTags() []string {
-	q := sqlf.From("mailbox").
-		Select(`DISTINCT Tags`).
-		Where("Tags != ?", "[]")
-
 	var tags = []string{}
+	var name string
 
-	if err := q.QueryAndClose(nil, db, func(row *sql.Rows) {
-		var tagData string
-		t := []string{}
-
-		if err := row.Scan(&tagData); err != nil {
-			logger.Log().Error(err)
-			return
-		}
-
-		if err := json.Unmarshal([]byte(tagData), &t); err != nil {
-			logger.Log().Error(err)
-			return
-		}
-
-		for _, tag := range t {
-			if !inArray(tag, tags) {
-				tags = append(tags, tag)
-			}
-		}
-
-	}); err != nil {
+	if err := sqlf.
+		Select(`DISTINCT Name`).
+		From("tags").To(&name).
+		OrderBy("Name").
+		QueryAndClose(nil, db, func(row *sql.Rows) {
+			tags = append(tags, name)
+		}); err != nil {
 		logger.Log().Error(err)
 	}
-
-	sort.Strings(tags)
 
 	return tags
 }

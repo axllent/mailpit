@@ -139,13 +139,23 @@ func dbCron() {
 				continue
 			}
 
+			_, err = tx.Query(`DELETE FROM message_tags WHERE ID IN (?`+strings.Repeat(",?", len(ids)-1)+`)`, args...) // #nosec
+			if err != nil {
+				logger.Log().Errorf("[db] %s", err.Error())
+				continue
+			}
+
 			err = tx.Commit()
 
 			if err != nil {
-				logger.Log().Errorf(err.Error())
+				logger.Log().Errorf("[db] %s", err.Error())
 				if err := tx.Rollback(); err != nil {
-					logger.Log().Errorf(err.Error())
+					logger.Log().Errorf("[db] %s", err.Error())
 				}
+			}
+
+			if err := pruneUnusedTags(); err != nil {
+				logger.Log().Errorf("[db] %s", err.Error())
 			}
 
 			dbDataDeleted = true
