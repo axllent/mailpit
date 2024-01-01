@@ -2,6 +2,7 @@ package storage
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 )
 
@@ -23,7 +24,7 @@ func TestTags(t *testing.T) {
 	}
 
 	for i := 0; i < 10; i++ {
-		if err := SetTags(ids[i], []string{fmt.Sprintf("Tag-%d", i)}); err != nil {
+		if err := SetMessageTags(ids[i], []string{fmt.Sprintf("Tag-%d", i)}); err != nil {
 			t.Log("error ", err)
 			t.Fail()
 		}
@@ -40,4 +41,71 @@ func TestTags(t *testing.T) {
 			t.Fatal("Message tags do not match")
 		}
 	}
+
+	if err := DeleteAllMessages(); err != nil {
+		t.Log("error ", err)
+		t.Fail()
+	}
+
+	// test 20 tags
+	id, err := Store(testMimeEmail)
+	if err != nil {
+		t.Log("error ", err)
+		t.Fail()
+	}
+	newTags := []string{}
+	for i := 0; i < 20; i++ {
+		// pad number with 0 to ensure they are returned alphabetically
+		newTags = append(newTags, fmt.Sprintf("AnotherTag %02d", i))
+	}
+	if err := SetMessageTags(id, newTags); err != nil {
+		t.Log("error ", err)
+		t.Fail()
+	}
+	returnedTags := getMessageTags(id)
+	assertEqual(t, strings.Join(newTags, "|"), strings.Join(returnedTags, "|"), "Message tags do not match")
+
+	// remove first tag
+	if err := DeleteMessageTag(id, newTags[0]); err != nil {
+		t.Log("error ", err)
+		t.Fail()
+	}
+	returnedTags = getMessageTags(id)
+	assertEqual(t, strings.Join(newTags[1:], "|"), strings.Join(returnedTags, "|"), "Message tags do not match after deleting 1")
+
+	// remove all tags
+	if err := DeleteAllMessageTags(id); err != nil {
+		t.Log("error ", err)
+		t.Fail()
+	}
+	returnedTags = getMessageTags(id)
+	assertEqual(t, "", strings.Join(returnedTags, "|"), "Message tags should be empty")
+
+	// apply the same tag twice
+	if err := SetMessageTags(id, []string{"Duplicate Tag", "Duplicate Tag"}); err != nil {
+		t.Log("error ", err)
+		t.Fail()
+	}
+	returnedTags = getMessageTags(id)
+	assertEqual(t, "Duplicate Tag", strings.Join(returnedTags, "|"), "Message tags should be duplicated")
+	if err := DeleteAllMessageTags(id); err != nil {
+		t.Log("error ", err)
+		t.Fail()
+	}
+
+	// apply tag with invalid characters
+	if err := SetMessageTags(id, []string{"Dirty! \"Tag\""}); err != nil {
+		t.Log("error ", err)
+		t.Fail()
+	}
+	returnedTags = getMessageTags(id)
+	assertEqual(t, "Dirty Tag", strings.Join(returnedTags, "|"), "Dirty message tag did not clean as expected")
+	if err := DeleteAllMessageTags(id); err != nil {
+		t.Log("error ", err)
+		t.Fail()
+	}
+
+	// Check deleted message tags also prune the tags database
+	allTags := GetAllTags()
+	assertEqual(t, "", strings.Join(allTags, "|"), "Dirty message tag did not clean as expected")
 }
