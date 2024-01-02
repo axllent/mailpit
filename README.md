@@ -1,8 +1,8 @@
-<h1 style="text-align: center">
+<h1 align="center">
   Mailpit - email testing for developers
 </h1>
 
-<div style="text-align: center">
+<div align="center">
     <img src="https://github.com/axllent/mailpit/actions/workflows/tests.yml/badge.svg" alt="CI Tests status">
     <img src="https://github.com/axllent/mailpit/actions/workflows/release-build.yml/badge.svg" alt="CI build status">
     <img src="https://github.com/axllent/mailpit/actions/workflows/build-docker.yml/badge.svg" alt="DI Docker build status">
@@ -11,8 +11,8 @@
     <a href="https://github.com/axllent/mailpit/releases/latest"><img src="https://img.shields.io/github/v/release/axllent/mailpit.svg" alt="Latest release"></a>
     <a href="https://hub.docker.com/r/axllent/mailpit"><img src="https://img.shields.io/docker/pulls/axllent/mailpit.svg" alt="Docker pulls"></a>
 </div>
-
-<p style="text-align: center; margin: 10px 0">
+<br>
+<p align="center">
   <a href="https://mailpit.axllent.org">Website</a>  •
   <a href="https://mailpit.axllent.org/docs/">Documentation</a>  •
   <a href="https://mailpit.axllent.org/docs/api-v1/">API</a>
