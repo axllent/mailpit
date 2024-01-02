@@ -479,7 +479,7 @@ func GetAttachmentPart(id, partID string) (*enmime.Part, error) {
 // If a query argument is set in the request the function will return the
 // latest message matching the search
 func LatestID(r *http.Request) (string, error) {
-	messages := []MessageSummary{}
+	var messages []MessageSummary
 	var err error
 
 	search := strings.TrimSpace(r.URL.Query().Get("query"))
