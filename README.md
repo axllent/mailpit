@@ -1,12 +1,26 @@
-# Mailpit - email testing for developers
+<h1 style="text-align: center">
+  Mailpit - email testing for developers
+</h1>
 
-![Tests](https://github.com/axllent/mailpit/actions/workflows/tests.yml/badge.svg)
-![Build status](https://github.com/axllent/mailpit/actions/workflows/release-build.yml/badge.svg)
-![Docker builds](https://github.com/axllent/mailpit/actions/workflows/build-docker.yml/badge.svg)
-![CodeQL](https://github.com/axllent/mailpit/actions/workflows/codeql-analysis.yml/badge.svg)
-[![Go Report Card](https://goreportcard.com/badge/github.com/axllent/mailpit)](https://goreportcard.com/report/github.com/axllent/mailpit)
+<div style="text-align: center">
+    <img src="https://github.com/axllent/mailpit/actions/workflows/tests.yml/badge.svg" alt="CI Tests status">
+    <img src="https://github.com/axllent/mailpit/actions/workflows/release-build.yml/badge.svg" alt="CI build status">
+    <img src="https://github.com/axllent/mailpit/actions/workflows/build-docker.yml/badge.svg" alt="DI Docker build status">
+    <img src="https://github.com/axllent/mailpit/actions/workflows/codeql-analysis.yml/badge.svg" alt="Code quality">
+    <a href="https://goreportcard.com/report/github.com/axllent/mailpit"><img src="https://goreportcard.com/badge/github.com/axllent/mailpit" alt="Go Report Card"></a>
+    <a href="https://github.com/axllent/mailpit/releases/latest"><img src="https://img.shields.io/github/v/release/axllent/mailpit.svg" alt="Latest release"></a>
+    <a href="https://hub.docker.com/r/axllent/mailpit"><img src="https://img.shields.io/docker/pulls/axllent/mailpit.svg" alt="Docker pulls"></a>
+</div>
 
-[Mailpit](https://mailpit.axllent.org) is a small, fast, low memory, zero-dependency, multi-platform email testing tool & API for developers.
+<p style="text-align: center; margin: 10px 0">
+  <a href="https://mailpit.axllent.org">Website</a>  •
+  <a href="https://mailpit.axllent.org/docs/">Documentation</a>  •
+  <a href="https://mailpit.axllent.org/docs/api-v1/">API</a>
+</p>
+
+<hr>
+
+**Mailpit** is a small, fast, low memory, zero-dependency, multi-platform email testing tool & API for developers.
 
 It acts as an SMTP server, provides a modern web interface to view & test captured emails, and includes an API for automated integration testing.
 
