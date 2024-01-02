@@ -1,5 +1,7 @@
 package apiv1
 
+import "github.com/axllent/mailpit/internal/stats"
+
 // These structs are for the purpose of defining swagger HTTP parameters & responses
 
 // Application information
@@ -8,7 +10,7 @@ type infoResponse struct {
 	// Application information
 	//
 	// in: body
-	Body appInformation
+	Body stats.AppInformation
 }
 
 // Web UI configuration

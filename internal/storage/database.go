@@ -628,6 +628,8 @@ func DeleteOneMessage(id string) error {
 	dbLastAction = time.Now()
 	dbDataDeleted = true
 
+	logMessagesDeleted(1)
+
 	BroadcastMailboxStats()
 
 	return err
@@ -684,6 +686,8 @@ func DeleteAllMessages() error {
 		logger.Log().Debugf("[db] deleted %d messages in %s", total, elapsed)
 	}
 
+	logMessagesDeleted(total)
+
 	dbLastAction = time.Now()
 	dbDataDeleted = false
 
@@ -691,24 +695,6 @@ func DeleteAllMessages() error {
 	BroadcastMailboxStats()
 
 	return err
-}
-
-// GetAllTags returns all used tags
-func GetAllTags() []string {
-	var tags = []string{}
-	var name string
-
-	if err := sqlf.
-		Select(`DISTINCT Name`).
-		From("tags").To(&name).
-		OrderBy("Name").
-		QueryAndClose(nil, db, func(row *sql.Rows) {
-			tags = append(tags, name)
-		}); err != nil {
-		logger.Log().Error(err)
-	}
-
-	return tags
 }
 
 // StatsGet returns the total/unread statistics for a mailbox

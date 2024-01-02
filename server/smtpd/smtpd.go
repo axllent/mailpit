@@ -12,6 +12,7 @@ import (
 	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/internal/auth"
 	"github.com/axllent/mailpit/internal/logger"
+	"github.com/axllent/mailpit/internal/stats"
 	"github.com/axllent/mailpit/internal/storage"
 	"github.com/google/uuid"
 	"github.com/mhale/smtpd"
@@ -27,7 +28,7 @@ func mailHandler(origin net.Addr, from string, to []string, data []byte) error {
 	msg, err := mail.ReadMessage(bytes.NewReader(data))
 	if err != nil {
 		logger.Log().Errorf("[smtpd] error parsing message: %s", err.Error())
-
+		stats.LogSMTPError()
 		return err
 	}
 
@@ -63,6 +64,7 @@ func mailHandler(origin net.Addr, from string, to []string, data []byte) error {
 	} else if config.IgnoreDuplicateIDs {
 		if storage.MessageIDExists(messageID) {
 			logger.Log().Debugf("[smtpd] duplicate message found, ignoring %s", messageID)
+			stats.LogSMTPIgnored()
 			return nil
 		}
 	}
@@ -116,12 +118,16 @@ func mailHandler(origin net.Addr, from string, to []string, data []byte) error {
 		logger.Log().Debugf("[smtpd] added missing addresses to Bcc header: %s", strings.Join(missingAddresses, ", "))
 	}
 
-	_, err = storage.Store(data)
+	_, err = storage.Store(&data)
 	if err != nil {
 		logger.Log().Errorf("[db] error storing message: %s", err.Error())
-
+		stats.LogSMTPError()
 		return err
 	}
+
+	stats.LogSMTPReceived(len(data))
+
+	data = nil // avoid memory leaks
 
 	subject := msg.Header.Get("Subject")
 	logger.Log().Debugf("[smtpd] received (%s) from:%s subject:%q", cleanIP(origin), from, subject)

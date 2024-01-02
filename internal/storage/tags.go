@@ -137,6 +137,47 @@ func DeleteAllMessageTags(id string) error {
 	return pruneUnusedTags()
 }
 
+// GetAllTags returns all used tags
+func GetAllTags() []string {
+	var tags = []string{}
+	var name string
+
+	if err := sqlf.
+		Select(`DISTINCT Name`).
+		From("tags").To(&name).
+		OrderBy("Name").
+		QueryAndClose(nil, db, func(row *sql.Rows) {
+			tags = append(tags, name)
+		}); err != nil {
+		logger.Log().Error(err)
+	}
+
+	return tags
+}
+
+// GetAllTagsCount returns all used tags with their total messages
+func GetAllTagsCount() map[string]int64 {
+	var tags = make(map[string]int64)
+	var name string
+	var total int64
+
+	if err := sqlf.
+		Select(`Name`).To(&name).
+		Select(`COUNT(message_tags.TagID) as total`).To(&total).
+		From("tags").
+		LeftJoin("message_tags", "tags.ID = message_tags.TagID").
+		GroupBy("message_tags.TagID").
+		OrderBy("Name").
+		QueryAndClose(nil, db, func(row *sql.Rows) {
+			tags[name] = total
+			// tags = append(tags, name)
+		}); err != nil {
+		logger.Log().Error(err)
+	}
+
+	return tags
+}
+
 // PruneUnusedTags will delete all unused tags from the database
 func pruneUnusedTags() error {
 	q := sqlf.From("tags").
