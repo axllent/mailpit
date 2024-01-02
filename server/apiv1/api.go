@@ -540,7 +540,7 @@ func GetAllTags(w http.ResponseWriter, _ *http.Request) {
 	_, _ = w.Write(data)
 }
 
-// SetTags (method: PUT) will set the tags for all provided IDs
+// SetMessageTags (method: PUT) will set the tags for all provided IDs
 func SetMessageTags(w http.ResponseWriter, r *http.Request) {
 	// swagger:route PUT /api/v1/tags tags SetTags
 	//
