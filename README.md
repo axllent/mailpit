@@ -3,13 +3,28 @@
 </h1>
 
 <div align="center">
-    <img src="https://github.com/axllent/mailpit/actions/workflows/tests.yml/badge.svg" alt="CI Tests status">
-    <img src="https://github.com/axllent/mailpit/actions/workflows/release-build.yml/badge.svg" alt="CI build status">
-    <img src="https://github.com/axllent/mailpit/actions/workflows/build-docker.yml/badge.svg" alt="DI Docker build status">
-    <img src="https://github.com/axllent/mailpit/actions/workflows/codeql-analysis.yml/badge.svg" alt="Code quality">
-    <a href="https://goreportcard.com/report/github.com/axllent/mailpit"><img src="https://goreportcard.com/badge/github.com/axllent/mailpit" alt="Go Report Card"></a>
-    <a href="https://github.com/axllent/mailpit/releases/latest"><img src="https://img.shields.io/github/v/release/axllent/mailpit.svg" alt="Latest release"></a>
-    <a href="https://hub.docker.com/r/axllent/mailpit"><img src="https://img.shields.io/docker/pulls/axllent/mailpit.svg" alt="Docker pulls"></a>
+    <a href="https://github.com/axllent/mailpit/actions/workflows/tests.yml">
+      <img src="https://github.com/axllent/mailpit/actions/workflows/tests.yml/badge.svg" alt="CI Tests status">
+    </a>
+    <a href="https://github.com/axllent/mailpit/actions/workflows/release-build.yml">
+      <img src="https://github.com/axllent/mailpit/actions/workflows/release-build.yml/badge.svg" alt="CI build status">
+    </a>
+    <a href="https://github.com/axllent/mailpit/actions/workflows/build-docker.yml">
+      <img src="https://github.com/axllent/mailpit/actions/workflows/build-docker.yml/badge.svg" alt="CI Docker build status">
+    </a>
+    <a href="https://github.com/axllent/mailpit/actions/workflows/codeql-analysis.yml">
+      <img src="https://github.com/axllent/mailpit/actions/workflows/codeql-analysis.yml/badge.svg" alt="Code quality">
+    </a>
+    <a href="https://goreportcard.com/report/github.com/axllent/mailpit">
+      <img src="https://goreportcard.com/badge/github.com/axllent/mailpit" alt="Go Report Card">
+    </a>
+    <br>
+    <a href="https://github.com/axllent/mailpit/releases/latest">
+      <img src="https://img.shields.io/github/v/release/axllent/mailpit.svg" alt="Latest release">
+    </a>
+    <a href="https://hub.docker.com/r/axllent/mailpit">
+      <img src="https://img.shields.io/docker/pulls/axllent/mailpit.svg" alt="Docker pulls">
+    </a>
 </div>
 <br>
 <p align="center">
