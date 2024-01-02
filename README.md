@@ -6,13 +6,13 @@
 ![CodeQL](https://github.com/axllent/mailpit/actions/workflows/codeql-analysis.yml/badge.svg)
 [![Go Report Card](https://goreportcard.com/badge/github.com/axllent/mailpit)](https://goreportcard.com/report/github.com/axllent/mailpit)
 
-Mailpit is a small, fast, low memory, zero-dependency, multi-platform email testing tool & API for developers.
+[Mailpit](https://mailpit.axllent.org) is a small, fast, low memory, zero-dependency, multi-platform email testing tool & API for developers.
 
-It acts as an SMTP server, provides a modern web interface to view & test captured emails, and contains an API for automated integration testing.
+It acts as an SMTP server, provides a modern web interface to view & test captured emails, and includes an API for automated integration testing.
 
-Mailpit was originally **inspired** by MailHog which is [no longer maintained](https://github.com/mailhog/MailHog/issues/442#issuecomment-1493415258) and hasn't seen active development for a few years now.
+Mailpit was originally **inspired** by MailHog which is [no longer maintained](https://github.com/mailhog/MailHog/issues/442#issuecomment-1493415258) and hasn't seen active development or security updates for a few years now.
 
-![Mailpit](https://raw.githubusercontent.com/axllent/mailpit/develop/docs/screenshot.png)
+![Mailpit](https://raw.githubusercontent.com/axllent/mailpit/develop/server/ui-src/screenshot.png)
 
 
 ## Features
