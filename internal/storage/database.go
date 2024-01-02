@@ -686,10 +686,10 @@ func DeleteAllMessages() error {
 		logger.Log().Debugf("[db] deleted %d messages in %s", total, elapsed)
 	}
 
-	logMessagesDeleted(total)
-
 	dbLastAction = time.Now()
 	dbDataDeleted = false
+
+	logMessagesDeleted(total)
 
 	websockets.Broadcast("prune", nil)
 	BroadcastMailboxStats()

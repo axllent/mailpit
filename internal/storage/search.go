@@ -193,6 +193,8 @@ func DeleteSearch(search string) error {
 		dbLastAction = time.Now()
 		dbDataDeleted = true
 
+		logMessagesDeleted(total)
+
 		BroadcastMailboxStats()
 	}
 
