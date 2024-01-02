@@ -7,6 +7,7 @@ import (
 	"os"
 	"regexp"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/axllent/mailpit/config"
@@ -15,6 +16,13 @@ import (
 	"github.com/axllent/mailpit/server/websockets"
 	"github.com/jhillyerd/enmime"
 	"github.com/leporo/sqlf"
+)
+
+var (
+	// for stats to prevent import cycle
+	mu sync.RWMutex
+	// StatsDeleted for counting the number of messages deleted
+	StatsDeleted int
 )
 
 // Return a header field as a []*mail.Address, or "null" is not found/empty
@@ -139,13 +147,23 @@ func dbCron() {
 				continue
 			}
 
+			_, err = tx.Query(`DELETE FROM message_tags WHERE ID IN (?`+strings.Repeat(",?", len(ids)-1)+`)`, args...) // #nosec
+			if err != nil {
+				logger.Log().Errorf("[db] %s", err.Error())
+				continue
+			}
+
 			err = tx.Commit()
 
 			if err != nil {
-				logger.Log().Errorf(err.Error())
+				logger.Log().Errorf("[db] %s", err.Error())
 				if err := tx.Rollback(); err != nil {
-					logger.Log().Errorf(err.Error())
+					logger.Log().Errorf("[db] %s", err.Error())
 				}
+			}
+
+			if err := pruneUnusedTags(); err != nil {
+				logger.Log().Errorf("[db] %s", err.Error())
 			}
 
 			dbDataDeleted = true
@@ -156,6 +174,13 @@ func dbCron() {
 			websockets.Broadcast("prune", nil)
 		}
 	}
+}
+
+// LogMessagesDeleted logs the number of messages deleted
+func logMessagesDeleted(n int) {
+	mu.Lock()
+	StatsDeleted = StatsDeleted + n
+	mu.Unlock()
 }
 
 // IsFile returns whether a path is a file

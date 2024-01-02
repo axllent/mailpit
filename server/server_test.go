@@ -186,7 +186,7 @@ func TestAPIv1Search(t *testing.T) {
 	defer ts.Close()
 
 	// insert 100
-	t.Log("Insert 100 messages")
+	t.Log("Insert 100 messages & tag")
 	insertEmailData(t)
 	assertStatsEqual(t, ts.URL+"/api/v1/messages", 100, 100)
 
@@ -201,6 +201,8 @@ func TestAPIv1Search(t *testing.T) {
 	assertSearchEqual(t, ts.URL+"/api/v1/search", "!thisdoesnotexist", 100)
 	assertSearchEqual(t, ts.URL+"/api/v1/search", "-thisdoesnotexist", 100)
 	assertSearchEqual(t, ts.URL+"/api/v1/search", "thisdoesnotexist", 0)
+	assertSearchEqual(t, ts.URL+"/api/v1/search", "tag:\"Test tag 065\"", 1)
+	assertSearchEqual(t, ts.URL+"/api/v1/search", "!tag:\"Test tag 023\"", 99)
 }
 
 func setup() {
@@ -272,7 +274,15 @@ func insertEmailData(t *testing.T) {
 			t.Fail()
 		}
 
-		if _, err := storage.Store(buf.Bytes()); err != nil {
+		bufBytes := buf.Bytes()
+
+		id, err := storage.Store(&bufBytes)
+		if err != nil {
+			t.Log("error ", err)
+			t.Fail()
+		}
+
+		if err := storage.SetMessageTags(id, []string{fmt.Sprintf("Test tag %03d", i)}); err != nil {
 			t.Log("error ", err)
 			t.Fail()
 		}

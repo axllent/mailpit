@@ -5,10 +5,11 @@ import { pagination } from '../stores/pagination'
 export default {
 	mixins: [CommonMixins],
 
+	emits: ['loadMessages'],
+
 	data() {
 		return {
-			search: '',
-			pagination
+			search: ''
 		}
 	},
 
@@ -33,6 +34,12 @@ export default {
 			if (this.search == '') {
 				this.$router.push('/')
 			} else {
+				const urlParams = new URLSearchParams(window.location.search)
+				let curr = urlParams.get('q')
+				if (curr && curr == this.search) {
+					pagination.start = 0
+					this.$emit('loadMessages')
+				}
 				this.$router.push('/search?q=' + encodeURIComponent(this.search))
 			}
 

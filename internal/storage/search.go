@@ -37,23 +37,17 @@ func Search(search string, start, limit int) ([]MessageSummary, int, error) {
 		var metadata string
 		var size int
 		var attachments int
-		var tags string
 		var snippet string
 		var read int
 		var ignore string
 		em := MessageSummary{}
 
-		if err := row.Scan(&created, &id, &messageID, &subject, &metadata, &size, &attachments, &read, &tags, &snippet, &ignore, &ignore, &ignore, &ignore); err != nil {
+		if err := row.Scan(&created, &id, &messageID, &subject, &metadata, &size, &attachments, &read, &snippet, &ignore, &ignore, &ignore, &ignore); err != nil {
 			logger.Log().Error(err)
 			return
 		}
 
 		if err := json.Unmarshal([]byte(metadata), &em); err != nil {
-			logger.Log().Error(err)
-			return
-		}
-
-		if err := json.Unmarshal([]byte(tags), &em.Tags); err != nil {
 			logger.Log().Error(err)
 			return
 		}
@@ -85,6 +79,11 @@ func Search(search string, start, limit int) ([]MessageSummary, int, error) {
 		results = allResults[start:end]
 	}
 
+	// set tags for listed messages only
+	for i, m := range results {
+		results[i].Tags = getMessageTags(m.ID)
+	}
+
 	elapsed := time.Since(tsStart)
 
 	logger.Log().Debugf("[db] search for \"%s\" in %s", search, elapsed)
@@ -109,12 +108,12 @@ func DeleteSearch(search string) error {
 		var metadata string
 		var size int
 		var attachments int
-		var tags string
+		// var tags string
 		var read int
 		var snippet string
 		var ignore string
 
-		if err := row.Scan(&created, &id, &messageID, &subject, &metadata, &size, &attachments, &read, &tags, &snippet, &ignore, &ignore, &ignore, &ignore); err != nil {
+		if err := row.Scan(&created, &id, &messageID, &subject, &metadata, &size, &attachments, &read, &snippet, &ignore, &ignore, &ignore, &ignore); err != nil {
 			logger.Log().Error(err)
 			return
 		}
@@ -172,9 +171,20 @@ func DeleteSearch(search string) error {
 			if err != nil {
 				return err
 			}
+
+			sqlDelete3 := `DELETE FROM message_tags WHERE ID IN (?` + strings.Repeat(",?", len(ids)-1) + `)`
+
+			_, err = tx.Exec(sqlDelete3, delIDs...)
+			if err != nil {
+				return err
+			}
 		}
 
 		err = tx.Commit()
+
+		if err := pruneUnusedTags(); err != nil {
+			return err
+		}
 
 		if err == nil {
 			logger.Log().Debugf("[db] deleted %d messages matching %s", total, search)
@@ -195,13 +205,15 @@ func searchQueryBuilder(searchString string) *sqlf.Stmt {
 	// group strings with quotes as a single argument and remove quotes
 	args := tools.ArgsParser(searchString)
 
-	q := sqlf.From("mailbox").
-		Select(`Created, ID, MessageID, Subject, Metadata, Size, Attachments, Read, Tags, Snippet,
+	q := sqlf.From("mailbox m").
+		Select(`m.Created, m.ID, m.MessageID, m.Subject, m.Metadata, m.Size, m.Attachments, m.Read,
+			m.Snippet,
 			IFNULL(json_extract(Metadata, '$.To'), '{}') as ToJSON,
 			IFNULL(json_extract(Metadata, '$.From'), '{}') as FromJSON,
 			IFNULL(json_extract(Metadata, '$.Cc'), '{}') as CcJSON,
 			IFNULL(json_extract(Metadata, '$.Bcc'), '{}') as BccJSON
-		`).OrderBy("Created DESC")
+		`).
+		OrderBy("m.Created DESC")
 
 	for _, w := range args {
 		if cleanString(w) == "" {
@@ -278,9 +290,9 @@ func searchQueryBuilder(searchString string) *sqlf.Stmt {
 			w = cleanString(w[4:])
 			if w != "" {
 				if exclude {
-					q.Where("Tags NOT LIKE ?", "%\""+escPercentChar(w)+"\"%")
+					q.Where(`m.ID NOT IN (SELECT mt.ID FROM message_tags mt JOIN tags t ON mt.TagID = t.ID WHERE t.Name = ?)`, w)
 				} else {
-					q.Where("Tags LIKE ?", "%\""+escPercentChar(w)+"\"%")
+					q.Where(`m.ID IN (SELECT mt.ID FROM message_tags mt JOIN tags t ON mt.TagID = t.ID WHERE t.Name = ?)`, w)
 				}
 			}
 		} else if w == "is:read" {
@@ -297,9 +309,9 @@ func searchQueryBuilder(searchString string) *sqlf.Stmt {
 			}
 		} else if w == "is:tagged" {
 			if exclude {
-				q.Where("Tags = ?", "[]")
+				q.Where(`m.ID NOT IN (SELECT DISTINCT mt.ID FROM message_tags mt JOIN tags t ON mt.TagID = t.ID)`)
 			} else {
-				q.Where("Tags != ?", "[]")
+				q.Where(`m.ID IN (SELECT DISTINCT mt.ID FROM message_tags mt JOIN tags t ON mt.TagID = t.ID)`)
 			}
 		} else if w == "has:attachment" || w == "has:attachments" {
 			if exclude {

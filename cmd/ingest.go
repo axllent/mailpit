@@ -112,8 +112,7 @@ The --recent flag will only consider files with a modification date within the l
 
 					err = smtp.SendMail(sendmail.SMTPAddr, nil, returnPath, recipients, body)
 					if err != nil {
-						logger.Log().Errorf("error sending mail: %s", err.Error())
-						logger.Log().Errorf(path)
+						logger.Log().Errorf("error sending mail: %s (%s)", err.Error(), path)
 						return nil
 					}
 

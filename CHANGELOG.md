@@ -2,6 +2,23 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.12.0]
+
+### Chore
+- Include runtime statistics in API (info) & UI (About)
+- Use memory pointer for internal message parsing & storage
+- Update caniemail test data
+- Convert to many-to-many message tag relationships
+- Standardize error logging & formatting
+
+### Libs
+- Update node modules
+- Update Go modules
+
+### UI
+- Refresh search results when search resubmitted or active tag filter clicked
+
+
 ## [v1.11.1]
 
 ### Fix

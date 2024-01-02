@@ -1,8 +1,7 @@
 package storage
 
 import (
-	"context"
-	"encoding/json"
+	"database/sql"
 	"sort"
 	"strings"
 
@@ -12,8 +11,8 @@ import (
 	"github.com/leporo/sqlf"
 )
 
-// SetTags will set the tags for a given database ID, used via API
-func SetTags(id string, tags []string) error {
+// SetMessageTags will set the tags for a given database ID
+func SetMessageTags(id string, tags []string) error {
 	applyTags := []string{}
 	for _, t := range tags {
 		t = tools.CleanTag(t)
@@ -22,24 +21,201 @@ func SetTags(id string, tags []string) error {
 		}
 	}
 
-	sort.Strings(applyTags)
+	currentTags := getMessageTags(id)
+	origTagCount := len(currentTags)
 
-	tagJSON, err := json.Marshal(applyTags)
-	if err != nil {
-		logger.Log().Errorf("[db] setting tags for message %s", id)
+	for _, t := range applyTags {
+		t = tools.CleanTag(t)
+		if t == "" || !config.ValidTagRegexp.MatchString(t) || inArray(t, currentTags) {
+			continue
+		}
+
+		if err := AddMessageTag(id, t); err != nil {
+			return err
+		}
+	}
+
+	if origTagCount > 0 {
+		currentTags = getMessageTags(id)
+
+		for _, t := range currentTags {
+			if !inArray(t, applyTags) {
+				if err := DeleteMessageTag(id, t); err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+// AddMessageTag adds a tag to a message
+func AddMessageTag(id, name string) error {
+	var tagID int
+
+	q := sqlf.From("tags").
+		Select("ID").To(&tagID).
+		Where("Name = ?", name)
+
+	// tag exists - add tag to message
+	if err := q.QueryRowAndClose(nil, db); err == nil {
+		// check message does not already have this tag
+		var count int
+		if _, err := sqlf.From("message_tags").
+			Select("COUNT(ID)").To(&count).
+			Where("ID = ?", id).
+			Where("TagID = ?", tagID).
+			ExecAndClose(nil, db); err != nil {
+			return err
+		}
+		if count != 0 {
+			// already exists
+			return nil
+		}
+
+		logger.Log().Debugf("[tags] adding tag \"%s\" to %s", name, id)
+
+		_, err := sqlf.InsertInto("message_tags").
+			Set("ID", id).
+			Set("TagID", tagID).
+			ExecAndClose(nil, db)
 		return err
 	}
 
-	_, err = sqlf.Update("mailbox").
-		Set("Tags", string(tagJSON)).
-		Where("ID = ?", id).
-		ExecAndClose(context.Background(), db)
+	logger.Log().Debugf("[tags] adding tag \"%s\" to %s", name, id)
 
-	if err == nil {
-		logger.Log().Debugf("[db] set tags %s for message %s", string(tagJSON), id)
+	// tag dos not exist, add new one
+	if err := sqlf.InsertInto("tags").
+		Set("Name", name).
+		Returning("ID").To(&tagID).
+		QueryRowAndClose(nil, db); err != nil {
+		return err
 	}
 
+	// check message does not already have this tag
+	var count int
+	if _, err := sqlf.From("message_tags").
+		Select("COUNT(ID)").To(&count).
+		Where("ID = ?", id).
+		Where("TagID = ?", tagID).
+		ExecAndClose(nil, db); err != nil {
+		return err
+	}
+	if count != 0 {
+		return nil // already exists
+	}
+
+	// add tag to message
+	_, err := sqlf.InsertInto("message_tags").
+		Set("ID", id).
+		Set("TagID", tagID).
+		ExecAndClose(nil, db)
 	return err
+}
+
+// DeleteMessageTag deleted a tag from a message
+func DeleteMessageTag(id, name string) error {
+	if _, err := sqlf.DeleteFrom("message_tags").
+		Where("message_tags.ID = ?", id).
+		Where(`message_tags.Key IN (SELECT Key FROM message_tags LEFT JOIN tags ON TagID=tags.ID WHERE Name = ?)`, name).
+		ExecAndClose(nil, db); err != nil {
+		return err
+	}
+
+	return pruneUnusedTags()
+}
+
+// DeleteAllMessageTags deleted all tags from a message
+func DeleteAllMessageTags(id string) error {
+	if _, err := sqlf.DeleteFrom("message_tags").
+		Where("message_tags.ID = ?", id).
+		ExecAndClose(nil, db); err != nil {
+		return err
+	}
+
+	return pruneUnusedTags()
+}
+
+// GetAllTags returns all used tags
+func GetAllTags() []string {
+	var tags = []string{}
+	var name string
+
+	if err := sqlf.
+		Select(`DISTINCT Name`).
+		From("tags").To(&name).
+		OrderBy("Name").
+		QueryAndClose(nil, db, func(row *sql.Rows) {
+			tags = append(tags, name)
+		}); err != nil {
+		logger.Log().Error(err)
+	}
+
+	return tags
+}
+
+// GetAllTagsCount returns all used tags with their total messages
+func GetAllTagsCount() map[string]int64 {
+	var tags = make(map[string]int64)
+	var name string
+	var total int64
+
+	if err := sqlf.
+		Select(`Name`).To(&name).
+		Select(`COUNT(message_tags.TagID) as total`).To(&total).
+		From("tags").
+		LeftJoin("message_tags", "tags.ID = message_tags.TagID").
+		GroupBy("message_tags.TagID").
+		OrderBy("Name").
+		QueryAndClose(nil, db, func(row *sql.Rows) {
+			tags[name] = total
+			// tags = append(tags, name)
+		}); err != nil {
+		logger.Log().Error(err)
+	}
+
+	return tags
+}
+
+// PruneUnusedTags will delete all unused tags from the database
+func pruneUnusedTags() error {
+	q := sqlf.From("tags").
+		Select("tags.ID, tags.Name, COUNT(message_tags.ID) as COUNT").
+		LeftJoin("message_tags", "tags.ID = message_tags.TagID").
+		GroupBy("tags.ID")
+
+	toDel := []int{}
+
+	if err := q.QueryAndClose(nil, db, func(row *sql.Rows) {
+		var n string
+		var id int
+		var c int
+
+		if err := row.Scan(&id, &n, &c); err != nil {
+			logger.Log().Error("[tags]", err)
+			return
+		}
+
+		if c == 0 {
+			logger.Log().Debugf("[tags] deleting unused tag \"%s\"", n)
+			toDel = append(toDel, id)
+		}
+	}); err != nil {
+		return err
+	}
+
+	if len(toDel) > 0 {
+		for _, id := range toDel {
+			if _, err := sqlf.DeleteFrom("tags").
+				Where("ID = ?", id).
+				ExecAndClose(nil, db); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
 
 // Find tags set via --tags in raw message.
@@ -64,20 +240,18 @@ func findTagsInRawMessage(message *[]byte) string {
 // Used when parsing a raw email.
 func getMessageTags(id string) []string {
 	tags := []string{}
-	var data string
+	var name string
 
-	q := sqlf.From("mailbox").
-		Select(`Tags`).To(&data).
-		Where(`ID = ?`, id)
-
-	err := q.QueryRowAndClose(context.Background(), db)
-	if err != nil {
-		logger.Log().Error(err)
-		return tags
-	}
-
-	if err := json.Unmarshal([]byte(data), &tags); err != nil {
-		logger.Log().Error(err)
+	if err := sqlf.
+		Select(`Name`).To(&name).
+		From("Tags").
+		LeftJoin("message_tags", "Tags.ID=message_tags.TagID").
+		Where(`message_tags.ID = ?`, id).
+		OrderBy("Name").
+		QueryAndClose(nil, db, func(row *sql.Rows) {
+			tags = append(tags, name)
+		}); err != nil {
+		logger.Log().Errorf("[tags] %s", err.Error())
 		return tags
 	}
 
@@ -103,7 +277,7 @@ func uniqueTagsFromString(s string) []string {
 				tags = append(tags, w)
 			}
 		} else {
-			logger.Log().Debugf("[db] ignoring invalid tag: %s", w)
+			logger.Log().Debugf("[tags] ignoring invalid tag: %s", w)
 		}
 	}
 

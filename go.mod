@@ -7,7 +7,7 @@ require (
 	github.com/PuerkitoBio/goquery v1.8.1
 	github.com/axllent/semver v0.0.1
 	github.com/disintegration/imaging v1.6.2
-	github.com/gomarkdown/markdown v0.0.0-20231115200524-a660076da3fd
+	github.com/gomarkdown/markdown v0.0.0-20231222211730-1d6d20845b47
 	github.com/google/uuid v1.5.0
 	github.com/gorilla/mux v1.8.1
 	github.com/gorilla/websocket v1.5.1
@@ -19,7 +19,7 @@ require (
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/pflag v1.0.5
-	github.com/tg123/go-htpasswd v1.2.1
+	github.com/tg123/go-htpasswd v1.2.2
 	github.com/vanng822/go-premailer v1.20.2
 	golang.org/x/net v0.19.0
 	golang.org/x/text v0.14.0
@@ -51,7 +51,7 @@ require (
 	github.com/ssor/bom v0.0.0-20170718123548-6386211fdfcf // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/vanng822/css v1.0.1 // indirect
-	golang.org/x/crypto v0.16.0 // indirect
+	golang.org/x/crypto v0.17.0 // indirect
 	golang.org/x/image v0.14.0 // indirect
 	golang.org/x/mod v0.14.0 // indirect
 	golang.org/x/sys v0.15.0 // indirect
@@ -60,7 +60,7 @@ require (
 	lukechampine.com/uint128 v1.3.0 // indirect
 	modernc.org/cc/v3 v3.41.0 // indirect
 	modernc.org/ccgo/v3 v3.16.15 // indirect
-	modernc.org/libc v1.37.6 // indirect
+	modernc.org/libc v1.38.0 // indirect
 	modernc.org/mathutil v1.6.0 // indirect
 	modernc.org/memory v1.7.2 // indirect
 	modernc.org/opt v0.1.3 // indirect

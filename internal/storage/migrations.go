@@ -71,6 +71,23 @@ var (
 			Description: "Create snippet column",
 			Script:      `ALTER TABLE mailbox ADD COLUMN Snippet Text NOT NULL DEFAULT '';`,
 		},
+		{
+			Version:     1.4,
+			Description: "Create tag tables",
+			Script: `CREATE TABLE IF NOT EXISTS tags (
+				ID INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+				Name TEXT COLLATE NOCASE
+			);
+			CREATE UNIQUE INDEX IF NOT EXISTS idx_tag_name ON tags (Name);
+
+			CREATE TABLE IF NOT EXISTS message_tags(
+				Key INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+				ID TEXT REFERENCES mailbox(ID),
+				TagID INT REFERENCES tags(ID)
+			);
+			CREATE INDEX IF NOT EXISTS idx_message_tag_id ON message_tags (ID);
+			CREATE INDEX IF NOT EXISTS idx_message_tag_tagid ON message_tags (TagID);`,
+		},
 	}
 )
 

@@ -33,6 +33,9 @@ export default {
 		},
 
 		getFileSize: function (bytes) {
+			if (bytes == 0) {
+				return '0B'
+			}
 			var i = Math.floor(Math.log(bytes) / Math.log(1024))
 			return (bytes / Math.pow(1024, i)).toFixed(1) * 1 + ' ' + ['B', 'kB', 'MB', 'GB', 'TB'][i]
 		},
@@ -43,6 +46,10 @@ export default {
 
 		messageDate: function (d) {
 			return moment(d).format('ddd, D MMM YYYY, h:mm a')
+		},
+
+		secondsToRelative: function (d) {
+			return moment().subtract(d, 'seconds').fromNow()
 		},
 
 		tagEncodeURI: function (tag) {

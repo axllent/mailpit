@@ -17,6 +17,7 @@ import (
 	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/internal/auth"
 	"github.com/axllent/mailpit/internal/logger"
+	"github.com/axllent/mailpit/internal/stats"
 	"github.com/axllent/mailpit/internal/storage"
 	"github.com/axllent/mailpit/server/apiv1"
 	"github.com/axllent/mailpit/server/handlers"
@@ -34,10 +35,11 @@ var AccessControlAllowOrigin string
 func Listen() {
 	isReady := &atomic.Value{}
 	isReady.Store(false)
+	stats.Track()
 
 	serverRoot, err := fs.Sub(embeddedFS, "ui")
 	if err != nil {
-		logger.Log().Errorf("[http] %s", err)
+		logger.Log().Errorf("[http] %s", err.Error())
 		os.Exit(1)
 	}
 
@@ -108,8 +110,8 @@ func apiRoutes() *mux.Router {
 	r.HandleFunc(config.Webroot+"api/v1/messages", middleWareFunc(apiv1.GetMessages)).Methods("GET")
 	r.HandleFunc(config.Webroot+"api/v1/messages", middleWareFunc(apiv1.SetReadStatus)).Methods("PUT")
 	r.HandleFunc(config.Webroot+"api/v1/messages", middleWareFunc(apiv1.DeleteMessages)).Methods("DELETE")
-	r.HandleFunc(config.Webroot+"api/v1/tags", middleWareFunc(apiv1.GetTags)).Methods("GET")
-	r.HandleFunc(config.Webroot+"api/v1/tags", middleWareFunc(apiv1.SetTags)).Methods("PUT")
+	r.HandleFunc(config.Webroot+"api/v1/tags", middleWareFunc(apiv1.GetAllTags)).Methods("GET")
+	r.HandleFunc(config.Webroot+"api/v1/tags", middleWareFunc(apiv1.SetMessageTags)).Methods("PUT")
 	r.HandleFunc(config.Webroot+"api/v1/search", middleWareFunc(apiv1.Search)).Methods("GET")
 	r.HandleFunc(config.Webroot+"api/v1/search", middleWareFunc(apiv1.DeleteSearch)).Methods("DELETE")
 	r.HandleFunc(config.Webroot+"api/v1/message/{id}/part/{partID}", middleWareFunc(apiv1.DownloadAttachment)).Methods("GET")

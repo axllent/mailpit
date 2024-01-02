@@ -37,9 +37,7 @@ func ReindexAll() {
 
 	chunks := chunkBy(ids, chunkSize)
 
-	logger.Log().Infof("Reindexing %d messages", total)
-
-	// fmt.Println(len(ids), " = ", len(chunks), "chunks")
+	logger.Log().Infof("reindexing %d messages", total)
 
 	type updateStruct struct {
 		ID         string
@@ -102,79 +100,9 @@ func ReindexAll() {
 
 		finished += len(updates)
 
-		logger.Log().Printf("Reindexed: %d / %d (%d%%)", finished, total, finished*100/total)
+		logger.Log().Printf("reindexed: %d / %d (%d%%)", finished, total, finished*100/total)
 	}
 }
-
-// Reindex will regenerate the search text and snippet for a message
-// and update the database.
-func Reindex(id string) error {
-	// ids := []string{}
-	// var i string
-	// // chunkSize := 100
-
-	// err := sqlf.Select("ID").To(&i).From("mailbox_data").QueryAndClose(nil, db, func(row *sql.Rows) {
-	// 	ids = append(ids, id)
-	// })
-
-	// if err != nil {
-	// 	return err
-	// }
-
-	// chunks := chunkBy(ids, 100)
-
-	// fmt.Println(len(ids), " = ", len(chunks), "chunks")
-
-	// return nil
-
-	raw, err := GetMessageRaw(id)
-	if err != nil {
-		return err
-	}
-
-	r := bytes.NewReader(raw)
-
-	env, err := enmime.ReadEnvelope(r)
-	if err != nil {
-		return err
-	}
-
-	searchText := createSearchText(env)
-	snippet := tools.CreateSnippet(env.Text, env.HTML)
-
-	// return nil
-
-	// ctx := context.Background()
-	// tx, err := db.BeginTx(ctx, nil)
-	// if err != nil {
-	// 	return err
-	// }
-
-	// // roll back if it fails
-	// defer tx.Rollback()
-
-	// // insert mail summary data
-	// _, err = tx.Exec("UPDATE mailbox SET SearchText = ?, Snippet = ? WHERE ID = ?", searchText, snippet, id)
-	// if err != nil {
-	// 	return err
-	// }
-
-	// return tx.Commit()
-
-	_, err = sqlf.Update("mailbox").
-		Set("SearchText", searchText).
-		Set("Snippet", snippet).
-		Where("ID = ?", id).
-		ExecAndClose(context.Background(), db)
-
-	return err
-}
-
-// ctx := context.Background()
-// tx, err := db.BeginTx(ctx, nil)
-// if err != nil {
-// 	return "", err
-// }
 
 func chunkBy[T any](items []T, chunkSize int) (chunks [][]T) {
 	for chunkSize < len(items) {

@@ -14,7 +14,7 @@ import (
 
 // RedirectToLatestMessage (method: GET) redirects the web UI to the latest message
 func RedirectToLatestMessage(w http.ResponseWriter, r *http.Request) {
-	messages := []storage.MessageSummary{}
+	var messages []storage.MessageSummary
 	var err error
 
 	search := strings.TrimSpace(r.URL.Query().Get("query"))

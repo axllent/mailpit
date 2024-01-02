@@ -1,18 +1,33 @@
-# Mailpit - email testing for developers
+<h1 align="center">
+  Mailpit - email testing for developers
+</h1>
 
-![Tests](https://github.com/axllent/mailpit/actions/workflows/tests.yml/badge.svg)
-![Build status](https://github.com/axllent/mailpit/actions/workflows/release-build.yml/badge.svg)
-![Docker builds](https://github.com/axllent/mailpit/actions/workflows/build-docker.yml/badge.svg)
-![CodeQL](https://github.com/axllent/mailpit/actions/workflows/codeql-analysis.yml/badge.svg)
-[![Go Report Card](https://goreportcard.com/badge/github.com/axllent/mailpit)](https://goreportcard.com/report/github.com/axllent/mailpit)
+<div align="center">
+    <a href="https://github.com/axllent/mailpit/actions/workflows/tests.yml"><img src="https://github.com/axllent/mailpit/actions/workflows/tests.yml/badge.svg" alt="CI Tests status"></a>
+    <a href="https://github.com/axllent/mailpit/actions/workflows/release-build.yml"><img src="https://github.com/axllent/mailpit/actions/workflows/release-build.yml/badge.svg" alt="CI build status"></a>
+    <a href="https://github.com/axllent/mailpit/actions/workflows/build-docker.yml"><img src="https://github.com/axllent/mailpit/actions/workflows/build-docker.yml/badge.svg" alt="CI Docker build status"></a>
+    <a href="https://github.com/axllent/mailpit/actions/workflows/codeql-analysis.yml"><img src="https://github.com/axllent/mailpit/actions/workflows/codeql-analysis.yml/badge.svg" alt="Code quality"></a>
+    <a href="https://goreportcard.com/report/github.com/axllent/mailpit"><img src="https://goreportcard.com/badge/github.com/axllent/mailpit" alt="Go Report Card"></a>
+    <br>
+    <a href="https://github.com/axllent/mailpit/releases/latest"><img src="https://img.shields.io/github/v/release/axllent/mailpit.svg" alt="Latest release"></a>
+    <a href="https://hub.docker.com/r/axllent/mailpit"><img src="https://img.shields.io/docker/pulls/axllent/mailpit.svg" alt="Docker pulls"></a>
+</div>
+<br>
+<p align="center">
+  <a href="https://mailpit.axllent.org">Website</a>  •
+  <a href="https://mailpit.axllent.org/docs/">Documentation</a>  •
+  <a href="https://mailpit.axllent.org/docs/api-v1/">API</a>
+</p>
 
-Mailpit is a small, fast, low memory, zero-dependency, multi-platform email testing tool & API for developers.
+<hr>
 
-It acts as an SMTP server, provides a modern web interface to view & test captured emails, and contains an API for automated integration testing.
+**Mailpit** is a small, fast, low memory, zero-dependency, multi-platform email testing tool & API for developers.
 
-Mailpit was originally **inspired** by MailHog which is [no longer maintained](https://github.com/mailhog/MailHog/issues/442#issuecomment-1493415258) and hasn't seen active development for a few years now.
+It acts as an SMTP server, provides a modern web interface to view & test captured emails, and includes an API for automated integration testing.
 
-![Mailpit](https://raw.githubusercontent.com/axllent/mailpit/develop/docs/screenshot.png)
+Mailpit was originally **inspired** by MailHog which is [no longer maintained](https://github.com/mailhog/MailHog/issues/442#issuecomment-1493415258) and hasn't seen active development or security updates for a few years now.
+
+![Mailpit](https://raw.githubusercontent.com/axllent/mailpit/develop/server/ui-src/screenshot.png)
 
 
 ## Features
