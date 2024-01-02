@@ -124,9 +124,9 @@ func Close() {
 
 // Store will save an email to the database tables.
 // Returns the database ID of the saved message.
-func Store(body []byte) (string, error) {
+func Store(body *[]byte) (string, error) {
 	// Parse message body with enmime
-	env, err := enmime.ReadEnvelope(bytes.NewReader(body))
+	env, err := enmime.ReadEnvelope(bytes.NewReader(*body))
 	if err != nil {
 		logger.Log().Warningf("[db] %s", err.Error())
 		return "", nil
@@ -170,7 +170,7 @@ func Store(body []byte) (string, error) {
 	}
 
 	// extract tags from body matches based on --tag
-	tagStr := findTagsInRawMessage(&body)
+	tagStr := findTagsInRawMessage(body)
 
 	// extract tags from X-Tags header
 	headerTags := strings.TrimSpace(env.Root.Header.Get("X-Tags"))
@@ -192,7 +192,7 @@ func Store(body []byte) (string, error) {
 	defer tx.Rollback()
 
 	subject := env.GetHeader("Subject")
-	size := len(body)
+	size := len(*body)
 	inline := len(env.Inlines)
 	attachments := len(env.Attachments)
 	snippet := tools.CreateSnippet(env.Text, env.HTML)
@@ -205,7 +205,7 @@ func Store(body []byte) (string, error) {
 	}
 
 	// insert compressed raw message
-	compressed := dbEncoder.EncodeAll(body, make([]byte, 0, len(body)))
+	compressed := dbEncoder.EncodeAll(*body, make([]byte, 0, size))
 	_, err = tx.Exec("INSERT INTO mailbox_data(ID, Email) values(?,?)", id, string(compressed))
 	if err != nil {
 		return "", err

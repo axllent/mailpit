@@ -15,7 +15,7 @@ func TestTags(t *testing.T) {
 	ids := []string{}
 
 	for i := 0; i < 10; i++ {
-		id, err := Store(testMimeEmail)
+		id, err := Store(&testMimeEmail)
 		if err != nil {
 			t.Log("error ", err)
 			t.Fail()
@@ -48,7 +48,7 @@ func TestTags(t *testing.T) {
 	}
 
 	// test 20 tags
-	id, err := Store(testMimeEmail)
+	id, err := Store(&testMimeEmail)
 	if err != nil {
 		t.Log("error ", err)
 		t.Fail()

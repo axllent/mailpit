@@ -34,7 +34,9 @@ func TestSearch(t *testing.T) {
 			t.Fail()
 		}
 
-		if _, err := Store(buf.Bytes()); err != nil {
+		bufBytes := buf.Bytes()
+
+		if _, err := Store(&bufBytes); err != nil {
 			t.Log("error ", err)
 			t.Fail()
 		}
@@ -85,11 +87,11 @@ func TestSearchDelete100(t *testing.T) {
 
 	t.Log("Testing search delete of 100 messages")
 	for i := 0; i < 100; i++ {
-		if _, err := Store(testTextEmail); err != nil {
+		if _, err := Store(&testTextEmail); err != nil {
 			t.Log("error ", err)
 			t.Fail()
 		}
-		if _, err := Store(testMimeEmail); err != nil {
+		if _, err := Store(&testMimeEmail); err != nil {
 			t.Log("error ", err)
 			t.Fail()
 		}
@@ -123,7 +125,7 @@ func TestSearchDelete1100(t *testing.T) {
 
 	t.Log("Testing search delete of 1100 messages")
 	for i := 0; i < 1100; i++ {
-		if _, err := Store(testTextEmail); err != nil {
+		if _, err := Store(&testTextEmail); err != nil {
 			t.Log("error ", err)
 			t.Fail()
 		}
