@@ -50,15 +50,15 @@ type AppInformation struct {
 		Uptime int
 		// Current memory usage in bytes
 		Memory uint64
-		// Messages deleted
+		// Database runtime messages deleted
 		MessagesDeleted int
-		// SMTP accepted messages since run
+		// Accepted runtime SMTP messages
 		SMTPAccepted int
-		// Total size in bytes of accepted messages since run
+		// Total runtime accepted messages size in bytes
 		SMTPAcceptedSize int
-		// SMTP rejected messages since run
+		// Rejected runtime SMTP messages
 		SMTPRejected int
-		// SMTP ignored messages since run (duplicate IDs)
+		// Ignored runtime SMTP messages (when using --ignore-duplicate-ids)
 		SMTPIgnored int
 	}
 }
