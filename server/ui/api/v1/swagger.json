@@ -727,7 +727,7 @@
       "x-go-package": "net/mail"
     },
     "AppInformation": {
-      "description": "Response includes the current and latest Mailpit version, database info, and memory usage",
+      "description": "AppInformation struct",
       "type": "object",
       "properties": {
         "Database": {
@@ -743,12 +743,61 @@
           "description": "Latest Mailpit version",
           "type": "string"
         },
-        "Memory": {
-          "description": "Current memory usage in bytes",
-          "type": "integer",
-          "format": "uint64"
-        },
         "Messages": {
+          "description": "Total number of messages in the database",
+          "type": "integer",
+          "format": "int64"
+        },
+        "RuntimeStats": {
+          "description": "Runtime statistics",
+          "type": "object",
+          "properties": {
+            "Memory": {
+              "description": "Current memory usage in bytes",
+              "type": "integer",
+              "format": "uint64"
+            },
+            "MessagesDeleted": {
+              "description": "Messages deleted",
+              "type": "integer",
+              "format": "int64"
+            },
+            "SMTPErrors": {
+              "description": "SMTP errors since run",
+              "type": "integer",
+              "format": "int64"
+            },
+            "SMTPIgnored": {
+              "description": "SMTP messages ignored since run (duplicate IDs)",
+              "type": "integer",
+              "format": "int64"
+            },
+            "SMTPReceived": {
+              "description": "SMTP messages received via since run",
+              "type": "integer",
+              "format": "int64"
+            },
+            "SMTPReceivedSize": {
+              "description": "Total size in bytes of received messages since run",
+              "type": "integer",
+              "format": "int64"
+            },
+            "Uptime": {
+              "description": "Mailpit server uptime in seconds",
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        },
+        "Tags": {
+          "description": "Tags and message totals per tag",
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "format": "int64"
+          }
+        },
+        "Unread": {
           "description": "Total number of messages in the database",
           "type": "integer",
           "format": "int64"
@@ -758,8 +807,7 @@
           "type": "string"
         }
       },
-      "x-go-name": "appInformation",
-      "x-go-package": "github.com/axllent/mailpit/server/apiv1"
+      "x-go-package": "github.com/axllent/mailpit/internal/stats"
     },
     "Attachment": {
       "description": "Attachment struct for inline and attachments",

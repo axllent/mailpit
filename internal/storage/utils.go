@@ -7,6 +7,7 @@ import (
 	"os"
 	"regexp"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/axllent/mailpit/config"
@@ -15,6 +16,13 @@ import (
 	"github.com/axllent/mailpit/server/websockets"
 	"github.com/jhillyerd/enmime"
 	"github.com/leporo/sqlf"
+)
+
+var (
+	// for stats to prevent import cycle
+	mu sync.RWMutex
+	// StatsDeleted for counting the number of messages deleted
+	StatsDeleted int
 )
 
 // Return a header field as a []*mail.Address, or "null" is not found/empty
@@ -166,6 +174,13 @@ func dbCron() {
 			websockets.Broadcast("prune", nil)
 		}
 	}
+}
+
+// LogMessagesDeleted logs the number of messages deleted
+func logMessagesDeleted(n int) {
+	mu.Lock()
+	StatsDeleted = StatsDeleted + n
+	mu.Unlock()
 }
 
 // IsFile returns whether a path is a file

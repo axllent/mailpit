@@ -124,9 +124,9 @@ func Close() {
 
 // Store will save an email to the database tables.
 // Returns the database ID of the saved message.
-func Store(body []byte) (string, error) {
+func Store(body *[]byte) (string, error) {
 	// Parse message body with enmime
-	env, err := enmime.ReadEnvelope(bytes.NewReader(body))
+	env, err := enmime.ReadEnvelope(bytes.NewReader(*body))
 	if err != nil {
 		logger.Log().Warningf("[db] %s", err.Error())
 		return "", nil
@@ -170,7 +170,7 @@ func Store(body []byte) (string, error) {
 	}
 
 	// extract tags from body matches based on --tag
-	tagStr := findTagsInRawMessage(&body)
+	tagStr := findTagsInRawMessage(body)
 
 	// extract tags from X-Tags header
 	headerTags := strings.TrimSpace(env.Root.Header.Get("X-Tags"))
@@ -192,7 +192,7 @@ func Store(body []byte) (string, error) {
 	defer tx.Rollback()
 
 	subject := env.GetHeader("Subject")
-	size := len(body)
+	size := len(*body)
 	inline := len(env.Inlines)
 	attachments := len(env.Attachments)
 	snippet := tools.CreateSnippet(env.Text, env.HTML)
@@ -205,7 +205,7 @@ func Store(body []byte) (string, error) {
 	}
 
 	// insert compressed raw message
-	compressed := dbEncoder.EncodeAll(body, make([]byte, 0, len(body)))
+	compressed := dbEncoder.EncodeAll(*body, make([]byte, 0, size))
 	_, err = tx.Exec("INSERT INTO mailbox_data(ID, Email) values(?,?)", id, string(compressed))
 	if err != nil {
 		return "", err
@@ -628,6 +628,8 @@ func DeleteOneMessage(id string) error {
 	dbLastAction = time.Now()
 	dbDataDeleted = true
 
+	logMessagesDeleted(1)
+
 	BroadcastMailboxStats()
 
 	return err
@@ -684,6 +686,8 @@ func DeleteAllMessages() error {
 		logger.Log().Debugf("[db] deleted %d messages in %s", total, elapsed)
 	}
 
+	logMessagesDeleted(total)
+
 	dbLastAction = time.Now()
 	dbDataDeleted = false
 
@@ -691,24 +695,6 @@ func DeleteAllMessages() error {
 	BroadcastMailboxStats()
 
 	return err
-}
-
-// GetAllTags returns all used tags
-func GetAllTags() []string {
-	var tags = []string{}
-	var name string
-
-	if err := sqlf.
-		Select(`DISTINCT Name`).
-		From("tags").To(&name).
-		OrderBy("Name").
-		QueryAndClose(nil, db, func(row *sql.Rows) {
-			tags = append(tags, name)
-		}); err != nil {
-		logger.Log().Error(err)
-	}
-
-	return tags
 }
 
 // StatsGet returns the total/unread statistics for a mailbox

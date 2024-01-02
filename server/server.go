@@ -17,6 +17,7 @@ import (
 	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/internal/auth"
 	"github.com/axllent/mailpit/internal/logger"
+	"github.com/axllent/mailpit/internal/stats"
 	"github.com/axllent/mailpit/internal/storage"
 	"github.com/axllent/mailpit/server/apiv1"
 	"github.com/axllent/mailpit/server/handlers"
@@ -34,6 +35,7 @@ var AccessControlAllowOrigin string
 func Listen() {
 	isReady := &atomic.Value{}
 	isReady.Store(false)
+	stats.Track()
 
 	serverRoot, err := fs.Sub(embeddedFS, "ui")
 	if err != nil {

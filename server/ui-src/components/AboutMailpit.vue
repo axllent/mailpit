@@ -148,10 +148,11 @@ export default {
 
 	<template v-else>
 		<!-- Modals -->
-		<div class="modal fade" id="AppInfoModal" tabindex="-1" aria-labelledby="AppInfoModalLabel" aria-hidden="true">
+		<div class="modal modal-xl fade" id="AppInfoModal" tabindex="-1" aria-labelledby="AppInfoModalLabel"
+			aria-hidden="true">
 			<div class="modal-dialog">
-				<div class="modal-content">
-					<div class="modal-header" v-if="mailbox.appInfo">
+				<div class="modal-content" v-if="mailbox.appInfo.RuntimeStats">
+					<div class="modal-header">
 						<h5 class="modal-title" id="AppInfoModalLabel">
 							Mailpit
 							<code>({{ mailbox.appInfo.Version }})</code>
@@ -170,40 +171,107 @@ export default {
 						</a>
 
 						<div class="row g-3">
-							<div class="col-12">
-								<RouterLink to="/api/v1/" class="btn btn-primary w-100" target="_blank">
-									<i class="bi bi-braces"></i>
-									OpenAPI / Swagger API documentation
-								</RouterLink>
-							</div>
-							<div class="col-sm-6">
-								<a class="btn btn-primary w-100" href="https://github.com/axllent/mailpit" target="_blank">
-									<i class="bi bi-github"></i>
-									Github
-								</a>
-							</div>
-							<div class="col-sm-6">
-								<a class="btn btn-primary w-100" href="https://mailpit.axllent.org/docs/" target="_blank">
-									Documentation
-								</a>
-							</div>
-							<div class="col-6">
-								<div class="card border-secondary text-center">
-									<div class="card-header">Database size</div>
-									<div class="card-body text-secondary">
-										<h5 class="card-title">{{ getFileSize(mailbox.appInfo.DatabaseSize) }} </h5>
+							<div class="col-xl-6">
+								<div class="row g-3">
+									<div class="col-12">
+										<RouterLink to="/api/v1/" class="btn btn-primary w-100" target="_blank">
+											<i class="bi bi-braces"></i>
+											OpenAPI / Swagger API documentation
+										</RouterLink>
+									</div>
+									<div class="col-sm-6">
+										<a class="btn btn-primary w-100" href="https://github.com/axllent/mailpit"
+											target="_blank">
+											<i class="bi bi-github"></i>
+											Github
+										</a>
+									</div>
+									<div class="col-sm-6">
+										<a class="btn btn-primary w-100" href="https://mailpit.axllent.org/docs/"
+											target="_blank">
+											Documentation
+										</a>
+									</div>
+									<div class="col-6">
+										<div class="card border-secondary text-center">
+											<div class="card-header">Database size</div>
+											<div class="card-body text-secondary">
+												<h5 class="card-title">{{ getFileSize(mailbox.appInfo.DatabaseSize) }} </h5>
+											</div>
+										</div>
+									</div>
+									<div class="col-6">
+										<div class="card border-secondary text-center">
+											<div class="card-header">RAM usage</div>
+											<div class="card-body text-secondary">
+												<h5 class="card-title">{{ getFileSize(mailbox.appInfo.RuntimeStats.Memory)
+												}} </h5>
+											</div>
+										</div>
 									</div>
 								</div>
 							</div>
-							<div class="col-6">
-								<div class="card border-secondary text-center">
-									<div class="card-header">RAM usage</div>
-									<div class="card-body text-secondary">
-										<h5 class="card-title">{{ getFileSize(mailbox.appInfo.Memory) }} </h5>
+							<div class="col-xl-6">
+								<div class="card border-secondary">
+									<div class="card-header h4">
+										Runtime statistics
+										<button class="btn btn-sm btn-outline-secondary float-end" v-on:click="loadInfo">
+											Refresh
+										</button>
 									</div>
+									<div class="card-body text-secondary">
+										<table class="table table-sm table-borderless mb-0">
+											<tbody>
+												<tr>
+													<td>
+														Mailpit uptime
+													</td>
+													<td>
+														{{ secondsToRelative(mailbox.appInfo.RuntimeStats.Uptime) }}
+													</td>
+												</tr>
+												<tr>
+													<td>
+														Messages deleted
+													</td>
+													<td>
+														{{ formatNumber(mailbox.appInfo.RuntimeStats.MessagesDeleted) }}
+													</td>
+												</tr>
+												<tr>
+													<td>
+														SMTP messages received
+													</td>
+													<td>
+														{{ formatNumber(mailbox.appInfo.RuntimeStats.SMTPReceived) }}
+														({{ getFileSize(mailbox.appInfo.RuntimeStats.SMTPReceivedSize) }})
+													</td>
+												</tr>
+												<tr>
+													<td>
+														SMTP errors
+													</td>
+													<td>
+														{{ formatNumber(mailbox.appInfo.RuntimeStats.SMTPErrors) }}
+													</td>
+												</tr>
+												<tr>
+													<td>
+														SMTP messages ignored
+													</td>
+													<td>
+														{{ formatNumber(mailbox.appInfo.RuntimeStats.SMTPIgnored) }}
+													</td>
+												</tr>
+											</tbody>
+										</table>
+									</div>
+
 								</div>
+
 							</div>
 						</div>
+
 					</div>
 					<div class="modal-footer">
 						<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
