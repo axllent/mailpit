@@ -43,12 +43,12 @@ func Search(search string, start, limit int) ([]MessageSummary, int, error) {
 		em := MessageSummary{}
 
 		if err := row.Scan(&created, &id, &messageID, &subject, &metadata, &size, &attachments, &read, &snippet, &ignore, &ignore, &ignore, &ignore); err != nil {
-			logger.Log().Error(err)
+			logger.Log().Errorf("[db] %s", err.Error())
 			return
 		}
 
 		if err := json.Unmarshal([]byte(metadata), &em); err != nil {
-			logger.Log().Error(err)
+			logger.Log().Errorf("[db] %s", err.Error())
 			return
 		}
 
@@ -114,7 +114,7 @@ func DeleteSearch(search string) error {
 		var ignore string
 
 		if err := row.Scan(&created, &id, &messageID, &subject, &metadata, &size, &attachments, &read, &snippet, &ignore, &ignore, &ignore, &ignore); err != nil {
-			logger.Log().Error(err)
+			logger.Log().Errorf("[db] %s", err.Error())
 			return
 		}
 

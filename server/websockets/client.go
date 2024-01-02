@@ -132,7 +132,7 @@ func ServeWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
 
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		logger.Log().Error(err)
+		logger.Log().Errorf("[websocket] %s", err.Error())
 		return
 	}
 

@@ -25,14 +25,12 @@ func runCSSTests(html string) ([]Warning, int, error) {
 
 	inlined, err := inlineRemoteCSS(html)
 	if err != nil {
-		// logger.Log().Warn(err)
 		inlined = html
 	}
 
 	// merge all CSS inline
 	merged, err := mergeInlineCSS(inlined)
 	if err != nil {
-		// logger.Log().Warn(err)
 		merged = inlined
 	}
 
@@ -157,7 +155,7 @@ func inlineRemoteCSS(h string) (string, error) {
 
 				resp, err := downloadToBytes(a.Val)
 				if err != nil {
-					logger.Log().Warningf("html check failed to download %s", a.Val)
+					logger.Log().Warnf("[html-check] failed to download %s", a.Val)
 					continue
 				}
 
@@ -179,7 +177,7 @@ func inlineRemoteCSS(h string) (string, error) {
 
 	newDoc, err := doc.Html()
 	if err != nil {
-		logger.Log().Warning(err)
+		logger.Log().Warnf("[html-check] failed to download %s", err.Error())
 		return h, err
 	}
 

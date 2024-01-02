@@ -149,7 +149,7 @@ func GetAllTags() []string {
 		QueryAndClose(nil, db, func(row *sql.Rows) {
 			tags = append(tags, name)
 		}); err != nil {
-		logger.Log().Error(err)
+		logger.Log().Errorf("[db] %s", err.Error())
 	}
 
 	return tags
@@ -172,7 +172,7 @@ func GetAllTagsCount() map[string]int64 {
 			tags[name] = total
 			// tags = append(tags, name)
 		}); err != nil {
-		logger.Log().Error(err)
+		logger.Log().Errorf("[db] %s", err.Error())
 	}
 
 	return tags
@@ -193,7 +193,7 @@ func pruneUnusedTags() error {
 		var c int
 
 		if err := row.Scan(&id, &n, &c); err != nil {
-			logger.Log().Error("[tags]", err)
+			logger.Log().Errorf("[tags] %s", err.Error())
 			return
 		}
 

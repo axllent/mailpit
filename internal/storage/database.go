@@ -110,7 +110,7 @@ func InitDB() error {
 func Close() {
 	if db != nil {
 		if err := db.Close(); err != nil {
-			logger.Log().Warning("[db] error closing database, ignoring")
+			logger.Log().Warn("[db] error closing database, ignoring")
 		}
 	}
 
@@ -128,7 +128,7 @@ func Store(body *[]byte) (string, error) {
 	// Parse message body with enmime
 	env, err := enmime.ReadEnvelope(bytes.NewReader(*body))
 	if err != nil {
-		logger.Log().Warningf("[db] %s", err.Error())
+		logger.Log().Warnf("[message] %s", err.Error())
 		return "", nil
 	}
 
@@ -271,12 +271,12 @@ func List(start, limit int) ([]MessageSummary, error) {
 		em := MessageSummary{}
 
 		if err := row.Scan(&created, &id, &messageID, &subject, &metadata, &size, &attachments, &read, &snippet); err != nil {
-			logger.Log().Error(err)
+			logger.Log().Errorf("[db] %s", err.Error())
 			return
 		}
 
 		if err := json.Unmarshal([]byte(metadata), &em); err != nil {
-			logger.Log().Error(err)
+			logger.Log().Errorf("[json] %s", err.Error())
 			return
 		}
 
@@ -349,7 +349,7 @@ func GetMessage(id string) (*Message, error) {
 			var created int64
 
 			if err := row.Scan(&created); err != nil {
-				logger.Log().Error(err)
+				logger.Log().Errorf("[db] %s", err.Error())
 				return
 			}
 
@@ -357,7 +357,7 @@ func GetMessage(id string) (*Message, error) {
 
 			date = time.UnixMilli(created)
 		}); err != nil {
-			logger.Log().Error(err)
+			logger.Log().Errorf("[db] %s", err.Error())
 		}
 	}
 
