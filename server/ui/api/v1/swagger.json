@@ -762,23 +762,23 @@
               "type": "integer",
               "format": "int64"
             },
-            "SMTPErrors": {
-              "description": "SMTP errors since run",
+            "SMTPAccepted": {
+              "description": "SMTP accepted messages since run",
+              "type": "integer",
+              "format": "int64"
+            },
+            "SMTPAcceptedSize": {
+              "description": "Total size in bytes of accepted messages since run",
               "type": "integer",
               "format": "int64"
             },
             "SMTPIgnored": {
-              "description": "SMTP messages ignored since run (duplicate IDs)",
+              "description": "SMTP ignored messages since run (duplicate IDs)",
               "type": "integer",
               "format": "int64"
             },
-            "SMTPReceived": {
-              "description": "SMTP messages received via since run",
-              "type": "integer",
-              "format": "int64"
-            },
-            "SMTPReceivedSize": {
-              "description": "Total size in bytes of received messages since run",
+            "SMTPRejected": {
+              "description": "SMTP rejected messages since run",
               "type": "integer",
               "format": "int64"
             },

@@ -93,6 +93,12 @@ var (
 	// @see https://github.com/axllent/mailpit/issues/87 & https://github.com/axllent/mailpit/issues/153
 	SMTPStrictRFCHeaders bool
 
+	// SMTPAllowedRecipients if set, will only accept recipients matching this regular expression
+	SMTPAllowedRecipients string
+
+	// SMTPAllowedRecipientsRegexp is the compiled version of SMTPAllowedRecipients
+	SMTPAllowedRecipientsRegexp *regexp.Regexp
+
 	// ReleaseEnabled is whether message releases are enabled, requires a valid SMTPRelayConfigFile
 	ReleaseEnabled = false
 
@@ -262,6 +268,16 @@ func VerifyConfig() error {
 		}
 	}
 
+	if SMTPAllowedRecipients != "" {
+		restrictRegexp, err := regexp.Compile(SMTPAllowedRecipients)
+		if err != nil {
+			return fmt.Errorf("Failed to compile smtp-allowed-recipients regexp: %s", err.Error())
+		}
+
+		SMTPAllowedRecipientsRegexp = restrictRegexp
+		logger.Log().Infof("[smtp] only allowing recipients matching the following regexp: %s", SMTPAllowedRecipients)
+	}
+
 	if err := parseRelayConfig(SMTPRelayConfigFile); err != nil {
 		return err
 	}
@@ -335,11 +351,11 @@ func parseRelayConfig(c string) error {
 
 	if SMTPRelayConfig.RecipientAllowlist != "" {
 		if err != nil {
-			return fmt.Errorf("failed to compile recipient allowlist regexp: %e", err)
+			return fmt.Errorf("Failed to compile relay recipient allowlist regexp: %s", err.Error())
 		}
 
 		SMTPRelayConfig.RecipientAllowlistRegexp = allowlistRegexp
-		logger.Log().Infof("[smtp] recipient allowlist is active with the following regexp: %s", SMTPRelayConfig.RecipientAllowlist)
+		logger.Log().Infof("[smtp] relay recipient allowlist is active with the following regexp: %s", SMTPRelayConfig.RecipientAllowlist)
 
 	}
 

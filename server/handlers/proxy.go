@@ -95,7 +95,7 @@ func ProxyHandler(w http.ResponseWriter, r *http.Request) {
 
 			address, err := absoluteURL(parts[3], uri)
 			if err != nil {
-				logger.Log().Error(err)
+				logger.Log().Errorf("[proxy] %s", err.Error())
 				return []byte(parts[3])
 			}
 
