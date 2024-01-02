@@ -290,7 +290,7 @@ func index(w http.ResponseWriter, _ *http.Request) {
 </head>
 
 <body class="h-100">
-	<div class="container-fluid h-100 d-flex flex-column" id="app" data-webroot="{{ .Webroot }}">
+	<div class="container-fluid h-100 d-flex flex-column" id="app" data-webroot="{{ .Webroot }}" data-version="{{ .Version }}">
 		<noscript>You require JavaScript to use this app.</noscript>
 	</div>
 
