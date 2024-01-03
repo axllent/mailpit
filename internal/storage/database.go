@@ -76,6 +76,12 @@ func InitDB() error {
 	// @see https://github.com/mattn/go-sqlite3#faq
 	db.SetMaxOpenConns(1)
 
+	// SQLite performance tuning (https://phiresky.github.io/blog/2020/sqlite-performance-tuning/)
+	_, err = db.Exec("PRAGMA journal_mode = WAL; PRAGMA synchronous = normal;")
+	if err != nil {
+		return err
+	}
+
 	// create tables if necessary & apply migrations
 	if err := dbApplyMigrations(); err != nil {
 		return err
