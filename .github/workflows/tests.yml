@@ -15,6 +15,7 @@ jobs:
     - uses: actions/setup-go@v5
       with:
         go-version: ${{ matrix.go-version }}
+        cache: false
     - uses: actions/checkout@v4
     - name: Run Go tests
       uses: actions/cache@v3
@@ -35,8 +36,10 @@ jobs:
       with:
         node-version: 18
         cache: 'npm'
-    - run: npm install
-    - run: npm run package
+    - if: startsWith(matrix.os, 'ubuntu') == true
+      run: npm install
+    - if: startsWith(matrix.os, 'ubuntu') == true
+      run: npm run package
 
     # validate the swagger file
     - name: Validate OpenAPI definition
