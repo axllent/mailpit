@@ -3,6 +3,7 @@ package storage
 import (
 	"time"
 
+	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/server/websockets"
 )
 
@@ -23,11 +24,13 @@ func BroadcastMailboxStats() {
 		time.Sleep(250 * time.Millisecond)
 		bcStatsDelay = false
 		b := struct {
-			Total  int
-			Unread int
+			Total   int
+			Unread  int
+			Version string
 		}{
-			Total:  CountTotal(),
-			Unread: CountUnread(),
+			Total:   CountTotal(),
+			Unread:  CountUnread(),
+			Version: config.Version,
 		}
 
 		websockets.Broadcast("stats", b)

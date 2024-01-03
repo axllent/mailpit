@@ -28,7 +28,7 @@ func mailHandler(origin net.Addr, from string, to []string, data []byte) error {
 	msg, err := mail.ReadMessage(bytes.NewReader(data))
 	if err != nil {
 		logger.Log().Errorf("[smtpd] error parsing message: %s", err.Error())
-		stats.LogSMTPError()
+		stats.LogSMTPRejected()
 		return err
 	}
 
@@ -121,11 +121,10 @@ func mailHandler(origin net.Addr, from string, to []string, data []byte) error {
 	_, err = storage.Store(&data)
 	if err != nil {
 		logger.Log().Errorf("[db] error storing message: %s", err.Error())
-		stats.LogSMTPError()
 		return err
 	}
 
-	stats.LogSMTPReceived(len(data))
+	stats.LogSMTPAccepted(len(data))
 
 	data = nil // avoid memory leaks
 
@@ -153,6 +152,22 @@ func authHandlerAny(remoteAddr net.Addr, mechanism string, username []byte, _ []
 	return true, nil
 }
 
+// HandlerRcpt used to optionally restrict recipients based on `--smtp-allowed-recipients`
+func handlerRcpt(remoteAddr net.Addr, from string, to string) bool {
+	if config.SMTPAllowedRecipientsRegexp == nil {
+		return true
+	}
+
+	result := config.SMTPAllowedRecipientsRegexp.MatchString(to)
+
+	if !result {
+		logger.Log().Warnf("[smtpd] rejected message to %s from %s (%s)", to, from, cleanIP(remoteAddr))
+		stats.LogSMTPRejected()
+	}
+
+	return result
+}
+
 // Listen starts the SMTPD server
 func Listen() error {
 	if config.SMTPAuthAllowInsecure {
@@ -178,6 +193,7 @@ func listenAndServe(addr string, handler smtpd.Handler, authHandler smtpd.AuthHa
 	srv := &smtpd.Server{
 		Addr:          addr,
 		Handler:       handler,
+		HandlerRcpt:   handlerRcpt,
 		Appname:       "Mailpit",
 		Hostname:      "",
 		AuthHandler:   nil,

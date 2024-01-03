@@ -758,27 +758,27 @@
               "format": "uint64"
             },
             "MessagesDeleted": {
-              "description": "Messages deleted",
+              "description": "Database runtime messages deleted",
               "type": "integer",
               "format": "int64"
             },
-            "SMTPErrors": {
-              "description": "SMTP errors since run",
+            "SMTPAccepted": {
+              "description": "Accepted runtime SMTP messages",
+              "type": "integer",
+              "format": "int64"
+            },
+            "SMTPAcceptedSize": {
+              "description": "Total runtime accepted messages size in bytes",
               "type": "integer",
               "format": "int64"
             },
             "SMTPIgnored": {
-              "description": "SMTP messages ignored since run (duplicate IDs)",
+              "description": "Ignored runtime SMTP messages (when using --ignore-duplicate-ids)",
               "type": "integer",
               "format": "int64"
             },
-            "SMTPReceived": {
-              "description": "SMTP messages received via since run",
-              "type": "integer",
-              "format": "int64"
-            },
-            "SMTPReceivedSize": {
-              "description": "Total size in bytes of received messages since run",
+            "SMTPRejected": {
+              "description": "Rejected runtime SMTP messages",
               "type": "integer",
               "format": "int64"
             },

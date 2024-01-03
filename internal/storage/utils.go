@@ -171,6 +171,8 @@ func dbCron() {
 			elapsed := time.Since(start)
 			logger.Log().Debugf("[db] auto-pruned %d messages in %s", len(ids), elapsed)
 
+			logMessagesDeleted(len(ids))
+
 			websockets.Broadcast("prune", nil)
 		}
 	}

@@ -9,12 +9,13 @@ jobs:
     strategy:
       matrix:
         go-version: [1.21.x]
-        os: [ubuntu-latest]
+        os: [ubuntu-latest, windows-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/setup-go@v5
       with:
         go-version: ${{ matrix.go-version }}
+        cache: false
     - uses: actions/checkout@v4
     - name: Run Go tests
       uses: actions/cache@v3
@@ -30,15 +31,19 @@ jobs:
     
     # build the assets
     - name: Build web UI
+      if: startsWith(matrix.os, 'ubuntu') == true
       uses: actions/setup-node@v4
       with:
         node-version: 18
         cache: 'npm'
-    - run: npm install
-    - run: npm run package
+    - if: startsWith(matrix.os, 'ubuntu') == true
+      run: npm install
+    - if: startsWith(matrix.os, 'ubuntu') == true
+      run: npm run package
 
     # validate the swagger file
     - name: Validate OpenAPI definition
+      if: startsWith(matrix.os, 'ubuntu') == true
       uses: char0n/swagger-editor-validate@v1
       with:
         definition-file: server/ui/api/v1/swagger.json

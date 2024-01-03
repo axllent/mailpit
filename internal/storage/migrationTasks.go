@@ -36,7 +36,7 @@ func migrateTagsToManyMany() {
 		tags := []string{}
 
 		if err := json.Unmarshal([]byte(jsonTags), &tags); err != nil {
-			logger.Log().Error(err)
+			logger.Log().Errorf("[json] %s", err.Error())
 			return
 		}
 

@@ -77,7 +77,7 @@ func Thumbnail(w http.ResponseWriter, r *http.Request) {
 	img, err := imaging.Decode(buf)
 	if err != nil {
 		// it's not an image, return default
-		logger.Log().Warning(err)
+		logger.Log().Warnf("[image] %s", err.Error())
 		blankImage(a, w)
 		return
 	}
@@ -99,7 +99,7 @@ func Thumbnail(w http.ResponseWriter, r *http.Request) {
 	dst = imaging.OverlayCenter(dst, dstImageFill, 1.0)
 
 	if err := jpeg.Encode(foo, dst, &jpeg.Options{Quality: 70}); err != nil {
-		logger.Log().Warning(err)
+		logger.Log().Warnf("[image] %s", err.Error())
 		blankImage(a, w)
 		return
 	}
@@ -120,7 +120,7 @@ func blankImage(a *enmime.Part, w http.ResponseWriter) {
 	dstImageFill := imaging.Fill(img, thumbWidth, thumbHeight, imaging.Center, imaging.Lanczos)
 
 	if err := jpeg.Encode(foo, dstImageFill, &jpeg.Options{Quality: 70}); err != nil {
-		logger.Log().Warning(err)
+		logger.Log().Warnf("[image] %s", err.Error())
 	}
 
 	fileName := a.FileName

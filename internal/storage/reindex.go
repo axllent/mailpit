@@ -29,7 +29,7 @@ func ReindexAll() {
 		})
 
 	if err != nil {
-		logger.Log().Error(err)
+		logger.Log().Errorf("[db] %s", err.Error())
 		os.Exit(1)
 	}
 
@@ -59,7 +59,7 @@ func ReindexAll() {
 
 			env, err := enmime.ReadEnvelope(r)
 			if err != nil {
-				logger.Log().Error(err)
+				logger.Log().Errorf("[message] %s", err.Error())
 				continue
 			}
 
@@ -77,7 +77,7 @@ func ReindexAll() {
 		ctx := context.Background()
 		tx, err := db.BeginTx(ctx, nil)
 		if err != nil {
-			logger.Log().Error(err)
+			logger.Log().Errorf("[db] %s", err.Error())
 			continue
 		}
 
@@ -88,13 +88,13 @@ func ReindexAll() {
 		for _, u := range updates {
 			_, err = tx.Exec("UPDATE mailbox SET SearchText = ?, Snippet = ? WHERE ID = ?", u.SearchText, u.Snippet, u.ID)
 			if err != nil {
-				logger.Log().Error(err)
+				logger.Log().Errorf("[db] %s", err.Error())
 				continue
 			}
 		}
 
 		if err := tx.Commit(); err != nil {
-			logger.Log().Error(err)
+			logger.Log().Errorf("[db] %s", err.Error())
 			continue
 		}
 

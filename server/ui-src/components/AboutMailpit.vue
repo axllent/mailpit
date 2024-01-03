@@ -240,19 +240,23 @@ export default {
 												</tr>
 												<tr>
 													<td>
-														SMTP messages received
+														SMTP messages accepted
 													</td>
 													<td>
-														{{ formatNumber(mailbox.appInfo.RuntimeStats.SMTPReceived) }}
-														({{ getFileSize(mailbox.appInfo.RuntimeStats.SMTPReceivedSize) }})
+														{{ formatNumber(mailbox.appInfo.RuntimeStats.SMTPAccepted) }}
+														<small class="text-secondary">
+															({{
+																getFileSize(mailbox.appInfo.RuntimeStats.SMTPAcceptedSize)
+															}})
+														</small>
 													</td>
 												</tr>
 												<tr>
 													<td>
-														SMTP errors
+														SMTP messages rejected
 													</td>
 													<td>
-														{{ formatNumber(mailbox.appInfo.RuntimeStats.SMTPErrors) }}
+														{{ formatNumber(mailbox.appInfo.RuntimeStats.SMTPRejected) }}
 													</td>
 												</tr>
 												<tr>

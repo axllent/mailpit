@@ -21,9 +21,9 @@ var (
 
 	mu sync.RWMutex
 
-	smtpReceived     int
-	smtpReceivedSize int
-	smtpErrors       int
+	smtpAccepted     int
+	smtpAcceptedSize int
+	smtpRejected     int
 	smtpIgnored      int
 )
 
@@ -50,15 +50,15 @@ type AppInformation struct {
 		Uptime int
 		// Current memory usage in bytes
 		Memory uint64
-		// Messages deleted
+		// Database runtime messages deleted
 		MessagesDeleted int
-		// SMTP messages received via since run
-		SMTPReceived int
-		// Total size in bytes of received messages since run
-		SMTPReceivedSize int
-		// SMTP errors since run
-		SMTPErrors int
-		// SMTP messages ignored since run (duplicate IDs)
+		// Accepted runtime SMTP messages
+		SMTPAccepted int
+		// Total runtime accepted messages size in bytes
+		SMTPAcceptedSize int
+		// Rejected runtime SMTP messages
+		SMTPRejected int
+		// Ignored runtime SMTP messages (when using --ignore-duplicate-ids)
 		SMTPIgnored int
 	}
 }
@@ -75,9 +75,9 @@ func Load() AppInformation {
 
 	info.RuntimeStats.Uptime = int(time.Since(startedAt).Seconds())
 	info.RuntimeStats.MessagesDeleted = storage.StatsDeleted
-	info.RuntimeStats.SMTPReceived = smtpReceived
-	info.RuntimeStats.SMTPReceivedSize = smtpReceivedSize
-	info.RuntimeStats.SMTPErrors = smtpErrors
+	info.RuntimeStats.SMTPAccepted = smtpAccepted
+	info.RuntimeStats.SMTPAcceptedSize = smtpAcceptedSize
+	info.RuntimeStats.SMTPRejected = smtpRejected
 	info.RuntimeStats.SMTPIgnored = smtpIgnored
 
 	if latestVersionCache != "" {
@@ -116,18 +116,18 @@ func Track() {
 	startedAt = time.Now()
 }
 
-// LogSMTPReceived logs a successfully SMTP transaction
-func LogSMTPReceived(size int) {
+// LogSMTPAccepted logs a successful SMTP transaction
+func LogSMTPAccepted(size int) {
 	mu.Lock()
-	smtpReceived = smtpReceived + 1
-	smtpReceivedSize = smtpReceivedSize + size
+	smtpAccepted = smtpAccepted + 1
+	smtpAcceptedSize = smtpAcceptedSize + size
 	mu.Unlock()
 }
 
-// LogSMTPError logs a failed SMTP transaction
-func LogSMTPError() {
+// LogSMTPRejected logs a rejected SMTP transaction
+func LogSMTPRejected() {
 	mu.Lock()
-	smtpErrors = smtpErrors + 1
+	smtpRejected = smtpRejected + 1
 	mu.Unlock()
 }
 

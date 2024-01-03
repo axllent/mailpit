@@ -79,7 +79,7 @@ func doHead(link string, followRedirects bool) (int, error) {
 
 	req, err := http.NewRequest("HEAD", link, nil)
 	if err != nil {
-		logger.Log().Error(err)
+		logger.Log().Errorf("[link-check] %s", err.Error())
 		return 0, err
 	}
 

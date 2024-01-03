@@ -15,10 +15,16 @@ export default {
 			reconnectRefresh: false,
 			socketURI: false,
 			pauseNotifications: false, // prevent spamming
+			version: false
 		}
 	},
 
 	mounted() {
+		let d = document.getElementById('app')
+		if (d) {
+			this.version = d.dataset.version
+		}
+
 		let proto = location.protocol == 'https:' ? 'wss' : 'ws'
 		this.socketURI = proto + "://" + document.location.host + this.resolve(`/api/events`)
 
@@ -35,10 +41,13 @@ export default {
 			let ws = new WebSocket(this.socketURI)
 			let self = this
 			ws.onmessage = function (e) {
-				let response = JSON.parse(e.data)
-				if (!response) {
+				let response
+				try {
+					response = JSON.parse(e.data)
+				} catch (e) {
 					return
 				}
+
 				// new messages
 				if (response.Type == "new" && response.Data) {
 					if (!mailbox.searching) {
@@ -79,6 +88,11 @@ export default {
 					// refresh mailbox stats
 					mailbox.total = response.Data.Total
 					mailbox.unread = response.Data.Unread
+
+					// detect version updated, refresh is needed
+					if (self.version != response.Data.Version) {
+						location.reload()
+					}
 				}
 			}
 
