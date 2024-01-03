@@ -157,7 +157,13 @@ func Run() {
 		}
 	}
 
-	err = smtp.SendMail(SMTPAddr, nil, FromAddr, addresses, body)
+	from, err := mail.ParseAddress(FromAddr)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "invalid from address")
+		os.Exit(11)
+	}
+
+	err = smtp.SendMail(SMTPAddr, nil, from.Address, addresses, body)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "error sending mail")
 		logger.Log().Fatal(err)
