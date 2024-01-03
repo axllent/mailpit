@@ -2,6 +2,30 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.12.1]
+
+### Chore
+- Significantly increase database performance using WAL (Write-Ahead-Log)
+- Standardize error logging & formatting
+
+### Feature
+- Add option to only allow SMTP recipients matching a regular expression (disable open-relay behaviour [#219](https://github.com/axllent/mailpit/issues/219))
+
+### Fix
+- Log total deleted messages when auto-pruning messages (--max)
+- Prevent rare error from websocket connection (unexpected non-whitespace character)
+- Log total deleted messages when deleting all messages from search
+
+### Libs
+- Update node modules
+
+### Tests
+- Run tests on Linux, Windows & Mac
+
+### UI
+- Automatically refresh connected browsers if Mailpit is upgraded (version change)
+
+
 ## [v1.12.0]
 
 ### Chore
