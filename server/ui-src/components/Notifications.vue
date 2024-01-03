@@ -41,10 +41,13 @@ export default {
 			let ws = new WebSocket(this.socketURI)
 			let self = this
 			ws.onmessage = function (e) {
-				let response = JSON.parse(e.data)
-				if (!response) {
+				let response
+				try {
+					response = JSON.parse(e.data)
+				} catch (e) {
 					return
 				}
+
 				// new messages
 				if (response.Type == "new" && response.Data) {
 					if (!mailbox.searching) {
@@ -88,7 +91,7 @@ export default {
 
 					// detect version updated, refresh is needed
 					if (self.version != response.Data.Version) {
-						location.reload();
+						location.reload()
 					}
 				}
 			}
