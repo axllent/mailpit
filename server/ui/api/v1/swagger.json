@@ -366,6 +366,43 @@
         }
       }
     },
+    "/api/v1/message/{ID}/sa-check": {
+      "get": {
+        "description": "Returns the SpamAssassin (if enabled) summary of the message.\n\nNOTE: This feature is currently in beta and is documented for reference only.\nPlease do not integrate with it (yet) as there may be changes.",
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "Other"
+        ],
+        "summary": "SpamAssassin check (beta)",
+        "operationId": "SpamAssassinCheck",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Message database ID or \"latest\"",
+            "name": "ID",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "SpamAssassinResponse",
+            "schema": {
+              "$ref": "#/definitions/SpamAssassinResponse"
+            }
+          },
+          "default": {
+            "$ref": "#/responses/ErrorResponse"
+          }
+        }
+      }
+    },
     "/api/v1/messages": {
       "get": {
         "description": "Returns messages from the mailbox ordered from newest to oldest.",
@@ -1299,6 +1336,54 @@
       },
       "x-go-package": "github.com/axllent/mailpit/server/apiv1"
     },
+    "Rule": {
+      "description": "Rule struct",
+      "type": "object",
+      "properties": {
+        "Description": {
+          "description": "SpamAssassin rule description",
+          "type": "string"
+        },
+        "Name": {
+          "description": "SpamAssassin rule name",
+          "type": "string"
+        },
+        "Score": {
+          "description": "Spam rule score",
+          "type": "number",
+          "format": "double"
+        }
+      },
+      "x-go-package": "github.com/axllent/mailpit/internal/spamassassin"
+    },
+    "SpamAssassinResponse": {
+      "description": "Result is a SpamAssassin result",
+      "type": "object",
+      "properties": {
+        "Error": {
+          "description": "If populated will return an error string",
+          "type": "string"
+        },
+        "IsSpam": {
+          "description": "Whether the message is spam or not",
+          "type": "boolean"
+        },
+        "Rules": {
+          "description": "Spam rules triggered",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Rule"
+          }
+        },
+        "Score": {
+          "description": "Total spam score based on triggered rules",
+          "type": "number",
+          "format": "double"
+        }
+      },
+      "x-go-name": "Result",
+      "x-go-package": "github.com/axllent/mailpit/internal/spamassassin"
+    },
     "WebUIConfiguration": {
       "description": "Response includes global web UI settings",
       "type": "object",
@@ -1328,6 +1413,10 @@
               "type": "string"
             }
           }
+        },
+        "SpamAssassin": {
+          "description": "Whether SpamAssassin is enabled",
+          "type": "boolean"
         }
       },
       "x-go-name": "webUIConfiguration",

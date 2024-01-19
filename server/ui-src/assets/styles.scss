@@ -319,6 +319,12 @@ body.blur {
 	}
 }
 
+.dropdown-menu.checks {
+	.dropdown-item {
+		min-width: 190px;
+	}
+}
+
 // bootstrap5-tags
 .tags-badge {
 	display: flex;

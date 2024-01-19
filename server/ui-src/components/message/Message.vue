@@ -1,9 +1,10 @@
 
 <script>
 import Attachments from './Attachments.vue'
-import HTMLCheck from './HTMLCheck.vue'
 import Headers from './Headers.vue'
+import HTMLCheck from './HTMLCheck.vue'
 import LinkCheck from './LinkCheck.vue'
+import SpamAssassin from './SpamAssassin.vue'
 import Prism from 'prismjs'
 import Tags from 'bootstrap5-tags'
 import commonMixins from '../../mixins/CommonMixins'
@@ -19,6 +20,7 @@ export default {
 		Headers,
 		HTMLCheck,
 		LinkCheck,
+		SpamAssassin,
 	},
 
 	mixins: [commonMixins],
@@ -34,6 +36,8 @@ export default {
 			htmlScore: false,
 			htmlScoreColor: false,
 			linkCheckErrors: false,
+			spamScore: false,
+			spamScoreColor: false,
 			showMobileButtons: false,
 			scaleHTMLPreview: 'display',
 			// keys names match bootstrap icon names 
@@ -386,13 +390,14 @@ export default {
 					<button class="nav-link dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
 						Checks
 					</button>
-					<ul class="dropdown-menu">
+					<ul class="dropdown-menu checks">
 						<li>
 							<button class="dropdown-item" id="nav-html-check-tab" data-bs-toggle="tab"
 								data-bs-target="#nav-html-check" type="button" role="tab" aria-controls="nav-html"
 								aria-selected="false" v-if="!mailbox.uiConfig.DisableHTMLCheck && message.HTML != ''">
 								HTML Check
-								<span class="badge rounded-pill p-1" :class="htmlScoreColor" v-if="htmlScore !== false">
+								<span class="badge rounded-pill p-1 float-end" :class="htmlScoreColor"
+									v-if="htmlScore !== false">
 									<small>{{ Math.floor(htmlScore) }}%</small>
 								</span>
 							</button>
@@ -402,9 +407,22 @@ export default {
 								data-bs-target="#nav-link-check" type="button" role="tab" aria-controls="nav-link-check"
 								aria-selected="false">
 								Link Check
-								<i class="bi bi-check-all text-success" v-if="linkCheckErrors === 0"></i>
-								<span class="badge rounded-pill bg-danger" v-else-if="linkCheckErrors > 0">
+								<span class="badge rounded-pill bg-success float-end" v-if="linkCheckErrors === 0">
+									<small>0</small>
+								</span>
+								<span class="badge rounded-pill bg-danger float-end" v-else-if="linkCheckErrors > 0">
 									<small>{{ formatNumber(linkCheckErrors) }}</small>
+								</span>
+							</button>
+						</li>
+						<li v-if="mailbox.uiConfig.SpamAssassin">
+							<button class="dropdown-item" id="nav-spam-check-tab" data-bs-toggle="tab"
+								data-bs-target="#nav-spam-check" type="button" role="tab" aria-controls="nav-html"
+								aria-selected="false">
+								Spam Analysis
+								<span class="badge rounded-pill float-end" :class="spamScoreColor"
+									v-if="spamScore !== false">
+									<small>{{ spamScore }}</small>
 								</span>
 							</button>
 						</li>
@@ -425,6 +443,14 @@ export default {
 					<i class="bi bi-check-all text-success" v-if="linkCheckErrors === 0"></i>
 					<span class="badge rounded-pill bg-danger" v-else-if="linkCheckErrors > 0">
 						<small>{{ formatNumber(linkCheckErrors) }}</small>
+					</span>
+				</button>
+				<button class="d-none d-xl-inline-block nav-link position-relative" id="nav-spam-check-tab"
+					data-bs-toggle="tab" data-bs-target="#nav-spam-check" type="button" role="tab" aria-controls="nav-html"
+					aria-selected="false" v-if="mailbox.uiConfig.SpamAssassin">
+					Spam Analysis
+					<span class="badge rounded-pill" :class="spamScoreColor" v-if="spamScore !== false">
+						<small>{{ spamScore }}</small>
 					</span>
 				</button>
 
@@ -471,6 +497,11 @@ export default {
 				tabindex="0">
 				<HTMLCheck v-if="!mailbox.uiConfig.DisableHTMLCheck && message.HTML != ''" :message="message"
 					@setHtmlScore="(n) => htmlScore = n" @set-badge-style="(v) => htmlScoreColor = v" />
+			</div>
+			<div class="tab-pane fade" id="nav-spam-check" role="tabpanel" aria-labelledby="nav-spam-check-tab"
+				tabindex="0">
+				<SpamAssassin v-if="mailbox.uiConfig.SpamAssassin" :message="message" @setSpamScore="(n) => spamScore = n"
+					@set-badge-style="(v) => spamScoreColor = v" />
 			</div>
 			<div class="tab-pane fade" id="nav-link-check" role="tabpanel" aria-labelledby="nav-html-check-tab"
 				tabindex="0">

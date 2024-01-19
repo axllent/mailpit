@@ -91,6 +91,7 @@ func init() {
 	rootCmd.Flags().BoolVar(&config.IgnoreDuplicateIDs, "ignore-duplicate-ids", config.IgnoreDuplicateIDs, "Ignore duplicate messages (by Message-Id)")
 	rootCmd.Flags().BoolVar(&config.DisableHTMLCheck, "disable-html-check", config.DisableHTMLCheck, "Disable the HTML check functionality (web UI & API)")
 	rootCmd.Flags().BoolVar(&config.BlockRemoteCSSAndFonts, "block-remote-css-and-fonts", config.BlockRemoteCSSAndFonts, "Block access to remote CSS & fonts")
+	rootCmd.Flags().StringVar(&config.EnableSpamAssassin, "enable-spamassassin", config.EnableSpamAssassin, "Enable integration with SpamAssassin")
 
 	rootCmd.Flags().StringVar(&config.UIAuthFile, "ui-auth-file", config.UIAuthFile, "A password file for web UI & API authentication")
 	rootCmd.Flags().StringVar(&config.UITLSCert, "ui-tls-cert", config.UITLSCert, "TLS certificate for web UI (HTTPS) - requires ui-tls-key")
@@ -207,6 +208,9 @@ func initConfigFromEnv() {
 	}
 	if getEnabledFromEnv("MP_BLOCK_REMOTE_CSS_AND_FONTS") {
 		config.BlockRemoteCSSAndFonts = true
+	}
+	if len(os.Getenv("MP_ENABLE_SPAMASSASSIN")) > 0 {
+		config.EnableSpamAssassin = os.Getenv("MP_ENABLE_SPAMASSASSIN")
 	}
 	if getEnabledFromEnv("MP_ALLOW_UNTRUSTED_TLS") {
 		config.AllowUntrustedTLS = true

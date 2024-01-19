@@ -3,6 +3,7 @@ package apiv1
 import (
 	"github.com/axllent/mailpit/internal/htmlcheck"
 	"github.com/axllent/mailpit/internal/linkcheck"
+	"github.com/axllent/mailpit/internal/spamassassin"
 	"github.com/axllent/mailpit/internal/storage"
 )
 
@@ -50,3 +51,6 @@ type HTMLCheckResponse = htmlcheck.Response
 
 // LinkCheckResponse summary
 type LinkCheckResponse = linkcheck.Response
+
+// SpamAssassinResponse summary
+type SpamAssassinResponse = spamassassin.Result
