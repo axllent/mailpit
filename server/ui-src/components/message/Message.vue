@@ -234,7 +234,7 @@ export default {
 							<th class="small">From</th>
 							<td class="privacy">
 								<span v-if="message.From">
-									<span v-if="message.From.Name">{{ message.From.Name + " " }}</span>
+									<span v-if="message.From.Name" class="text-spaces">{{ message.From.Name + " " }}</span>
 									<span v-if="message.From.Address" class="small">
 										&lt;<a :href="searchURI(message.From.Address)" class="text-body">
 											{{ message.From.Address }}
@@ -252,7 +252,7 @@ export default {
 								<span v-if="message.To && message.To.length" v-for="(t, i) in message.To">
 									<template v-if="i > 0">, </template>
 									<span>
-										{{ t.Name }}
+										<span class="text-spaces">{{ t.Name }}</span>
 										&lt;<a :href="searchURI(t.Address)" class="text-body">
 											{{ t.Address }}
 										</a>&gt;
@@ -266,7 +266,7 @@ export default {
 							<td class="privacy">
 								<span v-for="(t, i) in message.Cc">
 									<template v-if="i > 0">,</template>
-									{{ t.Name }}
+									<span class="text-spaces">{{ t.Name }}</span>
 									&lt;<a :href="searchURI(t.Address)" class="text-body">
 										{{ t.Address }}
 									</a>&gt;
@@ -278,7 +278,7 @@ export default {
 							<td class="privacy">
 								<span v-for="(t, i) in message.Bcc">
 									<template v-if="i > 0">,</template>
-									{{ t.Name }}
+									<span class="text-spaces">{{ t.Name }}</span>
 									&lt;<a :href="searchURI(t.Address)" class="text-body">
 										{{ t.Address }}
 									</a>&gt;
@@ -290,7 +290,7 @@ export default {
 							<td class="privacy text-body-secondary text-break">
 								<span v-for="(t, i) in message.ReplyTo">
 									<template v-if="i > 0">,</template>
-									{{ t.Name }}
+									<span class="text-spaces">{{ t.Name }}</span>
 									&lt;<a :href="searchURI(t.Address)" class="text-body-secondary">
 										{{ t.Address }}
 									</a>&gt;
@@ -309,7 +309,7 @@ export default {
 						<tr>
 							<th class="small">Subject</th>
 							<td>
-								<strong v-if="message.Subject != ''">{{ message.Subject }}</strong>
+								<strong v-if="message.Subject != ''" class="text-spaces">{{ message.Subject }}</strong>
 								<small class="text-body-secondary" v-else>[ no subject ]</small>
 							</td>
 						</tr>

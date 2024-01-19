@@ -124,6 +124,14 @@
 	}
 }
 
+.text-spaces-nowrap {
+	white-space: pre;
+}
+
+.text-spaces {
+	white-space: pre-wrap;
+}
+
 #nav-plain-text .text-view,
 #nav-source {
 	white-space: pre;
