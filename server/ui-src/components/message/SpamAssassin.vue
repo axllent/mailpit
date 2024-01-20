@@ -2,8 +2,6 @@
 import Donut from 'vue-css-donut-chart/src/components/Donut.vue'
 import axios from 'axios'
 import commonMixins from '../../mixins/CommonMixins'
-import { Tooltip } from 'bootstrap'
-import { mailbox } from '../../stores/mailbox'
 
 export default {
 	props: {
