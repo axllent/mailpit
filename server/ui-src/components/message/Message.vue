@@ -7,6 +7,7 @@ import LinkCheck from './LinkCheck.vue'
 import SpamAssassin from './SpamAssassin.vue'
 import Prism from 'prismjs'
 import Tags from 'bootstrap5-tags'
+import { Tooltip } from 'bootstrap'
 import commonMixins from '../../mixins/CommonMixins'
 import { mailbox } from '../../stores/mailbox'
 
@@ -39,6 +40,7 @@ export default {
 			spamScore: false,
 			spamScoreColor: false,
 			showMobileButtons: false,
+			showUnsubscribe: false,
 			scaleHTMLPreview: 'display',
 			// keys names match bootstrap icon names 
 			responsiveSizes: {
@@ -120,6 +122,9 @@ export default {
 					self.isHTMLTabSelected()
 				})
 			})
+
+			const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+			[...tooltipTriggerList].map(tooltipTriggerEl => new Tooltip(tooltipTriggerEl))
 
 			// delay 0.2s until vue has rendered the iframe content
 			window.setTimeout(function () {
@@ -244,12 +249,20 @@ export default {
 								<span v-else>
 									[ Unknown ]
 								</span>
+
+								<span v-if="message.ListUnsubscribe.Header != ''" class="small ms-3 link"
+									:title="showUnsubscribe ? 'Hide unsubscribe information' : 'Show unsubscribe information'"
+									@click="showUnsubscribe = !showUnsubscribe">
+									Unsubscribe
+									<i class="bi bi bi-info-circle"
+										:class="{ 'text-danger': message.ListUnsubscribe.Errors != '' }"></i>
+								</span>
 							</td>
 						</tr>
 						<tr class="small">
 							<th>To</th>
 							<td class="privacy">
-								<span v-if="message.To && message.To.length" v-for="(t, i) in message.To">
+								<span v-if="message.To && message.To.length" v-for="(   t, i   ) in    message.To   ">
 									<template v-if="i > 0">, </template>
 									<span>
 										<span class="text-spaces">{{ t.Name }}</span>
@@ -264,7 +277,7 @@ export default {
 						<tr v-if="message.Cc && message.Cc.length" class="small">
 							<th>Cc</th>
 							<td class="privacy">
-								<span v-for="(t, i) in message.Cc">
+								<span v-for="(   t, i   ) in    message.Cc   ">
 									<template v-if="i > 0">,</template>
 									<span class="text-spaces">{{ t.Name }}</span>
 									&lt;<a :href="searchURI(t.Address)" class="text-body">
@@ -276,7 +289,7 @@ export default {
 						<tr v-if="message.Bcc && message.Bcc.length" class="small">
 							<th>Bcc</th>
 							<td class="privacy">
-								<span v-for="(t, i) in message.Bcc">
+								<span v-for="(   t, i   ) in    message.Bcc   ">
 									<template v-if="i > 0">,</template>
 									<span class="text-spaces">{{ t.Name }}</span>
 									&lt;<a :href="searchURI(t.Address)" class="text-body">
@@ -288,7 +301,7 @@ export default {
 						<tr v-if="message.ReplyTo && message.ReplyTo.length" class="small">
 							<th class="text-nowrap">Reply-To</th>
 							<td class="privacy text-body-secondary text-break">
-								<span v-for="(t, i) in message.ReplyTo">
+								<span v-for="(   t, i   ) in    message.ReplyTo   ">
 									<template v-if="i > 0">,</template>
 									<span class="text-spaces">{{ t.Name }}</span>
 									&lt;<a :href="searchURI(t.Address)" class="text-body-secondary">
@@ -328,9 +341,32 @@ export default {
 									data-separator="|,|">
 									<option value="">Type a tag...</option>
 									<!-- you need at least one option with the placeholder -->
-									<option v-for="t in mailbox.tags" :value="t">{{ t }}</option>
+									<option v-for="   t    in    mailbox.tags   " :value="t">{{ t }}</option>
 								</select>
 								<div class="invalid-feedback">Invalid tag name</div>
+							</td>
+						</tr>
+
+						<tr v-if="message.ListUnsubscribe.Header != ''" class="small"
+							:class="showUnsubscribe ? '' : 'd-none'">
+							<th>Unsubscribe</th>
+							<td>
+								<span v-if="message.ListUnsubscribe.Links.length" class="text-secondary small me-2">
+									<template v-for="(u, i) in message.ListUnsubscribe.Links">
+										<template v-if="i > 0">, </template>
+										&lt;{{ u }}&gt;
+									</template>
+								</span>
+								<i class="bi bi-info-circle text-success me-2 link"
+									v-if="message.ListUnsubscribe.HeaderPost != ''" data-bs-toggle="tooltip"
+									data-bs-placement="top" data-bs-custom-class="custom-tooltip"
+									:data-bs-title="'List-Unsubscribe-Post: ' + message.ListUnsubscribe.HeaderPost">
+								</i>
+								<i class="bi bi-exclamation-circle text-danger link"
+									v-if="message.ListUnsubscribe.Errors != ''" data-bs-toggle="tooltip"
+									data-bs-placement="top" data-bs-custom-class="custom-tooltip"
+									:data-bs-title="message.ListUnsubscribe.Errors">
+								</i>
 							</td>
 						</tr>
 					</tbody>
@@ -455,7 +491,7 @@ export default {
 				</button>
 
 				<div class="d-none d-lg-block ms-auto me-3" v-if="showMobileButtons">
-					<template v-for="vals, key in responsiveSizes">
+					<template v-for="   vals, key    in    responsiveSizes   ">
 						<button class="btn" :disabled="scaleHTMLPreview == key" :title="'Switch to ' + key + ' view'"
 							v-on:click="scaleHTMLPreview = key">
 							<i class="bi" :class="'bi-' + key"></i>

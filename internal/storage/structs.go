@@ -29,6 +29,9 @@ type Message struct {
 	ReturnPath string
 	// Message subject
 	Subject string
+	// List-Unsubscribe header information
+	// swagger:ignore
+	ListUnsubscribe ListUnsubscribe
 	// Message date if set, else date received
 	Date time.Time
 	// Message tags
@@ -121,4 +124,17 @@ func AttachmentSummary(a *enmime.Part) Attachment {
 	o.Size = len(a.Content)
 
 	return o
+}
+
+// ListUnsubscribe contains a summary of List-Unsubscribe & List-Unsubscribe-Post headers
+// including validation of the link structure
+type ListUnsubscribe struct {
+	// List-Unsubscribe header value
+	Header string
+	// Detected links, maximum one email and one HTTP(S)
+	Links []string
+	// Validation errors if any
+	Errors string
+	// List-Unsubscribe-Post value if set
+	HeaderPost string
 }
