@@ -64,6 +64,11 @@
 	}
 }
 
+.link {
+	@extend a;
+	cursor: pointer;
+}
+
 .loader {
 	position: fixed;
 	top: 0;
@@ -154,6 +159,7 @@
 		padding-right: 1.5rem;
 		font-weight: normal;
 		vertical-align: top;
+		min-width: 120px;
 	}
 
 	td {
