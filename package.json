@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "build": "node esbuild.config.mjs",
+    "build": "MINIFY=true node esbuild.config.mjs",
     "watch": "WATCH=true node esbuild.config.mjs",
     "package": "MINIFY=true node esbuild.config.mjs",
     "update-caniemail": "wget -O utils/html-check/caniemail-data.json https://www.caniemail.com/api/data.json"

@@ -18,6 +18,11 @@ import (
 	"github.com/mhale/smtpd"
 )
 
+var (
+	// DisableReverseDNS allows rDNS to be disabled
+	DisableReverseDNS bool
+)
+
 func mailHandler(origin net.Addr, from string, to []string, data []byte) error {
 	if !config.SMTPStrictRFCHeaders {
 		// replace all <CR><CR><LF> (\r\r\n) with <CR><LF> (\r\n)
@@ -191,14 +196,15 @@ func Listen() error {
 
 func listenAndServe(addr string, handler smtpd.Handler, authHandler smtpd.AuthHandler) error {
 	srv := &smtpd.Server{
-		Addr:          addr,
-		Handler:       handler,
-		HandlerRcpt:   handlerRcpt,
-		Appname:       "Mailpit",
-		Hostname:      "",
-		AuthHandler:   nil,
-		AuthRequired:  false,
-		MaxRecipients: config.SMTPMaxRecipients,
+		Addr:              addr,
+		Handler:           handler,
+		HandlerRcpt:       handlerRcpt,
+		Appname:           "Mailpit",
+		Hostname:          "",
+		AuthHandler:       nil,
+		AuthRequired:      false,
+		MaxRecipients:     config.SMTPMaxRecipients,
+		DisableReverseDNS: DisableReverseDNS,
 	}
 
 	if config.SMTPAuthAllowInsecure {
