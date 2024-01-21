@@ -122,13 +122,13 @@ export default {
 						{{ getRelativeCreated(message) }}
 					</div>
 					<div class="text-truncate d-lg-none privacy">
-						<span v-if="message.From" :title="message.From.Address">{{
+						<span v-if="message.From" :title="'From: ' + message.From.Address">{{
 							message.From.Name ?
 							message.From.Name : message.From.Address
 						}}</span>
 					</div>
 					<div class="text-truncate d-none d-lg-block privacy">
-						<b v-if="message.From" :title="message.From.Address">{{
+						<b v-if="message.From" :title="'From: ' + message.From.Address">{{
 							message.From.Name ?
 							message.From.Name : message.From.Address
 						}}</b>
@@ -141,7 +141,7 @@ export default {
 					</div>
 				</div>
 				<div class="col-lg-6 col-xxl-7 mt-2 mt-lg-0">
-					<div class="subject text-truncate">
+					<div class="subject text-truncate text-spaces-nowrap">
 						<b>{{ message.Subject != "" ? message.Subject : "[ no subject ]" }}</b>
 					</div>
 					<div v-if="message.Snippet != ''" class="small text-muted text-truncate">

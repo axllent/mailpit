@@ -2,6 +2,23 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.13.0]
+
+### Chore
+- Compress compiled assets with `npm run build`
+- Update Go modules
+- Update node modules
+
+### Feature
+- Add option to disable SMTP reverse DNS (rDNS) lookup ([#230](https://github.com/axllent/mailpit/issues/230))
+- Display List-Unsubscribe & List-Unsubscribe-Post header info with syntax validation ([#236](https://github.com/axllent/mailpit/issues/236))
+- Add optional SpamAssassin integration to display scores ([#233](https://github.com/axllent/mailpit/issues/233))
+
+### Fix
+- Display multiple whitespace characters in message subject & recipient names ([#238](https://github.com/axllent/mailpit/issues/238))
+- Sendmail support for `-f 'Name <email[@example](https://github.com/example).com>'` format
+
+
 ## [v1.12.1]
 
 ### Chore

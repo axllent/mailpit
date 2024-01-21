@@ -69,3 +69,51 @@ func TestSnippets(t *testing.T) {
 		}
 	}
 }
+
+func TestListUnsubscribeParser(t *testing.T) {
+	tests := map[string]bool{}
+
+	// should pass
+	tests["<mailto:unsubscribe@example.com>"] = true
+	tests["<https://example.com>"] = true
+	tests["<HTTPS://EXAMPLE.COM>"] = true
+	tests["<mailto:unsubscribe@example.com>, <http://example.com>"] = true
+	tests["<mailto:unsubscribe@example.com>, <https://example.com>"] = true
+	tests["<https://example.com>, <mailto:unsubscribe@example.com>"] = true
+	tests["<https://example.com> , 		<mailto:unsubscribe@example.com>"] = true
+	tests["<https://example.com> ,<mailto:unsubscribe@example.com>"] = true
+	tests["<mailto:unsubscribe@example.com>,<https://example.com>"] = true
+	tests[`<https://example.com> ,
+		 <mailto:unsubscribe@example.com>`] = true
+	tests["<mailto:unsubscribe@example.com?subject=unsubscribe%20me>"] = true
+	tests["(Use this command to get off the list) <mailto:unsubscribe@example.com?subject=unsubscribe%20me>"] = true
+	tests["<mailto:unsubscribe@example.com> (Use this command to get off the list)"] = true
+	tests["(Use this command to get off the list) <mailto:unsubscribe@example.com>, (Click this link to unsubscribe) <http://example.com>"] = true
+
+	// should fail
+	tests["mailto:unsubscribe@example.com"] = false                                                // no <>
+	tests["<mailto::unsubscribe@example.com>"] = false                                             // ::
+	tests["https://example.com/"] = false                                                          // no <>
+	tests["mailto:unsubscribe@example.com, <https://example.com/>"] = false                        // no <>
+	tests["<MAILTO:unsubscribe@example.com>"] = false                                              // capitals
+	tests["<mailto:unsubscribe@example.com>, <mailto:test2@example.com>"] = false                  // two emails
+	tests["<http://exampl\\e2.com>, <http://example2.com>"] = false                                // two links
+	tests["<http://example.com>, <mailto:unsubscribe@example.com>, <http://example2.com>"] = false // two links
+	tests["<mailto:unsubscribe@example.com>, <example.com>"] = false                               // no mailto || http(s)
+	tests["<mailto: unsubscribe@example.com>, <unsubscribe@lol.com>"] = false                      // space
+	tests["<mailto:unsubscribe@example.com?subject=unsubscribe me>"] = false                       // space
+	tests["<http:///example.com>"] = false                                                         // http:///
+
+	for search, expected := range tests {
+		_, err := ListUnsubscribeParser(search)
+		hasError := err != nil
+		if expected == hasError {
+			if err != nil {
+				t.Logf("ListUnsubscribeParser: %v", err)
+			} else {
+				t.Logf("ListUnsubscribeParser: \"%s\" expected: %v", search, expected)
+			}
+			t.Fail()
+		}
+	}
+}

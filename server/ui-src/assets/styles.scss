@@ -64,6 +64,11 @@
 	}
 }
 
+.link {
+	@extend a;
+	cursor: pointer;
+}
+
 .loader {
 	position: fixed;
 	top: 0;
@@ -124,6 +129,14 @@
 	}
 }
 
+.text-spaces-nowrap {
+	white-space: pre;
+}
+
+.text-spaces {
+	white-space: pre-wrap;
+}
+
 #nav-plain-text .text-view,
 #nav-source {
 	white-space: pre;
@@ -146,6 +159,7 @@
 		padding-right: 1.5rem;
 		font-weight: normal;
 		vertical-align: top;
+		min-width: 120px;
 	}
 
 	td {
@@ -316,6 +330,12 @@ body.blur {
 
 	div {
 		cursor: text; // html5-tags
+	}
+}
+
+.dropdown-menu.checks {
+	.dropdown-item {
+		min-width: 190px;
 	}
 }
 

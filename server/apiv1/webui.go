@@ -26,6 +26,9 @@ type webUIConfiguration struct {
 
 	// Whether the HTML check has been globally disabled
 	DisableHTMLCheck bool
+
+	// Whether SpamAssassin is enabled
+	SpamAssassin bool
 }
 
 // WebUIConfig returns configuration settings for the web UI.
@@ -55,6 +58,7 @@ func WebUIConfig(w http.ResponseWriter, _ *http.Request) {
 	}
 
 	conf.DisableHTMLCheck = config.DisableHTMLCheck
+	conf.SpamAssassin = config.EnableSpamAssassin != ""
 
 	bytes, _ := json.Marshal(conf)
 

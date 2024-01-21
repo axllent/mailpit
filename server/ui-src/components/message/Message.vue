@@ -1,11 +1,13 @@
 
 <script>
 import Attachments from './Attachments.vue'
-import HTMLCheck from './HTMLCheck.vue'
 import Headers from './Headers.vue'
+import HTMLCheck from './HTMLCheck.vue'
 import LinkCheck from './LinkCheck.vue'
+import SpamAssassin from './SpamAssassin.vue'
 import Prism from 'prismjs'
 import Tags from 'bootstrap5-tags'
+import { Tooltip } from 'bootstrap'
 import commonMixins from '../../mixins/CommonMixins'
 import { mailbox } from '../../stores/mailbox'
 
@@ -19,6 +21,7 @@ export default {
 		Headers,
 		HTMLCheck,
 		LinkCheck,
+		SpamAssassin,
 	},
 
 	mixins: [commonMixins],
@@ -34,7 +37,10 @@ export default {
 			htmlScore: false,
 			htmlScoreColor: false,
 			linkCheckErrors: false,
+			spamScore: false,
+			spamScoreColor: false,
 			showMobileButtons: false,
+			showUnsubscribe: false,
 			scaleHTMLPreview: 'display',
 			// keys names match bootstrap icon names 
 			responsiveSizes: {
@@ -116,6 +122,9 @@ export default {
 					self.isHTMLTabSelected()
 				})
 			})
+
+			const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+			[...tooltipTriggerList].map(tooltipTriggerEl => new Tooltip(tooltipTriggerEl))
 
 			// delay 0.2s until vue has rendered the iframe content
 			window.setTimeout(function () {
@@ -230,7 +239,7 @@ export default {
 							<th class="small">From</th>
 							<td class="privacy">
 								<span v-if="message.From">
-									<span v-if="message.From.Name">{{ message.From.Name + " " }}</span>
+									<span v-if="message.From.Name" class="text-spaces">{{ message.From.Name + " " }}</span>
 									<span v-if="message.From.Address" class="small">
 										&lt;<a :href="searchURI(message.From.Address)" class="text-body">
 											{{ message.From.Address }}
@@ -240,15 +249,23 @@ export default {
 								<span v-else>
 									[ Unknown ]
 								</span>
+
+								<span v-if="message.ListUnsubscribe.Header != ''" class="small ms-3 link"
+									:title="showUnsubscribe ? 'Hide unsubscribe information' : 'Show unsubscribe information'"
+									@click="showUnsubscribe = !showUnsubscribe">
+									Unsubscribe
+									<i class="bi bi bi-info-circle"
+										:class="{ 'text-danger': message.ListUnsubscribe.Errors != '' }"></i>
+								</span>
 							</td>
 						</tr>
 						<tr class="small">
 							<th>To</th>
 							<td class="privacy">
-								<span v-if="message.To && message.To.length" v-for="(t, i) in message.To">
+								<span v-if="message.To && message.To.length" v-for="(   t, i   ) in    message.To   ">
 									<template v-if="i > 0">, </template>
 									<span>
-										{{ t.Name }}
+										<span class="text-spaces">{{ t.Name }}</span>
 										&lt;<a :href="searchURI(t.Address)" class="text-body">
 											{{ t.Address }}
 										</a>&gt;
@@ -260,9 +277,9 @@ export default {
 						<tr v-if="message.Cc && message.Cc.length" class="small">
 							<th>Cc</th>
 							<td class="privacy">
-								<span v-for="(t, i) in message.Cc">
+								<span v-for="(   t, i   ) in    message.Cc   ">
 									<template v-if="i > 0">,</template>
-									{{ t.Name }}
+									<span class="text-spaces">{{ t.Name }}</span>
 									&lt;<a :href="searchURI(t.Address)" class="text-body">
 										{{ t.Address }}
 									</a>&gt;
@@ -272,9 +289,9 @@ export default {
 						<tr v-if="message.Bcc && message.Bcc.length" class="small">
 							<th>Bcc</th>
 							<td class="privacy">
-								<span v-for="(t, i) in message.Bcc">
+								<span v-for="(   t, i   ) in    message.Bcc   ">
 									<template v-if="i > 0">,</template>
-									{{ t.Name }}
+									<span class="text-spaces">{{ t.Name }}</span>
 									&lt;<a :href="searchURI(t.Address)" class="text-body">
 										{{ t.Address }}
 									</a>&gt;
@@ -284,9 +301,9 @@ export default {
 						<tr v-if="message.ReplyTo && message.ReplyTo.length" class="small">
 							<th class="text-nowrap">Reply-To</th>
 							<td class="privacy text-body-secondary text-break">
-								<span v-for="(t, i) in message.ReplyTo">
+								<span v-for="(   t, i   ) in    message.ReplyTo   ">
 									<template v-if="i > 0">,</template>
-									{{ t.Name }}
+									<span class="text-spaces">{{ t.Name }}</span>
 									&lt;<a :href="searchURI(t.Address)" class="text-body-secondary">
 										{{ t.Address }}
 									</a>&gt;
@@ -305,7 +322,7 @@ export default {
 						<tr>
 							<th class="small">Subject</th>
 							<td>
-								<strong v-if="message.Subject != ''">{{ message.Subject }}</strong>
+								<strong v-if="message.Subject != ''" class="text-spaces">{{ message.Subject }}</strong>
 								<small class="text-body-secondary" v-else>[ no subject ]</small>
 							</td>
 						</tr>
@@ -324,9 +341,32 @@ export default {
 									data-separator="|,|">
 									<option value="">Type a tag...</option>
 									<!-- you need at least one option with the placeholder -->
-									<option v-for="t in mailbox.tags" :value="t">{{ t }}</option>
+									<option v-for="   t    in    mailbox.tags   " :value="t">{{ t }}</option>
 								</select>
 								<div class="invalid-feedback">Invalid tag name</div>
+							</td>
+						</tr>
+
+						<tr v-if="message.ListUnsubscribe.Header != ''" class="small"
+							:class="showUnsubscribe ? '' : 'd-none'">
+							<th>Unsubscribe</th>
+							<td>
+								<span v-if="message.ListUnsubscribe.Links.length" class="text-secondary small me-2">
+									<template v-for="(u, i) in message.ListUnsubscribe.Links">
+										<template v-if="i > 0">, </template>
+										&lt;{{ u }}&gt;
+									</template>
+								</span>
+								<i class="bi bi-info-circle text-success me-2 link"
+									v-if="message.ListUnsubscribe.HeaderPost != ''" data-bs-toggle="tooltip"
+									data-bs-placement="top" data-bs-custom-class="custom-tooltip"
+									:data-bs-title="'List-Unsubscribe-Post: ' + message.ListUnsubscribe.HeaderPost">
+								</i>
+								<i class="bi bi-exclamation-circle text-danger link"
+									v-if="message.ListUnsubscribe.Errors != ''" data-bs-toggle="tooltip"
+									data-bs-placement="top" data-bs-custom-class="custom-tooltip"
+									:data-bs-title="message.ListUnsubscribe.Errors">
+								</i>
 							</td>
 						</tr>
 					</tbody>
@@ -386,13 +426,14 @@ export default {
 					<button class="nav-link dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
 						Checks
 					</button>
-					<ul class="dropdown-menu">
+					<ul class="dropdown-menu checks">
 						<li>
 							<button class="dropdown-item" id="nav-html-check-tab" data-bs-toggle="tab"
 								data-bs-target="#nav-html-check" type="button" role="tab" aria-controls="nav-html"
 								aria-selected="false" v-if="!mailbox.uiConfig.DisableHTMLCheck && message.HTML != ''">
 								HTML Check
-								<span class="badge rounded-pill p-1" :class="htmlScoreColor" v-if="htmlScore !== false">
+								<span class="badge rounded-pill p-1 float-end" :class="htmlScoreColor"
+									v-if="htmlScore !== false">
 									<small>{{ Math.floor(htmlScore) }}%</small>
 								</span>
 							</button>
@@ -402,9 +443,22 @@ export default {
 								data-bs-target="#nav-link-check" type="button" role="tab" aria-controls="nav-link-check"
 								aria-selected="false">
 								Link Check
-								<i class="bi bi-check-all text-success" v-if="linkCheckErrors === 0"></i>
-								<span class="badge rounded-pill bg-danger" v-else-if="linkCheckErrors > 0">
+								<span class="badge rounded-pill bg-success float-end" v-if="linkCheckErrors === 0">
+									<small>0</small>
+								</span>
+								<span class="badge rounded-pill bg-danger float-end" v-else-if="linkCheckErrors > 0">
 									<small>{{ formatNumber(linkCheckErrors) }}</small>
+								</span>
+							</button>
+						</li>
+						<li v-if="mailbox.uiConfig.SpamAssassin">
+							<button class="dropdown-item" id="nav-spam-check-tab" data-bs-toggle="tab"
+								data-bs-target="#nav-spam-check" type="button" role="tab" aria-controls="nav-html"
+								aria-selected="false">
+								Spam Analysis
+								<span class="badge rounded-pill float-end" :class="spamScoreColor"
+									v-if="spamScore !== false">
+									<small>{{ spamScore }}</small>
 								</span>
 							</button>
 						</li>
@@ -427,9 +481,17 @@ export default {
 						<small>{{ formatNumber(linkCheckErrors) }}</small>
 					</span>
 				</button>
+				<button class="d-none d-xl-inline-block nav-link position-relative" id="nav-spam-check-tab"
+					data-bs-toggle="tab" data-bs-target="#nav-spam-check" type="button" role="tab" aria-controls="nav-html"
+					aria-selected="false" v-if="mailbox.uiConfig.SpamAssassin">
+					Spam Analysis
+					<span class="badge rounded-pill" :class="spamScoreColor" v-if="spamScore !== false">
+						<small>{{ spamScore }}</small>
+					</span>
+				</button>
 
 				<div class="d-none d-lg-block ms-auto me-3" v-if="showMobileButtons">
-					<template v-for="vals, key in responsiveSizes">
+					<template v-for="   vals, key    in    responsiveSizes   ">
 						<button class="btn" :disabled="scaleHTMLPreview == key" :title="'Switch to ' + key + ' view'"
 							v-on:click="scaleHTMLPreview = key">
 							<i class="bi" :class="'bi-' + key"></i>
@@ -471,6 +533,11 @@ export default {
 				tabindex="0">
 				<HTMLCheck v-if="!mailbox.uiConfig.DisableHTMLCheck && message.HTML != ''" :message="message"
 					@setHtmlScore="(n) => htmlScore = n" @set-badge-style="(v) => htmlScoreColor = v" />
+			</div>
+			<div class="tab-pane fade" id="nav-spam-check" role="tabpanel" aria-labelledby="nav-spam-check-tab"
+				tabindex="0">
+				<SpamAssassin v-if="mailbox.uiConfig.SpamAssassin" :message="message" @setSpamScore="(n) => spamScore = n"
+					@set-badge-style="(v) => spamScoreColor = v" />
 			</div>
 			<div class="tab-pane fade" id="nav-link-check" role="tabpanel" aria-labelledby="nav-html-check-tab"
 				tabindex="0">

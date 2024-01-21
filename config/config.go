@@ -13,6 +13,7 @@ import (
 
 	"github.com/axllent/mailpit/internal/auth"
 	"github.com/axllent/mailpit/internal/logger"
+	"github.com/axllent/mailpit/internal/spamassassin"
 	"github.com/axllent/mailpit/internal/tools"
 	"gopkg.in/yaml.v3"
 )
@@ -105,6 +106,9 @@ var (
 	// SMTPRelayAllIncoming is whether to relay all incoming messages via pre-configured SMTP server.
 	// Use with extreme caution!
 	SMTPRelayAllIncoming = false
+
+	// EnableSpamAssassin must be either <host>:<port> or "postmark"
+	EnableSpamAssassin string
 
 	// WebhookURL for calling
 	WebhookURL string
@@ -243,6 +247,16 @@ func VerifyConfig() error {
 
 	if WebhookURL != "" && !isValidURL(WebhookURL) {
 		return fmt.Errorf("Webhook URL does not appear to be a valid URL (%s)", WebhookURL)
+	}
+
+	if EnableSpamAssassin != "" {
+		spamassassin.SetService(EnableSpamAssassin)
+		logger.Log().Infof("[spamassassin] enabled via %s", EnableSpamAssassin)
+
+		if err := spamassassin.Ping(); err != nil {
+			logger.Log().Warnf("[spamassassin] ping: %s", err.Error())
+		} else {
+		}
 	}
 
 	SMTPTags = []AutoTag{}

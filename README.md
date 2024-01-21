@@ -38,7 +38,9 @@ including image thumbnails), including optional [HTTPS](https://mailpit.axllent.
 - Optional [basic authentication](https://mailpit.axllent.org/docs/configuration/frontend-authentication/) for web UI & API
 - [HTML check](https://mailpit.axllent.org/docs/usage/html-check/) to test & score mail client compatibility with HTML emails
 - [Link check](https://mailpit.axllent.org/docs/usage/link-check/) to test message links (HTML & text) & linked images
+- [Spam check](https://mailpit.axllent.org/docs/usage/spamassassin/) to test message "spamminess" using a running SpamAssassin server
 - [Create screenshots](https://mailpit.axllent.org/docs/usage/html-screenshots/) of HTML messages via web UI
+- `List-Unsubscribe` syntax validation
 - Mobile and tablet HTML preview toggle in desktop mode
 - Advanced [mail search](https://mailpit.axllent.org/docs/usage/search-filters/)
 - [Message tagging](https://mailpit.axllent.org/docs/usage/tagging/)

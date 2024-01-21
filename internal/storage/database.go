@@ -405,6 +405,20 @@ func GetMessage(id string) (*Message, error) {
 		}
 	}
 
+	// get List-Unsubscribe links if set
+	obj.ListUnsubscribe = ListUnsubscribe{}
+	obj.ListUnsubscribe.Links = []string{}
+	if env.GetHeader("List-Unsubscribe") != "" {
+		l := env.GetHeader("List-Unsubscribe")
+		links, err := tools.ListUnsubscribeParser(l)
+		obj.ListUnsubscribe.Header = l
+		obj.ListUnsubscribe.Links = links
+		if err != nil {
+			obj.ListUnsubscribe.Errors = err.Error()
+		}
+		obj.ListUnsubscribe.HeaderPost = env.GetHeader("List-Unsubscribe-Post")
+	}
+
 	// mark message as read
 	if err := MarkRead(id); err != nil {
 		return &obj, err

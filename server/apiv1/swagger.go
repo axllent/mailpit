@@ -146,6 +146,16 @@ type linkCheckParams struct {
 	Follow string `json:"follow"`
 }
 
+// swagger:parameters SpamAssassinCheck
+type spamAssassinCheckParams struct {
+	// Message database ID or "latest"
+	//
+	// in: path
+	// description: Message database ID or "latest"
+	// required: true
+	ID string
+}
+
 // Binary data response inherits the attachment's content type
 // swagger:response BinaryResponse
 type binaryResponse string
