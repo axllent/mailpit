@@ -259,7 +259,7 @@ export default {
 														{{ formatNumber(mailbox.appInfo.RuntimeStats.SMTPRejected) }}
 													</td>
 												</tr>
-												<tr>
+												<tr v-if="mailbox.uiConfig.DuplicatesIgnored">
 													<td>
 														SMTP messages ignored
 													</td>

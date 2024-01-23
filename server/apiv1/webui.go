@@ -29,6 +29,9 @@ type webUIConfiguration struct {
 
 	// Whether SpamAssassin is enabled
 	SpamAssassin bool
+
+	// Whether messages with duplicate IDs are ignored
+	DuplicatesIgnored bool
 }
 
 // WebUIConfig returns configuration settings for the web UI.
@@ -59,6 +62,7 @@ func WebUIConfig(w http.ResponseWriter, _ *http.Request) {
 
 	conf.DisableHTMLCheck = config.DisableHTMLCheck
 	conf.SpamAssassin = config.EnableSpamAssassin != ""
+	conf.DuplicatesIgnored = config.IgnoreDuplicateIDs
 
 	bytes, _ := json.Marshal(conf)
 
