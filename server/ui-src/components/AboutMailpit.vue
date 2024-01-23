@@ -82,7 +82,7 @@ export default {
 		requestNotifications: function () {
 			// check if the browser supports notifications
 			if (!("Notification" in window)) {
-				alert("This browser does not support desktop notification")
+				alert("This browser does not support desktop notifications")
 			}
 
 			// we need to ask the user for permission
