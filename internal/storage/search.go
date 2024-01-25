@@ -229,6 +229,7 @@ func searchQueryBuilder(searchString string) *sqlf.Stmt {
 		if len(w) > 1 && (strings.HasPrefix(w, "-") || strings.HasPrefix(w, "!")) {
 			exclude = true
 			w = w[1:]
+			lw = lw[1:]
 		}
 
 		re := regexp.MustCompile(`[a-zA-Z0-9]+`)
