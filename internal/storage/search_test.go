@@ -152,3 +152,19 @@ func TestSearchDelete1100(t *testing.T) {
 
 	assertEqual(t, total, 0, "0 search results expected")
 }
+
+func TestEscPercentChar(t *testing.T) {
+	tests := map[string]string{}
+	tests["this is a test"] = "this is a test"
+	tests["this is% a test"] = "this is%% a test"
+	tests["this is%% a test"] = "this is%%%% a test"
+	tests["this is%%% a test"] = "this is%%%%%% a test"
+	tests["%this is% a test"] = "%%this is%% a test"
+	tests["Ä"] = "Ä"
+	tests["Ä%"] = "Ä%%"
+
+	for search, expected := range tests {
+		res := escPercentChar(search)
+		assertEqual(t, res, expected, "no match")
+	}
+}

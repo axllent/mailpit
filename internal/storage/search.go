@@ -203,7 +203,6 @@ func DeleteSearch(search string) error {
 
 // SearchParser returns the SQL syntax for the database search based on the search arguments
 func searchQueryBuilder(searchString string) *sqlf.Stmt {
-	searchString = strings.ToLower(searchString)
 	// group strings with quotes as a single argument and remove quotes
 	args := tools.ArgsParser(searchString)
 
@@ -222,6 +221,9 @@ func searchQueryBuilder(searchString string) *sqlf.Stmt {
 			continue
 		}
 
+		// lowercase search to try match search prefixes
+		lw := strings.ToLower(w)
+
 		exclude := false
 		// search terms starting with a `-` or `!` imply an exclude
 		if len(w) > 1 && (strings.HasPrefix(w, "-") || strings.HasPrefix(w, "!")) {
@@ -234,7 +236,7 @@ func searchQueryBuilder(searchString string) *sqlf.Stmt {
 			continue
 		}
 
-		if strings.HasPrefix(w, "to:") {
+		if strings.HasPrefix(lw, "to:") {
 			w = cleanString(w[3:])
 			if w != "" {
 				if exclude {
@@ -243,7 +245,7 @@ func searchQueryBuilder(searchString string) *sqlf.Stmt {
 					q.Where("ToJSON LIKE ?", "%"+escPercentChar(w)+"%")
 				}
 			}
-		} else if strings.HasPrefix(w, "from:") {
+		} else if strings.HasPrefix(lw, "from:") {
 			w = cleanString(w[5:])
 			if w != "" {
 				if exclude {
@@ -252,7 +254,7 @@ func searchQueryBuilder(searchString string) *sqlf.Stmt {
 					q.Where("FromJSON LIKE ?", "%"+escPercentChar(w)+"%")
 				}
 			}
-		} else if strings.HasPrefix(w, "cc:") {
+		} else if strings.HasPrefix(lw, "cc:") {
 			w = cleanString(w[3:])
 			if w != "" {
 				if exclude {
@@ -261,7 +263,7 @@ func searchQueryBuilder(searchString string) *sqlf.Stmt {
 					q.Where("CcJSON LIKE ?", "%"+escPercentChar(w)+"%")
 				}
 			}
-		} else if strings.HasPrefix(w, "bcc:") {
+		} else if strings.HasPrefix(lw, "bcc:") {
 			w = cleanString(w[4:])
 			if w != "" {
 				if exclude {
@@ -270,7 +272,7 @@ func searchQueryBuilder(searchString string) *sqlf.Stmt {
 					q.Where("BccJSON LIKE ?", "%"+escPercentChar(w)+"%")
 				}
 			}
-		} else if strings.HasPrefix(w, "subject:") {
+		} else if strings.HasPrefix(lw, "subject:") {
 			w = w[8:]
 			if w != "" {
 				if exclude {
@@ -279,7 +281,7 @@ func searchQueryBuilder(searchString string) *sqlf.Stmt {
 					q.Where("Subject LIKE ?", "%"+escPercentChar(w)+"%")
 				}
 			}
-		} else if strings.HasPrefix(w, "message-id:") {
+		} else if strings.HasPrefix(lw, "message-id:") {
 			w = cleanString(w[11:])
 			if w != "" {
 				if exclude {
@@ -288,7 +290,7 @@ func searchQueryBuilder(searchString string) *sqlf.Stmt {
 					q.Where("MessageID LIKE ?", "%"+escPercentChar(w)+"%")
 				}
 			}
-		} else if strings.HasPrefix(w, "tag:") {
+		} else if strings.HasPrefix(lw, "tag:") {
 			w = cleanString(w[4:])
 			if w != "" {
 				if exclude {
@@ -297,25 +299,25 @@ func searchQueryBuilder(searchString string) *sqlf.Stmt {
 					q.Where(`m.ID IN (SELECT mt.ID FROM message_tags mt JOIN tags t ON mt.TagID = t.ID WHERE t.Name = ?)`, w)
 				}
 			}
-		} else if w == "is:read" {
+		} else if lw == "is:read" {
 			if exclude {
 				q.Where("Read = 0")
 			} else {
 				q.Where("Read = 1")
 			}
-		} else if w == "is:unread" {
+		} else if lw == "is:unread" {
 			if exclude {
 				q.Where("Read = 1")
 			} else {
 				q.Where("Read = 0")
 			}
-		} else if w == "is:tagged" {
+		} else if lw == "is:tagged" {
 			if exclude {
 				q.Where(`m.ID NOT IN (SELECT DISTINCT mt.ID FROM message_tags mt JOIN tags t ON mt.TagID = t.ID)`)
 			} else {
 				q.Where(`m.ID IN (SELECT DISTINCT mt.ID FROM message_tags mt JOIN tags t ON mt.TagID = t.ID)`)
 			}
-		} else if w == "has:attachment" || w == "has:attachments" {
+		} else if lw == "has:attachment" || lw == "has:attachments" {
 			if exclude {
 				q.Where("Attachments = 0")
 			} else {
@@ -324,9 +326,9 @@ func searchQueryBuilder(searchString string) *sqlf.Stmt {
 		} else {
 			// search text
 			if exclude {
-				q.Where("SearchText NOT LIKE ?", "%"+cleanString(escPercentChar(w))+"%")
+				q.Where("SearchText NOT LIKE ?", "%"+cleanString(escPercentChar(strings.ToLower(w)))+"%")
 			} else {
-				q.Where("SearchText LIKE ?", "%"+cleanString(escPercentChar(w))+"%")
+				q.Where("SearchText LIKE ?", "%"+cleanString(escPercentChar(strings.ToLower(w)))+"%")
 			}
 		}
 	}
