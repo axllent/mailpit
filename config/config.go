@@ -52,6 +52,11 @@ var (
 	// SMTPTLSKey file
 	SMTPTLSKey string
 
+	// SMTPTLSRequired to enforce TLS
+	// The only allowed commands are NOOP, EHLO, STARTTLS and QUIT (as specified in RFC 3207) until
+	// the connection is upgraded to TLS i.e. until STARTTLS is issued.
+	SMTPTLSRequired bool
+
 	// SMTPAuthFile for SMTP authentication
 	SMTPAuthFile string
 
@@ -167,15 +172,15 @@ func VerifyConfig() error {
 
 	re := regexp.MustCompile(`.*:\d+$`)
 	if !re.MatchString(SMTPListen) {
-		return errors.New("SMTP bind should be in the format of <ip>:<port>")
+		return errors.New("[smtp] bind should be in the format of <ip>:<port>")
 	}
 	if !re.MatchString(HTTPListen) {
-		return errors.New("HTTP bind should be in the format of <ip>:<port>")
+		return errors.New("[ui] HTTP bind should be in the format of <ip>:<port>")
 	}
 
 	if UIAuthFile != "" {
 		if !isFile(UIAuthFile) {
-			return fmt.Errorf("HTTP password file not found: %s", UIAuthFile)
+			return fmt.Errorf("[ui] HTTP password file not found: %s", UIAuthFile)
 		}
 		b, err := os.ReadFile(UIAuthFile)
 		if err != nil {
@@ -187,36 +192,42 @@ func VerifyConfig() error {
 	}
 
 	if UITLSCert != "" && UITLSKey == "" || UITLSCert == "" && UITLSKey != "" {
-		return errors.New("You must provide both a UI TLS certificate and a key")
+		return errors.New("[ui] you must provide both a UI TLS certificate and a key")
 	}
 
 	if UITLSCert != "" {
 		if !isFile(UITLSCert) {
-			return fmt.Errorf("TLS certificate not found: %s", UITLSCert)
+			return fmt.Errorf("[ui] TLS certificate not found: %s", UITLSCert)
 		}
 
 		if !isFile(UITLSKey) {
-			return fmt.Errorf("TLS key not found: %s", UITLSKey)
+			return fmt.Errorf("[ui] TLS key not found: %s", UITLSKey)
 		}
 	}
 
 	if SMTPTLSCert != "" && SMTPTLSKey == "" || SMTPTLSCert == "" && SMTPTLSKey != "" {
-		return errors.New("You must provide both an SMTP TLS certificate and a key")
+		return errors.New("[smtp] You must provide both an SMTP TLS certificate and a key")
 	}
 
 	if SMTPTLSCert != "" {
 		if !isFile(SMTPTLSCert) {
-			return fmt.Errorf("SMTP TLS certificate not found: %s", SMTPTLSCert)
+			return fmt.Errorf("[smtp] TLS certificate not found: %s", SMTPTLSCert)
 		}
 
 		if !isFile(SMTPTLSKey) {
-			return fmt.Errorf("SMTP TLS key not found: %s", SMTPTLSKey)
+			return fmt.Errorf("[smtp] TLS key not found: %s", SMTPTLSKey)
 		}
+	} else if SMTPTLSRequired {
+		return errors.New("[smtp] TLS cannot be required without an SMTP TLS certificate and key")
+	}
+
+	if SMTPTLSRequired && SMTPAuthAllowInsecure {
+		return errors.New("[smtp] TLS cannot be required while also allowing insecure authentication")
 	}
 
 	if SMTPAuthFile != "" {
 		if !isFile(SMTPAuthFile) {
-			return fmt.Errorf("SMTP password file not found: %s", SMTPAuthFile)
+			return fmt.Errorf("[smtp] password file not found: %s", SMTPAuthFile)
 		}
 
 		b, err := os.ReadFile(SMTPAuthFile)
@@ -230,23 +241,23 @@ func VerifyConfig() error {
 	}
 
 	if auth.SMTPCredentials != nil && SMTPAuthAcceptAny {
-		return errors.New("SMTP authentication cannot use both credentials and --smtp-auth-accept-any")
+		return errors.New("[smtp] authentication cannot use both credentials and --smtp-auth-accept-any")
 	}
 
 	if SMTPTLSCert == "" && (auth.SMTPCredentials != nil || SMTPAuthAcceptAny) && !SMTPAuthAllowInsecure {
-		return errors.New("SMTP authentication requires TLS encryption, run with `--smtp-auth-allow-insecure` to allow insecure authentication")
+		return errors.New("[smtp] authentication requires TLS encryption, run with `--smtp-auth-allow-insecure` to allow insecure authentication")
 	}
 
 	validWebrootRe := regexp.MustCompile(`[^0-9a-zA-Z\/\-\_\.@]`)
 	if validWebrootRe.MatchString(Webroot) {
-		return fmt.Errorf("Invalid characters in Webroot (%s). Valid chars include: [a-z A-Z 0-9 _ . - / @]", Webroot)
+		return fmt.Errorf("invalid characters in Webroot (%s). Valid chars include: [a-z A-Z 0-9 _ . - / @]", Webroot)
 	}
 
 	s := strings.TrimRight(path.Join("/", Webroot, "/"), "/") + "/"
 	Webroot = s
 
 	if WebhookURL != "" && !isValidURL(WebhookURL) {
-		return fmt.Errorf("Webhook URL does not appear to be a valid URL (%s)", WebhookURL)
+		return fmt.Errorf("webhook URL does not appear to be a valid URL (%s)", WebhookURL)
 	}
 
 	if EnableSpamAssassin != "" {
@@ -255,7 +266,6 @@ func VerifyConfig() error {
 
 		if err := spamassassin.Ping(); err != nil {
 			logger.Log().Warnf("[spamassassin] ping: %s", err.Error())
-		} else {
 		}
 	}
 
@@ -269,15 +279,15 @@ func VerifyConfig() error {
 			if len(t) > 1 {
 				tag := tools.CleanTag(t[0])
 				if !ValidTagRegexp.MatchString(tag) || len(tag) == 0 {
-					return fmt.Errorf("Invalid tag (%s) - can only contain spaces, letters, numbers, - & _", tag)
+					return fmt.Errorf("[tag] invalid tag (%s) - can only contain spaces, letters, numbers, - & _", tag)
 				}
 				match := strings.TrimSpace(strings.ToLower(strings.Join(t[1:], "=")))
 				if len(match) == 0 {
-					return fmt.Errorf("Invalid tag match (%s) - no search detected", tag)
+					return fmt.Errorf("[tag] invalid tag match (%s) - no search detected", tag)
 				}
 				SMTPTags = append(SMTPTags, AutoTag{Tag: tag, Match: match})
 			} else {
-				return fmt.Errorf("Error parsing tags (%s)", a)
+				return fmt.Errorf("[tag] error parsing tags (%s)", a)
 			}
 		}
 	}
@@ -285,7 +295,7 @@ func VerifyConfig() error {
 	if SMTPAllowedRecipients != "" {
 		restrictRegexp, err := regexp.Compile(SMTPAllowedRecipients)
 		if err != nil {
-			return fmt.Errorf("Failed to compile smtp-allowed-recipients regexp: %s", err.Error())
+			return fmt.Errorf("[smtp] failed to compile smtp-allowed-recipients regexp: %s", err.Error())
 		}
 
 		SMTPAllowedRecipientsRegexp = restrictRegexp
@@ -297,7 +307,7 @@ func VerifyConfig() error {
 	}
 
 	if !ReleaseEnabled && SMTPRelayAllIncoming {
-		return errors.New("SMTP relay config must be set to relay all messages")
+		return errors.New("[smtp] relay config must be set to relay all messages")
 	}
 
 	if SMTPRelayAllIncoming {
@@ -315,7 +325,7 @@ func parseRelayConfig(c string) error {
 	}
 
 	if !isFile(c) {
-		return fmt.Errorf("SMTP relay configuration not found: %s", SMTPRelayConfigFile)
+		return fmt.Errorf("[smtp] relay configuration not found: %s", SMTPRelayConfigFile)
 	}
 
 	data, err := os.ReadFile(c)
@@ -328,7 +338,7 @@ func parseRelayConfig(c string) error {
 	}
 
 	if SMTPRelayConfig.Host == "" {
-		return errors.New("SMTP relay host not set")
+		return errors.New("[smtp] relay host not set")
 	}
 
 	if SMTPRelayConfig.Port == 0 {
@@ -341,20 +351,20 @@ func parseRelayConfig(c string) error {
 		SMTPRelayConfig.Auth = "none"
 	} else if SMTPRelayConfig.Auth == "plain" {
 		if SMTPRelayConfig.Username == "" || SMTPRelayConfig.Password == "" {
-			return fmt.Errorf("SMTP relay host username or password not set for PLAIN authentication (%s)", c)
+			return fmt.Errorf("[smtp] relay host username or password not set for PLAIN authentication (%s)", c)
 		}
 	} else if SMTPRelayConfig.Auth == "login" {
 		SMTPRelayConfig.Auth = "login"
 		if SMTPRelayConfig.Username == "" || SMTPRelayConfig.Password == "" {
-			return fmt.Errorf("SMTP relay host username or password not set for LOGIN authentication (%s)", c)
+			return fmt.Errorf("[smtp] relay host username or password not set for LOGIN authentication (%s)", c)
 		}
 	} else if strings.HasPrefix(SMTPRelayConfig.Auth, "cram") {
 		SMTPRelayConfig.Auth = "cram-md5"
 		if SMTPRelayConfig.Username == "" || SMTPRelayConfig.Secret == "" {
-			return fmt.Errorf("SMTP relay host username or secret not set for CRAM-MD5 authentication (%s)", c)
+			return fmt.Errorf("[smtp] relay host username or secret not set for CRAM-MD5 authentication (%s)", c)
 		}
 	} else {
-		return fmt.Errorf("SMTP relay authentication method not supported: %s", SMTPRelayConfig.Auth)
+		return fmt.Errorf("[smtp] relay authentication method not supported: %s", SMTPRelayConfig.Auth)
 	}
 
 	ReleaseEnabled = true
@@ -365,7 +375,7 @@ func parseRelayConfig(c string) error {
 
 	if SMTPRelayConfig.RecipientAllowlist != "" {
 		if err != nil {
-			return fmt.Errorf("Failed to compile relay recipient allowlist regexp: %s", err.Error())
+			return fmt.Errorf("[smtp] failed to compile relay recipient allowlist regexp: %s", err.Error())
 		}
 
 		SMTPRelayConfig.RecipientAllowlistRegexp = allowlistRegexp

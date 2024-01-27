@@ -221,6 +221,7 @@ func listenAndServe(addr string, handler smtpd.Handler, authHandler smtpd.AuthHa
 	}
 
 	if config.SMTPTLSCert != "" {
+		srv.TLSRequired = config.SMTPTLSRequired
 		if err := srv.ConfigureTLS(config.SMTPTLSCert, config.SMTPTLSKey); err != nil {
 			return err
 		}
