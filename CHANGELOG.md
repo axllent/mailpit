@@ -2,6 +2,22 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.13.1]
+
+### Chore
+- Update node dependencies
+- Update Go dependencies
+
+### Feature
+- Add TLSRequired option for smtpd ([#241](https://github.com/axllent/mailpit/issues/241))
+
+### Fix
+- Workaround for specific field searches containing unicode characters ([#239](https://github.com/axllent/mailpit/issues/239))
+
+### UI
+- Only show number of messages ignored statistics if `--ignore-duplicate-ids` is set
+
+
 ## [v1.13.0]
 
 ### Chore
