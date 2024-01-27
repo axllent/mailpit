@@ -194,14 +194,16 @@ func TestAPIv1Search(t *testing.T) {
 	assertSearchEqual(t, ts.URL+"/api/v1/search", "from-1@example.com", 1)
 	assertSearchEqual(t, ts.URL+"/api/v1/search", "from:from-1@example.com", 1)
 	assertSearchEqual(t, ts.URL+"/api/v1/search", "-from:from-1@example.com", 99)
+	assertSearchEqual(t, ts.URL+"/api/v1/search", "-FROM:FROM-1@EXAMPLE.COM", 99)
 	assertSearchEqual(t, ts.URL+"/api/v1/search", "to:from-1@example.com", 0)
 	assertSearchEqual(t, ts.URL+"/api/v1/search", "from:@example.com", 100)
 	assertSearchEqual(t, ts.URL+"/api/v1/search", "subject:\"Subject line\"", 100)
-	assertSearchEqual(t, ts.URL+"/api/v1/search", "subject:\"Subject line 17 end\"", 1)
+	assertSearchEqual(t, ts.URL+"/api/v1/search", "subject:\"SUBJECT LINE 17 END\"", 1)
 	assertSearchEqual(t, ts.URL+"/api/v1/search", "!thisdoesnotexist", 100)
-	assertSearchEqual(t, ts.URL+"/api/v1/search", "-thisdoesnotexist", 100)
+	assertSearchEqual(t, ts.URL+"/api/v1/search", "-ThisDoesNotExist", 100)
 	assertSearchEqual(t, ts.URL+"/api/v1/search", "thisdoesnotexist", 0)
 	assertSearchEqual(t, ts.URL+"/api/v1/search", "tag:\"Test tag 065\"", 1)
+	assertSearchEqual(t, ts.URL+"/api/v1/search", "tag:\"TEST TAG 065\"", 1)
 	assertSearchEqual(t, ts.URL+"/api/v1/search", "!tag:\"Test tag 023\"", 99)
 }
 

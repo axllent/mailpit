@@ -82,7 +82,7 @@ export default {
 		requestNotifications: function () {
 			// check if the browser supports notifications
 			if (!("Notification" in window)) {
-				alert("This browser does not support desktop notification")
+				alert("This browser does not support desktop notifications")
 			}
 
 			// we need to ask the user for permission
@@ -259,7 +259,7 @@ export default {
 														{{ formatNumber(mailbox.appInfo.RuntimeStats.SMTPRejected) }}
 													</td>
 												</tr>
-												<tr>
+												<tr v-if="mailbox.uiConfig.DuplicatesIgnored">
 													<td>
 														SMTP messages ignored
 													</td>
