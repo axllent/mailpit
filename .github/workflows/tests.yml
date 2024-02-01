@@ -18,7 +18,7 @@ jobs:
         cache: false
     - uses: actions/checkout@v4
     - name: Run Go tests
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: |
           ~/.cache/go-build
