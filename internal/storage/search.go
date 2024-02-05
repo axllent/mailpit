@@ -99,6 +99,7 @@ func DeleteSearch(search string) error {
 	q := searchQueryBuilder(search)
 
 	ids := []string{}
+	deleteSize := 0
 
 	if err := q.QueryAndClose(nil, db, func(row *sql.Rows) {
 		var created int64
@@ -119,6 +120,7 @@ func DeleteSearch(search string) error {
 		}
 
 		ids = append(ids, id)
+		deleteSize = deleteSize + size
 	}); err != nil {
 		return err
 	}
@@ -191,7 +193,7 @@ func DeleteSearch(search string) error {
 		}
 
 		dbLastAction = time.Now()
-		dbDataDeleted = true
+		deletedSize = deletedSize + int64(deleteSize)
 
 		logMessagesDeleted(total)
 

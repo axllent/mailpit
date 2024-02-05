@@ -33,12 +33,12 @@ import (
 )
 
 var (
-	db            *sql.DB
-	dbFile        string
-	dbIsTemp      bool
-	dbLastAction  time.Time
-	dbIsIdle      bool
-	dbDataDeleted bool
+	db           *sql.DB
+	dbFile       string
+	dbIsTemp     bool
+	dbLastAction time.Time
+	dbIsIdle     bool
+	deletedSize  int64
 
 	// zstd compression encoder & decoder
 	dbEncoder, _ = zstd.NewWriter(nil)
@@ -615,6 +615,10 @@ func MarkUnread(id string) error {
 
 // DeleteOneMessage will delete a single message from a mailbox
 func DeleteOneMessage(id string) error {
+	m, err := GetMessage(id)
+	if err != nil {
+		return err
+	}
 	// begin a transaction to ensure both the message
 	// and data are deleted successfully
 	tx, err := db.BeginTx(context.Background(), nil)
@@ -646,7 +650,7 @@ func DeleteOneMessage(id string) error {
 	}
 
 	dbLastAction = time.Now()
-	dbDataDeleted = true
+	deletedSize = deletedSize + int64(m.Size)
 
 	logMessagesDeleted(1)
 
@@ -707,7 +711,7 @@ func DeleteAllMessages() error {
 	}
 
 	dbLastAction = time.Now()
-	dbDataDeleted = false
+	deletedSize = 0
 
 	logMessagesDeleted(total)
 
