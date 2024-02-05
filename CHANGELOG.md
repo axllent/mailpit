@@ -2,6 +2,19 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.13.2]
+
+### Chore
+- Update caniemail data
+- Update node modules
+- Update Go modules
+- Bump actions build requirement versions
+- Update esbuild
+
+### Feature
+- Add option to log output to file ([#246](https://github.com/axllent/mailpit/issues/246))
+
+
 ## [v1.13.1]
 
 ### Chore
