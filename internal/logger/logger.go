@@ -18,6 +18,8 @@ var (
 	QuietLogging bool
 	// NoLogging shows only fatal errors
 	NoLogging bool
+	// LogFile sets a log file
+	LogFile string
 )
 
 // Log returns the logger instance
@@ -36,11 +38,21 @@ func Log() *logrus.Logger {
 			log.SetLevel(logrus.PanicLevel)
 		}
 
-		log.Out = os.Stdout
+		if LogFile != "" {
+			file, err := os.OpenFile(LogFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0664)
+			if err == nil {
+				log.Out = file
+			} else {
+				log.Out = os.Stdout
+				log.Warn("Failed to log to file, using default stderr")
+			}
+		} else {
+			log.Out = os.Stdout
+		}
+
 		log.SetFormatter(&logrus.TextFormatter{
 			FullTimestamp:   true,
 			TimestampFormat: "2006/01/02 15:04:05",
-			ForceColors:     true,
 		})
 	}
 
