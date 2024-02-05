@@ -160,18 +160,19 @@ export default {
 						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 					</div>
 					<div class="modal-body">
-
-						<div class="alert alert-warning mb-3" v-if="mailbox.appInfo.LatestVersion == ''">
-							There might be a newer version available. The check failed.
-						</div>
-						<a class="btn btn-warning d-block mb-3"
-							v-else-if="mailbox.appInfo.Version != mailbox.appInfo.LatestVersion"
-							:href="'https://github.com/axllent/mailpit/releases/tag/' + mailbox.appInfo.LatestVersion">
-							A new version of Mailpit ({{ mailbox.appInfo.LatestVersion }}) is available.
-						</a>
-
 						<div class="row g-3">
 							<div class="col-xl-6">
+								<div class="row g-3" v-if="mailbox.appInfo.LatestVersion == ''">
+									<div class="alert alert-warning mb-3">
+										There might be a newer version available. The check failed.
+									</div>
+								</div>
+								<div class="row g-3" v-else-if="mailbox.appInfo.Version != mailbox.appInfo.LatestVersion">
+									<a class="btn btn-warning d-block mb-3"
+										:href="'https://github.com/axllent/mailpit/releases/tag/' + mailbox.appInfo.LatestVersion">
+										A new version of Mailpit ({{ mailbox.appInfo.LatestVersion }}) is available.
+									</a>
+								</div>
 								<div class="row g-3">
 									<div class="col-12">
 										<RouterLink to="/api/v1/" class="btn btn-primary w-100" target="_blank">
@@ -224,7 +225,7 @@ export default {
 											<tbody>
 												<tr>
 													<td>
-														Mailpit uptime
+														Mailpit up since
 													</td>
 													<td>
 														{{ secondsToRelative(mailbox.appInfo.RuntimeStats.Uptime) }}
