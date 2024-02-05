@@ -116,6 +116,7 @@ func init() {
 	rootCmd.Flags().BoolVar(&config.AllowUntrustedTLS, "allow-untrusted-tls", config.AllowUntrustedTLS, "Do not verify HTTPS certificates (link checker & screenshots)")
 
 	rootCmd.Flags().StringVarP(&config.SMTPCLITags, "tag", "t", config.SMTPCLITags, "Tag new messages matching filters")
+	rootCmd.Flags().StringVar(&logger.LogFile, "log-file", logger.LogFile, "Log output to file instead of stdout")
 	rootCmd.Flags().BoolVarP(&logger.QuietLogging, "quiet", "q", logger.QuietLogging, "Quiet logging (errors only)")
 	rootCmd.Flags().BoolVarP(&logger.VerboseLogging, "verbose", "v", logger.VerboseLogging, "Verbose logging")
 
@@ -222,6 +223,9 @@ func initConfigFromEnv() {
 	}
 	if getEnabledFromEnv("MP_ALLOW_UNTRUSTED_TLS") {
 		config.AllowUntrustedTLS = true
+	}
+	if len(os.Getenv("MP_LOG_FILE")) > 0 {
+		logger.LogFile = os.Getenv("MP_LOG_FILE")
 	}
 	if getEnabledFromEnv("MP_QUIET") {
 		logger.QuietLogging = true
