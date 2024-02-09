@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
+	"encoding/json"
+	"net/mail"
 	"os"
 
 	"github.com/axllent/mailpit/internal/logger"
@@ -43,6 +45,7 @@ func ReindexAll() {
 		ID         string
 		SearchText string
 		Snippet    string
+		Metadata   string
 	}
 
 	for _, ids := range chunks {
@@ -63,6 +66,28 @@ func ReindexAll() {
 				continue
 			}
 
+			from := &mail.Address{}
+			fromJSON := addressToSlice(env, "From")
+			if len(fromJSON) > 0 {
+				from = fromJSON[0]
+			} else if env.GetHeader("From") != "" {
+				from = &mail.Address{Name: env.GetHeader("From")}
+			}
+
+			obj := DBMailSummary{
+				From:    from,
+				To:      addressToSlice(env, "To"),
+				Cc:      addressToSlice(env, "Cc"),
+				Bcc:     addressToSlice(env, "Bcc"),
+				ReplyTo: addressToSlice(env, "Reply-To"),
+			}
+
+			MetadataJSON, err := json.Marshal(obj)
+			if err != nil {
+				logger.Log().Errorf("[message] %s", err.Error())
+				continue
+			}
+
 			searchText := createSearchText(env)
 			snippet := tools.CreateSnippet(env.Text, env.HTML)
 
@@ -70,6 +95,7 @@ func ReindexAll() {
 			u.ID = id
 			u.SearchText = searchText
 			u.Snippet = snippet
+			u.Metadata = string(MetadataJSON)
 
 			updates = append(updates, u)
 		}
@@ -86,7 +112,7 @@ func ReindexAll() {
 
 		// insert mail summary data
 		for _, u := range updates {
-			_, err = tx.Exec("UPDATE mailbox SET SearchText = ?, Snippet = ? WHERE ID = ?", u.SearchText, u.Snippet, u.ID)
+			_, err = tx.Exec("UPDATE mailbox SET SearchText = ?, Snippet = ?, Metadata = ? WHERE ID = ?", u.SearchText, u.Snippet, u.Metadata, u.ID)
 			if err != nil {
 				logger.Log().Errorf("[db] %s", err.Error())
 				continue

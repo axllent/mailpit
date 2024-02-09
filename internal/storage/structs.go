@@ -82,6 +82,8 @@ type MessageSummary struct {
 	Cc []*mail.Address
 	// Bcc addresses
 	Bcc []*mail.Address
+	// Reply-To address
+	ReplyTo []*mail.Address
 	// Email subject
 	Subject string
 	// Created time
@@ -105,10 +107,11 @@ type MailboxStats struct {
 
 // DBMailSummary struct for storing mail summary
 type DBMailSummary struct {
-	From *mail.Address
-	To   []*mail.Address
-	Cc   []*mail.Address
-	Bcc  []*mail.Address
+	From    *mail.Address
+	To      []*mail.Address
+	Cc      []*mail.Address
+	Bcc     []*mail.Address
+	ReplyTo []*mail.Address
 }
 
 // AttachmentSummary returns a summary of the attachment without any binary data
