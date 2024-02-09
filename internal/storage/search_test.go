@@ -17,9 +17,13 @@ func TestSearch(t *testing.T) {
 	for i := 0; i < testRuns; i++ {
 		msg := enmime.Builder().
 			From(fmt.Sprintf("From %d", i), fmt.Sprintf("from-%d@example.com", i)).
+			CC(fmt.Sprintf("CC %d", i), fmt.Sprintf("cc-%d@example.com", i)).
+			CC(fmt.Sprintf("CC2 %d", i), fmt.Sprintf("cc2-%d@example.com", i)).
 			Subject(fmt.Sprintf("Subject line %d end", i)).
 			Text([]byte(fmt.Sprintf("This is the email body %d <jdsauk;dwqmdqw;>.", i))).
-			To(fmt.Sprintf("To %d", i), fmt.Sprintf("to-%d@example.com", i))
+			To(fmt.Sprintf("To %d", i), fmt.Sprintf("to-%d@example.com", i)).
+			To(fmt.Sprintf("To2 %d", i), fmt.Sprintf("to2-%d@example.com", i)).
+			ReplyTo(fmt.Sprintf("Reply To %d", i), fmt.Sprintf("reply-to-%d@example.com", i))
 
 		env, err := msg.Build()
 		if err != nil {
@@ -44,18 +48,26 @@ func TestSearch(t *testing.T) {
 
 	for i := 1; i < 51; i++ {
 		// search a random something that will return a single result
-		searchIdx := rand.Intn(4) + 1
-		var search string
-		switch searchIdx {
-		case 1:
-			search = fmt.Sprintf("from-%d@example.com", i)
-		case 2:
-			search = fmt.Sprintf("to-%d@example.com", i)
-		case 3:
-			search = fmt.Sprintf("\"Subject line %d end\"", i)
-		default:
-			search = fmt.Sprintf("\"the email body %d jdsauk dwqmdqw\"", i)
+		uniqueSearches := []string{
+			fmt.Sprintf("from-%d@example.com", i),
+			fmt.Sprintf("from:from-%d@example.com", i),
+			fmt.Sprintf("to-%d@example.com", i),
+			fmt.Sprintf("to:to-%d@example.com", i),
+			fmt.Sprintf("to2-%d@example.com", i),
+			fmt.Sprintf("to:to2-%d@example.com", i),
+			fmt.Sprintf("cc-%d@example.com", i),
+			fmt.Sprintf("cc:cc-%d@example.com", i),
+			fmt.Sprintf("cc2-%d@example.com", i),
+			fmt.Sprintf("cc:cc2-%d@example.com", i),
+			fmt.Sprintf("reply-to-%d@example.com", i),
+			fmt.Sprintf("reply-to:\"reply-to-%d@example.com\"", i),
+			fmt.Sprintf("\"Subject line %d end\"", i),
+			fmt.Sprintf("subject:\"Subject line %d end\"", i),
+			fmt.Sprintf("\"the email body %d jdsauk dwqmdqw\"", i),
 		}
+		searchIdx := rand.Intn(len(uniqueSearches))
+
+		search := uniqueSearches[searchIdx]
 
 		summaries, _, err := Search(search, 0, 100)
 		if err != nil {
@@ -63,7 +75,7 @@ func TestSearch(t *testing.T) {
 			t.Fail()
 		}
 
-		assertEqual(t, len(summaries), 1, "1 search result expected")
+		assertEqual(t, len(summaries), 1, "search result expected")
 
 		assertEqual(t, summaries[0].From.Name, fmt.Sprintf("From %d", i), "\"From\" name does not match")
 		assertEqual(t, summaries[0].From.Address, fmt.Sprintf("from-%d@example.com", i), "\"From\" address does not match")
