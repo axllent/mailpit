@@ -146,15 +146,15 @@ func Store(body *[]byte) (string, error) {
 		from = &mail.Address{Name: env.GetHeader("From")}
 	}
 
-	messageID := strings.Trim(env.Root.Header.Get("Message-ID"), "<>")
-
 	obj := DBMailSummary{
-		From: from,
-		To:   addressToSlice(env, "To"),
-		Cc:   addressToSlice(env, "Cc"),
-		Bcc:  addressToSlice(env, "Bcc"),
+		From:    from,
+		To:      addressToSlice(env, "To"),
+		Cc:      addressToSlice(env, "Cc"),
+		Bcc:     addressToSlice(env, "Bcc"),
+		ReplyTo: addressToSlice(env, "Reply-To"),
 	}
 
+	messageID := strings.Trim(env.Root.Header.Get("Message-ID"), "<>")
 	created := time.Now()
 
 	// use message date instead of created date
@@ -294,6 +294,10 @@ func List(start, limit int) ([]MessageSummary, error) {
 		em.Attachments = attachments
 		em.Read = read == 1
 		em.Snippet = snippet
+		// artificially generate ReplyTo if legacy data is missing Reply-To field
+		if em.ReplyTo == nil {
+			em.ReplyTo = []*mail.Address{}
+		}
 
 		results = append(results, em)
 	}); err != nil {
