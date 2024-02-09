@@ -88,32 +88,49 @@ func dbCron() {
 		// for 5 minutes, if so VACUUM
 		currentTime := time.Now()
 		diff := currentTime.Sub(dbLastAction)
-		if dbDataDeleted && diff.Minutes() > 5 {
-			dbDataDeleted = false
+
+		// get DB file size
+		fileInfo, err := os.Stat(config.DataFile)
+		if err != nil {
+			logger.Log().Errorf("[db] unable to stat database %s: %s", config.DataFile, err.Error())
+			continue
+		}
+
+		deletedPercent := deletedSize * 100 / fileInfo.Size()
+
+		// only vacuum DB when at least 2% of mail storage size has been deleted
+		// as this saves a lot of CPU on large databases
+		if deletedPercent >= 1 && diff.Minutes() > 5 {
+			logger.Log().Debugf("[db] compressing database as %d%% has been deleted", deletedPercent)
+			deletedSize = 0
 			_, err := db.Exec("VACUUM")
 			if err == nil {
 				elapsed := time.Since(start)
 				logger.Log().Debugf("[db] compressed idle database in %s", elapsed)
 			}
+
 			continue
 		}
 
 		if config.MaxMessages > 0 {
-			q := sqlf.Select("ID").
+			q := sqlf.Select("ID, Size").
 				From("mailbox").
 				OrderBy("Created DESC").
 				Limit(5000).
 				Offset(config.MaxMessages)
 
 			ids := []string{}
+			var prunedSize int64
+			var size int
 			if err := q.Query(nil, db, func(row *sql.Rows) {
 				var id string
 
-				if err := row.Scan(&id); err != nil {
+				if err := row.Scan(&id, &size); err != nil {
 					logger.Log().Errorf("[db] %s", err.Error())
 					return
 				}
 				ids = append(ids, id)
+				prunedSize = prunedSize + int64(size)
 
 			}); err != nil {
 				logger.Log().Errorf("[db] %s", err.Error())
@@ -166,7 +183,7 @@ func dbCron() {
 				logger.Log().Errorf("[db] %s", err.Error())
 			}
 
-			dbDataDeleted = true
+			deletedSize = deletedSize + prunedSize
 
 			elapsed := time.Since(start)
 			logger.Log().Debugf("[db] auto-pruned %d messages in %s", len(ids), elapsed)

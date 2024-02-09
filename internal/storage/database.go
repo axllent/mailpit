@@ -33,12 +33,12 @@ import (
 )
 
 var (
-	db            *sql.DB
-	dbFile        string
-	dbIsTemp      bool
-	dbLastAction  time.Time
-	dbIsIdle      bool
-	dbDataDeleted bool
+	db           *sql.DB
+	dbFile       string
+	dbIsTemp     bool
+	dbLastAction time.Time
+	dbIsIdle     bool
+	deletedSize  int64
 
 	// zstd compression encoder & decoder
 	dbEncoder, _ = zstd.NewWriter(nil)
@@ -146,15 +146,15 @@ func Store(body *[]byte) (string, error) {
 		from = &mail.Address{Name: env.GetHeader("From")}
 	}
 
-	messageID := strings.Trim(env.Root.Header.Get("Message-ID"), "<>")
-
 	obj := DBMailSummary{
-		From: from,
-		To:   addressToSlice(env, "To"),
-		Cc:   addressToSlice(env, "Cc"),
-		Bcc:  addressToSlice(env, "Bcc"),
+		From:    from,
+		To:      addressToSlice(env, "To"),
+		Cc:      addressToSlice(env, "Cc"),
+		Bcc:     addressToSlice(env, "Bcc"),
+		ReplyTo: addressToSlice(env, "Reply-To"),
 	}
 
+	messageID := strings.Trim(env.Root.Header.Get("Message-ID"), "<>")
 	created := time.Now()
 
 	// use message date instead of created date
@@ -294,6 +294,10 @@ func List(start, limit int) ([]MessageSummary, error) {
 		em.Attachments = attachments
 		em.Read = read == 1
 		em.Snippet = snippet
+		// artificially generate ReplyTo if legacy data is missing Reply-To field
+		if em.ReplyTo == nil {
+			em.ReplyTo = []*mail.Address{}
+		}
 
 		results = append(results, em)
 	}); err != nil {
@@ -615,6 +619,10 @@ func MarkUnread(id string) error {
 
 // DeleteOneMessage will delete a single message from a mailbox
 func DeleteOneMessage(id string) error {
+	m, err := GetMessage(id)
+	if err != nil {
+		return err
+	}
 	// begin a transaction to ensure both the message
 	// and data are deleted successfully
 	tx, err := db.BeginTx(context.Background(), nil)
@@ -646,7 +654,7 @@ func DeleteOneMessage(id string) error {
 	}
 
 	dbLastAction = time.Now()
-	dbDataDeleted = true
+	deletedSize = deletedSize + int64(m.Size)
 
 	logMessagesDeleted(1)
 
@@ -707,7 +715,7 @@ func DeleteAllMessages() error {
 	}
 
 	dbLastAction = time.Now()
-	dbDataDeleted = false
+	deletedSize = 0
 
 	logMessagesDeleted(total)
 

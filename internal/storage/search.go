@@ -42,7 +42,7 @@ func Search(search string, start, limit int) ([]MessageSummary, int, error) {
 		var ignore string
 		em := MessageSummary{}
 
-		if err := row.Scan(&created, &id, &messageID, &subject, &metadata, &size, &attachments, &read, &snippet, &ignore, &ignore, &ignore, &ignore); err != nil {
+		if err := row.Scan(&created, &id, &messageID, &subject, &metadata, &size, &attachments, &read, &snippet, &ignore, &ignore, &ignore, &ignore, &ignore); err != nil {
 			logger.Log().Errorf("[db] %s", err.Error())
 			return
 		}
@@ -99,6 +99,7 @@ func DeleteSearch(search string) error {
 	q := searchQueryBuilder(search)
 
 	ids := []string{}
+	deleteSize := 0
 
 	if err := q.QueryAndClose(nil, db, func(row *sql.Rows) {
 		var created int64
@@ -113,12 +114,13 @@ func DeleteSearch(search string) error {
 		var snippet string
 		var ignore string
 
-		if err := row.Scan(&created, &id, &messageID, &subject, &metadata, &size, &attachments, &read, &snippet, &ignore, &ignore, &ignore, &ignore); err != nil {
+		if err := row.Scan(&created, &id, &messageID, &subject, &metadata, &size, &attachments, &read, &snippet, &ignore, &ignore, &ignore, &ignore, &ignore); err != nil {
 			logger.Log().Errorf("[db] %s", err.Error())
 			return
 		}
 
 		ids = append(ids, id)
+		deleteSize = deleteSize + size
 	}); err != nil {
 		return err
 	}
@@ -191,7 +193,7 @@ func DeleteSearch(search string) error {
 		}
 
 		dbLastAction = time.Now()
-		dbDataDeleted = true
+		deletedSize = deletedSize + int64(deleteSize)
 
 		logMessagesDeleted(total)
 
@@ -212,7 +214,8 @@ func searchQueryBuilder(searchString string) *sqlf.Stmt {
 			IFNULL(json_extract(Metadata, '$.To'), '{}') as ToJSON,
 			IFNULL(json_extract(Metadata, '$.From'), '{}') as FromJSON,
 			IFNULL(json_extract(Metadata, '$.Cc'), '{}') as CcJSON,
-			IFNULL(json_extract(Metadata, '$.Bcc'), '{}') as BccJSON
+			IFNULL(json_extract(Metadata, '$.Bcc'), '{}') as BccJSON,
+			IFNULL(json_extract(Metadata, '$.ReplyTo'), '{}') as ReplyToJSON
 		`).
 		OrderBy("m.Created DESC")
 
@@ -271,6 +274,15 @@ func searchQueryBuilder(searchString string) *sqlf.Stmt {
 					q.Where("BccJSON NOT LIKE ?", "%"+escPercentChar(w)+"%")
 				} else {
 					q.Where("BccJSON LIKE ?", "%"+escPercentChar(w)+"%")
+				}
+			}
+		} else if strings.HasPrefix(lw, "reply-to:") {
+			w = cleanString(w[9:])
+			if w != "" {
+				if exclude {
+					q.Where("ReplyToJSON NOT LIKE ?", "%"+escPercentChar(w)+"%")
+				} else {
+					q.Where("ReplyToJSON LIKE ?", "%"+escPercentChar(w)+"%")
 				}
 			}
 		} else if strings.HasPrefix(lw, "subject:") {

@@ -2,6 +2,21 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.13.3]
+
+### API
+- Include Reply-To information in message summaries for message list & websocket events
+
+### Chore
+- Update node dependencies
+- Update Go dependencies
+- Compress database only when >= 1% of total message size has been deleted
+- Update "About" modal layout when new version is available
+
+### Feature
+- Add reply-to:<search> search filter ([#247](https://github.com/axllent/mailpit/issues/247))
+
+
 ## [v1.13.2]
 
 ### Chore
