@@ -88,6 +88,18 @@ var (
 			CREATE INDEX IF NOT EXISTS idx_message_tag_id ON message_tags (ID);
 			CREATE INDEX IF NOT EXISTS idx_message_tag_tagid ON message_tags (TagID);`,
 		},
+		{
+			// assume deleted messages account for 50% of storage
+			// to handle previously-deleted messages
+			Version:     1.5,
+			Description: "Create settings table",
+			Script: `CREATE TABLE IF NOT EXISTS settings (
+				Key TEXT,
+				Value TEXT
+			);
+			CREATE UNIQUE INDEX IF NOT EXISTS idx_settings_key ON settings (Key);
+			INSERT INTO settings (Key, Value) VALUES("DeletedSize", (SELECT SUM(Size)/2 FROM mailbox));`,
+		},
 	}
 )
 

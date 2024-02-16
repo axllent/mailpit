@@ -37,8 +37,6 @@ var (
 	dbFile       string
 	dbIsTemp     bool
 	dbLastAction time.Time
-	dbIsIdle     bool
-	deletedSize  int64
 
 	// zstd compression encoder & decoder
 	dbEncoder, _ = zstd.NewWriter(nil)
@@ -654,7 +652,7 @@ func DeleteOneMessage(id string) error {
 	}
 
 	dbLastAction = time.Now()
-	deletedSize = deletedSize + int64(m.Size)
+	addDeletedSize(int64(m.Size))
 
 	logMessagesDeleted(1)
 
@@ -708,14 +706,13 @@ func DeleteAllMessages() error {
 		return err
 	}
 
-	_, err = db.Exec("VACUUM")
-	if err == nil {
-		elapsed := time.Since(start)
-		logger.Log().Debugf("[db] deleted %d messages in %s", total, elapsed)
-	}
+	elapsed := time.Since(start)
+	logger.Log().Debugf("[db] deleted %d messages in %s", total, elapsed)
+
+	vacuumDb()
 
 	dbLastAction = time.Now()
-	deletedSize = 0
+	SettingPut("DeletedSize", "0")
 
 	logMessagesDeleted(total)
 

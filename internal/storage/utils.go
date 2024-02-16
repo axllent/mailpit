@@ -1,21 +1,14 @@
 package storage
 
 import (
-	"context"
-	"database/sql"
 	"net/mail"
 	"os"
 	"regexp"
 	"strings"
 	"sync"
-	"time"
 
-	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/internal/html2text"
-	"github.com/axllent/mailpit/internal/logger"
-	"github.com/axllent/mailpit/server/websockets"
 	"github.com/jhillyerd/enmime"
-	"github.com/leporo/sqlf"
 )
 
 var (
@@ -77,124 +70,6 @@ func cleanString(str string) string {
 	return strings.ToLower(strings.Join(strings.Fields(strings.TrimSpace(str)), " "))
 }
 
-// Auto-prune runs every minute to automatically delete oldest messages
-// if total is greater than the threshold
-func dbCron() {
-	for {
-		time.Sleep(60 * time.Second)
-		start := time.Now()
-
-		// check if database contains deleted data and has not been in use
-		// for 5 minutes, if so VACUUM
-		currentTime := time.Now()
-		diff := currentTime.Sub(dbLastAction)
-
-		// get DB file size
-		fileInfo, err := os.Stat(config.DataFile)
-		if err != nil {
-			logger.Log().Errorf("[db] unable to stat database %s: %s", config.DataFile, err.Error())
-			continue
-		}
-
-		deletedPercent := deletedSize * 100 / fileInfo.Size()
-
-		// only vacuum DB when at least 2% of mail storage size has been deleted
-		// as this saves a lot of CPU on large databases
-		if deletedPercent >= 1 && diff.Minutes() > 5 {
-			logger.Log().Debugf("[db] compressing database as %d%% has been deleted", deletedPercent)
-			deletedSize = 0
-			_, err := db.Exec("VACUUM")
-			if err == nil {
-				elapsed := time.Since(start)
-				logger.Log().Debugf("[db] compressed idle database in %s", elapsed)
-			}
-
-			continue
-		}
-
-		if config.MaxMessages > 0 {
-			q := sqlf.Select("ID, Size").
-				From("mailbox").
-				OrderBy("Created DESC").
-				Limit(5000).
-				Offset(config.MaxMessages)
-
-			ids := []string{}
-			var prunedSize int64
-			var size int
-			if err := q.Query(nil, db, func(row *sql.Rows) {
-				var id string
-
-				if err := row.Scan(&id, &size); err != nil {
-					logger.Log().Errorf("[db] %s", err.Error())
-					return
-				}
-				ids = append(ids, id)
-				prunedSize = prunedSize + int64(size)
-
-			}); err != nil {
-				logger.Log().Errorf("[db] %s", err.Error())
-				continue
-			}
-
-			if len(ids) == 0 {
-				continue
-			}
-
-			tx, err := db.BeginTx(context.Background(), nil)
-			if err != nil {
-				logger.Log().Errorf("[db] %s", err.Error())
-				continue
-			}
-
-			args := make([]interface{}, len(ids))
-			for i, id := range ids {
-				args[i] = id
-			}
-
-			_, err = tx.Query(`DELETE FROM mailbox WHERE ID IN (?`+strings.Repeat(",?", len(ids)-1)+`)`, args...) // #nosec
-			if err != nil {
-				logger.Log().Errorf("[db] %s", err.Error())
-				continue
-			}
-
-			_, err = tx.Query(`DELETE FROM mailbox_data WHERE ID IN (?`+strings.Repeat(",?", len(ids)-1)+`)`, args...) // #nosec
-			if err != nil {
-				logger.Log().Errorf("[db] %s", err.Error())
-				continue
-			}
-
-			_, err = tx.Query(`DELETE FROM message_tags WHERE ID IN (?`+strings.Repeat(",?", len(ids)-1)+`)`, args...) // #nosec
-			if err != nil {
-				logger.Log().Errorf("[db] %s", err.Error())
-				continue
-			}
-
-			err = tx.Commit()
-
-			if err != nil {
-				logger.Log().Errorf("[db] %s", err.Error())
-				if err := tx.Rollback(); err != nil {
-					logger.Log().Errorf("[db] %s", err.Error())
-				}
-			}
-
-			if err := pruneUnusedTags(); err != nil {
-				logger.Log().Errorf("[db] %s", err.Error())
-			}
-
-			deletedSize = deletedSize + prunedSize
-
-			elapsed := time.Since(start)
-			logger.Log().Debugf("[db] auto-pruned %d messages in %s", len(ids), elapsed)
-
-			logMessagesDeleted(len(ids))
-
-			websockets.Broadcast("prune", nil)
-		}
-	}
-}
-
 // LogMessagesDeleted logs the number of messages deleted
 func logMessagesDeleted(n int) {
 	mu.Lock()
@@ -212,7 +87,7 @@ func isFile(path string) bool {
 	return true
 }
 
-// InArray tests if a string in within an array. It is not case sensitive.
+// Tests if a string is within an array. It is not case sensitive.
 func inArray(k string, arr []string) bool {
 	k = strings.ToLower(k)
 	for _, v := range arr {
@@ -224,7 +99,7 @@ func inArray(k string, arr []string) bool {
 	return false
 }
 
-// escPercentChar replaces `%` with `%%` for SQL searches
+// Convert `%` to `%%` for SQL searches
 func escPercentChar(s string) string {
 	return strings.ReplaceAll(s, "%", "%%")
 }

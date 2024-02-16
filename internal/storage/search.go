@@ -193,7 +193,7 @@ func DeleteSearch(search string) error {
 		}
 
 		dbLastAction = time.Now()
-		deletedSize = deletedSize + int64(deleteSize)
+		addDeletedSize(int64(deleteSize))
 
 		logMessagesDeleted(total)
 
