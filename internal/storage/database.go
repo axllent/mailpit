@@ -23,10 +23,10 @@ import (
 	"github.com/axllent/mailpit/internal/tools"
 	"github.com/axllent/mailpit/server/webhook"
 	"github.com/axllent/mailpit/server/websockets"
-	"github.com/google/uuid"
 	"github.com/jhillyerd/enmime"
 	"github.com/klauspost/compress/zstd"
 	"github.com/leporo/sqlf"
+	"github.com/lithammer/shortuuid/v4"
 
 	// sqlite (native) - https://gitlab.com/cznic/sqlite
 	_ "modernc.org/sqlite"
@@ -166,7 +166,7 @@ func Store(body *[]byte) (string, error) {
 	searchText := createSearchText(env)
 
 	// generate unique ID
-	id := uuid.New().String()
+	id := shortuuid.New()
 
 	summaryJSON, err := json.Marshal(obj)
 	if err != nil {

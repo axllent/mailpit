@@ -8,12 +8,12 @@ require (
 	github.com/axllent/semver v0.0.1
 	github.com/disintegration/imaging v1.6.2
 	github.com/gomarkdown/markdown v0.0.0-20231222211730-1d6d20845b47
-	github.com/google/uuid v1.6.0
 	github.com/gorilla/mux v1.8.1
 	github.com/gorilla/websocket v1.5.1
 	github.com/jhillyerd/enmime v1.1.0
 	github.com/klauspost/compress v1.17.6
 	github.com/leporo/sqlf v1.4.0
+	github.com/lithammer/shortuuid/v4 v4.0.0
 	github.com/mhale/smtpd v0.8.2
 	github.com/reiver/go-telnet v0.0.0-20180421082511-9ff0b2ab096e
 	github.com/sirupsen/logrus v1.9.3
@@ -36,6 +36,7 @@ require (
 	github.com/cznic/ql v1.2.0 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/gogs/chardet v0.0.0-20211120154057-b7413eaefb8f // indirect
+	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/css v1.0.1 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/jaytaylor/html2text v0.0.0-20230321000545-74c2419ad056 // indirect
