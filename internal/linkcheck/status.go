@@ -63,7 +63,7 @@ func doHead(link string, followRedirects bool) (int, error) {
 	tr := &http.Transport{}
 
 	if config.AllowUntrustedTLS {
-		tr.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+		tr.TLSClientConfig = &tls.Config{InsecureSkipVerify: true} // #nosec
 	}
 
 	client := http.Client{

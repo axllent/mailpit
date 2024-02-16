@@ -712,7 +712,9 @@ func DeleteAllMessages() error {
 	vacuumDb()
 
 	dbLastAction = time.Now()
-	SettingPut("DeletedSize", "0")
+	if err := SettingPut("DeletedSize", "0"); err != nil {
+		logger.Log().Warnf("[db] %s", err.Error())
+	}
 
 	logMessagesDeleted(total)
 

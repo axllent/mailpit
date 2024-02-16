@@ -35,7 +35,7 @@ func ProxyHandler(w http.ResponseWriter, r *http.Request) {
 	tr := &http.Transport{}
 
 	if config.AllowUntrustedTLS {
-		tr.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+		tr.TLSClientConfig = &tls.Config{InsecureSkipVerify: true} // #nosec
 	}
 
 	client := &http.Client{
@@ -108,7 +108,9 @@ func ProxyHandler(w http.ResponseWriter, r *http.Request) {
 	// relay status code - WriteHeader must come after Header.Set()
 	w.WriteHeader(resp.StatusCode)
 
-	w.Write(body)
+	if _, err := w.Write(body); err != nil {
+		logger.Log().Warnf("[proxy] %s", err.Error())
+	}
 }
 
 // AbsoluteURL will return a full URL regardless whether it is relative or absolute

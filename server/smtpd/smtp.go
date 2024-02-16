@@ -54,7 +54,7 @@ func Send(from string, to []string, msg []byte) error {
 	defer c.Close()
 
 	if config.SMTPRelayConfig.STARTTLS {
-		conf := &tls.Config{ServerName: config.SMTPRelayConfig.Host}
+		conf := &tls.Config{ServerName: config.SMTPRelayConfig.Host} // #nosec
 
 		conf.InsecureSkipVerify = config.SMTPRelayConfig.AllowInsecure
 

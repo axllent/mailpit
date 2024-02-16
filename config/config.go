@@ -179,13 +179,17 @@ func VerifyConfig() error {
 	}
 
 	if UIAuthFile != "" {
+		UIAuthFile = filepath.Clean(UIAuthFile)
+
 		if !isFile(UIAuthFile) {
 			return fmt.Errorf("[ui] HTTP password file not found: %s", UIAuthFile)
 		}
+
 		b, err := os.ReadFile(UIAuthFile)
 		if err != nil {
 			return err
 		}
+
 		if err := auth.SetUIAuth(string(b)); err != nil {
 			return err
 		}
@@ -196,6 +200,8 @@ func VerifyConfig() error {
 	}
 
 	if UITLSCert != "" {
+		UITLSCert = filepath.Clean(UITLSCert)
+
 		if !isFile(UITLSCert) {
 			return fmt.Errorf("[ui] TLS certificate not found: %s", UITLSCert)
 		}
@@ -210,6 +216,8 @@ func VerifyConfig() error {
 	}
 
 	if SMTPTLSCert != "" {
+		SMTPTLSCert = filepath.Clean(SMTPTLSCert)
+
 		if !isFile(SMTPTLSCert) {
 			return fmt.Errorf("[smtp] TLS certificate not found: %s", SMTPTLSCert)
 		}
@@ -226,6 +234,8 @@ func VerifyConfig() error {
 	}
 
 	if SMTPAuthFile != "" {
+		SMTPAuthFile = filepath.Clean(SMTPAuthFile)
+
 		if !isFile(SMTPAuthFile) {
 			return fmt.Errorf("[smtp] password file not found: %s", SMTPAuthFile)
 		}
@@ -324,8 +334,10 @@ func parseRelayConfig(c string) error {
 		return nil
 	}
 
+	c = filepath.Clean(c)
+
 	if !isFile(c) {
-		return fmt.Errorf("[smtp] relay configuration not found: %s", SMTPRelayConfigFile)
+		return fmt.Errorf("[smtp] relay configuration not found: %s", c)
 	}
 
 	data, err := os.ReadFile(c)

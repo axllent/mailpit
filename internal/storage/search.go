@@ -160,21 +160,21 @@ func DeleteSearch(search string) error {
 				delIDs[i] = id
 			}
 
-			sqlDelete1 := `DELETE FROM mailbox WHERE ID IN (?` + strings.Repeat(",?", len(ids)-1) + `)`
+			sqlDelete1 := `DELETE FROM mailbox WHERE ID IN (?` + strings.Repeat(",?", len(ids)-1) + `)` // #nosec
 
 			_, err = tx.Exec(sqlDelete1, delIDs...)
 			if err != nil {
 				return err
 			}
 
-			sqlDelete2 := `DELETE FROM mailbox_data WHERE ID IN (?` + strings.Repeat(",?", len(ids)-1) + `)`
+			sqlDelete2 := `DELETE FROM mailbox_data WHERE ID IN (?` + strings.Repeat(",?", len(ids)-1) + `)` // #nosec
 
 			_, err = tx.Exec(sqlDelete2, delIDs...)
 			if err != nil {
 				return err
 			}
 
-			sqlDelete3 := `DELETE FROM message_tags WHERE ID IN (?` + strings.Repeat(",?", len(ids)-1) + `)`
+			sqlDelete3 := `DELETE FROM message_tags WHERE ID IN (?` + strings.Repeat(",?", len(ids)-1) + `)` // #nosec
 
 			_, err = tx.Exec(sqlDelete3, delIDs...)
 			if err != nil {

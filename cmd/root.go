@@ -154,13 +154,17 @@ func initConfigFromEnv() {
 
 	// UI
 	config.UIAuthFile = os.Getenv("MP_UI_AUTH_FILE")
-	auth.SetUIAuth(os.Getenv("MP_UI_AUTH"))
+	if err := auth.SetUIAuth(os.Getenv("MP_UI_AUTH")); err != nil {
+		logger.Log().Errorf(err.Error())
+	}
 	config.UITLSCert = os.Getenv("MP_UI_TLS_CERT")
 	config.UITLSKey = os.Getenv("MP_UI_TLS_KEY")
 
 	// SMTP
 	config.SMTPAuthFile = os.Getenv("MP_SMTP_AUTH_FILE")
-	auth.SetSMTPAuth(os.Getenv("MP_SMTP_AUTH"))
+	if err := auth.SetSMTPAuth(os.Getenv("MP_SMTP_AUTH")); err != nil {
+		logger.Log().Errorf(err.Error())
+	}
 	config.SMTPTLSCert = os.Getenv("MP_SMTP_TLS_CERT")
 	config.SMTPTLSKey = os.Getenv("MP_SMTP_TLS_KEY")
 	if getEnabledFromEnv("MP_SMTP_TLS_REQUIRED") {
