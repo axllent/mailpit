@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"database/sql"
+	"math"
 	"strings"
 	"time"
 
@@ -21,7 +22,7 @@ func dbCron() {
 		sinceLastDbAction := currentTime.Sub(dbLastAction)
 
 		// only run the database has been idle for 5 minutes
-		if sinceLastDbAction.Minutes() >= 5 {
+		if math.Floor(sinceLastDbAction.Minutes()) == 5 {
 			deletedSize := getDeletedSize()
 
 			if deletedSize > 0 {
