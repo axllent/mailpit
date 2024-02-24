@@ -2,6 +2,23 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.14.0]
+
+### Chore
+- Update node dependencies
+- Update Go dependencies
+- Refactor storage library
+- Security improvements (gosec)
+- Switch to short uuid format for database IDs
+- Better handling of automatic database compression (vacuuming) after deleting messages
+
+### Docker
+- Add edge Docker images for latest unreleased features
+
+### Feature
+- Optional POP3 server ([#249](https://github.com/axllent/mailpit/issues/249))
+
+
 ## [v1.13.3]
 
 ### API
