@@ -513,10 +513,12 @@ func MarkUnread(id string) error {
 
 // DeleteOneMessage will delete a single message from a mailbox
 func DeleteOneMessage(id string) error {
-	m, err := GetMessage(id)
+	m, err := GetMessageRaw(id)
 	if err != nil {
 		return err
 	}
+
+	size := len(m)
 	// begin a transaction to ensure both the message
 	// and data are deleted successfully
 	tx, err := db.BeginTx(context.Background(), nil)
@@ -548,7 +550,7 @@ func DeleteOneMessage(id string) error {
 	}
 
 	dbLastAction = time.Now()
-	addDeletedSize(int64(m.Size))
+	addDeletedSize(int64(size))
 
 	logMessagesDeleted(1)
 

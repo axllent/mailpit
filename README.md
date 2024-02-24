@@ -52,6 +52,7 @@ via either HTTPS or `localhost` only)
 including an optional allowlist of accepted recipients
 - Fast SMTP processing & storing - approximately 70-100 emails per second depending on CPU, network speed & email size,
 easily handling tens of thousands of emails
+- Optional [POP3 server](https://mailpit.axllent.org/docs/configuration/pop3/) to download captured message directly into your email client
 - Configurable automatic email pruning (default keeps the most recent 500 emails)
 - A simple [REST API](https://mailpit.axllent.org/docs/api-v1/) for integration testing
 - Optional [webhook](https://mailpit.axllent.org/docs/integration/webhook/) for received messages

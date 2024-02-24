@@ -22,6 +22,7 @@ import (
 	"github.com/axllent/mailpit/internal/storage"
 	"github.com/axllent/mailpit/server/apiv1"
 	"github.com/axllent/mailpit/server/handlers"
+	"github.com/axllent/mailpit/server/pop3"
 	"github.com/axllent/mailpit/server/websockets"
 	"github.com/gorilla/mux"
 )
@@ -47,6 +48,8 @@ func Listen() {
 	websockets.MessageHub = websockets.NewHub()
 
 	go websockets.MessageHub.Run()
+
+	go pop3.Run()
 
 	r := apiRoutes()
 

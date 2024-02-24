@@ -4,6 +4,7 @@ package config
 import (
 	"errors"
 	"fmt"
+	"net"
 	"net/url"
 	"os"
 	"path"
@@ -112,6 +113,18 @@ var (
 	// Use with extreme caution!
 	SMTPRelayAllIncoming = false
 
+	// POP3Listen address - if set then Mailpit will start the POP3 server and listen on this address
+	POP3Listen = "[::]:1110"
+
+	// POP3AuthFile for POP3 authentication
+	POP3AuthFile string
+
+	// POP3TLSCert TLS certificate
+	POP3TLSCert string
+
+	// POP3TLSKey TLS certificate key
+	POP3TLSKey string
+
 	// EnableSpamAssassin must be either <host>:<port> or "postmark"
 	EnableSpamAssassin string
 
@@ -201,6 +214,7 @@ func VerifyConfig() error {
 
 	if UITLSCert != "" {
 		UITLSCert = filepath.Clean(UITLSCert)
+		UITLSKey = filepath.Clean(UITLSKey)
 
 		if !isFile(UITLSCert) {
 			return fmt.Errorf("[ui] TLS certificate not found: %s", UITLSCert)
@@ -217,6 +231,7 @@ func VerifyConfig() error {
 
 	if SMTPTLSCert != "" {
 		SMTPTLSCert = filepath.Clean(SMTPTLSCert)
+		SMTPTLSKey = filepath.Clean(SMTPTLSKey)
 
 		if !isFile(SMTPTLSCert) {
 			return fmt.Errorf("[smtp] TLS certificate not found: %s", SMTPTLSCert)
@@ -258,6 +273,46 @@ func VerifyConfig() error {
 		return errors.New("[smtp] authentication requires TLS encryption, run with `--smtp-auth-allow-insecure` to allow insecure authentication")
 	}
 
+	// POP3 server
+	if POP3TLSCert != "" {
+		POP3TLSCert = filepath.Clean(POP3TLSCert)
+		POP3TLSKey = filepath.Clean(POP3TLSKey)
+
+		if !isFile(POP3TLSCert) {
+			return fmt.Errorf("[pop3] TLS certificate not found: %s", POP3TLSCert)
+		}
+
+		if !isFile(POP3TLSKey) {
+			return fmt.Errorf("[pop3] TLS key not found: %s", POP3TLSKey)
+		}
+	}
+	if POP3TLSCert != "" && POP3TLSKey == "" || POP3TLSCert == "" && POP3TLSKey != "" {
+		return errors.New("[pop3] You must provide both a POP3 TLS certificate and a key")
+	}
+	if POP3Listen != "" {
+		_, err := net.ResolveTCPAddr("tcp", POP3Listen)
+		if err != nil {
+			return fmt.Errorf("[pop3] %s", err.Error())
+		}
+	}
+	if POP3AuthFile != "" {
+		POP3AuthFile = filepath.Clean(POP3AuthFile)
+
+		if !isFile(POP3AuthFile) {
+			return fmt.Errorf("[pop3] password file not found: %s", POP3AuthFile)
+		}
+
+		b, err := os.ReadFile(POP3AuthFile)
+		if err != nil {
+			return err
+		}
+
+		if err := auth.SetPOP3Auth(string(b)); err != nil {
+			return err
+		}
+	}
+
+	// Web root
 	validWebrootRe := regexp.MustCompile(`[^0-9a-zA-Z\/\-\_\.@]`)
 	if validWebrootRe.MatchString(Webroot) {
 		return fmt.Errorf("invalid characters in Webroot (%s). Valid chars include: [a-z A-Z 0-9 _ . - / @]", Webroot)
