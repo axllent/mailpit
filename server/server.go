@@ -13,6 +13,7 @@ import (
 	"strings"
 	"sync/atomic"
 	"text/template"
+	"time"
 
 	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/internal/auth"
@@ -21,6 +22,7 @@ import (
 	"github.com/axllent/mailpit/internal/storage"
 	"github.com/axllent/mailpit/server/apiv1"
 	"github.com/axllent/mailpit/server/handlers"
+	"github.com/axllent/mailpit/server/pop3"
 	"github.com/axllent/mailpit/server/websockets"
 	"github.com/gorilla/mux"
 )
@@ -46,6 +48,8 @@ func Listen() {
 	websockets.MessageHub = websockets.NewHub()
 
 	go websockets.MessageHub.Run()
+
+	go pop3.Run()
 
 	r := apiRoutes()
 
@@ -94,12 +98,18 @@ func Listen() {
 
 	logger.Log().Infof("[http] starting on %s", config.HTTPListen)
 
+	server := &http.Server{
+		Addr:         config.HTTPListen,
+		ReadTimeout:  30 * time.Second,
+		WriteTimeout: 30 * time.Second,
+	}
+
 	if config.UITLSCert != "" && config.UITLSKey != "" {
 		logger.Log().Infof("[http] accessible via https://%s%s", logger.CleanHTTPIP(config.HTTPListen), config.Webroot)
-		logger.Log().Fatal(http.ListenAndServeTLS(config.HTTPListen, config.UITLSCert, config.UITLSKey, nil))
+		logger.Log().Fatal(server.ListenAndServeTLS(config.UITLSCert, config.UITLSKey))
 	} else {
 		logger.Log().Infof("[http] accessible via http://%s%s", logger.CleanHTTPIP(config.HTTPListen), config.Webroot)
-		logger.Log().Fatal(http.ListenAndServe(config.HTTPListen, nil))
+		logger.Log().Fatal(server.ListenAndServe())
 	}
 }
 

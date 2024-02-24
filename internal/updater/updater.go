@@ -178,8 +178,8 @@ func GithubUpdate(repo, appName, currentVersion string) (string, error) {
 	}
 
 	if runtime.GOOS != "windows" {
-		/* #nosec G302 */
-		if err := os.Chmod(newExec, 0755); err != nil {
+		err := os.Chmod(newExec, 0755) // #nosec
+		if err != nil {
 			return "", err
 		}
 	}

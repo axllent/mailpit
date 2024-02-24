@@ -19,8 +19,8 @@ import (
 	"github.com/axllent/mailpit/internal/storage"
 	"github.com/axllent/mailpit/internal/tools"
 	"github.com/axllent/mailpit/server/smtpd"
-	"github.com/google/uuid"
 	"github.com/gorilla/mux"
+	"github.com/lithammer/shortuuid/v4"
 )
 
 // GetMessages returns a paginated list of messages as JSON
@@ -696,7 +696,7 @@ func ReleaseMessage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// generate unique ID
-	uid := uuid.New().String() + "@mailpit"
+	uid := shortuuid.New() + "@mailpit"
 	// update Message-Id with unique ID
 	msg, err = tools.UpdateMessageHeader(msg, "Message-Id", "<"+uid+">")
 	if err != nil {

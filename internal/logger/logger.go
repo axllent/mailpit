@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"regexp"
 
 	"github.com/sirupsen/logrus"
@@ -39,7 +40,7 @@ func Log() *logrus.Logger {
 		}
 
 		if LogFile != "" {
-			file, err := os.OpenFile(LogFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0664)
+			file, err := os.OpenFile(filepath.Clean(LogFile), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0664) // #nosec
 			if err == nil {
 				log.Out = file
 			} else {

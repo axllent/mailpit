@@ -14,7 +14,7 @@ import (
 	"github.com/axllent/mailpit/internal/logger"
 	"github.com/axllent/mailpit/internal/stats"
 	"github.com/axllent/mailpit/internal/storage"
-	"github.com/google/uuid"
+	"github.com/lithammer/shortuuid/v4"
 	"github.com/mhale/smtpd"
 )
 
@@ -63,7 +63,7 @@ func mailHandler(origin net.Addr, from string, to []string, data []byte) error {
 	// add a message ID if not set
 	if messageID == "" {
 		// generate unique ID
-		messageID = uuid.New().String() + "@mailpit"
+		messageID = shortuuid.New() + "@mailpit"
 		// add unique ID
 		data = append([]byte("Message-Id: <"+messageID+">\r\n"), data...)
 	} else if config.IgnoreDuplicateIDs {

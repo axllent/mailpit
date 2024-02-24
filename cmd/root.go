@@ -110,6 +110,12 @@ func init() {
 
 	rootCmd.Flags().StringVar(&config.SMTPRelayConfigFile, "smtp-relay-config", config.SMTPRelayConfigFile, "SMTP configuration file to allow releasing messages")
 	rootCmd.Flags().BoolVar(&config.SMTPRelayAllIncoming, "smtp-relay-all", config.SMTPRelayAllIncoming, "Relay all incoming messages via external SMTP server (caution!)")
+
+	rootCmd.Flags().StringVar(&config.POP3Listen, "pop3", config.POP3Listen, "POP3 server bind interface and port")
+	rootCmd.Flags().StringVar(&config.POP3AuthFile, "pop3-auth-file", config.POP3AuthFile, "A password file for POP3 server authentication (enables POP3 server)")
+	rootCmd.Flags().StringVar(&config.POP3TLSCert, "pop3-tls-cert", config.POP3TLSCert, "Optional TLS certificate for POP3 server - requires pop3-tls-key")
+	rootCmd.Flags().StringVar(&config.POP3TLSKey, "pop3-tls-key", config.POP3TLSKey, "Optional TLS key for POP3 server - requires pop3-tls-cert")
+
 	rootCmd.Flags().StringVar(&config.WebhookURL, "webhook-url", config.WebhookURL, "Send a webhook request for new messages")
 	rootCmd.Flags().IntVar(&webhook.RateLimit, "webhook-limit", webhook.RateLimit, "Limit webhook requests per second")
 
@@ -154,13 +160,17 @@ func initConfigFromEnv() {
 
 	// UI
 	config.UIAuthFile = os.Getenv("MP_UI_AUTH_FILE")
-	auth.SetUIAuth(os.Getenv("MP_UI_AUTH"))
+	if err := auth.SetUIAuth(os.Getenv("MP_UI_AUTH")); err != nil {
+		logger.Log().Errorf(err.Error())
+	}
 	config.UITLSCert = os.Getenv("MP_UI_TLS_CERT")
 	config.UITLSKey = os.Getenv("MP_UI_TLS_KEY")
 
 	// SMTP
 	config.SMTPAuthFile = os.Getenv("MP_SMTP_AUTH_FILE")
-	auth.SetSMTPAuth(os.Getenv("MP_SMTP_AUTH"))
+	if err := auth.SetSMTPAuth(os.Getenv("MP_SMTP_AUTH")); err != nil {
+		logger.Log().Errorf(err.Error())
+	}
 	config.SMTPTLSCert = os.Getenv("MP_SMTP_TLS_CERT")
 	config.SMTPTLSKey = os.Getenv("MP_SMTP_TLS_KEY")
 	if getEnabledFromEnv("MP_SMTP_TLS_REQUIRED") {
@@ -190,6 +200,17 @@ func initConfigFromEnv() {
 	if getEnabledFromEnv("MP_SMTP_RELAY_ALL") {
 		config.SMTPRelayAllIncoming = true
 	}
+
+	// POP3
+	if len(os.Getenv("MP_POP3_BIND_ADDR")) > 0 {
+		config.POP3Listen = os.Getenv("MP_POP3_BIND_ADDR")
+	}
+	config.POP3AuthFile = os.Getenv("MP_POP3_AUTH_FILE")
+	if err := auth.SetPOP3Auth(os.Getenv("MP_POP3_AUTH")); err != nil {
+		logger.Log().Errorf(err.Error())
+	}
+	config.POP3TLSCert = os.Getenv("MP_POP3_TLS_CERT")
+	config.POP3TLSKey = os.Getenv("MP_POP3_TLS_KEY")
 
 	// Webhook
 	if len(os.Getenv("MP_WEBHOOK_URL")) > 0 {
