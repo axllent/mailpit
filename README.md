@@ -50,7 +50,7 @@ via either HTTPS or `localhost` only)
 "accept any" mode)
 - [SMTP relaying](https://mailpit.axllent.org/docs/configuration/smtp-relay/) (message release) - relay messages via a different SMTP server
 including an optional allowlist of accepted recipients
-- Fast SMTP processing & storing - approximately 70-100 emails per second depending on CPU, network speed & email size,
+- Fast SMTP processing & storing - ingesting 100-200 emails per second depending on CPU, network speed & email size,
 easily handling tens of thousands of emails
 - Optional [POP3 server](https://mailpit.axllent.org/docs/configuration/pop3/) to download captured message directly into your email client
 - Configurable automatic email pruning (default keeps the most recent 500 emails)
