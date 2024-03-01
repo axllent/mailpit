@@ -9,7 +9,7 @@ import (
 
 // SettingGet returns a setting string value, blank is it does not exist
 func SettingGet(k string) string {
-	var result string
+	var result sql.NullString
 	err := sqlf.From("settings").
 		Select("Value").To(&result).
 		Where("Key = ?", k).
@@ -17,10 +17,10 @@ func SettingGet(k string) string {
 		QueryAndClose(nil, db, func(row *sql.Rows) {})
 	if err != nil {
 		logger.Log().Errorf("[db] %s", err.Error())
-		return result
+		return ""
 	}
 
-	return result
+	return result.String
 }
 
 // SettingPut sets a setting string value, inserting if new
@@ -35,7 +35,7 @@ func SettingPut(k, v string) error {
 
 // The total deleted message size as an int64 value
 func getDeletedSize() int64 {
-	var result int64
+	var result sql.NullInt64
 	err := sqlf.From("settings").
 		Select("Value").To(&result).
 		Where("Key = ?", "DeletedSize").
@@ -43,10 +43,10 @@ func getDeletedSize() int64 {
 		QueryAndClose(nil, db, func(row *sql.Rows) {})
 	if err != nil {
 		logger.Log().Errorf("[db] %s", err.Error())
-		return result
+		return 0
 	}
 
-	return result
+	return result.Int64
 }
 
 // The total raw non-compressed messages size in bytes of all messages in the database
@@ -57,7 +57,7 @@ func totalMessagesSize() int64 {
 		QueryAndClose(nil, db, func(row *sql.Rows) {})
 	if err != nil {
 		logger.Log().Errorf("[db] %s", err.Error())
-		return result
+		return 0
 	}
 
 	return result

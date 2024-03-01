@@ -121,6 +121,11 @@ func dbApplyMigrations() error {
 
 // These functions are used to migrate data formats/structure on startup.
 func dataMigrations() {
+	// ensure DeletedSize has a value if empty
+	if SettingGet("DeletedSize") == "" {
+		_ = SettingPut("DeletedSize", "0")
+	}
+
 	migrateTagsToManyMany()
 }
 
