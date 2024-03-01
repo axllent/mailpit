@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/GuiaBolso/darwin v0.0.0-20191218124601-fd6d2aa3d244
-	github.com/PuerkitoBio/goquery v1.9.0
+	github.com/PuerkitoBio/goquery v1.9.1
 	github.com/axllent/semver v0.0.1
 	github.com/disintegration/imaging v1.6.2
 	github.com/gomarkdown/markdown v0.0.0-20231222211730-1d6d20845b47
@@ -25,7 +25,7 @@ require (
 	golang.org/x/text v0.14.0
 	golang.org/x/time v0.5.0
 	gopkg.in/yaml.v3 v3.0.1
-	modernc.org/sqlite v1.29.1
+	modernc.org/sqlite v1.29.2
 )
 
 require (
@@ -53,7 +53,7 @@ require (
 	github.com/ssor/bom v0.0.0-20170718123548-6386211fdfcf // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/vanng822/css v1.0.1 // indirect
-	golang.org/x/crypto v0.19.0 // indirect
+	golang.org/x/crypto v0.20.0 // indirect
 	golang.org/x/image v0.15.0 // indirect
 	golang.org/x/sys v0.17.0 // indirect
 	golang.org/x/tools v0.18.0 // indirect
