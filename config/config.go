@@ -85,7 +85,7 @@ var (
 	SMTPCLITags string
 
 	// ValidTagRegexp represents a valid tag
-	ValidTagRegexp = regexp.MustCompile(`^([a-zA-Z0-9\-\ \_]){3,}$`)
+	ValidTagRegexp = regexp.MustCompile(`^([a-zA-Z0-9\-\ \_\.]){1,}$`)
 
 	// SMTPTags are expressions to apply tags to new mail
 	SMTPTags []AutoTag
