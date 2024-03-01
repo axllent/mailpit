@@ -69,14 +69,10 @@ func Store(body *[]byte) (string, error) {
 		return "", err
 	}
 
-	// extract tags from body matches based on --tag
-	tagStr := findTagsInRawMessage(body)
-
-	// extract tags from X-Tags header
-	headerTags := strings.TrimSpace(env.Root.Header.Get("X-Tags"))
-	if headerTags != "" {
-		tagStr += "," + headerTags
-	}
+	// extract tags from body matches based on --tag, plus addresses & X-Tags header
+	tagStr := findTagsInRawMessage(body) + "," +
+		obj.tagsFromPlusAddresses() + "," +
+		strings.TrimSpace(env.Root.Header.Get("X-Tags"))
 
 	tagData := uniqueTagsFromString(tagStr)
 
