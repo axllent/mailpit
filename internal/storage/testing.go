@@ -11,6 +11,7 @@ import (
 
 var (
 	testTextEmail []byte
+	testTagEmail  []byte
 	testMimeEmail []byte
 	testRuns      = 100
 )
@@ -27,6 +28,11 @@ func setup() {
 	var err error
 
 	testTextEmail, err = os.ReadFile("testdata/plain-text.eml")
+	if err != nil {
+		panic(err)
+	}
+
+	testTagEmail, err = os.ReadFile("testdata/tags.eml")
 	if err != nil {
 		panic(err)
 	}
