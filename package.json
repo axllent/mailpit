@@ -18,7 +18,7 @@
     "moment": "^2.29.4",
     "prismjs": "^1.29.0",
     "rapidoc": "^9.3.4",
-    "vue": "^3.2.13",
+    "vue": "^3.4.21",
     "vue-css-donut-chart": "^2.0.0",
     "vue-router": "^4.2.4"
   },
