@@ -10,6 +10,7 @@ import (
 	"github.com/axllent/mailpit/internal/auth"
 	"github.com/axllent/mailpit/internal/logger"
 	"github.com/axllent/mailpit/internal/storage"
+	"github.com/axllent/mailpit/internal/tools"
 	"github.com/axllent/mailpit/server"
 	"github.com/axllent/mailpit/server/smtpd"
 	"github.com/axllent/mailpit/server/webhook"
@@ -122,6 +123,7 @@ func init() {
 	rootCmd.Flags().BoolVar(&config.AllowUntrustedTLS, "allow-untrusted-tls", config.AllowUntrustedTLS, "Do not verify HTTPS certificates (link checker & screenshots)")
 
 	rootCmd.Flags().StringVarP(&config.SMTPCLITags, "tag", "t", config.SMTPCLITags, "Tag new messages matching filters")
+	rootCmd.Flags().BoolVar(&tools.TagsTitleCase, "tags-title-case", tools.TagsTitleCase, "Convert new tags automatically to TitleCase")
 	rootCmd.Flags().StringVar(&logger.LogFile, "log-file", logger.LogFile, "Log output to file instead of stdout")
 	rootCmd.Flags().BoolVarP(&logger.QuietLogging, "quiet", "q", logger.QuietLogging, "Quiet logging (errors only)")
 	rootCmd.Flags().BoolVarP(&logger.VerboseLogging, "verbose", "v", logger.VerboseLogging, "Verbose logging")
@@ -153,9 +155,6 @@ func initConfigFromEnv() {
 	}
 	if len(os.Getenv("MP_MAX_MESSAGES")) > 0 {
 		config.MaxMessages, _ = strconv.Atoi(os.Getenv("MP_MAX_MESSAGES"))
-	}
-	if len(os.Getenv("MP_TAG")) > 0 {
-		config.SMTPCLITags = os.Getenv("MP_TAG")
 	}
 
 	// UI
@@ -244,6 +243,12 @@ func initConfigFromEnv() {
 	}
 	if getEnabledFromEnv("MP_ALLOW_UNTRUSTED_TLS") {
 		config.AllowUntrustedTLS = true
+	}
+	if len(os.Getenv("MP_TAG")) > 0 {
+		config.SMTPCLITags = os.Getenv("MP_TAG")
+	}
+	if getEnabledFromEnv("MP_TAGS_TITLE_CASE") {
+		tools.TagsTitleCase = getEnabledFromEnv("MP_TAGS_TITLE_CASE")
 	}
 	if len(os.Getenv("MP_LOG_FILE")) > 0 {
 		logger.LogFile = os.Getenv("MP_LOG_FILE")
