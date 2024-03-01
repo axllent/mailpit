@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/GuiaBolso/darwin v0.0.0-20191218124601-fd6d2aa3d244
-	github.com/PuerkitoBio/goquery v1.9.0
+	github.com/PuerkitoBio/goquery v1.9.1
 	github.com/axllent/semver v0.0.1
 	github.com/disintegration/imaging v1.6.2
 	github.com/gomarkdown/markdown v0.0.0-20231222211730-1d6d20845b47
