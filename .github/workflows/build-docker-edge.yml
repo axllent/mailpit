@@ -27,6 +27,8 @@ jobs:
       with:
         context: .
         platforms: linux/386,linux/amd64,linux/arm64
+        build-args: |
+          "VERSION=edge-${{ github.sha }}"
         push: true
         tags: |
           axllent/mailpit:edge

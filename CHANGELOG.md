@@ -2,6 +2,21 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.14.1]
+
+### Chore
+- Tag names now allow `.` and must be a minimum of 1 character
+- Update node dependencies
+- Update Go dependencies
+
+### Feature
+- Option to enforce TitleCasing for all newly created tags
+- Set message tags using plus addressing ([#253](https://github.com/axllent/mailpit/issues/253))
+
+### Fix
+- Handle null values in Mailpit settings, set DeletedSize=0 if null
+
+
 ## [v1.14.0]
 
 ### Chore

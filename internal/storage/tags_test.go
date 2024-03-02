@@ -107,5 +107,24 @@ func TestTags(t *testing.T) {
 
 	// Check deleted message tags also prune the tags database
 	allTags := GetAllTags()
-	assertEqual(t, "", strings.Join(allTags, "|"), "Dirty message tag did not clean as expected")
+	assertEqual(t, "", strings.Join(allTags, "|"), "Tags did not delete as expected")
+
+	if err := DeleteAllMessages(); err != nil {
+		t.Log("error ", err)
+		t.Fail()
+	}
+
+	// test 20 tags
+	id, err = Store(&testTagEmail)
+	if err != nil {
+		t.Log("error ", err)
+		t.Fail()
+	}
+
+	returnedTags = getMessageTags(id)
+	assertEqual(t, "BccTag|CcTag|FromFag|ToTag|X-tag1|X-tag2", strings.Join(returnedTags, "|"), "Tags not detected correctly")
+	if err := DeleteAllMessageTags(id); err != nil {
+		t.Log("error ", err)
+		t.Fail()
+	}
 }

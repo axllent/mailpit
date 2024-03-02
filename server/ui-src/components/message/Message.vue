@@ -301,7 +301,7 @@ export default {
 						<tr v-if="message.ReplyTo && message.ReplyTo.length" class="small">
 							<th class="text-nowrap">Reply-To</th>
 							<td class="privacy text-body-secondary text-break">
-								<span v-for="(   t, i   ) in    message.ReplyTo   ">
+								<span v-for="(t, i) in message.ReplyTo">
 									<template v-if="i > 0">,</template>
 									<span class="text-spaces">{{ t.Name }}</span>
 									&lt;<a :href="searchURI(t.Address)" class="text-body-secondary">
@@ -337,11 +337,11 @@ export default {
 								<select class="form-select small tag-selector" v-model="messageTags" multiple
 									data-full-width="false" data-suggestions-threshold="1" data-allow-new="true"
 									data-clear-end="true" data-allow-clear="true" data-placeholder="Add tags..."
-									data-badge-style="secondary" data-regex="^([a-zA-Z0-9\-\ \_]){3,}$"
+									data-badge-style="secondary" data-regex="^([a-zA-Z0-9\-\ \_\.]){1,}$"
 									data-separator="|,|">
 									<option value="">Type a tag...</option>
 									<!-- you need at least one option with the placeholder -->
-									<option v-for="   t    in    mailbox.tags   " :value="t">{{ t }}</option>
+									<option v-for="t in mailbox.tags" :value="t">{{ t }}</option>
 								</select>
 								<div class="invalid-feedback">Invalid tag name</div>
 							</td>
@@ -491,7 +491,7 @@ export default {
 				</button>
 
 				<div class="d-none d-lg-block ms-auto me-3" v-if="showMobileButtons">
-					<template v-for="   vals, key    in    responsiveSizes   ">
+					<template v-for="_, key in responsiveSizes">
 						<button class="btn" :disabled="scaleHTMLPreview == key" :title="'Switch to ' + key + ' view'"
 							v-on:click="scaleHTMLPreview = key">
 							<i class="bi" :class="'bi-' + key"></i>

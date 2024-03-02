@@ -2,6 +2,7 @@ package storage
 
 import (
 	"database/sql"
+	"regexp"
 	"sort"
 	"strings"
 
@@ -9,6 +10,10 @@ import (
 	"github.com/axllent/mailpit/internal/logger"
 	"github.com/axllent/mailpit/internal/tools"
 	"github.com/leporo/sqlf"
+)
+
+var (
+	addressPlusRe = regexp.MustCompile(`^(.*){1,}\+(.*)@`)
 )
 
 // SetMessageTags will set the tags for a given database ID
@@ -234,6 +239,35 @@ func findTagsInRawMessage(message *[]byte) string {
 	}
 
 	return tagStr
+}
+
+// Returns tags found in email plus addresses (eg: test+tagname@example.com)
+func (d DBMailSummary) tagsFromPlusAddresses() string {
+	tags := []string{}
+	for _, c := range d.To {
+		matches := addressPlusRe.FindAllStringSubmatch(c.String(), 1)
+		if len(matches) == 1 && config.ValidTagRegexp.MatchString(matches[0][2]) {
+			tags = append(tags, matches[0][2])
+		}
+	}
+	for _, c := range d.Cc {
+		matches := addressPlusRe.FindAllStringSubmatch(c.String(), 1)
+		if len(matches) == 1 && config.ValidTagRegexp.MatchString(matches[0][2]) {
+			tags = append(tags, matches[0][2])
+		}
+	}
+	for _, c := range d.Bcc {
+		matches := addressPlusRe.FindAllStringSubmatch(c.String(), 1)
+		if len(matches) == 1 && config.ValidTagRegexp.MatchString(matches[0][2]) {
+			tags = append(tags, matches[0][2])
+		}
+	}
+	matches := addressPlusRe.FindAllStringSubmatch(d.From.String(), 1)
+	if len(matches) == 1 && config.ValidTagRegexp.MatchString(matches[0][2]) {
+		tags = append(tags, matches[0][2])
+	}
+
+	return strings.Join(tags, ",")
 }
 
 // Get message tags from the database for a given database ID
