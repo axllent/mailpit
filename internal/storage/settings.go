@@ -51,7 +51,7 @@ func getDeletedSize() int64 {
 
 // The total raw non-compressed messages size in bytes of all messages in the database
 func totalMessagesSize() int64 {
-	var result int64
+	var result sql.NullInt64
 	err := sqlf.From("mailbox").
 		Select("SUM(Size)").To(&result).
 		QueryAndClose(nil, db, func(row *sql.Rows) {})
@@ -60,7 +60,7 @@ func totalMessagesSize() int64 {
 		return 0
 	}
 
-	return result
+	return result.Int64
 }
 
 // AddDeletedSize will add the value to the DeletedSize setting
