@@ -2,6 +2,15 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.14.2]
+
+### Chore
+- Allow setting of multiple message tags via plus addresses ([#253](https://github.com/axllent/mailpit/issues/253))
+
+### Fix
+- Prevent runtime error when calculating total messages size of empty table ([#263](https://github.com/axllent/mailpit/issues/263))
+
+
 ## [v1.14.1]
 
 ### Chore
