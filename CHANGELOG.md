@@ -2,6 +2,16 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.14.3]
+
+### Chore
+- Update node dependencies
+- Update Go dependencies
+
+### Fix
+- Prevent crash when calculating deleted space percentage (divide by zero)
+
+
 ## [v1.14.2]
 
 ### Chore
