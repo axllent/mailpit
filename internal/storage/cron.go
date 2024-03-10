@@ -27,7 +27,12 @@ func dbCron() {
 
 			if deletedSize > 0 {
 				total := totalMessagesSize()
-				deletedPercent := deletedSize * 100 / total
+				var deletedPercent int64
+				if total == 0 {
+					deletedPercent = 100
+				} else {
+					deletedPercent = deletedSize * 100 / total
+				}
 				// only vacuum the DB if at least 1% of mail storage size has been deleted
 				if deletedPercent >= 1 {
 					logger.Log().Debugf("[db] deleted messages is %d%% of total size, reclaim space", deletedPercent)
