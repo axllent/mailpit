@@ -2,6 +2,16 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.14.4]
+
+### Chore
+- Update caniemail test data
+- Reorder CLI flags to group by related functionality
+
+### Feature
+- Allow setting SMTP relay configuration values via environment variables ([#262](https://github.com/axllent/mailpit/issues/262))
+
+
 ## [v1.14.3]
 
 ### Chore
