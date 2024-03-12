@@ -12,7 +12,7 @@ import (
 )
 
 func allowedRecipients(to []string) []string {
-	if config.SMTPRelayConfig.RecipientAllowlistRegexp == nil {
+	if config.SMTPRelayConfig.AllowedRecipientsRegexp == nil {
 		return to
 	}
 
@@ -26,8 +26,8 @@ func allowedRecipients(to []string) []string {
 			continue
 		}
 
-		if !config.SMTPRelayConfig.RecipientAllowlistRegexp.MatchString(address.Address) {
-			logger.Log().Debugf("[smtp] not allowed to relay to %s: does not match the allowlist %s", recipient, config.SMTPRelayConfig.RecipientAllowlist)
+		if !config.SMTPRelayConfig.AllowedRecipientsRegexp.MatchString(address.Address) {
+			logger.Log().Debugf("[smtp] not allowed to relay to %s: does not match the allowlist %s", recipient, config.SMTPRelayConfig.AllowedRecipients)
 		} else {
 			ar = append(ar, recipient)
 		}

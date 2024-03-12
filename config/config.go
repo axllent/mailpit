@@ -94,7 +94,7 @@ var (
 	SMTPRelayConfigFile string
 
 	// SMTPRelayConfig to parse a yaml file and store config of relay SMTP server
-	SMTPRelayConfig smtpRelayConfigStruct
+	SMTPRelayConfig SMTPRelayConfigStruct
 
 	// SMTPStrictRFCHeaders will return an error if the email headers contain <CR><CR><LF> (\r\r\n)
 	// @see https://github.com/axllent/mailpit/issues/87 & https://github.com/axllent/mailpit/issues/153
@@ -154,18 +154,20 @@ type AutoTag struct {
 }
 
 // SMTPRelayConfigStruct struct for parsing yaml & storing variables
-type smtpRelayConfigStruct struct {
-	Host                     string `yaml:"host"`
-	Port                     int    `yaml:"port"`
-	STARTTLS                 bool   `yaml:"starttls"`
-	AllowInsecure            bool   `yaml:"allow-insecure"`
-	Auth                     string `yaml:"auth"`                // none, plain, login, cram-md5
-	Username                 string `yaml:"username"`            // plain & cram-md5
-	Password                 string `yaml:"password"`            // plain
-	Secret                   string `yaml:"secret"`              // cram-md5
-	ReturnPath               string `yaml:"return-path"`         // allow overriding the bounce address
-	RecipientAllowlist       string `yaml:"recipient-allowlist"` // regex, if set needs to match for mails to be relayed
-	RecipientAllowlistRegexp *regexp.Regexp
+type SMTPRelayConfigStruct struct {
+	Host                    string         `yaml:"host"`
+	Port                    int            `yaml:"port"`
+	STARTTLS                bool           `yaml:"starttls"`
+	AllowInsecure           bool           `yaml:"allow-insecure"`
+	Auth                    string         `yaml:"auth"`               // none, plain, login, cram-md5
+	Username                string         `yaml:"username"`           // plain & cram-md5
+	Password                string         `yaml:"password"`           // plain
+	Secret                  string         `yaml:"secret"`             // cram-md5
+	ReturnPath              string         `yaml:"return-path"`        // allow overriding the bounce address
+	AllowedRecipients       string         `yaml:"allowed-recipients"` // regex, if set needs to match for mails to be relayed
+	AllowedRecipientsRegexp *regexp.Regexp // compiled regexp using AllowedRecipients
+	// DEPRECATED 2024/03/12
+	RecipientAllowlist string `yaml:"recipient-allowlist"`
 }
 
 // VerifyConfig wil do some basic checking
@@ -371,6 +373,11 @@ func VerifyConfig() error {
 		return err
 	}
 
+	// separate relay config validation to account for environment variables
+	if err := validateRelayConfig(); err != nil {
+		return err
+	}
+
 	if !ReleaseEnabled && SMTPRelayAllIncoming {
 		return errors.New("[smtp] relay config must be set to relay all messages")
 	}
@@ -383,7 +390,7 @@ func VerifyConfig() error {
 	return nil
 }
 
-// Parse & validate the SMTPRelayConfigFile (if set)
+// Parse the SMTPRelayConfigFile (if set)
 func parseRelayConfig(c string) error {
 	if c == "" {
 		return nil
@@ -408,6 +415,23 @@ func parseRelayConfig(c string) error {
 		return errors.New("[smtp] relay host not set")
 	}
 
+	// DEPRECATED 2024/03/12
+	if SMTPRelayConfig.RecipientAllowlist != "" {
+		logger.Log().Warn("[smtp] relay 'recipient-allowlist' is deprecated, use 'allowed_recipients' instead")
+		if SMTPRelayConfig.AllowedRecipients == "" {
+			SMTPRelayConfig.AllowedRecipients = SMTPRelayConfig.RecipientAllowlist
+		}
+	}
+
+	return nil
+}
+
+// Validate the SMTPRelayConfig (if Host is set)
+func validateRelayConfig() error {
+	if SMTPRelayConfig.Host == "" {
+		return nil
+	}
+
 	if SMTPRelayConfig.Port == 0 {
 		SMTPRelayConfig.Port = 25 // default
 	}
@@ -418,17 +442,17 @@ func parseRelayConfig(c string) error {
 		SMTPRelayConfig.Auth = "none"
 	} else if SMTPRelayConfig.Auth == "plain" {
 		if SMTPRelayConfig.Username == "" || SMTPRelayConfig.Password == "" {
-			return fmt.Errorf("[smtp] relay host username or password not set for PLAIN authentication (%s)", c)
+			return fmt.Errorf("[smtp] relay host username or password not set for PLAIN authentication")
 		}
 	} else if SMTPRelayConfig.Auth == "login" {
 		SMTPRelayConfig.Auth = "login"
 		if SMTPRelayConfig.Username == "" || SMTPRelayConfig.Password == "" {
-			return fmt.Errorf("[smtp] relay host username or password not set for LOGIN authentication (%s)", c)
+			return fmt.Errorf("[smtp] relay host username or password not set for LOGIN authentication")
 		}
 	} else if strings.HasPrefix(SMTPRelayConfig.Auth, "cram") {
 		SMTPRelayConfig.Auth = "cram-md5"
 		if SMTPRelayConfig.Username == "" || SMTPRelayConfig.Secret == "" {
-			return fmt.Errorf("[smtp] relay host username or secret not set for CRAM-MD5 authentication (%s)", c)
+			return fmt.Errorf("[smtp] relay host username or secret not set for CRAM-MD5 authentication")
 		}
 	} else {
 		return fmt.Errorf("[smtp] relay authentication method not supported: %s", SMTPRelayConfig.Auth)
@@ -438,15 +462,15 @@ func parseRelayConfig(c string) error {
 
 	logger.Log().Infof("[smtp] enabling message relaying via %s:%d", SMTPRelayConfig.Host, SMTPRelayConfig.Port)
 
-	allowlistRegexp, err := regexp.Compile(SMTPRelayConfig.RecipientAllowlist)
+	allowlistRegexp, err := regexp.Compile(SMTPRelayConfig.AllowedRecipients)
 
-	if SMTPRelayConfig.RecipientAllowlist != "" {
+	if SMTPRelayConfig.AllowedRecipients != "" {
 		if err != nil {
 			return fmt.Errorf("[smtp] failed to compile relay recipient allowlist regexp: %s", err.Error())
 		}
 
-		SMTPRelayConfig.RecipientAllowlistRegexp = allowlistRegexp
-		logger.Log().Infof("[smtp] relay recipient allowlist is active with the following regexp: %s", SMTPRelayConfig.RecipientAllowlist)
+		SMTPRelayConfig.AllowedRecipientsRegexp = allowlistRegexp
+		logger.Log().Infof("[smtp] relay recipient allowlist is active with the following regexp: %s", SMTPRelayConfig.AllowedRecipients)
 
 	}
 

@@ -642,7 +642,7 @@ func ReleaseMessage(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if config.SMTPRelayConfig.RecipientAllowlistRegexp != nil && !config.SMTPRelayConfig.RecipientAllowlistRegexp.MatchString(address.Address) {
+		if config.SMTPRelayConfig.AllowedRecipientsRegexp != nil && !config.SMTPRelayConfig.AllowedRecipientsRegexp.MatchString(address.Address) {
 			httpError(w, "Mail address does not match allowlist: "+to)
 			return
 		}

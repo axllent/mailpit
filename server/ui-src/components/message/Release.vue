@@ -126,10 +126,10 @@ export default {
 
 						</div>
 					</div>
-					<div class="form-text text-center" v-if="mailbox.uiConfig.MessageRelay.RecipientAllowlist != ''">
+					<div class="form-text text-center" v-if="mailbox.uiConfig.MessageRelay.AllowedRecipients != ''">
 						Note: A recipient allowlist has been configured. Any mail address not matching it will be rejected.
 						<br class="d-none d-md-inline">
-						Configured allowlist: <b>{{ mailbox.uiConfig.MessageRelay.RecipientAllowlist }}</b>
+						Allowed recipients: <b>{{ mailbox.uiConfig.MessageRelay.AllowedRecipients }}</b>
 					</div>
 					<div class="form-text text-center">
 						Note: For testing purposes, a unique Message-Id will be generated on send.
