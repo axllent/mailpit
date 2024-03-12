@@ -79,7 +79,7 @@ func init() {
 	// load and warn deprecated ENV vars
 	initDeprecatedConfigFromEnv()
 
-	// load ENV vars
+	// load environment variables
 	initConfigFromEnv()
 
 	rootCmd.Flags().StringVarP(&config.DataFile, "db-file", "d", config.DataFile, "Database file to store persistent data")
@@ -237,6 +237,19 @@ func initConfigFromEnv() {
 	if getEnabledFromEnv("MP_SMTP_RELAY_ALL") {
 		config.SMTPRelayAllIncoming = true
 	}
+	config.SMTPRelayConfig = config.SMTPRelayConfigStruct{}
+	config.SMTPRelayConfig.Host = os.Getenv("MP_SMTP_RELAY_HOST")
+	if len(os.Getenv("MP_SMTP_RELAY_PORT")) > 0 {
+		config.SMTPRelayConfig.Port, _ = strconv.Atoi(os.Getenv("MP_SMTP_RELAY_PORT"))
+	}
+	config.SMTPRelayConfig.STARTTLS = getEnabledFromEnv("MP_SMTP_RELAY_STARTTLS")
+	config.SMTPRelayConfig.AllowInsecure = getEnabledFromEnv("MP_SMTP_RELAY_ALLOW_INSECURE")
+	config.SMTPRelayConfig.Auth = os.Getenv("MP_SMTP_RELAY_AUTH")
+	config.SMTPRelayConfig.Username = os.Getenv("MP_SMTP_RELAY_USERNAME")
+	config.SMTPRelayConfig.Password = os.Getenv("MP_SMTP_RELAY_PASSWORD")
+	config.SMTPRelayConfig.Secret = os.Getenv("MP_SMTP_RELAY_SECRET")
+	config.SMTPRelayConfig.ReturnPath = os.Getenv("MP_SMTP_RELAY_RETURN_PATH")
+	config.SMTPRelayConfig.AllowedRecipients = os.Getenv("MP_SMTP_RELAY_ALLOWED_RECIPIENTS")
 
 	// POP3 server
 	if len(os.Getenv("MP_POP3_BIND_ADDR")) > 0 {

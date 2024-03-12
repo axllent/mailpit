@@ -1407,13 +1407,13 @@
           "description": "Message Relay information",
           "type": "object",
           "properties": {
+            "AllowedRecipients": {
+              "description": "Only allow relaying to these recipients (regex)",
+              "type": "string"
+            },
             "Enabled": {
               "description": "Whether message relaying (release) is enabled",
               "type": "boolean"
-            },
-            "RecipientAllowlist": {
-              "description": "Allowlist of accepted recipients",
-              "type": "string"
             },
             "ReturnPath": {
               "description": "Enforced Return-Path (if set) for relay bounces",

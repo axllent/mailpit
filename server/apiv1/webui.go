@@ -20,7 +20,10 @@ type webUIConfiguration struct {
 		SMTPServer string
 		// Enforced Return-Path (if set) for relay bounces
 		ReturnPath string
-		// Allowlist of accepted recipients
+		// Only allow relaying to these recipients (regex)
+		AllowedRecipients string
+		// DEPRECATED 2024/03/12
+		// swagger:ignore
 		RecipientAllowlist string
 	}
 
@@ -57,7 +60,9 @@ func WebUIConfig(w http.ResponseWriter, _ *http.Request) {
 	if config.ReleaseEnabled {
 		conf.MessageRelay.SMTPServer = fmt.Sprintf("%s:%d", config.SMTPRelayConfig.Host, config.SMTPRelayConfig.Port)
 		conf.MessageRelay.ReturnPath = config.SMTPRelayConfig.ReturnPath
-		conf.MessageRelay.RecipientAllowlist = config.SMTPRelayConfig.RecipientAllowlist
+		conf.MessageRelay.AllowedRecipients = config.SMTPRelayConfig.AllowedRecipients
+		// DEPRECATED 2024/03/12
+		conf.MessageRelay.RecipientAllowlist = config.SMTPRelayConfig.AllowedRecipients
 	}
 
 	conf.DisableHTMLCheck = config.DisableHTMLCheck
