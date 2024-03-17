@@ -108,7 +108,8 @@ func init() {
 	rootCmd.Flags().BoolVar(&config.SMTPAuthAcceptAny, "smtp-auth-accept-any", config.SMTPAuthAcceptAny, "Accept any SMTP username and password, including none")
 	rootCmd.Flags().StringVar(&config.SMTPTLSCert, "smtp-tls-cert", config.SMTPTLSCert, "TLS certificate for SMTP (STARTTLS) - requires smtp-tls-key")
 	rootCmd.Flags().StringVar(&config.SMTPTLSKey, "smtp-tls-key", config.SMTPTLSKey, "TLS key for SMTP (STARTTLS) - requires smtp-tls-cert")
-	rootCmd.Flags().BoolVar(&config.SMTPTLSRequired, "smtp-tls-required", config.SMTPTLSRequired, "Require TLS SMTP encryption")
+	rootCmd.Flags().BoolVar(&config.SMTPRequireSTARTTLS, "smtp-require-starttls", config.SMTPRequireSTARTTLS, "Require SMTP client use STARTTLS")
+	rootCmd.Flags().BoolVar(&config.SMTPRequireTLS, "smtp-require-tls", config.SMTPRequireTLS, "Require client use SSL/TLS")
 	rootCmd.Flags().BoolVar(&config.SMTPAuthAllowInsecure, "smtp-auth-allow-insecure", config.SMTPAuthAllowInsecure, "Allow insecure PLAIN & LOGIN SMTP authentication")
 	rootCmd.Flags().BoolVar(&config.SMTPStrictRFCHeaders, "smtp-strict-rfc-headers", config.SMTPStrictRFCHeaders, "Return SMTP error if message headers contain <CR><CR><LF>")
 	rootCmd.Flags().IntVar(&config.SMTPMaxRecipients, "smtp-max-recipients", config.SMTPMaxRecipients, "Maximum SMTP recipients allowed")
@@ -146,6 +147,11 @@ func init() {
 	rootCmd.Flags().Lookup("smtp-ssl-cert").Deprecated = "use --smtp-tls-cert"
 	rootCmd.Flags().Lookup("smtp-ssl-key").Hidden = true
 	rootCmd.Flags().Lookup("smtp-ssl-key").Deprecated = "use --smtp-tls-key"
+
+	// DEPRECATED FLAGS 2024/03/16
+	rootCmd.Flags().BoolVar(&config.SMTPRequireSTARTTLS, "smtp-tls-required", config.SMTPRequireSTARTTLS, "smtp-require-starttls")
+	rootCmd.Flags().Lookup("smtp-tls-required").Hidden = true
+	rootCmd.Flags().Lookup("smtp-tls-required").Deprecated = "use --smtp-require-starttls"
 }
 
 // Load settings from environment
@@ -213,9 +219,13 @@ func initConfigFromEnv() {
 	}
 	config.SMTPTLSCert = os.Getenv("MP_SMTP_TLS_CERT")
 	config.SMTPTLSKey = os.Getenv("MP_SMTP_TLS_KEY")
-	if getEnabledFromEnv("MP_SMTP_TLS_REQUIRED") {
-		config.SMTPTLSRequired = true
+	if getEnabledFromEnv("MP_SMTP_REQUIRE_STARTTLS") {
+		config.SMTPRequireSTARTTLS = true
 	}
+	if getEnabledFromEnv("MP_SMTP_REQUIRE_TLS") {
+		config.SMTPRequireTLS = true
+	}
+
 	if getEnabledFromEnv("MP_SMTP_AUTH_ALLOW_INSECURE") {
 		config.SMTPAuthAllowInsecure = true
 	}
@@ -305,6 +315,11 @@ func initDeprecatedConfigFromEnv() {
 	if getEnabledFromEnv("MP_STRICT_RFC_HEADERS") {
 		logger.Log().Warn("ENV MP_STRICT_RFC_HEADERS has been deprecated, use MP_SMTP_STRICT_RFC_HEADERS")
 		config.SMTPStrictRFCHeaders = true
+	}
+	// deprecated 2024/03.16
+	if getEnabledFromEnv("MP_SMTP_TLS_REQUIRED") {
+		logger.Log().Warn("ENV MP_SMTP_TLS_REQUIRED has been deprecated, use MP_SMTP_REQUIRE_STARTTLS")
+		config.SMTPRequireSTARTTLS = true
 	}
 }
 

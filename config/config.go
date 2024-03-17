@@ -53,10 +53,14 @@ var (
 	// SMTPTLSKey file
 	SMTPTLSKey string
 
-	// SMTPTLSRequired to enforce TLS
+	// SMTPRequireSTARTTLS to enforce the use of STARTTLS
 	// The only allowed commands are NOOP, EHLO, STARTTLS and QUIT (as specified in RFC 3207) until
 	// the connection is upgraded to TLS i.e. until STARTTLS is issued.
-	SMTPTLSRequired bool
+	SMTPRequireSTARTTLS bool
+
+	// SMTPRequireTLS to allow only SSL/TLS connections for all connections
+	//
+	SMTPRequireTLS bool
 
 	// SMTPAuthFile for SMTP authentication
 	SMTPAuthFile string
@@ -242,12 +246,16 @@ func VerifyConfig() error {
 		if !isFile(SMTPTLSKey) {
 			return fmt.Errorf("[smtp] TLS key not found: %s", SMTPTLSKey)
 		}
-	} else if SMTPTLSRequired {
+	} else if SMTPRequireTLS {
 		return errors.New("[smtp] TLS cannot be required without an SMTP TLS certificate and key")
+	} else if SMTPRequireSTARTTLS {
+		return errors.New("[smtp] STARTTLS cannot be required without an SMTP TLS certificate and key")
 	}
-
-	if SMTPTLSRequired && SMTPAuthAllowInsecure {
-		return errors.New("[smtp] TLS cannot be required while also allowing insecure authentication")
+	if SMTPRequireSTARTTLS && SMTPAuthAllowInsecure || SMTPRequireTLS && SMTPAuthAllowInsecure {
+		return errors.New("[smtp] TLS cannot be required with --smtp-auth-allow-insecure")
+	}
+	if SMTPRequireSTARTTLS && SMTPRequireTLS {
+		return errors.New("[smtp] TLS & STARTTLS cannot be required together")
 	}
 
 	if SMTPAuthFile != "" {
@@ -272,7 +280,7 @@ func VerifyConfig() error {
 	}
 
 	if SMTPTLSCert == "" && (auth.SMTPCredentials != nil || SMTPAuthAcceptAny) && !SMTPAuthAllowInsecure {
-		return errors.New("[smtp] authentication requires TLS encryption, run with `--smtp-auth-allow-insecure` to allow insecure authentication")
+		return errors.New("[smtp] authentication requires STARTTLS or TLS encryption, run with `--smtp-auth-allow-insecure` to allow insecure authentication")
 	}
 
 	// POP3 server
