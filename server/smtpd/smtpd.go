@@ -177,19 +177,35 @@ func handlerRcpt(remoteAddr net.Addr, from string, to string) bool {
 func Listen() error {
 	if config.SMTPAuthAllowInsecure {
 		if auth.SMTPCredentials != nil {
-			logger.Log().Info("[smtpd] enabling login auth (insecure)")
+			logger.Log().Info("[smtpd] enabling login authentication (insecure)")
 		} else if config.SMTPAuthAcceptAny {
-			logger.Log().Info("[smtpd] enabling all auth (insecure)")
+			logger.Log().Info("[smtpd] enabling any authentication (insecure)")
 		}
 	} else {
 		if auth.SMTPCredentials != nil {
-			logger.Log().Info("[smtpd] enabling login auth (TLS)")
+			logger.Log().Info("[smtpd] enabling login authentication")
 		} else if config.SMTPAuthAcceptAny {
-			logger.Log().Info("[smtpd] enabling any auth (TLS)")
+			logger.Log().Info("[smtpd] enabling any authentication")
 		}
 	}
 
-	logger.Log().Infof("[smtpd] starting on %s", config.SMTPListen)
+	smtpType := "no encryption"
+
+	if config.SMTPTLSCert != "" {
+		if config.SMTPRequireSTARTTLS {
+			smtpType = "STARTTLS required"
+		} else if config.SMTPRequireTLS {
+			smtpType = "SSL/TLS required"
+		} else {
+			smtpType = "STARTTLS optional"
+			if !config.SMTPAuthAllowInsecure && auth.SMTPCredentials != nil {
+				smtpType = "STARTTLS required"
+			}
+		}
+
+	}
+
+	logger.Log().Infof("[smtpd] starting on %s (%s)", config.SMTPListen, smtpType)
 
 	return listenAndServe(config.SMTPListen, mailHandler, authHandler)
 }
@@ -221,7 +237,8 @@ func listenAndServe(addr string, handler smtpd.Handler, authHandler smtpd.AuthHa
 	}
 
 	if config.SMTPTLSCert != "" {
-		srv.TLSRequired = config.SMTPTLSRequired
+		srv.TLSRequired = config.SMTPRequireSTARTTLS
+		srv.TLSListener = config.SMTPRequireTLS // if true overrules srv.TLSRequired
 		if err := srv.ConfigureTLS(config.SMTPTLSCert, config.SMTPTLSKey); err != nil {
 			return err
 		}
