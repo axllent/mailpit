@@ -273,6 +273,18 @@ func VerifyConfig() error {
 		if err := auth.SetSMTPAuth(string(b)); err != nil {
 			return err
 		}
+
+		if !SMTPAuthAllowInsecure {
+			// https://www.rfc-editor.org/rfc/rfc4954
+			// A server implementation MUST implement a configuration in which
+			// it does NOT permit any plaintext password mechanisms, unless either
+			// the STARTTLS [SMTP-TLS] command has been negotiated or some other
+			// mechanism that protects the session from password snooping has been
+			// provided.  Server sites SHOULD NOT use any configuration which
+			// permits a plaintext password mechanism without such a protection
+			// mechanism against password snooping.
+			SMTPRequireSTARTTLS = true
+		}
 	}
 
 	if auth.SMTPCredentials != nil && SMTPAuthAcceptAny {
