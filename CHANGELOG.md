@@ -2,6 +2,19 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.15.0]
+
+### Chore
+- Update node dependencies
+- Update Go dependencies
+
+### Feature
+- Add SMTP TLS option ([#265](https://github.com/axllent/mailpit/issues/265))
+
+### Fix
+- Enforce SMTP STARTTLS by default if authentication is set
+
+
 ## [v1.14.4]
 
 ### Chore
