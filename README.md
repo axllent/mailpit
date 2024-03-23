@@ -28,6 +28,7 @@ It acts as an SMTP server, provides a modern web interface to view & test captur
 Mailpit was originally **inspired** by MailHog which is [no longer maintained](https://github.com/mailhog/MailHog/issues/442#issuecomment-1493415258) and hasn't seen active development or security updates for a few years now.
 
 ![Mailpit](https://raw.githubusercontent.com/axllent/mailpit/develop/server/ui-src/screenshot.png)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Faxllent%2Fmailpit.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Faxllent%2Fmailpit?ref=badge_shield)
 
 
 ## Features
@@ -107,3 +108,7 @@ Please refer to [the documentation](https://mailpit.axllent.org/docs/install/tes
 Mailpit's SMTP server (default on port 1025), so you will likely need to configure your sending application to deliver mail via that port. 
 A common MTA (Mail Transfer Agent) that delivers system emails to an SMTP server is `sendmail`, used by many applications, including PHP. 
 Mailpit can also act as substitute for sendmail. For instructions on how to set this up, please refer to the [sendmail documentation](https://mailpit.axllent.org/docs/install/sendmail/).
+
+
+## License
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Faxllent%2Fmailpit.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Faxllent%2Fmailpit?ref=badge_large)
