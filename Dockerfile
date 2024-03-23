@@ -12,6 +12,13 @@ CGO_ENABLED=0 go build -ldflags "-s -w -X github.com/axllent/mailpit/config.Vers
 
 FROM alpine:latest
 
+LABEL org.opencontainers.image.title="Mailpit" \
+  org.opencontainers.image.description="An email and SMTP testing tool with API for developers" \
+  org.opencontainers.image.source="https://github.com/axllent/mailpit" \
+  org.opencontainers.image.url="https://mailpit.axllent.org" \
+  org.opencontainers.image.documentation="https://mailpit.axllent.org/docs/" \
+  org.opencontainers.image.licenses="MIT"
+
 COPY --from=builder /mailpit /mailpit
 
 RUN apk add --no-cache tzdata
