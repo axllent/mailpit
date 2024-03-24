@@ -63,7 +63,7 @@ func pruneMessages() {
 	ids := []string{}
 	var prunedSize int64
 	var size int
-	if err := q.Query(nil, db, func(row *sql.Rows) {
+	if err := q.Query(context.TODO(), db, func(row *sql.Rows) {
 		var id string
 
 		if err := row.Scan(&id, &size); err != nil {

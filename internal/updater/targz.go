@@ -98,53 +98,6 @@ func makeAbsolute(inputFilePath, outputFilePath string) (string, string, error) 
 	return inputFilePath, outputFilePath, err
 }
 
-// Write path without the prefix in subPath to tar writer.
-func writeTarGz(path string, tarWriter *tar.Writer, fileInfo os.FileInfo, subPath string) error {
-	file, err := os.Open(filepath.Clean(path))
-	if err != nil {
-		return err
-	}
-
-	defer func() {
-		if err := file.Close(); err != nil {
-			fmt.Printf("Error closing file: %s\n", err)
-		}
-	}()
-
-	evaledPath, err := filepath.EvalSymlinks(path)
-	if err != nil {
-		return err
-	}
-
-	subPath, err = filepath.EvalSymlinks(subPath)
-	if err != nil {
-		return err
-	}
-
-	link := ""
-	if evaledPath != path {
-		link = evaledPath
-	}
-
-	header, err := tar.FileInfoHeader(fileInfo, link)
-	if err != nil {
-		return err
-	}
-	header.Name = evaledPath[len(subPath):]
-
-	err = tarWriter.WriteHeader(header)
-	if err != nil {
-		return err
-	}
-
-	_, err = io.Copy(tarWriter, file)
-	if err != nil {
-		return err
-	}
-
-	return err
-}
-
 // Extract the file in filePath to directory.
 func extract(filePath string, directory string) error {
 	file, err := os.Open(filepath.Clean(filePath))
@@ -200,7 +153,7 @@ func extract(filePath string, directory string) error {
 
 			// set file ownership (if allowed)
 			// Chtimes() && Chmod() only set after once extraction is complete
-			os.Chown(filename, header.Uid, header.Gid) // #nosec
+			_ = os.Chown(filename, header.Uid, header.Gid)
 
 			// add directory info to slice to process afterwards
 			postExtraction = append(postExtraction, DirInfo{filename, header})
@@ -249,15 +202,15 @@ func extract(filePath string, directory string) error {
 		}
 
 		// set file permissions, timestamps & uid/gid
-		os.Chmod(filename, os.FileMode(header.Mode))            // #nosec
-		os.Chtimes(filename, header.AccessTime, header.ModTime) // #nosec
-		os.Chown(filename, header.Uid, header.Gid)              // #nosec
+		_ = os.Chmod(filename, os.FileMode(header.Mode))
+		_ = os.Chtimes(filename, header.AccessTime, header.ModTime)
+		_ = os.Chown(filename, header.Uid, header.Gid)
 	}
 
 	if len(postExtraction) > 0 {
 		for _, dir := range postExtraction {
-			os.Chtimes(dir.Path, dir.Header.AccessTime, dir.Header.ModTime) // #nosec
-			os.Chmod(dir.Path, dir.Header.FileInfo().Mode().Perm())         // #nosec
+			_ = os.Chtimes(dir.Path, dir.Header.AccessTime, dir.Header.ModTime)
+			_ = os.Chmod(dir.Path, dir.Header.FileInfo().Mode().Perm())
 		}
 	}
 

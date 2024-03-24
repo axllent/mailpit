@@ -49,9 +49,7 @@ The --recent flag will only consider files with a modification date within the l
 						return nil
 					}
 
-					info.ModTime()
-
-					if ingestRecent > 0 && time.Now().Sub(info.ModTime()) > time.Duration(ingestRecent)*24*time.Hour {
+					if ingestRecent > 0 && time.Since(info.ModTime()) > time.Duration(ingestRecent)*24*time.Hour {
 						return nil
 					}
 

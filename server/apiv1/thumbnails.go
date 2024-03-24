@@ -114,7 +114,7 @@ func blankImage(a *enmime.Part, w http.ResponseWriter) {
 	rect := image.Rect(0, 0, thumbWidth, thumbHeight)
 	img := image.NewRGBA(rect)
 	background := color.RGBA{255, 255, 255, 255}
-	draw.Draw(img, img.Bounds(), &image.Uniform{background}, image.ZP, draw.Src)
+	draw.Draw(img, img.Bounds(), &image.Uniform{background}, image.Point{}, draw.Src)
 	var b bytes.Buffer
 	foo := bufio.NewWriter(&b)
 	dstImageFill := imaging.Fill(img, thumbWidth, thumbHeight, imaging.Center, imaging.Lanczos)

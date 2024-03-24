@@ -32,9 +32,7 @@ func RunTests(msg *storage.Message, followRedirects bool) (Response, error) {
 func extractTextLinks(msg *storage.Message) []string {
 	links := []string{}
 
-	for _, match := range linkRe.FindAllString(msg.Text, -1) {
-		links = append(links, match)
-	}
+	links = append(links, linkRe.FindAllString(msg.Text, -1)...)
 
 	return links
 }

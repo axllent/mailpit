@@ -2,6 +2,7 @@
 package storage
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"os"
@@ -137,7 +138,7 @@ func CountTotal() int {
 
 	_ = sqlf.From("mailbox").
 		Select("COUNT(*)").To(&total).
-		QueryRowAndClose(nil, db)
+		QueryRowAndClose(context.TODO(), db)
 
 	return total
 }
@@ -146,11 +147,10 @@ func CountTotal() int {
 func CountUnread() int {
 	var total int
 
-	q := sqlf.From("mailbox").
+	_ = sqlf.From("mailbox").
 		Select("COUNT(*)").To(&total).
-		Where("Read = ?", 0)
-
-	_ = q.QueryRowAndClose(nil, db)
+		Where("Read = ?", 0).
+		QueryRowAndClose(context.TODO(), db)
 
 	return total
 }
@@ -159,26 +159,23 @@ func CountUnread() int {
 func CountRead() int {
 	var total int
 
-	q := sqlf.From("mailbox").
+	_ = sqlf.From("mailbox").
 		Select("COUNT(*)").To(&total).
-		Where("Read = ?", 1)
-
-	_ = q.QueryRowAndClose(nil, db)
+		Where("Read = ?", 1).
+		QueryRowAndClose(context.TODO(), db)
 
 	return total
 }
 
-// IsUnread returns the number of emails in the database that are unread.
-// If an ID is supplied, then it is just limited to that message.
+// IsUnread returns whether a message is unread or not.
 func IsUnread(id string) bool {
 	var unread int
 
-	q := sqlf.From("mailbox").
+	_ = sqlf.From("mailbox").
 		Select("COUNT(*)").To(&unread).
 		Where("Read = ?", 0).
-		Where("ID = ?", id)
-
-	_ = q.QueryRowAndClose(nil, db)
+		Where("ID = ?", id).
+		QueryRowAndClose(context.TODO(), db)
 
 	return unread == 1
 }
@@ -187,11 +184,10 @@ func IsUnread(id string) bool {
 func MessageIDExists(id string) bool {
 	var total int
 
-	q := sqlf.From("mailbox").
+	_ = sqlf.From("mailbox").
 		Select("COUNT(*)").To(&total).
-		Where("MessageID = ?", id)
-
-	_ = q.QueryRowAndClose(nil, db)
+		Where("MessageID = ?", id).
+		QueryRowAndClose(context.TODO(), db)
 
 	return total != 0
 }

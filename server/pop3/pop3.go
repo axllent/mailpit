@@ -41,9 +41,9 @@ func Run() {
 	var err error
 
 	if config.POP3TLSCert != "" {
-		cer, err := tls.LoadX509KeyPair(config.POP3TLSCert, config.POP3TLSKey)
-		if err != nil {
-			logger.Log().Errorf("[pop3] %s", err.Error())
+		cer, err2 := tls.LoadX509KeyPair(config.POP3TLSCert, config.POP3TLSKey)
+		if err2 != nil {
+			logger.Log().Errorf("[pop3] %s", err2.Error())
 			return
 		}
 
@@ -273,6 +273,10 @@ func handleClient(conn net.Conn) {
 
 			m := messages[nr-1]
 			headers, body, err := getTop(m.ID, lines)
+			if err != nil {
+				sendResponse(conn, err.Error())
+				return
+			}
 
 			sendData(conn, "+OK Top of message follows")
 			sendData(conn, headers+"\r\n")

@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"context"
 	"database/sql"
 	"regexp"
 	"sort"
@@ -64,14 +65,14 @@ func AddMessageTag(id, name string) error {
 		Where("Name = ?", name)
 
 	// tag exists - add tag to message
-	if err := q.QueryRowAndClose(nil, db); err == nil {
+	if err := q.QueryRowAndClose(context.TODO(), db); err == nil {
 		// check message does not already have this tag
 		var count int
 		if _, err := sqlf.From("message_tags").
 			Select("COUNT(ID)").To(&count).
 			Where("ID = ?", id).
 			Where("TagID = ?", tagID).
-			ExecAndClose(nil, db); err != nil {
+			ExecAndClose(context.TODO(), db); err != nil {
 			return err
 		}
 		if count != 0 {
@@ -84,7 +85,7 @@ func AddMessageTag(id, name string) error {
 		_, err := sqlf.InsertInto("message_tags").
 			Set("ID", id).
 			Set("TagID", tagID).
-			ExecAndClose(nil, db)
+			ExecAndClose(context.TODO(), db)
 		return err
 	}
 
@@ -94,7 +95,7 @@ func AddMessageTag(id, name string) error {
 	if err := sqlf.InsertInto("tags").
 		Set("Name", name).
 		Returning("ID").To(&tagID).
-		QueryRowAndClose(nil, db); err != nil {
+		QueryRowAndClose(context.TODO(), db); err != nil {
 		return err
 	}
 
@@ -104,7 +105,7 @@ func AddMessageTag(id, name string) error {
 		Select("COUNT(ID)").To(&count).
 		Where("ID = ?", id).
 		Where("TagID = ?", tagID).
-		ExecAndClose(nil, db); err != nil {
+		ExecAndClose(context.TODO(), db); err != nil {
 		return err
 	}
 	if count != 0 {
@@ -115,7 +116,7 @@ func AddMessageTag(id, name string) error {
 	_, err := sqlf.InsertInto("message_tags").
 		Set("ID", id).
 		Set("TagID", tagID).
-		ExecAndClose(nil, db)
+		ExecAndClose(context.TODO(), db)
 	return err
 }
 
@@ -124,7 +125,7 @@ func DeleteMessageTag(id, name string) error {
 	if _, err := sqlf.DeleteFrom("message_tags").
 		Where("message_tags.ID = ?", id).
 		Where(`message_tags.Key IN (SELECT Key FROM message_tags LEFT JOIN tags ON TagID=tags.ID WHERE Name = ?)`, name).
-		ExecAndClose(nil, db); err != nil {
+		ExecAndClose(context.TODO(), db); err != nil {
 		return err
 	}
 
@@ -135,7 +136,7 @@ func DeleteMessageTag(id, name string) error {
 func DeleteAllMessageTags(id string) error {
 	if _, err := sqlf.DeleteFrom("message_tags").
 		Where("message_tags.ID = ?", id).
-		ExecAndClose(nil, db); err != nil {
+		ExecAndClose(context.TODO(), db); err != nil {
 		return err
 	}
 
@@ -151,7 +152,7 @@ func GetAllTags() []string {
 		Select(`DISTINCT Name`).
 		From("tags").To(&name).
 		OrderBy("Name").
-		QueryAndClose(nil, db, func(row *sql.Rows) {
+		QueryAndClose(context.TODO(), db, func(row *sql.Rows) {
 			tags = append(tags, name)
 		}); err != nil {
 		logger.Log().Errorf("[db] %s", err.Error())
@@ -173,7 +174,7 @@ func GetAllTagsCount() map[string]int64 {
 		LeftJoin("message_tags", "tags.ID = message_tags.TagID").
 		GroupBy("message_tags.TagID").
 		OrderBy("Name").
-		QueryAndClose(nil, db, func(row *sql.Rows) {
+		QueryAndClose(context.TODO(), db, func(row *sql.Rows) {
 			tags[name] = total
 			// tags = append(tags, name)
 		}); err != nil {
@@ -192,7 +193,7 @@ func pruneUnusedTags() error {
 
 	toDel := []int{}
 
-	if err := q.QueryAndClose(nil, db, func(row *sql.Rows) {
+	if err := q.QueryAndClose(context.TODO(), db, func(row *sql.Rows) {
 		var n string
 		var id int
 		var c int
@@ -214,7 +215,7 @@ func pruneUnusedTags() error {
 		for _, id := range toDel {
 			if _, err := sqlf.DeleteFrom("tags").
 				Where("ID = ?", id).
-				ExecAndClose(nil, db); err != nil {
+				ExecAndClose(context.TODO(), db); err != nil {
 				return err
 			}
 		}
@@ -282,7 +283,7 @@ func getMessageTags(id string) []string {
 		LeftJoin("message_tags", "Tags.ID=message_tags.TagID").
 		Where(`message_tags.ID = ?`, id).
 		OrderBy("Name").
-		QueryAndClose(nil, db, func(row *sql.Rows) {
+		QueryAndClose(context.TODO(), db, func(row *sql.Rows) {
 			tags = append(tags, name)
 		}); err != nil {
 		logger.Log().Errorf("[tags] %s", err.Error())

@@ -47,8 +47,6 @@ func TestAPIv1Messages(t *testing.T) {
 	insertEmailData(t)
 	assertStatsEqual(t, ts.URL+"/api/v1/messages", 100, 100)
 
-	// store this for later tests
-
 	m, err = fetchMessages(ts.URL + "/api/v1/messages")
 	if err != nil {
 		t.Errorf(err.Error())
@@ -56,7 +54,6 @@ func TestAPIv1Messages(t *testing.T) {
 
 	// read first 10 messages
 	t.Log("Read first 10 messages including raw & headers")
-	putIDS := []string{}
 	for idx, msg := range m.Messages {
 		if idx == 10 {
 			break
@@ -71,13 +68,10 @@ func TestAPIv1Messages(t *testing.T) {
 			t.Errorf(err.Error())
 		}
 
-		// het headers
+		// get headers
 		if _, err := clientGet(ts.URL + "/api/v1/message/" + msg.ID + "/headers"); err != nil {
 			t.Errorf(err.Error())
 		}
-
-		// store for later
-		putIDS = append(putIDS, msg.ID)
 	}
 
 	// 10 should be marked as read
