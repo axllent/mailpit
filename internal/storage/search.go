@@ -29,7 +29,7 @@ func Search(search string, start, limit int) ([]MessageSummary, int, error) {
 	q := searchQueryBuilder(search)
 	var err error
 
-	if err := q.QueryAndClose(nil, db, func(row *sql.Rows) {
+	if err := q.QueryAndClose(context.TODO(), db, func(row *sql.Rows) {
 		var created int64
 		var id string
 		var messageID string
@@ -101,7 +101,7 @@ func DeleteSearch(search string) error {
 	ids := []string{}
 	deleteSize := 0
 
-	if err := q.QueryAndClose(nil, db, func(row *sql.Rows) {
+	if err := q.QueryAndClose(context.TODO(), db, func(row *sql.Rows) {
 		var created int64
 		var id string
 		var messageID string

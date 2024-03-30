@@ -154,7 +154,7 @@ func List(start, limit int) ([]MessageSummary, error) {
 		Limit(limit).
 		Offset(start)
 
-	if err := q.QueryAndClose(nil, db, func(row *sql.Rows) {
+	if err := q.QueryAndClose(context.TODO(), db, func(row *sql.Rows) {
 		var created int64
 		var id string
 		var messageID string
@@ -245,7 +245,7 @@ func GetMessage(id string) (*Message, error) {
 			Select(`Created`).
 			Where(`ID = ?`, id)
 
-		if err := q.QueryAndClose(nil, db, func(row *sql.Rows) {
+		if err := q.QueryAndClose(context.TODO(), db, func(row *sql.Rows) {
 			var created int64
 
 			if err := row.Scan(&created); err != nil {
@@ -564,7 +564,7 @@ func DeleteAllMessages() error {
 
 	_ = sqlf.From("mailbox").
 		Select("COUNT(*)").To(&total).
-		QueryRowAndClose(nil, db)
+		QueryRowAndClose(context.TODO(), db)
 
 	// begin a transaction to ensure both the message
 	// summaries and data are deleted successfully

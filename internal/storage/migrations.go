@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 
@@ -140,7 +141,7 @@ func migrateTagsToManyMany() {
 		Where("Tags != ?", "[]").
 		Where("Tags IS NOT NULL")
 
-	if err := q.QueryAndClose(nil, db, func(row *sql.Rows) {
+	if err := q.QueryAndClose(context.TODO(), db, func(row *sql.Rows) {
 		var id string
 		var jsonTags string
 		if err := row.Scan(&id, &jsonTags); err != nil {
@@ -169,7 +170,7 @@ func migrateTagsToManyMany() {
 				if _, err := sqlf.Update("mailbox").
 					Set("Tags", nil).
 					Where("ID = ?", id).
-					ExecAndClose(nil, db); err != nil {
+					ExecAndClose(context.TODO(), db); err != nil {
 					logger.Log().Errorf("[migration] %s", err.Error())
 				}
 			}
@@ -182,7 +183,7 @@ func migrateTagsToManyMany() {
 	if _, err := sqlf.Update("mailbox").
 		Set("Tags", nil).
 		Where("Tags = ?", "[]").
-		ExecAndClose(nil, db); err != nil {
+		ExecAndClose(context.TODO(), db); err != nil {
 		logger.Log().Errorf("[migration] %s", err.Error())
 	}
 }

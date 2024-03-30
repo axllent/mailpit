@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"context"
 	"database/sql"
 
 	"github.com/axllent/mailpit/internal/logger"
@@ -14,7 +15,7 @@ func SettingGet(k string) string {
 		Select("Value").To(&result).
 		Where("Key = ?", k).
 		Limit(1).
-		QueryAndClose(nil, db, func(row *sql.Rows) {})
+		QueryAndClose(context.TODO(), db, func(row *sql.Rows) {})
 	if err != nil {
 		logger.Log().Errorf("[db] %s", err.Error())
 		return ""
@@ -40,7 +41,7 @@ func getDeletedSize() int64 {
 		Select("Value").To(&result).
 		Where("Key = ?", "DeletedSize").
 		Limit(1).
-		QueryAndClose(nil, db, func(row *sql.Rows) {})
+		QueryAndClose(context.TODO(), db, func(row *sql.Rows) {})
 	if err != nil {
 		logger.Log().Errorf("[db] %s", err.Error())
 		return 0
@@ -54,7 +55,7 @@ func totalMessagesSize() int64 {
 	var result sql.NullInt64
 	err := sqlf.From("mailbox").
 		Select("SUM(Size)").To(&result).
-		QueryAndClose(nil, db, func(row *sql.Rows) {})
+		QueryAndClose(context.TODO(), db, func(row *sql.Rows) {})
 	if err != nil {
 		logger.Log().Errorf("[db] %s", err.Error())
 		return 0

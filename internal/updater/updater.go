@@ -335,16 +335,6 @@ func mkDirIfNotExists(path string) error {
 	return nil
 }
 
-// IsFile returns if a path is a file
-func isFile(path string) bool {
-	info, err := os.Stat(path)
-	if os.IsNotExist(err) || !info.Mode().IsRegular() {
-		return false
-	}
-
-	return true
-}
-
 // IsDir returns if a path is a directory
 func isDir(path string) bool {
 	info, err := os.Stat(path)

@@ -2,6 +2,16 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.15.1]
+
+### Chore
+- Code cleanup, remove redundant functionality
+- Add labels to Docker image ([#267](https://github.com/axllent/mailpit/issues/267))
+
+### Feature
+- Add readyz subcommand for Docker healthcheck ([#270](https://github.com/axllent/mailpit/issues/270))
+
+
 ## [v1.15.0]
 
 ### Chore
