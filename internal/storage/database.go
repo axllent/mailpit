@@ -115,6 +115,11 @@ func Close() {
 	}
 }
 
+// Ping the database connection and return an error if unsuccessful
+func Ping() error {
+	return db.Ping()
+}
+
 // StatsGet returns the total/unread statistics for a mailbox
 func StatsGet() MailboxStats {
 	var (

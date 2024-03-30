@@ -25,4 +25,6 @@ RUN apk add --no-cache tzdata
 
 EXPOSE 1025/tcp 1110/tcp 8025/tcp
 
+HEALTHCHECK --interval=15s CMD /mailpit readyz
+
 ENTRYPOINT ["/mailpit"]
