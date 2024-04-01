@@ -246,24 +246,24 @@ func findTagsInRawMessage(message *[]byte) string {
 func (d DBMailSummary) tagsFromPlusAddresses() string {
 	tags := []string{}
 	for _, c := range d.To {
-		matches := addressPlusRe.FindAllStringSubmatch(c.String(), 1)
+		matches := addressPlusRe.FindAllStringSubmatch(c.Address, 1)
 		if len(matches) == 1 {
 			tags = append(tags, strings.Split(matches[0][2], "+")...)
 		}
 	}
 	for _, c := range d.Cc {
-		matches := addressPlusRe.FindAllStringSubmatch(c.String(), 1)
+		matches := addressPlusRe.FindAllStringSubmatch(c.Address, 1)
 		if len(matches) == 1 {
 			tags = append(tags, strings.Split(matches[0][2], "+")...)
 		}
 	}
 	for _, c := range d.Bcc {
-		matches := addressPlusRe.FindAllStringSubmatch(c.String(), 1)
+		matches := addressPlusRe.FindAllStringSubmatch(c.Address, 1)
 		if len(matches) == 1 {
 			tags = append(tags, strings.Split(matches[0][2], "+")...)
 		}
 	}
-	matches := addressPlusRe.FindAllStringSubmatch(d.From.String(), 1)
+	matches := addressPlusRe.FindAllStringSubmatch(d.From.Address, 1)
 	if len(matches) == 1 {
 		tags = append(tags, strings.Split(matches[0][2], "+")...)
 	}
