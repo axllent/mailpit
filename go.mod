@@ -16,6 +16,7 @@ require (
 	github.com/lithammer/shortuuid/v4 v4.0.0
 	github.com/mhale/smtpd v0.8.2
 	github.com/reiver/go-telnet v0.0.0-20180421082511-9ff0b2ab096e
+	github.com/rqlite/gorqlite v0.0.0-20240227123050-397b03f02418
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/pflag v1.0.5

@@ -41,7 +41,7 @@ type Message struct {
 	// Message body HTML
 	HTML string
 	// Message size in bytes
-	Size int
+	Size float64
 	// Inline message attachments
 	Inline []Attachment
 	// Message attachments
@@ -61,7 +61,7 @@ type Attachment struct {
 	// Content ID
 	ContentID string
 	// Size in bytes
-	Size int
+	Size float64
 }
 
 // MessageSummary struct for frontend messages
@@ -91,7 +91,7 @@ type MessageSummary struct {
 	// Message tags
 	Tags []string
 	// Message size in bytes (total)
-	Size int
+	Size float64
 	// Whether the message has any attachments
 	Attachments int
 	// Message snippet includes up to 250 characters
@@ -100,8 +100,8 @@ type MessageSummary struct {
 
 // MailboxStats struct for quick mailbox total/read lookups
 type MailboxStats struct {
-	Total  int
-	Unread int
+	Total  float64
+	Unread float64
 	Tags   []string
 }
 
@@ -124,7 +124,7 @@ func AttachmentSummary(a *enmime.Part) Attachment {
 	}
 	o.ContentType = a.ContentType
 	o.ContentID = a.ContentID
-	o.Size = len(a.Content)
+	o.Size = float64(len(a.Content))
 
 	return o
 }

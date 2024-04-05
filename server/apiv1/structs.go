@@ -10,18 +10,18 @@ import (
 // MessagesSummary is a summary of a list of messages
 type MessagesSummary struct {
 	// Total number of messages in mailbox
-	Total int `json:"total"`
+	Total float64 `json:"total"`
 
 	// Total number of unread messages in mailbox
-	Unread int `json:"unread"`
+	Unread float64 `json:"unread"`
 
 	// Legacy - now undocumented in API specs but left for backwards compatibility.
 	// Removed from API documentation 2023-07-12
 	// swagger:ignore
-	Count int `json:"count"`
+	Count float64 `json:"count"`
 
 	// Total number of messages matching current query
-	MessagesCount int `json:"messages_count"`
+	MessagesCount float64 `json:"messages_count"`
 
 	// Pagination offset
 	Start int `json:"start"`

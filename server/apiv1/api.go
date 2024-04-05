@@ -67,7 +67,7 @@ func GetMessages(w http.ResponseWriter, r *http.Request) {
 
 	res.Start = start
 	res.Messages = messages
-	res.Count = len(messages) // legacy - now undocumented in API specs
+	res.Count = float64(len(messages)) // legacy - now undocumented in API specs
 	res.Total = stats.Total
 	res.Unread = stats.Unread
 	res.Tags = stats.Tags
@@ -133,9 +133,9 @@ func Search(w http.ResponseWriter, r *http.Request) {
 
 	res.Start = start
 	res.Messages = messages
-	res.Count = len(messages) // legacy - now undocumented in API specs
-	res.Total = stats.Total   // total messages in mailbox
-	res.MessagesCount = results
+	res.Count = float64(len(messages)) // legacy - now undocumented in API specs
+	res.Total = stats.Total            // total messages in mailbox
+	res.MessagesCount = float64(results)
 	res.Unread = stats.Unread
 	res.Tags = stats.Tags
 
@@ -337,7 +337,11 @@ func GetHeaders(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	bytes, _ := json.Marshal(m.Header)
+	bytes, err := json.Marshal(m.Header)
+	if err != nil {
+		httpError(w, err.Error())
+		return
+	}
 
 	w.Header().Add("Content-Type", "application/json")
 	_, _ = w.Write(bytes)
@@ -428,11 +432,9 @@ func DeleteMessages(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	} else {
-		for _, id := range data.IDs {
-			if err := storage.DeleteOneMessage(id); err != nil {
-				httpError(w, err.Error())
-				return
-			}
+		if err := storage.DeleteMessages(data.IDs); err != nil {
+			httpError(w, err.Error())
+			return
 		}
 	}
 

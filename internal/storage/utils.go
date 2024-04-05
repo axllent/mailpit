@@ -15,7 +15,7 @@ var (
 	// for stats to prevent import cycle
 	mu sync.RWMutex
 	// StatsDeleted for counting the number of messages deleted
-	StatsDeleted int
+	StatsDeleted float64
 )
 
 // Return a header field as a []*mail.Address, or "null" is not found/empty
@@ -73,7 +73,7 @@ func cleanString(str string) string {
 // LogMessagesDeleted logs the number of messages deleted
 func logMessagesDeleted(n int) {
 	mu.Lock()
-	StatsDeleted = StatsDeleted + n
+	StatsDeleted = StatsDeleted + float64(n)
 	mu.Unlock()
 }
 

@@ -78,11 +78,10 @@ func Run() {
 
 type message struct {
 	ID   string
-	Size int
+	Size float64
 }
 
 func handleClient(conn net.Conn) {
-
 	var (
 		user     = ""
 		state    = 1
@@ -92,7 +91,7 @@ func handleClient(conn net.Conn) {
 	defer func() {
 		if state == UPDATE {
 			for _, id := range toDelete {
-				_ = storage.DeleteOneMessage(id)
+				_ = storage.DeleteMessages([]string{id})
 			}
 			if len(toDelete) > 0 {
 				// update web UI to remove deleted messages
@@ -178,19 +177,19 @@ func handleClient(conn net.Conn) {
 			}
 
 		} else if cmd == "STAT" && state == TRANSACTION {
-			totalSize := 0
+			totalSize := float64(0)
 			for _, m := range messages {
 				totalSize = totalSize + m.Size
 			}
 
-			sendResponse(conn, fmt.Sprintf("+OK %d %d", len(messages), totalSize))
+			sendResponse(conn, fmt.Sprintf("+OK %d %d", len(messages), int64(totalSize)))
 
 		} else if cmd == "LIST" && state == TRANSACTION {
-			totalSize := 0
+			totalSize := float64(0)
 			for _, m := range messages {
 				totalSize = totalSize + m.Size
 			}
-			sendData(conn, fmt.Sprintf("+OK %d messages (%d octets)", len(messages), totalSize))
+			sendData(conn, fmt.Sprintf("+OK %d messages (%d octets)", len(messages), int64(totalSize)))
 
 			// print all sizes
 			for row, m := range messages {
@@ -200,7 +199,7 @@ func handleClient(conn net.Conn) {
 			sendData(conn, ".")
 
 		} else if cmd == "UIDL" && state == TRANSACTION {
-			totalSize := 0
+			totalSize := float64(0)
 			for _, m := range messages {
 				totalSize = totalSize + m.Size
 			}

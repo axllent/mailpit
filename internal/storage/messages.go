@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
+	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -88,21 +90,22 @@ func Store(body *[]byte) (string, error) {
 	defer tx.Rollback()
 
 	subject := env.GetHeader("Subject")
-	size := len(*body)
+	size := float64(len(*body))
 	inline := len(env.Inlines)
 	attachments := len(env.Attachments)
 	snippet := tools.CreateSnippet(env.Text, env.HTML)
 
 	// insert mail summary data
-	_, err = tx.Exec("INSERT INTO mailbox(Created, ID, MessageID, Subject, Metadata, Size, Inline, Attachments, SearchText, Read, Snippet) values(?,?,?,?,?,?,?,?,?,0,?)",
+	_, err = tx.Exec("INSERT INTO mailbox(Created, ID, MessageID, Subject, Metadata, Size, Inline, Attachments, SearchText, Read, Snippet) VALUES(?,?,?,?,?,?,?,?,?,0,?)",
 		created.UnixMilli(), id, messageID, subject, string(summaryJSON), size, inline, attachments, searchText, snippet)
 	if err != nil {
 		return "", err
 	}
 
 	// insert compressed raw message
-	compressed := dbEncoder.EncodeAll(*body, make([]byte, 0, size))
-	_, err = tx.Exec("INSERT INTO mailbox_data(ID, Email) values(?,?)", id, string(compressed))
+	encoded := dbEncoder.EncodeAll(*body, make([]byte, 0, int(size)))
+	hexStr := hex.EncodeToString(encoded)
+	_, err = tx.Exec("INSERT INTO mailbox_data(ID, Email) VALUES(?, x'"+hexStr+"')", id)
 	if err != nil {
 		return "", err
 	}
@@ -155,12 +158,12 @@ func List(start, limit int) ([]MessageSummary, error) {
 		Offset(start)
 
 	if err := q.QueryAndClose(context.TODO(), db, func(row *sql.Rows) {
-		var created int64
+		var created float64
 		var id string
 		var messageID string
 		var subject string
 		var metadata string
-		var size int
+		var size float64
 		var attachments int
 		var read int
 		var snippet string
@@ -176,7 +179,7 @@ func List(start, limit int) ([]MessageSummary, error) {
 			return
 		}
 
-		em.Created = time.UnixMilli(created)
+		em.Created = time.UnixMilli(int64(created))
 		em.ID = id
 		em.MessageID = messageID
 		em.Subject = subject
@@ -246,7 +249,7 @@ func GetMessage(id string) (*Message, error) {
 			Where(`ID = ?`, id)
 
 		if err := q.QueryAndClose(context.TODO(), db, func(row *sql.Rows) {
-			var created int64
+			var created float64
 
 			if err := row.Scan(&created); err != nil {
 				logger.Log().Errorf("[db] %s", err.Error())
@@ -255,7 +258,7 @@ func GetMessage(id string) (*Message, error) {
 
 			logger.Log().Debugf("[db] %s does not contain a date header, using received datetime", id)
 
-			date = time.UnixMilli(created)
+			date = time.UnixMilli(int64(created))
 		}); err != nil {
 			logger.Log().Errorf("[db] %s", err.Error())
 		}
@@ -273,7 +276,7 @@ func GetMessage(id string) (*Message, error) {
 		ReturnPath: returnPath,
 		Subject:    env.GetHeader("Subject"),
 		Tags:       getMessageTags(id),
-		Size:       len(raw),
+		Size:       float64(len(raw)),
 		Text:       env.Text,
 	}
 
@@ -331,7 +334,6 @@ func GetMessageRaw(id string) ([]byte, error) {
 		Select(`ID`).To(&i).
 		Select(`Email`).To(&msg).
 		Where(`ID = ?`, id)
-
 	err := q.QueryRowAndClose(context.Background(), db)
 	if err != nil {
 		return nil, err
@@ -341,7 +343,17 @@ func GetMessageRaw(id string) ([]byte, error) {
 		return nil, errors.New("message not found")
 	}
 
-	raw, err := dbDecoder.DecodeAll([]byte(msg), nil)
+	var data []byte
+	if sqlDriver == "rqlite" {
+		data, err = base64.StdEncoding.DecodeString(msg)
+		if err != nil {
+			return nil, fmt.Errorf("error decoding base64 message: %w", err)
+		}
+	} else {
+		data = []byte(msg)
+	}
+
+	raw, err := dbDecoder.DecodeAll(data, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error decompressing message: %s", err.Error())
 	}
@@ -451,7 +463,7 @@ func MarkAllRead() error {
 	}
 
 	elapsed := time.Since(start)
-	logger.Log().Debugf("[db] marked %d messages as read in %s", total, elapsed)
+	logger.Log().Debugf("[db] marked %v messages as read in %s", total, elapsed)
 
 	BroadcastMailboxStats()
 
@@ -476,7 +488,7 @@ func MarkAllUnread() error {
 	}
 
 	elapsed := time.Since(start)
-	logger.Log().Debugf("[db] marked %d messages as unread in %s", total, elapsed)
+	logger.Log().Debugf("[db] marked %v messages as unread in %s", total, elapsed)
 
 	BroadcastMailboxStats()
 
@@ -507,52 +519,92 @@ func MarkUnread(id string) error {
 	return err
 }
 
-// DeleteOneMessage will delete a single message from a mailbox
-func DeleteOneMessage(id string) error {
-	m, err := GetMessageRaw(id)
+// DeleteMessages deletes one or more messages in bulk
+func DeleteMessages(ids []string) error {
+	if len(ids) == 0 {
+		return nil
+	}
+
+	start := time.Now()
+
+	args := make([]interface{}, len(ids))
+	for i, id := range ids {
+		args[i] = id
+	}
+
+	rows, err := db.Query(`SELECT ID, Size FROM mailbox WHERE  ID IN (?`+strings.Repeat(",?", len(args)-1)+`)`, args...)
 	if err != nil {
 		return err
 	}
+	defer rows.Close()
 
-	size := len(m)
-	// begin a transaction to ensure both the message
-	// and data are deleted successfully
+	toDelete := []string{}
+	var totalSize float64
+
+	for rows.Next() {
+		var id string
+		var size float64
+		if err := rows.Scan(&id, &size); err != nil {
+			return err
+		}
+		toDelete = append(toDelete, id)
+		totalSize = totalSize + size
+	}
+
+	if err = rows.Err(); err != nil {
+		return err
+	}
+
+	if len(toDelete) == 0 {
+		return nil // nothing to delete
+	}
+
 	tx, err := db.BeginTx(context.Background(), nil)
 	if err != nil {
 		return err
 	}
 
-	// roll back if it fails
-	defer tx.Rollback()
+	args = make([]interface{}, len(toDelete))
+	for i, id := range toDelete {
+		args[i] = id
+	}
 
-	_, err = tx.Exec("DELETE FROM mailbox WHERE ID  = ?", id)
+	_, err = tx.Exec(`DELETE FROM mailbox WHERE ID IN (?`+strings.Repeat(",?", len(ids)-1)+`)`, args...) // #nosec
 	if err != nil {
 		return err
 	}
 
-	_, err = tx.Exec("DELETE FROM mailbox_data WHERE ID  = ?", id)
+	_, err = tx.Exec(`DELETE FROM mailbox_data WHERE ID IN (?`+strings.Repeat(",?", len(ids)-1)+`)`, args...) // #nosec
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.Exec(`DELETE FROM message_tags WHERE ID IN (?`+strings.Repeat(",?", len(ids)-1)+`)`, args...) // #nosec
 	if err != nil {
 		return err
 	}
 
 	err = tx.Commit()
 
-	if err == nil {
-		logger.Log().Debugf("[db] deleted message %s", id)
-	}
-
-	if err := DeleteAllMessageTags(id); err != nil {
-		return err
-	}
-
 	dbLastAction = time.Now()
-	addDeletedSize(int64(size))
+	addDeletedSize(int64(totalSize))
 
-	logMessagesDeleted(1)
+	logMessagesDeleted(len(toDelete))
+
+	pruneUnusedTags()
+
+	elapsed := time.Since(start)
+
+	messages := "messages"
+	if len(toDelete) == 1 {
+		messages = "message"
+	}
+
+	logger.Log().Debugf("[db] deleted %d %s in %s", len(toDelete), messages, elapsed)
 
 	BroadcastMailboxStats()
 
-	return err
+	return nil
 }
 
 // DeleteAllMessages will delete all messages from a mailbox
