@@ -30,12 +30,12 @@ func Search(search string, start, limit int) ([]MessageSummary, int, error) {
 	var err error
 
 	if err := q.QueryAndClose(context.TODO(), db, func(row *sql.Rows) {
-		var created int64
+		var created float64
 		var id string
 		var messageID string
 		var subject string
 		var metadata string
-		var size int
+		var size float64
 		var attachments int
 		var snippet string
 		var read int
@@ -52,7 +52,7 @@ func Search(search string, start, limit int) ([]MessageSummary, int, error) {
 			return
 		}
 
-		em.Created = time.UnixMilli(created)
+		em.Created = time.UnixMilli(int64(created))
 		em.ID = id
 		em.MessageID = messageID
 		em.Subject = subject
@@ -99,17 +99,16 @@ func DeleteSearch(search string) error {
 	q := searchQueryBuilder(search)
 
 	ids := []string{}
-	deleteSize := 0
+	deleteSize := float64(0)
 
 	if err := q.QueryAndClose(context.TODO(), db, func(row *sql.Rows) {
-		var created int64
+		var created float64
 		var id string
 		var messageID string
 		var subject string
 		var metadata string
-		var size int
+		var size float64
 		var attachments int
-		// var tags string
 		var read int
 		var snippet string
 		var ignore string

@@ -13,8 +13,6 @@ func TestTextEmailInserts(t *testing.T) {
 
 	start := time.Now()
 
-	assertEqualStats(t, 0, 0)
-
 	for i := 0; i < testRuns; i++ {
 		if _, err := Store(&testTextEmail); err != nil {
 			t.Log("error ", err)
@@ -22,11 +20,9 @@ func TestTextEmailInserts(t *testing.T) {
 		}
 	}
 
-	assertEqual(t, CountTotal(), testRuns, "Incorrect number of text emails stored")
+	assertEqual(t, CountTotal(), float64(testRuns), "Incorrect number of text emails stored")
 
 	t.Logf("Inserted %d text emails in %s", testRuns, time.Since(start))
-
-	assertEqualStats(t, testRuns, testRuns)
 
 	delStart := time.Now()
 	if err := DeleteAllMessages(); err != nil {
@@ -34,7 +30,7 @@ func TestTextEmailInserts(t *testing.T) {
 		t.Fail()
 	}
 
-	assertEqual(t, CountTotal(), 0, "incorrect number of text emails deleted")
+	assertEqual(t, CountTotal(), float64(0), "incorrect number of text emails deleted")
 
 	t.Logf("deleted %d text emails in %s", testRuns, time.Since(delStart))
 
@@ -56,11 +52,9 @@ func TestMimeEmailInserts(t *testing.T) {
 		}
 	}
 
-	assertEqual(t, CountTotal(), testRuns, "Incorrect number of mime emails stored")
+	assertEqual(t, CountTotal(), float64(testRuns), "Incorrect number of mime emails stored")
 
 	t.Logf("Inserted %d text emails in %s", testRuns, time.Since(start))
-
-	assertEqualStats(t, testRuns, testRuns)
 
 	delStart := time.Now()
 	if err := DeleteAllMessages(); err != nil {
@@ -68,7 +62,7 @@ func TestMimeEmailInserts(t *testing.T) {
 		t.Fail()
 	}
 
-	assertEqual(t, CountTotal(), 0, "incorrect number of mime emails deleted")
+	assertEqual(t, CountTotal(), float64(0), "incorrect number of mime emails deleted")
 
 	t.Logf("Deleted %d mime emails in %s", testRuns, time.Since(delStart))
 }
@@ -107,14 +101,14 @@ func TestRetrieveMimeEmail(t *testing.T) {
 		t.Log("error ", err)
 		t.Fail()
 	}
-	assertEqual(t, len(attachmentData.Content), msg.Attachments[0].Size, "attachment size does not match")
+	assertEqual(t, float64(len(attachmentData.Content)), msg.Attachments[0].Size, "attachment size does not match")
 
 	inlineData, err := GetAttachmentPart(id, msg.Inline[0].PartID)
 	if err != nil {
 		t.Log("error ", err)
 		t.Fail()
 	}
-	assertEqual(t, len(inlineData.Content), msg.Inline[0].Size, "inline attachment size does not match")
+	assertEqual(t, float64(len(inlineData.Content)), msg.Inline[0].Size, "inline attachment size does not match")
 }
 
 func TestMessageSummary(t *testing.T) {

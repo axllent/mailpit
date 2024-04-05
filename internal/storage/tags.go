@@ -92,32 +92,13 @@ func AddMessageTag(id, name string) error {
 	logger.Log().Debugf("[tags] adding tag \"%s\" to %s", name, id)
 
 	// tag dos not exist, add new one
-	if err := sqlf.InsertInto("tags").
+	if _, err := sqlf.InsertInto("tags").
 		Set("Name", name).
-		Returning("ID").To(&tagID).
-		QueryRowAndClose(context.TODO(), db); err != nil {
-		return err
-	}
-
-	// check message does not already have this tag
-	var count int
-	if _, err := sqlf.From("message_tags").
-		Select("COUNT(ID)").To(&count).
-		Where("ID = ?", id).
-		Where("TagID = ?", tagID).
 		ExecAndClose(context.TODO(), db); err != nil {
 		return err
 	}
-	if count != 0 {
-		return nil // already exists
-	}
 
-	// add tag to message
-	_, err := sqlf.InsertInto("message_tags").
-		Set("ID", id).
-		Set("TagID", tagID).
-		ExecAndClose(context.TODO(), db)
-	return err
+	return AddMessageTag(id, name)
 }
 
 // DeleteMessageTag deleted a tag from a message
@@ -246,24 +227,24 @@ func findTagsInRawMessage(message *[]byte) string {
 func (d DBMailSummary) tagsFromPlusAddresses() string {
 	tags := []string{}
 	for _, c := range d.To {
-		matches := addressPlusRe.FindAllStringSubmatch(c.String(), 1)
+		matches := addressPlusRe.FindAllStringSubmatch(c.Address, 1)
 		if len(matches) == 1 {
 			tags = append(tags, strings.Split(matches[0][2], "+")...)
 		}
 	}
 	for _, c := range d.Cc {
-		matches := addressPlusRe.FindAllStringSubmatch(c.String(), 1)
+		matches := addressPlusRe.FindAllStringSubmatch(c.Address, 1)
 		if len(matches) == 1 {
 			tags = append(tags, strings.Split(matches[0][2], "+")...)
 		}
 	}
 	for _, c := range d.Bcc {
-		matches := addressPlusRe.FindAllStringSubmatch(c.String(), 1)
+		matches := addressPlusRe.FindAllStringSubmatch(c.Address, 1)
 		if len(matches) == 1 {
 			tags = append(tags, strings.Split(matches[0][2], "+")...)
 		}
 	}
-	matches := addressPlusRe.FindAllStringSubmatch(d.From.String(), 1)
+	matches := addressPlusRe.FindAllStringSubmatch(d.From.Address, 1)
 	if len(matches) == 1 {
 		tags = append(tags, strings.Split(matches[0][2], "+")...)
 	}
