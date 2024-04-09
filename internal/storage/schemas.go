@@ -7,7 +7,7 @@ import (
 	"embed"
 	"encoding/json"
 	"log"
-	"path/filepath"
+	"path"
 	"sort"
 	"strings"
 	"text/template"
@@ -103,8 +103,8 @@ func dbApplySchemas() error {
 			continue
 		}
 
-		s := schema{s.Name(), semver.MajorMinor(schemaID) + "." + semver.Patch(schemaID)}
-		scripts = append(scripts, s)
+		script := schema{s.Name(), semver.MajorMinor(schemaID) + "." + semver.Patch(schemaID)}
+		scripts = append(scripts, script)
 	}
 
 	// sort schemas by semver, low to high
@@ -123,8 +123,8 @@ func dbApplySchemas() error {
 			// already completed, ignore
 			continue
 		}
-
-		b, err := schemaScripts.ReadFile(filepath.Join("schemas", s.Name))
+		// use path.Join for Windows compatibility, see https://github.com/golang/go/issues/44305
+		b, err := schemaScripts.ReadFile(path.Join("schemas", s.Name))
 		if err != nil {
 			return err
 		}
