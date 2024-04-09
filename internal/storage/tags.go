@@ -60,7 +60,7 @@ func SetMessageTags(id string, tags []string) error {
 func AddMessageTag(id, name string) error {
 	var tagID int
 
-	q := sqlf.From("tags").
+	q := sqlf.From(tenant("tags")).
 		Select("ID").To(&tagID).
 		Where("Name = ?", name)
 
@@ -68,7 +68,7 @@ func AddMessageTag(id, name string) error {
 	if err := q.QueryRowAndClose(context.TODO(), db); err == nil {
 		// check message does not already have this tag
 		var count int
-		if _, err := sqlf.From("message_tags").
+		if _, err := sqlf.From(tenant("message_tags")).
 			Select("COUNT(ID)").To(&count).
 			Where("ID = ?", id).
 			Where("TagID = ?", tagID).
@@ -82,7 +82,7 @@ func AddMessageTag(id, name string) error {
 
 		logger.Log().Debugf("[tags] adding tag \"%s\" to %s", name, id)
 
-		_, err := sqlf.InsertInto("message_tags").
+		_, err := sqlf.InsertInto(tenant("message_tags")).
 			Set("ID", id).
 			Set("TagID", tagID).
 			ExecAndClose(context.TODO(), db)
@@ -92,7 +92,7 @@ func AddMessageTag(id, name string) error {
 	logger.Log().Debugf("[tags] adding tag \"%s\" to %s", name, id)
 
 	// tag dos not exist, add new one
-	if _, err := sqlf.InsertInto("tags").
+	if _, err := sqlf.InsertInto(tenant("tags")).
 		Set("Name", name).
 		ExecAndClose(context.TODO(), db); err != nil {
 		return err
@@ -103,9 +103,9 @@ func AddMessageTag(id, name string) error {
 
 // DeleteMessageTag deleted a tag from a message
 func DeleteMessageTag(id, name string) error {
-	if _, err := sqlf.DeleteFrom("message_tags").
-		Where("message_tags.ID = ?", id).
-		Where(`message_tags.Key IN (SELECT Key FROM message_tags LEFT JOIN tags ON TagID=tags.ID WHERE Name = ?)`, name).
+	if _, err := sqlf.DeleteFrom(tenant("message_tags")).
+		Where(tenant("message_tags.ID")+" = ?", id).
+		Where(tenant("message_tags.Key")+` IN (SELECT Key FROM `+tenant("message_tags")+` LEFT JOIN tags ON `+tenant("TagID")+"="+tenant("tags.ID")+` WHERE Name = ?)`, name).
 		ExecAndClose(context.TODO(), db); err != nil {
 		return err
 	}
@@ -115,8 +115,8 @@ func DeleteMessageTag(id, name string) error {
 
 // DeleteAllMessageTags deleted all tags from a message
 func DeleteAllMessageTags(id string) error {
-	if _, err := sqlf.DeleteFrom("message_tags").
-		Where("message_tags.ID = ?", id).
+	if _, err := sqlf.DeleteFrom(tenant("message_tags")).
+		Where(tenant("message_tags.ID")+" = ?", id).
 		ExecAndClose(context.TODO(), db); err != nil {
 		return err
 	}
@@ -131,7 +131,7 @@ func GetAllTags() []string {
 
 	if err := sqlf.
 		Select(`DISTINCT Name`).
-		From("tags").To(&name).
+		From(tenant("tags")).To(&name).
 		OrderBy("Name").
 		QueryAndClose(context.TODO(), db, func(row *sql.Rows) {
 			tags = append(tags, name)
@@ -150,10 +150,10 @@ func GetAllTagsCount() map[string]int64 {
 
 	if err := sqlf.
 		Select(`Name`).To(&name).
-		Select(`COUNT(message_tags.TagID) as total`).To(&total).
-		From("tags").
-		LeftJoin("message_tags", "tags.ID = message_tags.TagID").
-		GroupBy("message_tags.TagID").
+		Select(`COUNT(`+tenant("message_tags.TagID")+`) as total`).To(&total).
+		From(tenant("tags")).
+		LeftJoin(tenant("message_tags"), tenant("tags.ID")+" = "+tenant("message_tags.TagID")).
+		GroupBy(tenant("message_tags.TagID")).
 		OrderBy("Name").
 		QueryAndClose(context.TODO(), db, func(row *sql.Rows) {
 			tags[name] = total
@@ -167,10 +167,10 @@ func GetAllTagsCount() map[string]int64 {
 
 // PruneUnusedTags will delete all unused tags from the database
 func pruneUnusedTags() error {
-	q := sqlf.From("tags").
-		Select("tags.ID, tags.Name, COUNT(message_tags.ID) as COUNT").
-		LeftJoin("message_tags", "tags.ID = message_tags.TagID").
-		GroupBy("tags.ID")
+	q := sqlf.From(tenant("tags")).
+		Select(tenant("tags.ID")+", "+tenant("tags.Name")+", COUNT("+tenant("message_tags.ID")+") as COUNT").
+		LeftJoin(tenant("message_tags"), tenant("tags.ID")+" = "+tenant("message_tags.TagID")).
+		GroupBy(tenant("tags.ID"))
 
 	toDel := []int{}
 
@@ -194,7 +194,7 @@ func pruneUnusedTags() error {
 
 	if len(toDel) > 0 {
 		for _, id := range toDel {
-			if _, err := sqlf.DeleteFrom("tags").
+			if _, err := sqlf.DeleteFrom(tenant("tags")).
 				Where("ID = ?", id).
 				ExecAndClose(context.TODO(), db); err != nil {
 				return err
@@ -260,9 +260,9 @@ func getMessageTags(id string) []string {
 
 	if err := sqlf.
 		Select(`Name`).To(&name).
-		From("Tags").
-		LeftJoin("message_tags", "Tags.ID=message_tags.TagID").
-		Where(`message_tags.ID = ?`, id).
+		From(tenant("Tags")).
+		LeftJoin(tenant("message_tags"), tenant("Tags.ID")+"="+tenant("message_tags.TagID")).
+		Where(tenant("message_tags.ID")+` = ?`, id).
 		OrderBy("Name").
 		QueryAndClose(context.TODO(), db, func(row *sql.Rows) {
 			tags = append(tags, name)

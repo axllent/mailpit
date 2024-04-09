@@ -55,7 +55,7 @@ func pruneMessages() {
 	start := time.Now()
 
 	q := sqlf.Select("ID, Size").
-		From("mailbox").
+		From(tenant("mailbox")).
 		OrderBy("Created DESC").
 		Limit(5000).
 		Offset(config.MaxMessages)
@@ -93,19 +93,19 @@ func pruneMessages() {
 		args[i] = id
 	}
 
-	_, err = tx.Exec(`DELETE FROM mailbox_data WHERE ID IN (?`+strings.Repeat(",?", len(ids)-1)+`)`, args...) // #nosec
+	_, err = tx.Exec(`DELETE FROM `+tenant("mailbox_data")+` WHERE ID IN (?`+strings.Repeat(",?", len(ids)-1)+`)`, args...) // #nosec
 	if err != nil {
 		logger.Log().Errorf("[db] %s", err.Error())
 		return
 	}
 
-	_, err = tx.Exec(`DELETE FROM message_tags WHERE ID IN (?`+strings.Repeat(",?", len(ids)-1)+`)`, args...) // #nosec
+	_, err = tx.Exec(`DELETE FROM `+tenant("message_tags")+` WHERE ID IN (?`+strings.Repeat(",?", len(ids)-1)+`)`, args...) // #nosec
 	if err != nil {
 		logger.Log().Errorf("[db] %s", err.Error())
 		return
 	}
 
-	_, err = tx.Exec(`DELETE FROM mailbox WHERE ID IN (?`+strings.Repeat(",?", len(ids)-1)+`)`, args...) // #nosec
+	_, err = tx.Exec(`DELETE FROM `+tenant("mailbox")+` WHERE ID IN (?`+strings.Repeat(",?", len(ids)-1)+`)`, args...) // #nosec
 	if err != nil {
 		logger.Log().Errorf("[db] %s", err.Error())
 		return

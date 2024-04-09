@@ -95,9 +95,14 @@ func Store(body *[]byte) (string, error) {
 	attachments := len(env.Attachments)
 	snippet := tools.CreateSnippet(env.Text, env.HTML)
 
+	sql := fmt.Sprintf(`INSERT INTO %s 
+		(Created, ID, MessageID, Subject, Metadata, Size, Inline, Attachments, SearchText, Read, Snippet) 
+		VALUES(?,?,?,?,?,?,?,?,?,0,?)`,
+		tenant("mailbox"),
+	) // #nosec
+
 	// insert mail summary data
-	_, err = tx.Exec("INSERT INTO mailbox(Created, ID, MessageID, Subject, Metadata, Size, Inline, Attachments, SearchText, Read, Snippet) VALUES(?,?,?,?,?,?,?,?,?,0,?)",
-		created.UnixMilli(), id, messageID, subject, string(summaryJSON), size, inline, attachments, searchText, snippet)
+	_, err = tx.Exec(sql, created.UnixMilli(), id, messageID, subject, string(summaryJSON), size, inline, attachments, searchText, snippet)
 	if err != nil {
 		return "", err
 	}
@@ -105,7 +110,7 @@ func Store(body *[]byte) (string, error) {
 	// insert compressed raw message
 	encoded := dbEncoder.EncodeAll(*body, make([]byte, 0, int(size)))
 	hexStr := hex.EncodeToString(encoded)
-	_, err = tx.Exec("INSERT INTO mailbox_data(ID, Email) VALUES(?, x'"+hexStr+"')", id)
+	_, err = tx.Exec(fmt.Sprintf(`INSERT INTO %s (ID, Email) VALUES(?, x'%s')`, tenant("mailbox_data"), hexStr), id) // #nosec
 	if err != nil {
 		return "", err
 	}
@@ -151,7 +156,7 @@ func List(start, limit int) ([]MessageSummary, error) {
 	results := []MessageSummary{}
 	tsStart := time.Now()
 
-	q := sqlf.From("mailbox m").
+	q := sqlf.From(tenant("mailbox") + " m").
 		Select(`m.Created, m.ID, m.MessageID, m.Subject, m.Metadata, m.Size, m.Attachments, m.Read, m.Snippet`).
 		OrderBy("m.Created DESC").
 		Limit(limit).
@@ -244,7 +249,7 @@ func GetMessage(id string) (*Message, error) {
 	date, err := env.Date()
 	if err != nil {
 		// return received datetime when message does not contain a date header
-		q := sqlf.From("mailbox").
+		q := sqlf.From(tenant("mailbox")).
 			Select(`Created`).
 			Where(`ID = ?`, id)
 
@@ -330,7 +335,7 @@ func GetMessage(id string) (*Message, error) {
 func GetMessageRaw(id string) ([]byte, error) {
 	var i string
 	var msg string
-	q := sqlf.From("mailbox_data").
+	q := sqlf.From(tenant("mailbox_data")).
 		Select(`ID`).To(&i).
 		Select(`Email`).To(&msg).
 		Where(`ID = ?`, id)
@@ -433,7 +438,7 @@ func MarkRead(id string) error {
 		return nil
 	}
 
-	_, err := sqlf.Update("mailbox").
+	_, err := sqlf.Update(tenant("mailbox")).
 		Set("Read", 1).
 		Where("ID = ?", id).
 		ExecAndClose(context.Background(), db)
@@ -454,7 +459,7 @@ func MarkAllRead() error {
 		total = CountUnread()
 	)
 
-	_, err := sqlf.Update("mailbox").
+	_, err := sqlf.Update(tenant("mailbox")).
 		Set("Read", 1).
 		Where("Read = ?", 0).
 		ExecAndClose(context.Background(), db)
@@ -479,7 +484,7 @@ func MarkAllUnread() error {
 		total = CountRead()
 	)
 
-	_, err := sqlf.Update("mailbox").
+	_, err := sqlf.Update(tenant("mailbox")).
 		Set("Read", 0).
 		Where("Read = ?", 1).
 		ExecAndClose(context.Background(), db)
@@ -503,7 +508,7 @@ func MarkUnread(id string) error {
 		return nil
 	}
 
-	_, err := sqlf.Update("mailbox").
+	_, err := sqlf.Update(tenant("mailbox")).
 		Set("Read", 0).
 		Where("ID = ?", id).
 		ExecAndClose(context.Background(), db)
@@ -532,7 +537,8 @@ func DeleteMessages(ids []string) error {
 		args[i] = id
 	}
 
-	rows, err := db.Query(`SELECT ID, Size FROM mailbox WHERE  ID IN (?`+strings.Repeat(",?", len(args)-1)+`)`, args...)
+	sql := fmt.Sprintf(`SELECT ID, Size FROM %s WHERE  ID IN (?%s)`, tenant("mailbox"), strings.Repeat(",?", len(args)-1)) // #nosec
+	rows, err := db.Query(sql, args...)
 	if err != nil {
 		return err
 	}
@@ -569,19 +575,15 @@ func DeleteMessages(ids []string) error {
 		args[i] = id
 	}
 
-	_, err = tx.Exec(`DELETE FROM mailbox WHERE ID IN (?`+strings.Repeat(",?", len(ids)-1)+`)`, args...) // #nosec
-	if err != nil {
-		return err
-	}
+	tables := []string{"mailbox", "mailbox_data", "message_tags"}
 
-	_, err = tx.Exec(`DELETE FROM mailbox_data WHERE ID IN (?`+strings.Repeat(",?", len(ids)-1)+`)`, args...) // #nosec
-	if err != nil {
-		return err
-	}
+	for _, t := range tables {
+		sql = fmt.Sprintf(`DELETE FROM %s WHERE ID IN (?%s)`, tenant(t), strings.Repeat(",?", len(ids)-1))
 
-	_, err = tx.Exec(`DELETE FROM message_tags WHERE ID IN (?`+strings.Repeat(",?", len(ids)-1)+`)`, args...) // #nosec
-	if err != nil {
-		return err
+		_, err = tx.Exec(sql, args...) // #nosec
+		if err != nil {
+			return err
+		}
 	}
 
 	err = tx.Commit()
@@ -591,7 +593,7 @@ func DeleteMessages(ids []string) error {
 
 	logMessagesDeleted(len(toDelete))
 
-	pruneUnusedTags()
+	_ = pruneUnusedTags()
 
 	elapsed := time.Since(start)
 
@@ -614,7 +616,7 @@ func DeleteAllMessages() error {
 		total int
 	)
 
-	_ = sqlf.From("mailbox").
+	_ = sqlf.From(tenant("mailbox")).
 		Select("COUNT(*)").To(&total).
 		QueryRowAndClose(context.TODO(), db)
 
@@ -628,24 +630,14 @@ func DeleteAllMessages() error {
 	// roll back if it fails
 	defer tx.Rollback()
 
-	_, err = tx.Exec("DELETE FROM mailbox")
-	if err != nil {
-		return err
-	}
+	tables := []string{"mailbox", "mailbox_data", "tags", "message_tags"}
 
-	_, err = tx.Exec("DELETE FROM mailbox_data")
-	if err != nil {
-		return err
-	}
-
-	_, err = tx.Exec("DELETE FROM tags")
-	if err != nil {
-		return err
-	}
-
-	_, err = tx.Exec("DELETE FROM message_tags")
-	if err != nil {
-		return err
+	for _, t := range tables {
+		sql := fmt.Sprintf(`DELETE FROM %s`, tenant(t)) // #nosec
+		_, err := tx.Exec(sql)
+		if err != nil {
+			return err
+		}
 	}
 
 	if err := tx.Commit(); err != nil {

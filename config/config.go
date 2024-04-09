@@ -29,6 +29,10 @@ var (
 	// DataFile for mail (optional)
 	DataFile string
 
+	// TenantID is an optional prefix to be applied to all database tables,
+	// allowing multiple isolated instances of Mailpit to share a database.
+	TenantID = ""
+
 	// MaxMessages is the maximum number of messages a mailbox can have (auto-pruned every minute)
 	MaxMessages = 500
 
@@ -187,6 +191,16 @@ func VerifyConfig() error {
 
 	if DataFile != "" && isDir(DataFile) {
 		DataFile = filepath.Join(DataFile, "mailpit.db")
+	}
+
+	TenantID = strings.TrimSpace(TenantID)
+	if TenantID != "" {
+		logger.Log().Infof("[db] using tenant \"%s\"", TenantID)
+		re := regexp.MustCompile(`[^a-zA-Z0-9\_]`)
+		TenantID = re.ReplaceAllString(TenantID, "_")
+		if !strings.HasSuffix(TenantID, "_") {
+			TenantID = TenantID + "_"
+		}
 	}
 
 	re := regexp.MustCompile(`.*:\d+$`)
