@@ -48,6 +48,7 @@ func InitDB() error {
 		p = fmt.Sprintf("%s-%d.db", path.Join(os.TempDir(), "mailpit"), time.Now().UnixNano())
 		dbIsTemp = true
 		sqlDriver = "sqlite"
+		dsn = p
 		logger.Log().Debugf("[db] using temporary database: %s", p)
 	} else if strings.HasPrefix(p, "http://") || strings.HasPrefix(p, "https://") {
 		sqlDriver = "rqlite"
@@ -92,7 +93,7 @@ func InitDB() error {
 	}
 
 	// create tables if necessary & apply migrations
-	if err := dbApplyMigrations(); err != nil {
+	if err := dbApplySchemas(); err != nil {
 		return err
 	}
 
@@ -119,6 +120,11 @@ func InitDB() error {
 	go dataMigrations()
 
 	return nil
+}
+
+// Tenant applies an optional prefix to the table name
+func tenant(table string) string {
+	return fmt.Sprintf("%s%s", config.TenantID, table)
 }
 
 // Close will close the database, and delete if a temporary table
@@ -163,7 +169,7 @@ func StatsGet() MailboxStats {
 func CountTotal() float64 {
 	var total float64
 
-	_ = sqlf.From("mailbox").
+	_ = sqlf.From(tenant("mailbox")).
 		Select("COUNT(*)").To(&total).
 		QueryRowAndClose(context.TODO(), db)
 
@@ -174,7 +180,7 @@ func CountTotal() float64 {
 func CountUnread() float64 {
 	var total float64
 
-	_ = sqlf.From("mailbox").
+	_ = sqlf.From(tenant("mailbox")).
 		Select("COUNT(*)").To(&total).
 		Where("Read = ?", 0).
 		QueryRowAndClose(context.TODO(), db)
@@ -186,7 +192,7 @@ func CountUnread() float64 {
 func CountRead() float64 {
 	var total float64
 
-	_ = sqlf.From("mailbox").
+	_ = sqlf.From(tenant("mailbox")).
 		Select("COUNT(*)").To(&total).
 		Where("Read = ?", 1).
 		QueryRowAndClose(context.TODO(), db)
@@ -212,7 +218,7 @@ func DbSize() float64 {
 func IsUnread(id string) bool {
 	var unread int
 
-	_ = sqlf.From("mailbox").
+	_ = sqlf.From(tenant("mailbox")).
 		Select("COUNT(*)").To(&unread).
 		Where("Read = ?", 0).
 		Where("ID = ?", id).
@@ -225,7 +231,7 @@ func IsUnread(id string) bool {
 func MessageIDExists(id string) bool {
 	var total int
 
-	_ = sqlf.From("mailbox").
+	_ = sqlf.From(tenant("mailbox")).
 		Select("COUNT(*)").To(&total).
 		Where("MessageID = ?", id).
 		QueryRowAndClose(context.TODO(), db)

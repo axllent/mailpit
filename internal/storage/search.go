@@ -159,21 +159,21 @@ func DeleteSearch(search string) error {
 				delIDs[i] = id
 			}
 
-			sqlDelete1 := `DELETE FROM mailbox WHERE ID IN (?` + strings.Repeat(",?", len(ids)-1) + `)` // #nosec
+			sqlDelete1 := `DELETE FROM ` + tenant("mailbox") + ` WHERE ID IN (?` + strings.Repeat(",?", len(ids)-1) + `)` // #nosec
 
 			_, err = tx.Exec(sqlDelete1, delIDs...)
 			if err != nil {
 				return err
 			}
 
-			sqlDelete2 := `DELETE FROM mailbox_data WHERE ID IN (?` + strings.Repeat(",?", len(ids)-1) + `)` // #nosec
+			sqlDelete2 := `DELETE FROM ` + tenant("mailbox_data") + ` WHERE ID IN (?` + strings.Repeat(",?", len(ids)-1) + `)` // #nosec
 
 			_, err = tx.Exec(sqlDelete2, delIDs...)
 			if err != nil {
 				return err
 			}
 
-			sqlDelete3 := `DELETE FROM message_tags WHERE ID IN (?` + strings.Repeat(",?", len(ids)-1) + `)` // #nosec
+			sqlDelete3 := `DELETE FROM ` + tenant("message_tags") + ` WHERE ID IN (?` + strings.Repeat(",?", len(ids)-1) + `)` // #nosec
 
 			_, err = tx.Exec(sqlDelete3, delIDs...)
 			if err != nil {
@@ -207,7 +207,7 @@ func searchQueryBuilder(searchString string) *sqlf.Stmt {
 	// group strings with quotes as a single argument and remove quotes
 	args := tools.ArgsParser(searchString)
 
-	q := sqlf.From("mailbox m").
+	q := sqlf.From(tenant("mailbox") + " m").
 		Select(`m.Created, m.ID, m.MessageID, m.Subject, m.Metadata, m.Size, m.Attachments, m.Read,
 			m.Snippet,
 			IFNULL(json_extract(Metadata, '$.To'), '{}') as ToJSON,
@@ -306,9 +306,9 @@ func searchQueryBuilder(searchString string) *sqlf.Stmt {
 			w = cleanString(w[4:])
 			if w != "" {
 				if exclude {
-					q.Where(`m.ID NOT IN (SELECT mt.ID FROM message_tags mt JOIN tags t ON mt.TagID = t.ID WHERE t.Name = ?)`, w)
+					q.Where(`m.ID NOT IN (SELECT mt.ID FROM `+tenant("message_tags")+` mt JOIN `+tenant("tags")+` t ON mt.TagID = t.ID WHERE t.Name = ?)`, w)
 				} else {
-					q.Where(`m.ID IN (SELECT mt.ID FROM message_tags mt JOIN tags t ON mt.TagID = t.ID WHERE t.Name = ?)`, w)
+					q.Where(`m.ID IN (SELECT mt.ID FROM `+tenant("message_tags")+` mt JOIN `+tenant("tags")+` t ON mt.TagID = t.ID WHERE t.Name = ?)`, w)
 				}
 			}
 		} else if lw == "is:read" {
@@ -325,9 +325,9 @@ func searchQueryBuilder(searchString string) *sqlf.Stmt {
 			}
 		} else if lw == "is:tagged" {
 			if exclude {
-				q.Where(`m.ID NOT IN (SELECT DISTINCT mt.ID FROM message_tags mt JOIN tags t ON mt.TagID = t.ID)`)
+				q.Where(`m.ID NOT IN (SELECT DISTINCT mt.ID FROM ` + tenant("message_tags") + ` mt JOIN tags t ON mt.TagID = t.ID)`)
 			} else {
-				q.Where(`m.ID IN (SELECT DISTINCT mt.ID FROM message_tags mt JOIN tags t ON mt.TagID = t.ID)`)
+				q.Where(`m.ID IN (SELECT DISTINCT mt.ID FROM ` + tenant("message_tags") + ` mt JOIN tags t ON mt.TagID = t.ID)`)
 			}
 		} else if lw == "has:attachment" || lw == "has:attachments" {
 			if exclude {

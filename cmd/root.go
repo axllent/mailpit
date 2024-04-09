@@ -81,6 +81,7 @@ func init() {
 	initConfigFromEnv()
 
 	rootCmd.Flags().StringVarP(&config.DataFile, "db-file", "d", config.DataFile, "Database file to store persistent data")
+	rootCmd.Flags().StringVar(&config.TenantID, "db-tenant-id", config.TenantID, "Database tenant ID to isolate data")
 	rootCmd.Flags().IntVarP(&config.MaxMessages, "max", "m", config.MaxMessages, "Max number of messages to store")
 	rootCmd.Flags().BoolVar(&config.UseMessageDates, "use-message-dates", config.UseMessageDates, "Use message dates as the received dates")
 	rootCmd.Flags().BoolVar(&config.IgnoreDuplicateIDs, "ignore-duplicate-ids", config.IgnoreDuplicateIDs, "Ignore duplicate messages (by Message-Id)")
@@ -155,7 +156,12 @@ func init() {
 // Load settings from environment
 func initConfigFromEnv() {
 	// General
-	config.DataFile = os.Getenv("MP_DATA_FILE")
+	if len(os.Getenv("MP_DB_FILE")) > 0 {
+		config.DataFile = os.Getenv("MP_DB_FILE")
+	}
+
+	config.TenantID = os.Getenv("MP_DB_TENANT")
+
 	if len(os.Getenv("MP_MAX_MESSAGES")) > 0 {
 		config.MaxMessages, _ = strconv.Atoi(os.Getenv("MP_MAX_MESSAGES"))
 	}
@@ -289,6 +295,12 @@ func initConfigFromEnv() {
 
 // load deprecated settings from environment and warn
 func initDeprecatedConfigFromEnv() {
+	// deprecated 2024/04/08
+	if len(os.Getenv("MP_DATA_FILE")) > 0 {
+		// do not warn - this will remain for quite some time
+		// logger.Log().Warn("ENV MP_DATA_FILE has been deprecated, use MP_DB_FILE")
+		config.DataFile = os.Getenv("MP_DATA_FILE")
+	}
 	// deprecated 2023/03/12
 	if len(os.Getenv("MP_UI_SSL_CERT")) > 0 {
 		logger.Log().Warn("ENV MP_UI_SSL_CERT has been deprecated, use MP_UI_TLS_CERT")
