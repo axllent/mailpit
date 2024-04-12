@@ -26,8 +26,8 @@ var (
 	// HTTPListen to listen on <interface>:<port>
 	HTTPListen = "[::]:8025"
 
-	// DataFile for mail (optional)
-	DataFile string
+	// Database for mail (optional)
+	Database string
 
 	// TenantID is an optional prefix to be applied to all database tables,
 	// allowing multiple isolated instances of Mailpit to share a database.
@@ -189,8 +189,8 @@ func VerifyConfig() error {
 		cssFontRestriction, cssFontRestriction,
 	)
 
-	if DataFile != "" && isDir(DataFile) {
-		DataFile = filepath.Join(DataFile, "mailpit.db")
+	if Database != "" && isDir(Database) {
+		Database = filepath.Join(Database, "mailpit.db")
 	}
 
 	TenantID = strings.TrimSpace(TenantID)

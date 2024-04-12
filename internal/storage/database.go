@@ -39,7 +39,7 @@ var (
 
 // InitDB will initialise the database
 func InitDB() error {
-	p := config.DataFile
+	p := config.Database
 	var dsn string
 
 	if p == "" {
@@ -61,7 +61,7 @@ func InitDB() error {
 		logger.Log().Debugf("[db] opening database %s", p)
 	}
 
-	config.DataFile = p
+	config.Database = p
 
 	var err error
 

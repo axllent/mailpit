@@ -80,8 +80,8 @@ func init() {
 	// load environment variables
 	initConfigFromEnv()
 
-	rootCmd.Flags().StringVarP(&config.DataFile, "db-file", "d", config.DataFile, "Database file to store persistent data")
-	rootCmd.Flags().StringVar(&config.TenantID, "db-tenant-id", config.TenantID, "Database tenant ID to isolate data")
+	rootCmd.Flags().StringVarP(&config.Database, "database", "d", config.Database, "Database to store persistent data")
+	rootCmd.Flags().StringVar(&config.TenantID, "tenant-id", config.TenantID, "Database tenant ID to isolate data")
 	rootCmd.Flags().IntVarP(&config.MaxMessages, "max", "m", config.MaxMessages, "Max number of messages to store")
 	rootCmd.Flags().BoolVar(&config.UseMessageDates, "use-message-dates", config.UseMessageDates, "Use message dates as the received dates")
 	rootCmd.Flags().BoolVar(&config.IgnoreDuplicateIDs, "ignore-duplicate-ids", config.IgnoreDuplicateIDs, "Ignore duplicate messages (by Message-Id)")
@@ -133,6 +133,10 @@ func init() {
 	rootCmd.Flags().StringVar(&config.WebhookURL, "webhook-url", config.WebhookURL, "Send a webhook request for new messages")
 	rootCmd.Flags().IntVar(&webhook.RateLimit, "webhook-limit", webhook.RateLimit, "Limit webhook requests per second")
 
+	// DEPRECATED FLAG 2024/04/12 - but will not be removed to maintain backwards compatibility
+	rootCmd.Flags().StringVar(&config.Database, "db-file", config.Database, "Database file to store persistent data")
+	rootCmd.Flags().Lookup("db-file").Hidden = true
+
 	// DEPRECATED FLAGS 2023/03/12
 	rootCmd.Flags().StringVar(&config.UITLSCert, "ui-ssl-cert", config.UITLSCert, "SSL certificate for web UI - requires ui-ssl-key")
 	rootCmd.Flags().StringVar(&config.UITLSKey, "ui-ssl-key", config.UITLSKey, "SSL key for web UI - requires ui-ssl-cert")
@@ -156,11 +160,11 @@ func init() {
 // Load settings from environment
 func initConfigFromEnv() {
 	// General
-	if len(os.Getenv("MP_DB_FILE")) > 0 {
-		config.DataFile = os.Getenv("MP_DB_FILE")
+	if len(os.Getenv("MP_DATABASE")) > 0 {
+		config.Database = os.Getenv("MP_DATABASE")
 	}
 
-	config.TenantID = os.Getenv("MP_DB_TENANT")
+	config.TenantID = os.Getenv("MP_TENANT_ID")
 
 	if len(os.Getenv("MP_MAX_MESSAGES")) > 0 {
 		config.MaxMessages, _ = strconv.Atoi(os.Getenv("MP_MAX_MESSAGES"))
@@ -229,7 +233,6 @@ func initConfigFromEnv() {
 	if getEnabledFromEnv("MP_SMTP_REQUIRE_TLS") {
 		config.SMTPRequireTLS = true
 	}
-
 	if getEnabledFromEnv("MP_SMTP_AUTH_ALLOW_INSECURE") {
 		config.SMTPAuthAllowInsecure = true
 	}
@@ -295,12 +298,11 @@ func initConfigFromEnv() {
 
 // load deprecated settings from environment and warn
 func initDeprecatedConfigFromEnv() {
-	// deprecated 2024/04/08
+	// deprecated 2024/04/12 - but will not be removed to maintain backwards compatibility
 	if len(os.Getenv("MP_DATA_FILE")) > 0 {
-		// do not warn - this will remain for quite some time
-		// logger.Log().Warn("ENV MP_DATA_FILE has been deprecated, use MP_DB_FILE")
-		config.DataFile = os.Getenv("MP_DATA_FILE")
+		config.Database = os.Getenv("MP_DATA_FILE")
 	}
+
 	// deprecated 2023/03/12
 	if len(os.Getenv("MP_UI_SSL_CERT")) > 0 {
 		logger.Log().Warn("ENV MP_UI_SSL_CERT has been deprecated, use MP_UI_TLS_CERT")
