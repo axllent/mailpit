@@ -19,7 +19,7 @@ var (
 func setup() {
 	logger.NoLogging = true
 	config.MaxMessages = 0
-	config.DataFile = os.Getenv("MP_DATA_FILE")
+	config.Database = os.Getenv("MP_DATABASE")
 
 	if err := InitDB(); err != nil {
 		panic(err)

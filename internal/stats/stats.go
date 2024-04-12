@@ -94,7 +94,7 @@ func Load() AppInformation {
 		}
 	}
 
-	info.Database = config.DataFile
+	info.Database = config.Database
 	info.DatabaseSize = storage.DbSize()
 	info.Messages = storage.CountTotal()
 	info.Unread = storage.CountUnread()

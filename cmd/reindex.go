@@ -19,7 +19,7 @@ If you have several thousand messages in your mailbox, then it is advised to shu
 Mailpit while you reindex as this process will likely result in database locking issues.`,
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		config.DataFile = args[0]
+		config.Database = args[0]
 		config.MaxMessages = 0
 
 		if err := storage.InitDB(); err != nil {

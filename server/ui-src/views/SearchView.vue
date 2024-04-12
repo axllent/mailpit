@@ -59,6 +59,9 @@ export default {
 			}
 
 			this.apiURI = this.resolve(`/api/v1/search`) + '?query=' + encodeURIComponent(s)
+			if (mailbox.timeZone != '' && (s.indexOf('after:') != -1 || s.indexOf('before:') != -1)) {
+				this.apiURI += '&tz=' + encodeURIComponent(mailbox.timeZone)
+			}
 			this.loadMessages()
 		}
 	}

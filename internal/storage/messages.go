@@ -415,7 +415,7 @@ func LatestID(r *http.Request) (string, error) {
 
 	search := strings.TrimSpace(r.URL.Query().Get("query"))
 	if search != "" {
-		messages, _, err = Search(search, 0, 1)
+		messages, _, err = Search(search, r.URL.Query().Get("tz"), 0, 1)
 		if err != nil {
 			return "", err
 		}
