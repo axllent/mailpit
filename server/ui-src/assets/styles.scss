@@ -320,16 +320,18 @@ body.blur {
 	display: none;
 }
 
-.form-control.dropdown {
-	padding: 0;
-	border: 0;
+#message-view {
+	.form-control.dropdown {
+		padding: 0;
+		border: 0;
 
-	input {
-		font-size: 0.875em;
-	}
+		input {
+			font-size: 0.875em;
+		}
 
-	div {
-		cursor: text; // html5-tags
+		div {
+			cursor: text; // html5-tags
+		}
 	}
 }
 

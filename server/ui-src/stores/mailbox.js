@@ -9,7 +9,6 @@ export const mailbox = reactive({
 	count: 0, 				// total in mailbox or search
 	messages: [],			// current messages
 	tags: [], 				// all tags
-	showTagColors: true, 	// show/hide tag colors
 	selected: [], 			// currently selected
 	connected: false, 		// websocket connection
 	searching: false,		// current search, false for none
@@ -19,7 +18,13 @@ export const mailbox = reactive({
 	appInfo: {},			// application information
 	uiConfig: {},			// configuration for UI
 	lastMessage: false,		// return scrolling
-	timeZone: '', 			// browser timezone
+
+	// settings
+	showTagColors: !localStorage.getItem('hideTagColors') == '1',
+	showHTMLCheck: !localStorage.getItem('hideHTMLCheck') == '1',
+	showLinkCheck: !localStorage.getItem('hideLinkCheck') == '1',
+	showSpamCheck: !localStorage.getItem('hideSpamCheck') == '1',
+	timeZone: localStorage.getItem('timeZone') ? localStorage.getItem('timeZone') : Intl.DateTimeFormat().resolvedOptions().timeZone,
 })
 
 watch(
@@ -36,6 +41,50 @@ watch(
 			localStorage.removeItem('hideTagColors')
 		} else {
 			localStorage.setItem('hideTagColors', '1')
+		}
+	}
+)
+
+watch(
+	() => mailbox.showHTMLCheck,
+	(v) => {
+		if (v) {
+			localStorage.removeItem('hideHTMLCheck')
+		} else {
+			localStorage.setItem('hideHTMLCheck', '1')
+		}
+	}
+)
+
+watch(
+	() => mailbox.showLinkCheck,
+	(v) => {
+		if (v) {
+			localStorage.removeItem('hideLinkCheck')
+		} else {
+			localStorage.setItem('hideLinkCheck', '1')
+		}
+	}
+)
+
+watch(
+	() => mailbox.showSpamCheck,
+	(v) => {
+		if (v) {
+			localStorage.removeItem('hideSpamCheck')
+		} else {
+			localStorage.setItem('hideSpamCheck', '1')
+		}
+	}
+)
+
+watch(
+	() => mailbox.timeZone,
+	(v) => {
+		if (v == Intl.DateTimeFormat().resolvedOptions().timeZone) {
+			localStorage.removeItem('timeZone')
+		} else {
+			localStorage.setItem('timeZone', v)
 		}
 	}
 )
