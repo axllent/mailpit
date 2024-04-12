@@ -193,20 +193,6 @@ func middleWareFunc(fn http.HandlerFunc) http.HandlerFunc {
 			}
 		}
 
-		if auth.UICredentials != nil {
-			user, pass, ok := r.BasicAuth()
-
-			if !ok {
-				basicAuthResponse(w)
-				return
-			}
-
-			if !auth.UICredentials.Match(user, pass) {
-				basicAuthResponse(w)
-				return
-			}
-		}
-
 		if !strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") {
 			fn(w, r)
 			return

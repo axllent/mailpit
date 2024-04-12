@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
 	"strings"
 	"testing"
 
@@ -204,9 +205,13 @@ func TestAPIv1Search(t *testing.T) {
 func setup() {
 	logger.NoLogging = true
 	config.MaxMessages = 0
-	config.DataFile = ""
+	config.Database = os.Getenv("MP_DATABASE")
 
 	if err := storage.InitDB(); err != nil {
+		panic(err)
+	}
+
+	if err := storage.DeleteAllMessages(); err != nil {
 		panic(err)
 	}
 }
@@ -225,8 +230,8 @@ func assertStatsEqual(t *testing.T, uri string, unread, total int) {
 		return
 	}
 
-	assertEqual(t, unread, m.Unread, "wrong unread count")
-	assertEqual(t, total, m.Total, "wrong total count")
+	assertEqual(t, float64(unread), m.Unread, "wrong unread count")
+	assertEqual(t, float64(total), m.Total, "wrong total count")
 }
 
 func assertSearchEqual(t *testing.T, uri, query string, count int) {
@@ -246,7 +251,7 @@ func assertSearchEqual(t *testing.T, uri, query string, count int) {
 		return
 	}
 
-	assertEqual(t, count, m.MessagesCount, "wrong search results count")
+	assertEqual(t, float64(count), m.MessagesCount, "wrong search results count")
 }
 
 func insertEmailData(t *testing.T) {

@@ -5,6 +5,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"net/mail"
 	"os"
 
@@ -24,7 +25,7 @@ func ReindexAll() {
 	finished := 0
 
 	err := sqlf.Select("ID").To(&i).
-		From("mailbox").
+		From(tenant("mailbox")).
 		OrderBy("Created DESC").
 		QueryAndClose(context.TODO(), db, func(row *sql.Rows) {
 			ids = append(ids, i)
@@ -112,7 +113,7 @@ func ReindexAll() {
 
 		// insert mail summary data
 		for _, u := range updates {
-			_, err = tx.Exec("UPDATE mailbox SET SearchText = ?, Snippet = ?, Metadata = ? WHERE ID = ?", u.SearchText, u.Snippet, u.Metadata, u.ID)
+			_, err = tx.Exec(fmt.Sprintf(`UPDATE %s SET SearchText = ?, Snippet = ?, Metadata = ? WHERE ID = ?`, tenant("mailbox")), u.SearchText, u.Snippet, u.Metadata, u.ID)
 			if err != nil {
 				logger.Log().Errorf("[db] %s", err.Error())
 				continue

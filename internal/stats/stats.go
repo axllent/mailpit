@@ -2,7 +2,6 @@
 package stats
 
 import (
-	"os"
 	"runtime"
 	"sync"
 	"time"
@@ -21,10 +20,10 @@ var (
 
 	mu sync.RWMutex
 
-	smtpAccepted     int
-	smtpAcceptedSize int
-	smtpRejected     int
-	smtpIgnored      int
+	smtpAccepted     float64
+	smtpAcceptedSize float64
+	smtpRejected     float64
+	smtpIgnored      float64
 )
 
 // AppInformation struct
@@ -37,29 +36,29 @@ type AppInformation struct {
 	// Database path
 	Database string
 	// Database size in bytes
-	DatabaseSize int64
+	DatabaseSize float64
 	// Total number of messages in the database
-	Messages int
+	Messages float64
 	// Total number of messages in the database
-	Unread int
+	Unread float64
 	// Tags and message totals per tag
 	Tags map[string]int64
 	// Runtime statistics
 	RuntimeStats struct {
 		// Mailpit server uptime in seconds
-		Uptime int
+		Uptime float64
 		// Current memory usage in bytes
 		Memory uint64
 		// Database runtime messages deleted
-		MessagesDeleted int
+		MessagesDeleted float64
 		// Accepted runtime SMTP messages
-		SMTPAccepted int
+		SMTPAccepted float64
 		// Total runtime accepted messages size in bytes
-		SMTPAcceptedSize int
+		SMTPAcceptedSize float64
 		// Rejected runtime SMTP messages
-		SMTPRejected int
+		SMTPRejected float64
 		// Ignored runtime SMTP messages (when using --ignore-duplicate-ids)
-		SMTPIgnored int
+		SMTPIgnored float64
 	}
 }
 
@@ -72,8 +71,7 @@ func Load() AppInformation {
 	runtime.ReadMemStats(&m)
 
 	info.RuntimeStats.Memory = m.Sys - m.HeapReleased
-
-	info.RuntimeStats.Uptime = int(time.Since(startedAt).Seconds())
+	info.RuntimeStats.Uptime = time.Since(startedAt).Seconds()
 	info.RuntimeStats.MessagesDeleted = storage.StatsDeleted
 	info.RuntimeStats.SMTPAccepted = smtpAccepted
 	info.RuntimeStats.SMTPAcceptedSize = smtpAcceptedSize
@@ -96,16 +94,10 @@ func Load() AppInformation {
 		}
 	}
 
-	info.Database = config.DataFile
-
-	db, err := os.Stat(info.Database)
-	if err == nil {
-		info.DatabaseSize = db.Size()
-	}
-
+	info.Database = config.Database
+	info.DatabaseSize = storage.DbSize()
 	info.Messages = storage.CountTotal()
 	info.Unread = storage.CountUnread()
-
 	info.Tags = storage.GetAllTagsCount()
 
 	return info
@@ -120,7 +112,7 @@ func Track() {
 func LogSMTPAccepted(size int) {
 	mu.Lock()
 	smtpAccepted = smtpAccepted + 1
-	smtpAcceptedSize = smtpAcceptedSize + size
+	smtpAcceptedSize = smtpAcceptedSize + float64(size)
 	mu.Unlock()
 }
 

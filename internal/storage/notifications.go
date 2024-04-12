@@ -24,8 +24,8 @@ func BroadcastMailboxStats() {
 		time.Sleep(250 * time.Millisecond)
 		bcStatsDelay = false
 		b := struct {
-			Total   int
-			Unread  int
+			Total   float64
+			Unread  float64
 			Version string
 		}{
 			Total:   CountTotal(),

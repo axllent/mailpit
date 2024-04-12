@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/araddon/dateparse"
 	"github.com/axllent/mailpit/internal/logger"
 	"github.com/axllent/mailpit/internal/tools"
 	"github.com/leporo/sqlf"
@@ -17,7 +18,7 @@ import (
 // The search is broken up by segments (exact phrases can be quoted), and interprets specific terms such as:
 // is:read, is:unread, has:attachment, to:<term>, from:<term> & subject:<term>
 // Negative searches also also included by prefixing the search term with a `-` or `!`
-func Search(search string, start, limit int) ([]MessageSummary, int, error) {
+func Search(search, timezone string, start, limit int) ([]MessageSummary, int, error) {
 	results := []MessageSummary{}
 	allResults := []MessageSummary{}
 	tsStart := time.Now()
@@ -26,16 +27,16 @@ func Search(search string, start, limit int) ([]MessageSummary, int, error) {
 		limit = 50
 	}
 
-	q := searchQueryBuilder(search)
+	q := searchQueryBuilder(search, timezone)
 	var err error
 
 	if err := q.QueryAndClose(context.TODO(), db, func(row *sql.Rows) {
-		var created int64
+		var created float64
 		var id string
 		var messageID string
 		var subject string
 		var metadata string
-		var size int
+		var size float64
 		var attachments int
 		var snippet string
 		var read int
@@ -52,7 +53,7 @@ func Search(search string, start, limit int) ([]MessageSummary, int, error) {
 			return
 		}
 
-		em.Created = time.UnixMilli(created)
+		em.Created = time.UnixMilli(int64(created))
 		em.ID = id
 		em.MessageID = messageID
 		em.Subject = subject
@@ -95,21 +96,20 @@ func Search(search string, start, limit int) ([]MessageSummary, int, error) {
 // The search is broken up by segments (exact phrases can be quoted), and interprets specific terms such as:
 // is:read, is:unread, has:attachment, to:<term>, from:<term> & subject:<term>
 // Negative searches also also included by prefixing the search term with a `-` or `!`
-func DeleteSearch(search string) error {
-	q := searchQueryBuilder(search)
+func DeleteSearch(search, timezone string) error {
+	q := searchQueryBuilder(search, timezone)
 
 	ids := []string{}
-	deleteSize := 0
+	deleteSize := float64(0)
 
 	if err := q.QueryAndClose(context.TODO(), db, func(row *sql.Rows) {
-		var created int64
+		var created float64
 		var id string
 		var messageID string
 		var subject string
 		var metadata string
-		var size int
+		var size float64
 		var attachments int
-		// var tags string
 		var read int
 		var snippet string
 		var ignore string
@@ -160,21 +160,21 @@ func DeleteSearch(search string) error {
 				delIDs[i] = id
 			}
 
-			sqlDelete1 := `DELETE FROM mailbox WHERE ID IN (?` + strings.Repeat(",?", len(ids)-1) + `)` // #nosec
+			sqlDelete1 := `DELETE FROM ` + tenant("mailbox") + ` WHERE ID IN (?` + strings.Repeat(",?", len(ids)-1) + `)` // #nosec
 
 			_, err = tx.Exec(sqlDelete1, delIDs...)
 			if err != nil {
 				return err
 			}
 
-			sqlDelete2 := `DELETE FROM mailbox_data WHERE ID IN (?` + strings.Repeat(",?", len(ids)-1) + `)` // #nosec
+			sqlDelete2 := `DELETE FROM ` + tenant("mailbox_data") + ` WHERE ID IN (?` + strings.Repeat(",?", len(ids)-1) + `)` // #nosec
 
 			_, err = tx.Exec(sqlDelete2, delIDs...)
 			if err != nil {
 				return err
 			}
 
-			sqlDelete3 := `DELETE FROM message_tags WHERE ID IN (?` + strings.Repeat(",?", len(ids)-1) + `)` // #nosec
+			sqlDelete3 := `DELETE FROM ` + tenant("message_tags") + ` WHERE ID IN (?` + strings.Repeat(",?", len(ids)-1) + `)` // #nosec
 
 			_, err = tx.Exec(sqlDelete3, delIDs...)
 			if err != nil {
@@ -204,11 +204,20 @@ func DeleteSearch(search string) error {
 }
 
 // SearchParser returns the SQL syntax for the database search based on the search arguments
-func searchQueryBuilder(searchString string) *sqlf.Stmt {
+func searchQueryBuilder(searchString, timezone string) *sqlf.Stmt {
 	// group strings with quotes as a single argument and remove quotes
 	args := tools.ArgsParser(searchString)
 
-	q := sqlf.From("mailbox m").
+	if timezone != "" {
+		loc, err := time.LoadLocation(timezone)
+		if err != nil {
+			logger.Log().Warnf("ignoring invalid timezone:\"%s\"", timezone)
+		} else {
+			time.Local = loc
+		}
+	}
+
+	q := sqlf.From(tenant("mailbox") + " m").
 		Select(`m.Created, m.ID, m.MessageID, m.Subject, m.Metadata, m.Size, m.Attachments, m.Read,
 			m.Snippet,
 			IFNULL(json_extract(Metadata, '$.To'), '{}') as ToJSON,
@@ -307,9 +316,9 @@ func searchQueryBuilder(searchString string) *sqlf.Stmt {
 			w = cleanString(w[4:])
 			if w != "" {
 				if exclude {
-					q.Where(`m.ID NOT IN (SELECT mt.ID FROM message_tags mt JOIN tags t ON mt.TagID = t.ID WHERE t.Name = ?)`, w)
+					q.Where(`m.ID NOT IN (SELECT mt.ID FROM `+tenant("message_tags")+` mt JOIN `+tenant("tags")+` t ON mt.TagID = t.ID WHERE t.Name = ?)`, w)
 				} else {
-					q.Where(`m.ID IN (SELECT mt.ID FROM message_tags mt JOIN tags t ON mt.TagID = t.ID WHERE t.Name = ?)`, w)
+					q.Where(`m.ID IN (SELECT mt.ID FROM `+tenant("message_tags")+` mt JOIN `+tenant("tags")+` t ON mt.TagID = t.ID WHERE t.Name = ?)`, w)
 				}
 			}
 		} else if lw == "is:read" {
@@ -326,15 +335,45 @@ func searchQueryBuilder(searchString string) *sqlf.Stmt {
 			}
 		} else if lw == "is:tagged" {
 			if exclude {
-				q.Where(`m.ID NOT IN (SELECT DISTINCT mt.ID FROM message_tags mt JOIN tags t ON mt.TagID = t.ID)`)
+				q.Where(`m.ID NOT IN (SELECT DISTINCT mt.ID FROM ` + tenant("message_tags") + ` mt JOIN tags t ON mt.TagID = t.ID)`)
 			} else {
-				q.Where(`m.ID IN (SELECT DISTINCT mt.ID FROM message_tags mt JOIN tags t ON mt.TagID = t.ID)`)
+				q.Where(`m.ID IN (SELECT DISTINCT mt.ID FROM ` + tenant("message_tags") + ` mt JOIN tags t ON mt.TagID = t.ID)`)
 			}
 		} else if lw == "has:attachment" || lw == "has:attachments" {
 			if exclude {
 				q.Where("Attachments = 0")
 			} else {
 				q.Where("Attachments > 0")
+			}
+		} else if strings.HasPrefix(lw, "after:") {
+			w = cleanString(w[6:])
+			if w != "" {
+				t, err := dateparse.ParseLocal(w)
+				if err != nil {
+					logger.Log().Warnf("ignoring invalid after: date \"%s\"", w)
+				} else {
+					timestamp := t.UnixMilli()
+					if exclude {
+						q.Where(`m.Created <= ?`, timestamp)
+					} else {
+						q.Where(`m.Created >= ?`, timestamp)
+					}
+				}
+			}
+		} else if strings.HasPrefix(lw, "before:") {
+			w = cleanString(w[7:])
+			if w != "" {
+				t, err := dateparse.ParseLocal(w)
+				if err != nil {
+					logger.Log().Warnf("ignoring invalid before: date \"%s\"", w)
+				} else {
+					timestamp := t.UnixMilli()
+					if exclude {
+						q.Where(`m.Created >= ?`, timestamp)
+					} else {
+						q.Where(`m.Created <= ?`, timestamp)
+					}
+				}
 			}
 		} else {
 			// search text

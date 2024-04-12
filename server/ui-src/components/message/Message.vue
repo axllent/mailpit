@@ -1,4 +1,3 @@
-
 <script>
 import Attachments from './Attachments.vue'
 import Headers from './Headers.vue'
@@ -32,6 +31,7 @@ export default {
 			srcURI: false,
 			iframes: [], // for resizing
 			canSaveTags: false, // prevent auto-saving tags on render
+			availableTags: [],
 			messageTags: [],
 			loadHeaders: false,
 			htmlScore: false,
@@ -90,7 +90,7 @@ export default {
 
 		// manually refresh tags
 		self.get(self.resolve(`/api/v1/tags`), false, function (response) {
-			mailbox.tags = response.data
+			self.availableTags = response.data
 			self.$nextTick(function () {
 				Tags.init('select[multiple]')
 				// delay tag change detection to allow Tags to load
@@ -239,7 +239,8 @@ export default {
 							<th class="small">From</th>
 							<td class="privacy">
 								<span v-if="message.From">
-									<span v-if="message.From.Name" class="text-spaces">{{ message.From.Name + " " }}</span>
+									<span v-if="message.From.Name" class="text-spaces">{{ message.From.Name + " "
+										}}</span>
 									<span v-if="message.From.Address" class="small">
 										&lt;<a :href="searchURI(message.From.Address)" class="text-body">
 											{{ message.From.Address }}
@@ -341,7 +342,7 @@ export default {
 									data-separator="|,|">
 									<option value="">Type a tag...</option>
 									<!-- you need at least one option with the placeholder -->
-									<option v-for="t in mailbox.tags" :value="t">{{ t }}</option>
+									<option v-for="t in availableTags" :value="t">{{ t }}</option>
 								</select>
 								<div class="invalid-feedback">Invalid tag name</div>
 							</td>
@@ -423,7 +424,8 @@ export default {
 					Raw
 				</button>
 				<div class="dropdown d-xl-none">
-					<button class="nav-link dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+					<button class="nav-link dropdown-toggle" type="button" data-bs-toggle="dropdown"
+						aria-expanded="false">
 						Checks
 					</button>
 					<ul class="dropdown-menu checks">
@@ -465,8 +467,9 @@ export default {
 					</ul>
 				</div>
 				<button class="d-none d-xl-inline-block nav-link position-relative" id="nav-html-check-tab"
-					data-bs-toggle="tab" data-bs-target="#nav-html-check" type="button" role="tab" aria-controls="nav-html"
-					aria-selected="false" v-if="!mailbox.uiConfig.DisableHTMLCheck && message.HTML != ''">
+					data-bs-toggle="tab" data-bs-target="#nav-html-check" type="button" role="tab"
+					aria-controls="nav-html" aria-selected="false"
+					v-if="!mailbox.uiConfig.DisableHTMLCheck && message.HTML != ''">
 					HTML Check
 					<span class="badge rounded-pill p-1" :class="htmlScoreColor" v-if="htmlScore !== false">
 						<small>{{ Math.floor(htmlScore) }}%</small>
@@ -482,8 +485,8 @@ export default {
 					</span>
 				</button>
 				<button class="d-none d-xl-inline-block nav-link position-relative" id="nav-spam-check-tab"
-					data-bs-toggle="tab" data-bs-target="#nav-spam-check" type="button" role="tab" aria-controls="nav-html"
-					aria-selected="false" v-if="mailbox.uiConfig.SpamAssassin">
+					data-bs-toggle="tab" data-bs-target="#nav-spam-check" type="button" role="tab"
+					aria-controls="nav-html" aria-selected="false" v-if="mailbox.uiConfig.SpamAssassin">
 					Spam Analysis
 					<span class="badge rounded-pill" :class="spamScoreColor" v-if="spamScore !== false">
 						<small>{{ spamScore }}</small>
@@ -505,22 +508,25 @@ export default {
 			<div v-if="message.HTML != ''" class="tab-pane fade show" id="nav-html" role="tabpanel"
 				aria-labelledby="nav-html-tab" tabindex="0">
 				<div id="responsive-view" :class="scaleHTMLPreview" :style="responsiveSizes[scaleHTMLPreview]">
-					<iframe target-blank="" class="tab-pane d-block" id="preview-html" :srcdoc="sanitizeHTML(message.HTML)"
-						v-on:load="resizeIframe" frameborder="0" style="width: 100%; height: 100%; background: #fff;">
+					<iframe target-blank="" class="tab-pane d-block" id="preview-html"
+						:srcdoc="sanitizeHTML(message.HTML)" v-on:load="resizeIframe" frameborder="0"
+						style="width: 100%; height: 100%; background: #fff;">
 					</iframe>
 				</div>
 				<Attachments v-if="allAttachments(message).length" :message="message"
-					:attachments="allAttachments(message)"></Attachments>
+					:attachments="allAttachments(message)">
+				</Attachments>
 			</div>
 			<div class="tab-pane fade" id="nav-html-source" role="tabpanel" aria-labelledby="nav-html-source-tab"
 				tabindex="0" v-if="message.HTML">
 				<pre><code class="language-html">{{ message.HTML }}</code></pre>
 			</div>
-			<div class="tab-pane fade" id="nav-plain-text" role="tabpanel" aria-labelledby="nav-plain-text-tab" tabindex="0"
-				:class="message.HTML == '' ? 'show' : ''">
+			<div class="tab-pane fade" id="nav-plain-text" role="tabpanel" aria-labelledby="nav-plain-text-tab"
+				tabindex="0" :class="message.HTML == '' ? 'show' : ''">
 				<div class="text-view" v-html="textToHTML(message.Text)"></div>
 				<Attachments v-if="allAttachments(message).length" :message="message"
-					:attachments="allAttachments(message)"></Attachments>
+					:attachments="allAttachments(message)">
+				</Attachments>
 			</div>
 			<div class="tab-pane fade" id="nav-headers" role="tabpanel" aria-labelledby="nav-headers-tab" tabindex="0">
 				<Headers v-if="loadHeaders" :message="message"></Headers>
@@ -536,8 +542,8 @@ export default {
 			</div>
 			<div class="tab-pane fade" id="nav-spam-check" role="tabpanel" aria-labelledby="nav-spam-check-tab"
 				tabindex="0">
-				<SpamAssassin v-if="mailbox.uiConfig.SpamAssassin" :message="message" @setSpamScore="(n) => spamScore = n"
-					@set-badge-style="(v) => spamScoreColor = v" />
+				<SpamAssassin v-if="mailbox.uiConfig.SpamAssassin" :message="message"
+					@setSpamScore="(n) => spamScore = n" @set-badge-style="(v) => spamScoreColor = v" />
 			</div>
 			<div class="tab-pane fade" id="nav-link-check" role="tabpanel" aria-labelledby="nav-html-check-tab"
 				tabindex="0">

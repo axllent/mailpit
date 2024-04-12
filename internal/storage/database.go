@@ -9,6 +9,7 @@ import (
 	"os/signal"
 	"path"
 	"path/filepath"
+	"strings"
 	"syscall"
 	"time"
 
@@ -17,14 +18,18 @@ import (
 	"github.com/klauspost/compress/zstd"
 	"github.com/leporo/sqlf"
 
-	// sqlite (native) - https://gitlab.com/cznic/sqlite
+	// sqlite - https://gitlab.com/cznic/sqlite
 	_ "modernc.org/sqlite"
+
+	// rqlite - https://github.com/rqlite/gorqlite | https://rqlite.io/
+	_ "github.com/rqlite/gorqlite/stdlib"
 )
 
 var (
 	db           *sql.DB
 	dbFile       string
 	dbIsTemp     bool
+	sqlDriver    string
 	dbLastAction time.Time
 
 	// zstd compression encoder & decoder
@@ -34,43 +39,61 @@ var (
 
 // InitDB will initialise the database
 func InitDB() error {
-	p := config.DataFile
+	p := config.Database
+	var dsn string
 
 	if p == "" {
 		// when no path is provided then we create a temporary file
 		// which will get deleted on Close(), SIGINT or SIGTERM
 		p = fmt.Sprintf("%s-%d.db", path.Join(os.TempDir(), "mailpit"), time.Now().UnixNano())
 		dbIsTemp = true
+		sqlDriver = "sqlite"
+		dsn = p
 		logger.Log().Debugf("[db] using temporary database: %s", p)
+	} else if strings.HasPrefix(p, "http://") || strings.HasPrefix(p, "https://") {
+		sqlDriver = "rqlite"
+		dsn = p
+		logger.Log().Debugf("[db] opening rqlite database %s", p)
 	} else {
 		p = filepath.Clean(p)
+		sqlDriver = "sqlite"
+		dsn = fmt.Sprintf("file:%s?cache=shared", p)
+		logger.Log().Debugf("[db] opening database %s", p)
 	}
 
-	config.DataFile = p
-
-	logger.Log().Debugf("[db] opening database %s", p)
+	config.Database = p
 
 	var err error
 
-	dsn := fmt.Sprintf("file:%s?cache=shared", p)
-
-	db, err = sql.Open("sqlite", dsn)
+	db, err = sql.Open(sqlDriver, dsn)
 	if err != nil {
 		return err
+	}
+
+	for i := 1; i < 6; i++ {
+		if err := Ping(); err != nil {
+			logger.Log().Errorf("[db] %s", err.Error())
+			logger.Log().Infof("[db] reconnecting in 5 seconds (%d/5)", i)
+			time.Sleep(5 * time.Second)
+		} else {
+			continue
+		}
 	}
 
 	// prevent "database locked" errors
 	// @see https://github.com/mattn/go-sqlite3#faq
 	db.SetMaxOpenConns(1)
 
-	// SQLite performance tuning (https://phiresky.github.io/blog/2020/sqlite-performance-tuning/)
-	_, err = db.Exec("PRAGMA journal_mode = WAL; PRAGMA synchronous = normal;")
-	if err != nil {
-		return err
+	if sqlDriver == "sqlite" {
+		// SQLite performance tuning (https://phiresky.github.io/blog/2020/sqlite-performance-tuning/)
+		_, err = db.Exec("PRAGMA journal_mode = WAL; PRAGMA synchronous = normal;")
+		if err != nil {
+			return err
+		}
 	}
 
 	// create tables if necessary & apply migrations
-	if err := dbApplyMigrations(); err != nil {
+	if err := dbApplySchemas(); err != nil {
 		return err
 	}
 
@@ -97,6 +120,11 @@ func InitDB() error {
 	go dataMigrations()
 
 	return nil
+}
+
+// Tenant applies an optional prefix to the table name
+func tenant(table string) string {
+	return fmt.Sprintf("%s%s", config.TenantID, table)
 }
 
 // Close will close the database, and delete if a temporary table
@@ -138,10 +166,10 @@ func StatsGet() MailboxStats {
 }
 
 // CountTotal returns the number of emails in the database
-func CountTotal() int {
-	var total int
+func CountTotal() float64 {
+	var total float64
 
-	_ = sqlf.From("mailbox").
+	_ = sqlf.From(tenant("mailbox")).
 		Select("COUNT(*)").To(&total).
 		QueryRowAndClose(context.TODO(), db)
 
@@ -149,10 +177,10 @@ func CountTotal() int {
 }
 
 // CountUnread returns the number of emails in the database that are unread.
-func CountUnread() int {
-	var total int
+func CountUnread() float64 {
+	var total float64
 
-	_ = sqlf.From("mailbox").
+	_ = sqlf.From(tenant("mailbox")).
 		Select("COUNT(*)").To(&total).
 		Where("Read = ?", 0).
 		QueryRowAndClose(context.TODO(), db)
@@ -161,10 +189,10 @@ func CountUnread() int {
 }
 
 // CountRead returns the number of emails in the database that are read.
-func CountRead() int {
-	var total int
+func CountRead() float64 {
+	var total float64
 
-	_ = sqlf.From("mailbox").
+	_ = sqlf.From(tenant("mailbox")).
 		Select("COUNT(*)").To(&total).
 		Where("Read = ?", 1).
 		QueryRowAndClose(context.TODO(), db)
@@ -172,11 +200,25 @@ func CountRead() int {
 	return total
 }
 
+// DbSize returns the size of the SQLite database.
+func DbSize() float64 {
+	var total sql.NullFloat64
+
+	err := db.QueryRow("SELECT page_count * page_size AS size FROM pragma_page_count(), pragma_page_size()").Scan(&total)
+
+	if err != nil {
+		logger.Log().Errorf("[db] %s", err.Error())
+		return total.Float64
+	}
+
+	return total.Float64
+}
+
 // IsUnread returns whether a message is unread or not.
 func IsUnread(id string) bool {
 	var unread int
 
-	_ = sqlf.From("mailbox").
+	_ = sqlf.From(tenant("mailbox")).
 		Select("COUNT(*)").To(&unread).
 		Where("Read = ?", 0).
 		Where("ID = ?", id).
@@ -189,7 +231,7 @@ func IsUnread(id string) bool {
 func MessageIDExists(id string) bool {
 	var total int
 
-	_ = sqlf.From("mailbox").
+	_ = sqlf.From(tenant("mailbox")).
 		Select("COUNT(*)").To(&total).
 		Where("MessageID = ?", id).
 		QueryRowAndClose(context.TODO(), db)

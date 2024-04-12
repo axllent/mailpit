@@ -19,6 +19,7 @@ export const mailbox = reactive({
 	appInfo: {},			// application information
 	uiConfig: {},			// configuration for UI
 	lastMessage: false,		// return scrolling
+	timeZone: '', 			// browser timezone
 })
 
 watch(

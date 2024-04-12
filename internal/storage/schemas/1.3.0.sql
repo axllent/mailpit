@@ -1,0 +1,2 @@
+-- CREATE SNIPPET COLUMN
+ALTER TABLE {{ tenant "mailbox" }} ADD COLUMN Snippet TEXT NOT NULL DEFAULT '';
