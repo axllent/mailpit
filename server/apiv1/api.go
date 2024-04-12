@@ -109,6 +109,11 @@ func Search(w http.ResponseWriter, r *http.Request) {
 	//	    required: false
 	//	    type: integer
 	//	    default: 50
+	//	  + name: tz
+	//	    in: query
+	//	    description: Timezone for `before:` & `after:` queries, eg: "Pacific/Auckland"
+	//	    required: false
+	//	    type: string
 	//
 	//	Responses:
 	//		200: MessagesSummaryResponse
@@ -121,7 +126,7 @@ func Search(w http.ResponseWriter, r *http.Request) {
 
 	start, limit := getStartLimit(r)
 
-	messages, results, err := storage.Search(search, start, limit)
+	messages, results, err := storage.Search(search, r.URL.Query().Get("tz"), start, limit)
 	if err != nil {
 		httpError(w, err.Error())
 		return
@@ -173,7 +178,7 @@ func DeleteSearch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := storage.DeleteSearch(search); err != nil {
+	if err := storage.DeleteSearch(search, r.URL.Query().Get("tz")); err != nil {
 		httpError(w, err.Error())
 		return
 	}

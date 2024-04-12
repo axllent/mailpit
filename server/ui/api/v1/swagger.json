@@ -550,6 +550,12 @@
             "description": "Limit results",
             "name": "limit",
             "in": "query"
+          },
+          {
+            "type": "string",
+            "description": "Timezone for `before:` \u0026 `after:` queries, eg: \"Pacific/Auckland\"",
+            "name": "tz",
+            "in": "query"
           }
         ],
         "responses": {

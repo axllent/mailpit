@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/araddon/dateparse"
 	"github.com/axllent/mailpit/internal/logger"
 	"github.com/axllent/mailpit/internal/tools"
 	"github.com/leporo/sqlf"
@@ -17,7 +18,7 @@ import (
 // The search is broken up by segments (exact phrases can be quoted), and interprets specific terms such as:
 // is:read, is:unread, has:attachment, to:<term>, from:<term> & subject:<term>
 // Negative searches also also included by prefixing the search term with a `-` or `!`
-func Search(search string, start, limit int) ([]MessageSummary, int, error) {
+func Search(search, timezone string, start, limit int) ([]MessageSummary, int, error) {
 	results := []MessageSummary{}
 	allResults := []MessageSummary{}
 	tsStart := time.Now()
@@ -26,7 +27,7 @@ func Search(search string, start, limit int) ([]MessageSummary, int, error) {
 		limit = 50
 	}
 
-	q := searchQueryBuilder(search)
+	q := searchQueryBuilder(search, timezone)
 	var err error
 
 	if err := q.QueryAndClose(context.TODO(), db, func(row *sql.Rows) {
@@ -95,8 +96,8 @@ func Search(search string, start, limit int) ([]MessageSummary, int, error) {
 // The search is broken up by segments (exact phrases can be quoted), and interprets specific terms such as:
 // is:read, is:unread, has:attachment, to:<term>, from:<term> & subject:<term>
 // Negative searches also also included by prefixing the search term with a `-` or `!`
-func DeleteSearch(search string) error {
-	q := searchQueryBuilder(search)
+func DeleteSearch(search, timezone string) error {
+	q := searchQueryBuilder(search, timezone)
 
 	ids := []string{}
 	deleteSize := float64(0)
@@ -203,9 +204,18 @@ func DeleteSearch(search string) error {
 }
 
 // SearchParser returns the SQL syntax for the database search based on the search arguments
-func searchQueryBuilder(searchString string) *sqlf.Stmt {
+func searchQueryBuilder(searchString, timezone string) *sqlf.Stmt {
 	// group strings with quotes as a single argument and remove quotes
 	args := tools.ArgsParser(searchString)
+
+	if timezone != "" {
+		loc, err := time.LoadLocation(timezone)
+		if err != nil {
+			logger.Log().Warnf("ignoring invalid timezone:\"%s\"", timezone)
+		} else {
+			time.Local = loc
+		}
+	}
 
 	q := sqlf.From(tenant("mailbox") + " m").
 		Select(`m.Created, m.ID, m.MessageID, m.Subject, m.Metadata, m.Size, m.Attachments, m.Read,
@@ -334,6 +344,36 @@ func searchQueryBuilder(searchString string) *sqlf.Stmt {
 				q.Where("Attachments = 0")
 			} else {
 				q.Where("Attachments > 0")
+			}
+		} else if strings.HasPrefix(lw, "after:") {
+			w = cleanString(w[6:])
+			if w != "" {
+				t, err := dateparse.ParseLocal(w)
+				if err != nil {
+					logger.Log().Warnf("ignoring invalid after: date \"%s\"", w)
+				} else {
+					timestamp := t.UnixMilli()
+					if exclude {
+						q.Where(`m.Created <= ?`, timestamp)
+					} else {
+						q.Where(`m.Created >= ?`, timestamp)
+					}
+				}
+			}
+		} else if strings.HasPrefix(lw, "before:") {
+			w = cleanString(w[7:])
+			if w != "" {
+				t, err := dateparse.ParseLocal(w)
+				if err != nil {
+					logger.Log().Warnf("ignoring invalid before: date \"%s\"", w)
+				} else {
+					timestamp := t.UnixMilli()
+					if exclude {
+						q.Where(`m.Created >= ?`, timestamp)
+					} else {
+						q.Where(`m.Created <= ?`, timestamp)
+					}
+				}
 			}
 		} else {
 			// search text
