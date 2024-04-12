@@ -476,10 +476,6 @@ export default {
 						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 					</div>
 					<div class="modal-body">
-						<p>
-							HTML check is currently in beta. Constructive feedback is welcome via
-							<a href="https://github.com/axllent/mailpit/issues" target="_blank">GitHub</a>.
-						</p>
 						<div class="accordion" id="HTMLCheckAboutAccordion">
 							<div class="accordion-item">
 								<h2 class="accordion-header">

@@ -124,7 +124,7 @@
     },
     "/api/v1/message/{ID}/html-check": {
       "get": {
-        "description": "Returns the summary of the message HTML checker.\n\nNOTE: This feature is currently in beta and is documented for reference only.\nPlease do not integrate with it (yet) as there may be changes.",
+        "description": "Returns the summary of the message HTML checker.",
         "produces": [
           "application/json"
         ],
@@ -161,7 +161,7 @@
     },
     "/api/v1/message/{ID}/link-check": {
       "get": {
-        "description": "Returns the summary of the message Link checker.\n\nNOTE: This feature is currently in beta and is documented for reference only.\nPlease do not integrate with it (yet) as there may be changes.",
+        "description": "Returns the summary of the message Link checker.",
         "produces": [
           "application/json"
         ],
