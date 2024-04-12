@@ -729,9 +729,6 @@ func HTMLCheck(w http.ResponseWriter, r *http.Request) {
 	//
 	// Returns the summary of the message HTML checker.
 	//
-	// NOTE: This feature is currently in beta and is documented for reference only.
-	// Please do not integrate with it (yet) as there may be changes.
-	//
 	//	Produces:
 	//	- application/json
 	//
@@ -783,9 +780,6 @@ func LinkCheck(w http.ResponseWriter, r *http.Request) {
 	// # Link check (beta)
 	//
 	// Returns the summary of the message Link checker.
-	//
-	// NOTE: This feature is currently in beta and is documented for reference only.
-	// Please do not integrate with it (yet) as there may be changes.
 	//
 	//	Produces:
 	//	- application/json

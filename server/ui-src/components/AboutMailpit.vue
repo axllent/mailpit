@@ -1,5 +1,6 @@
 <script>
 import AjaxLoader from './AjaxLoader.vue'
+import Settings from '../components/Settings.vue'
 import CommonMixins from '../mixins/CommonMixins'
 import { mailbox } from '../stores/mailbox'
 
@@ -7,7 +8,8 @@ export default {
 	mixins: [CommonMixins],
 
 	components: {
-		AjaxLoader
+		AjaxLoader,
+		Settings,
 	},
 
 	props: {
@@ -20,18 +22,7 @@ export default {
 	data() {
 		return {
 			mailbox,
-			theme: 'auto',
-			icon: 'circle-half',
-			icons: {
-				'auto': 'circle-half',
-				'light': 'sun-fill',
-				'dark': 'moon-stars-fill'
-			},
 		}
-	},
-
-	mounted() {
-		this.setTheme(this.getPreferredTheme())
 	},
 
 	methods: {
@@ -41,42 +32,6 @@ export default {
 				mailbox.appInfo = response.data
 				self.modal('AppInfoModal').show()
 			})
-		},
-
-		getStoredTheme: function () {
-			let theme = localStorage.getItem('theme')
-			if (!theme) {
-				theme = 'auto'
-			}
-
-			return theme
-		},
-
-		setStoredTheme: function (theme) {
-			localStorage.setItem('theme', theme)
-			this.setTheme(theme)
-		},
-
-		getPreferredTheme: function () {
-			const storedTheme = this.getStoredTheme()
-			if (storedTheme) {
-				return storedTheme
-			}
-
-			return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
-		},
-
-		setTheme: function (theme) {
-			this.icon = this.icons[theme]
-			this.theme = theme
-			if (
-				theme === 'auto' &&
-				window.matchMedia('(prefers-color-scheme: dark)').matches
-			) {
-				document.documentElement.setAttribute('data-bs-theme', 'dark')
-			} else {
-				document.documentElement.setAttribute('data-bs-theme', theme)
-			}
 		},
 
 		requestNotifications: function () {
@@ -101,42 +56,17 @@ export default {
 
 <template>
 	<template v-if="!modals">
-		<div class="position-fixed bg-body bottom-0 ms-n1 py-2 text-muted small col-xl-2 col-md-3 pe-3 z-3 about-mailpit">
+		<div
+			class="position-fixed bg-body bottom-0 ms-n1 py-2 text-muted small col-xl-2 col-md-3 pe-3 z-3 about-mailpit">
 			<button class="text-muted btn btn-sm" v-on:click="loadInfo">
 				<i class="bi bi-info-circle-fill me-1"></i>
 				About
 			</button>
 
-			<div class="dropdown bd-mode-toggle float-end me-2 d-inline-block">
-				<button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" aria-expanded="false"
-					title="Toggle theme" data-bs-toggle="dropdown" aria-label="Toggle theme">
-					<i :class="'bi bi-' + icon + ' my-1'"></i>
-					<span class="visually-hidden" id="bd-theme-text">Toggle theme</span>
-				</button>
-				<ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="bd-theme-text">
-					<li>
-						<button type="button" class="dropdown-item d-flex align-items-center"
-							:class="theme == 'light' ? 'active' : ''" @click="setStoredTheme('light')">
-							<i class="bi bi-sun-fill me-2 opacity-50"></i>
-							Light
-						</button>
-					</li>
-					<li>
-						<button type="button" class="dropdown-item d-flex align-items-center"
-							:class="theme == 'dark' ? 'active' : ''" @click="setStoredTheme('dark')">
-							<i class="bi bi-moon-stars-fill me-2 opacity-50"></i>
-							Dark
-						</button>
-					</li>
-					<li>
-						<button type="button" class="dropdown-item d-flex align-items-center"
-							:class="theme == 'auto' ? 'active' : ''" @click="setStoredTheme('auto')">
-							<i class="bi bi-circle-half me-2 opacity-50"></i>
-							Auto
-						</button>
-					</li>
-				</ul>
-			</div>
+			<button class="btn btn-sm btn-outline-secondary float-end me-2" data-bs-toggle="modal"
+				data-bs-target="#SettingsModal" title="Mailpit UI settings">
+				<i class="bi bi-gear-fill"></i>
+			</button>
 
 			<button class="btn btn-sm btn-outline-secondary float-end me-2" data-bs-toggle="modal"
 				data-bs-target="#EnableNotificationsModal" title="Enable browser notifications"
@@ -167,7 +97,8 @@ export default {
 										There might be a newer version available. The check failed.
 									</div>
 								</div>
-								<div class="row g-3" v-else-if="mailbox.appInfo.Version != mailbox.appInfo.LatestVersion">
+								<div class="row g-3"
+									v-else-if="mailbox.appInfo.Version != mailbox.appInfo.LatestVersion">
 									<a class="btn btn-warning d-block mb-3"
 										:href="'https://github.com/axllent/mailpit/releases/tag/' + mailbox.appInfo.LatestVersion">
 										A new version of Mailpit ({{ mailbox.appInfo.LatestVersion }}) is available.
@@ -197,7 +128,8 @@ export default {
 										<div class="card border-secondary text-center">
 											<div class="card-header">Database size</div>
 											<div class="card-body text-secondary">
-												<h5 class="card-title">{{ getFileSize(mailbox.appInfo.DatabaseSize) }} </h5>
+												<h5 class="card-title">{{ getFileSize(mailbox.appInfo.DatabaseSize) }}
+												</h5>
 											</div>
 										</div>
 									</div>
@@ -205,8 +137,9 @@ export default {
 										<div class="card border-secondary text-center">
 											<div class="card-header">RAM usage</div>
 											<div class="card-body text-secondary">
-												<h5 class="card-title">{{ getFileSize(mailbox.appInfo.RuntimeStats.Memory)
-												}} </h5>
+												<h5 class="card-title">
+													{{ getFileSize(mailbox.appInfo.RuntimeStats.Memory) }}
+												</h5>
 											</div>
 										</div>
 									</div>
@@ -216,7 +149,8 @@ export default {
 								<div class="card border-secondary">
 									<div class="card-header h4">
 										Runtime statistics
-										<button class="btn btn-sm btn-outline-secondary float-end" v-on:click="loadInfo">
+										<button class="btn btn-sm btn-outline-secondary float-end"
+											v-on:click="loadInfo">
 											Refresh
 										</button>
 									</div>
@@ -246,9 +180,7 @@ export default {
 													<td>
 														{{ formatNumber(mailbox.appInfo.RuntimeStats.SMTPAccepted) }}
 														<small class="text-secondary">
-															({{
-																getFileSize(mailbox.appInfo.RuntimeStats.SMTPAcceptedSize)
-															}})
+															({{ getFileSize(mailbox.appInfo.RuntimeStats.SMTPAcceptedSize) }})
 														</small>
 													</td>
 												</tr>
@@ -285,8 +217,8 @@ export default {
 			</div>
 		</div>
 
-		<div class="modal fade" id="EnableNotificationsModal" tabindex="-1" aria-labelledby="EnableNotificationsModalLabel"
-			aria-hidden="true">
+		<div class="modal fade" id="EnableNotificationsModal" tabindex="-1"
+			aria-labelledby="EnableNotificationsModalLabel" aria-hidden="true">
 			<div class="modal-dialog modal-lg">
 				<div class="modal-content">
 					<div class="modal-header">
@@ -298,7 +230,8 @@ export default {
 						<p>
 							Note that your browser will ask you for confirmation when you click
 							<code>enable notifications</code>,
-							and that you must have Mailpit open in a browser tab to be able to receive the notifications.
+							and that you must have Mailpit open in a browser tab to be able to receive the
+							notifications.
 						</p>
 					</div>
 					<div class="modal-footer">
@@ -309,7 +242,9 @@ export default {
 				</div>
 			</div>
 		</div>
-	</template>
 
+		<Settings />
+	</template>
+	
 	<AjaxLoader :loading="loading" />
 </template>

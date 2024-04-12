@@ -15,8 +15,6 @@ export default {
 
 	beforeMount() {
 		document.title = document.title + ' - ' + location.hostname
-		mailbox.showTagColors = !localStorage.getItem('hideTagColors') == '1'
-		mailbox.timeZone = localStorage.getItem('timezone') ? localStorage.getItem('timezone') : Intl.DateTimeFormat().resolvedOptions().timeZone;
 
 		// load global config
 		this.get(this.resolve('/api/v1/webui'), false, function (response) {
