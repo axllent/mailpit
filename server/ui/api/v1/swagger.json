@@ -1401,10 +1401,6 @@
       "description": "Response includes global web UI settings",
       "type": "object",
       "properties": {
-        "DisableHTMLCheck": {
-          "description": "Whether the HTML check has been globally disabled",
-          "type": "boolean"
-        },
         "DuplicatesIgnored": {
           "description": "Whether messages with duplicate IDs are ignored",
           "type": "boolean"

@@ -83,9 +83,6 @@ var (
 	// IgnoreDuplicateIDs will skip messages with the same ID
 	IgnoreDuplicateIDs bool
 
-	// DisableHTMLCheck used to disable the HTML check in bother the API and web UI
-	DisableHTMLCheck = false
-
 	// BlockRemoteCSSAndFonts used to disable remote CSS & fonts
 	BlockRemoteCSSAndFonts = false
 
@@ -153,6 +150,9 @@ var (
 
 	// RepoBinaryName on Github for updater
 	RepoBinaryName = "mailpit"
+
+	// DisableHTMLCheck DEPRECATED 2024/04/13 - kept here to display console warning only
+	DisableHTMLCheck = false
 )
 
 // AutoTag struct for auto-tagging
@@ -359,6 +359,11 @@ func VerifyConfig() error {
 
 	if WebhookURL != "" && !isValidURL(WebhookURL) {
 		return fmt.Errorf("webhook URL does not appear to be a valid URL (%s)", WebhookURL)
+	}
+
+	// DEPRECATED 2024/04/13
+	if DisableHTMLCheck {
+		logger.Log().Warn("--disable-html-check has been deprecated and is no longer used")
 	}
 
 	if EnableSpamAssassin != "" {

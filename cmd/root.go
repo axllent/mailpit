@@ -96,7 +96,6 @@ func init() {
 	rootCmd.Flags().StringVar(&config.UITLSCert, "ui-tls-cert", config.UITLSCert, "TLS certificate for web UI (HTTPS) - requires ui-tls-key")
 	rootCmd.Flags().StringVar(&config.UITLSKey, "ui-tls-key", config.UITLSKey, "TLS key for web UI (HTTPS) - requires ui-tls-cert")
 	rootCmd.Flags().StringVar(&server.AccessControlAllowOrigin, "api-cors", server.AccessControlAllowOrigin, "Set API CORS Access-Control-Allow-Origin header")
-	rootCmd.Flags().BoolVar(&config.DisableHTMLCheck, "disable-html-check", config.DisableHTMLCheck, "Disable the HTML check functionality (web UI & API)")
 	rootCmd.Flags().BoolVar(&config.BlockRemoteCSSAndFonts, "block-remote-css-and-fonts", config.BlockRemoteCSSAndFonts, "Block access to remote CSS & fonts")
 	rootCmd.Flags().StringVar(&config.EnableSpamAssassin, "enable-spamassassin", config.EnableSpamAssassin, "Enable integration with SpamAssassin")
 	rootCmd.Flags().BoolVar(&config.AllowUntrustedTLS, "allow-untrusted-tls", config.AllowUntrustedTLS, "Do not verify HTTPS certificates (link checker & screenshots)")
@@ -155,6 +154,10 @@ func init() {
 	rootCmd.Flags().BoolVar(&config.SMTPRequireSTARTTLS, "smtp-tls-required", config.SMTPRequireSTARTTLS, "smtp-require-starttls")
 	rootCmd.Flags().Lookup("smtp-tls-required").Hidden = true
 	rootCmd.Flags().Lookup("smtp-tls-required").Deprecated = "use --smtp-require-starttls"
+
+	// DEPRECATED FLAG 2024/04/13 - no longer used
+	rootCmd.Flags().BoolVar(&config.DisableHTMLCheck, "disable-html-check", config.DisableHTMLCheck, "Disable the HTML check functionality (web UI & API)")
+	rootCmd.Flags().Lookup("disable-html-check").Hidden = true
 }
 
 // Load settings from environment
@@ -200,9 +203,6 @@ func initConfigFromEnv() {
 	config.UITLSKey = os.Getenv("MP_UI_TLS_KEY")
 	if len(os.Getenv("MP_API_CORS")) > 0 {
 		server.AccessControlAllowOrigin = os.Getenv("MP_API_CORS")
-	}
-	if getEnabledFromEnv("MP_DISABLE_HTML_CHECK") {
-		config.DisableHTMLCheck = true
 	}
 	if getEnabledFromEnv("MP_BLOCK_REMOTE_CSS_AND_FONTS") {
 		config.BlockRemoteCSSAndFonts = true
@@ -332,6 +332,10 @@ func initDeprecatedConfigFromEnv() {
 	if getEnabledFromEnv("MP_SMTP_TLS_REQUIRED") {
 		logger.Log().Warn("ENV MP_SMTP_TLS_REQUIRED has been deprecated, use MP_SMTP_REQUIRE_STARTTLS")
 		config.SMTPRequireSTARTTLS = true
+	}
+	if getEnabledFromEnv("MP_DISABLE_HTML_CHECK") {
+		logger.Log().Warn("ENV MP_DISABLE_HTML_CHECK has been deprecated and is no longer used")
+		config.DisableHTMLCheck = true
 	}
 }
 
