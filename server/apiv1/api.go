@@ -84,7 +84,7 @@ func Search(w http.ResponseWriter, r *http.Request) {
 	//
 	// # Search messages
 	//
-	// Returns the latest messages matching a search.
+	// Returns messages matching [a search](https://mailpit.axllent.org/docs/usage/search-filters/), sorted by received date (descending).
 	//
 	//	Produces:
 	//	- application/json
@@ -111,7 +111,7 @@ func Search(w http.ResponseWriter, r *http.Request) {
 	//	    default: 50
 	//	  + name: tz
 	//	    in: query
-	//	    description: Timezone for `before:` & `after:` queries, eg: "Pacific/Auckland"
+	//	    description: [Timezone identifier](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) used specifically for `before:` & `after:` searches (eg: "Pacific/Auckland").
 	//	    required: false
 	//	    type: string
 	//
@@ -155,7 +155,7 @@ func DeleteSearch(w http.ResponseWriter, r *http.Request) {
 	//
 	// # Delete messages by search
 	//
-	// Delete all messages matching a search.
+	// Delete all messages matching [a search](https://mailpit.axllent.org/docs/usage/search-filters/).
 	//
 	//	Produces:
 	//	- application/json
@@ -167,6 +167,11 @@ func DeleteSearch(w http.ResponseWriter, r *http.Request) {
 	//	    in: query
 	//	    description: Search query
 	//	    required: true
+	//	    type: string
+	//	  + name: tz
+	//	    in: query
+	//	    description: [Timezone identifier](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) used specifically for `before:` & `after:` searches (eg: "Pacific/Auckland").
+	//	    required: false
 	//	    type: string
 	//
 	//	Responses:

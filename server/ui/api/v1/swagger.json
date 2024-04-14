@@ -516,7 +516,7 @@
     },
     "/api/v1/search": {
       "get": {
-        "description": "Returns the latest messages matching a search.",
+        "description": "Returns messages matching [a search](https://mailpit.axllent.org/docs/usage/search-filters/), sorted by received date (descending).",
         "produces": [
           "application/json"
         ],
@@ -553,7 +553,7 @@
           },
           {
             "type": "string",
-            "description": "Timezone for `before:` \u0026 `after:` queries, eg: \"Pacific/Auckland\"",
+            "description": "[Timezone identifier](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) used specifically for `before:` \u0026 `after:` searches (eg: \"Pacific/Auckland\").",
             "name": "tz",
             "in": "query"
           }
@@ -568,7 +568,7 @@
         }
       },
       "delete": {
-        "description": "Delete all messages matching a search.",
+        "description": "Delete all messages matching [a search](https://mailpit.axllent.org/docs/usage/search-filters/).",
         "produces": [
           "application/json"
         ],
@@ -588,6 +588,12 @@
             "name": "query",
             "in": "query",
             "required": true
+          },
+          {
+            "type": "string",
+            "description": "[Timezone identifier](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) used specifically for `before:` \u0026 `after:` searches (eg: \"Pacific/Auckland\").",
+            "name": "tz",
+            "in": "query"
           }
         ],
         "responses": {
