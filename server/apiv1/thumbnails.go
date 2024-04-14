@@ -12,7 +12,7 @@ import (
 
 	"github.com/axllent/mailpit/internal/logger"
 	"github.com/axllent/mailpit/internal/storage"
-	"github.com/disintegration/imaging"
+	"github.com/kovidgoyal/imaging"
 	"github.com/gorilla/mux"
 	"github.com/jhillyerd/enmime"
 )
