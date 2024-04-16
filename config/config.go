@@ -501,9 +501,8 @@ func validateRelayConfig() error {
 
 	logger.Log().Infof("[smtp] enabling message relaying via %s:%d", SMTPRelayConfig.Host, SMTPRelayConfig.Port)
 
-	allowlistRegexp, err := regexp.Compile(SMTPRelayConfig.AllowedRecipients)
-
 	if SMTPRelayConfig.AllowedRecipients != "" {
+		allowlistRegexp, err := regexp.Compile(SMTPRelayConfig.AllowedRecipients)
 		if err != nil {
 			return fmt.Errorf("[smtp] failed to compile relay recipient allowlist regexp: %s", err.Error())
 		}
