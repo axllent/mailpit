@@ -117,6 +117,7 @@ func apiRoutes() *mux.Router {
 	r := mux.NewRouter()
 
 	// API V1
+	r.HandleFunc(config.Webroot+"api/v1/messages", middleWareFunc(apiv1.SendMessage)).Methods("POST")
 	r.HandleFunc(config.Webroot+"api/v1/messages", middleWareFunc(apiv1.GetMessages)).Methods("GET")
 	r.HandleFunc(config.Webroot+"api/v1/messages", middleWareFunc(apiv1.SetReadStatus)).Methods("PUT")
 	r.HandleFunc(config.Webroot+"api/v1/messages", middleWareFunc(apiv1.DeleteMessages)).Methods("DELETE")

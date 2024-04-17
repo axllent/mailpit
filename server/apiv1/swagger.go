@@ -4,6 +4,121 @@ import "github.com/axllent/mailpit/internal/stats"
 
 // These structs are for the purpose of defining swagger HTTP parameters & responses
 
+// Send request
+// swagger:model sendMessageRequestBody
+type sendMessageRequestBody struct {
+	// Email+name pair to send the message from
+	//
+	// required: true
+	// example: {"email": "sender@example.com", "name": "Sender"}
+	From struct {
+		Email string `json:"email"`
+		Name  string `json:"name"`
+	} `json:"from"`
+
+	// Array of email+name pairs to send the message to
+	//
+	// required: true
+	// example: [{
+	// 	 "email": "user1@example.com",
+	// 	 "name": "user1",
+	// },
+	// {
+	//   "email": "user2@example.com"
+	// }],
+	To []struct {
+		Email string `json:"email"`
+		Name  string `json:"name"`
+	} `json:"to"`
+
+	// Array of email+name pairs to CC the message to
+	//
+	// required: true
+	// example: [{
+	// 	 "email": "user1@example.com",
+	// 	 "name": "user1",
+	// },
+	// {
+	//   "email": "user2@example.com"
+	// }],
+	CC []struct {
+		Email string `json:"email"`
+		Name  string `json:"name"`
+	} `json:"cc"`
+
+	// Array of email+name pairs to BCC the message to
+	//
+	// required: true
+	// example: [{
+	// 	 "email": "user1@example.com",
+	// 	 "name": "user1",
+	// },
+	// {
+	//   "email": "user2@example.com"
+	// }],
+	BCC []struct {
+		Email string `json:"email"`
+		Name  string `json:"name"`
+	} `json:"bcc"`
+
+	// Array of email+name pairs to add in the Reply-To header
+	//
+	// required: true
+	// example: [{
+	// 	 "email": "user1@example.com",
+	// 	 "name": "user1",
+	// },
+	// {
+	//   "email": "user2@example.com"
+	// }],
+	ReplyTo []struct {
+		Email string `json:"email"`
+		Name  string `json:"name"`
+	} `json:"replyTo"`
+
+	// Array of strings to add as tags
+	//
+	// required: false
+	// example: ["Tag 1", "Tag 2"]
+	Tags []string `json:"tags"`
+
+	// String of email subject
+	//
+	// required: true
+	// example: "Hello"
+	Subject string `json:"subject"`
+
+	// Map of headers
+	//
+	// required: false
+	// example: {"X-IP": "1.2.3.4"}
+	Headers map[string]string `json:"headers"`
+
+	// String of email text body
+	//
+	// required: true
+	// example: "Hello"
+	Text string `json:"text"`
+
+	// String of email HTML body
+	//
+	// required: true
+	// example: "<html><body>Hello</body></html>"
+	HTML string `json:"html"`
+
+	// Array of content+filename pairs to add as attachments
+	//
+	// required: false
+	// example: [{
+	// 	 "content": "VGhpcyBpcyBhIHBsYWluIHRleHQgYXRhY2htZW50Lg==",
+	// 	 "filename": "AttachedFile.txt",
+	// }],
+	Attachments []struct {
+		Content  string `json:"content"`
+		Filename string `json:"filename"`
+	} `json:"attachments"`
+}
+
 // Application information
 // swagger:response InfoResponse
 type infoResponse struct {

@@ -23,7 +23,7 @@ var (
 	DisableReverseDNS bool
 )
 
-func mailHandler(origin net.Addr, from string, to []string, data []byte) error {
+func MailHandler(origin net.Addr, from string, to []string, data []byte) error {
 	if !config.SMTPStrictRFCHeaders {
 		// replace all <CR><CR><LF> (\r\r\n) with <CR><LF> (\r\n)
 		// @see https://github.com/axllent/mailpit/issues/87 & https://github.com/axllent/mailpit/issues/153
@@ -207,7 +207,7 @@ func Listen() error {
 
 	logger.Log().Infof("[smtpd] starting on %s (%s)", config.SMTPListen, smtpType)
 
-	return listenAndServe(config.SMTPListen, mailHandler, authHandler)
+	return listenAndServe(config.SMTPListen, MailHandler, authHandler)
 }
 
 func listenAndServe(addr string, handler smtpd.Handler, authHandler smtpd.AuthHandler) error {

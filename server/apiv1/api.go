@@ -5,10 +5,12 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"net"
 	"net/http"
 	"net/mail"
 	"strconv"
 	"strings"
+	"text/template"
 	"time"
 
 	"github.com/axllent/mailpit/config"
@@ -22,6 +24,205 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/lithammer/shortuuid/v4"
 )
+
+// SendMessage sends a new message
+func SendMessage(w http.ResponseWriter, r *http.Request) {
+	// swagger:route POST /api/v1/messages message SendMessage
+	//
+	// # Send message
+	//
+	// Sends a message to the mailbox
+	//
+	//	Consumes:
+	//	- application/json
+	//
+	//	Produces:
+	//	- text/plain
+	//
+	//	Schemes: http, https
+	//
+	//	Responses:
+	//		200: OKResponse
+	//		default: ErrorResponse
+
+	decoder := json.NewDecoder(r.Body)
+
+	data := sendMessageRequestBody{}
+
+	if err := decoder.Decode(&data); err != nil {
+		httpError(w, err.Error())
+		return
+	}
+
+	fromEmail := data.From.Email
+	if fromEmail == "" {
+		httpError(w, "No valid sender address found")
+		return
+	}
+	_, err := mail.ParseAddress(fromEmail)
+	if err != nil {
+		httpError(w, "Invalid sender email address: "+fromEmail)
+		return
+	}
+	from := fromEmail
+	if data.From.Name != "" {
+		from = fmt.Sprintf("%s <%s>", data.From.Name, data.From.Email)
+	}
+
+	if len(data.To) == 0 || data.To[0].Email == "" {
+		httpError(w, "No valid recipient addresses found")
+		return
+	}
+	toEmails := []string{}
+	toRecipients := []string{}
+	for _, to := range data.To {
+		if _, err := mail.ParseAddress(to.Email); err != nil {
+			httpError(w, "Invalid 'to' recipient email address: "+to.Email)
+			return
+		}
+		toEmails = append(toEmails, to.Email)
+		if to.Name != "" {
+			toRecipients = append(toRecipients, fmt.Sprintf("%s <%s>", to.Name, to.Email))
+		} else {
+			toRecipients = append(toRecipients, to.Email)
+		}
+	}
+
+	ccRecipients := []string{}
+	for _, cc := range data.CC {
+		if _, err := mail.ParseAddress(cc.Email); err != nil {
+			httpError(w, "Invalid 'cc' email address: "+cc.Email)
+			return
+		}
+		if cc.Name != "" {
+			ccRecipients = append(ccRecipients, fmt.Sprintf("%s <%s>", cc.Name, cc.Email))
+		} else {
+			ccRecipients = append(ccRecipients, cc.Email)
+		}
+	}
+
+	bccRecipients := []string{}
+	for _, bcc := range data.BCC {
+		if _, err := mail.ParseAddress(bcc.Email); err != nil {
+			httpError(w, "Invalid 'bcc' email address: "+bcc.Email)
+			return
+		}
+		if bcc.Name != "" {
+			bccRecipients = append(bccRecipients, fmt.Sprintf("%s <%s>", bcc.Name, bcc.Email))
+		} else {
+			bccRecipients = append(bccRecipients, bcc.Email)
+		}
+	}
+
+	replyToRecipients := []string{}
+	for _, replyTo := range data.ReplyTo {
+		if _, err := mail.ParseAddress(replyTo.Email); err != nil {
+			httpError(w, "Invalid 'replyTo' email address: "+replyTo.Email)
+			return
+		}
+		if replyTo.Name != "" {
+			replyToRecipients = append(replyToRecipients, fmt.Sprintf("%s <%s>", replyTo.Name, replyTo.Email))
+		} else {
+			replyToRecipients = append(replyToRecipients, replyTo.Email)
+		}
+	}
+
+	if data.Subject == "" {
+		httpError(w, "No valid subject found")
+		return
+	}
+
+	if data.HTML == "" {
+		httpError(w, "No valid HTML body found")
+		return
+	}
+
+	if data.Text == "" {
+		httpError(w, "No valid text body found")
+		return
+	}
+
+	clientIP, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err != nil {
+		fmt.Fprintf(w, "Error parsing request RemoteAddr: %s", err)
+		return
+	}
+
+	templateData := map[string]interface{}{
+		"From":        from,
+		"To":          strings.Join(toRecipients, ", "),
+		"CC":          strings.Join(ccRecipients, ", "),
+		"BCC":         strings.Join(bccRecipients, ", "),
+		"ReplyTo":     strings.Join(replyToRecipients, ", "),
+		"Tags":        data.Tags,
+		"Subject":     data.Subject,
+		"Headers":     data.Headers,
+		"Text":        data.Text,
+		"HTML":        data.HTML,
+		"Attachments": data.Attachments,
+	}
+	messageTemplate, err := template.New("message").Parse(
+		"" +
+			"Content-Type: multipart/mixed; boundary=boundary\r\n" +
+			"{{range $key, $value := .Headers}}{{$key}}: {{$value}}\r\n{{end}}" +
+			"X-Tags:{{range $index, $tag := .Tags}} {{$tag}}\r\n{{end}}" +
+			"From: {{.From}}\r\n" +
+			"To: {{.To}}\r\n" +
+			"{{if .CC}}Cc: {{.CC}}\r\n{{end}}" +
+			"{{if .BCC}}Bcc: {{.BCC}}\r\n{{end}}" +
+			"{{if .ReplyTo}}Reply-To: {{.ReplyTo}}\r\n{{end}}" +
+			"Subject: {{.Subject}}\r\n" +
+			"\r\n" +
+			"{{if .Text }}--boundary\r\n" +
+			"Content-Type: text/plain; charset=\"UTF-8\"\r\n\r\n" +
+			"{{.Text}}" +
+			"\r\n{{ end }}" +
+			"{{if .HTML }}--boundary\r\n" +
+			"Content-Type: text/html; charset=\"UTF-8\"\r\n\r\n" +
+			"{{.HTML}}" +
+			"\r\n{{ end}}" +
+			"{{range .Attachments}}" +
+			"--boundary\r\n" +
+			"Content-Type: application/octet-stream\r\n" +
+			"Content-Disposition: attachment; filename=\"{{.Filename}}\"\r\n" +
+			"Content-Transfer-Encoding: base64\r\n\r\n" +
+			"{{.Content}}\r\n" +
+			"{{end}}" +
+			"--boundary--\r\n",
+	)
+	if err != nil {
+		fmt.Fprintf(w, "Error initialising email body template: %s", err)
+		return
+	}
+	message := bytes.NewBuffer(nil)
+	messageTemplate.Execute(message, templateData)
+	msg := message.Bytes()
+
+	// update message date
+	msg, err = tools.UpdateMessageHeader(msg, "Date", time.Now().Format(time.RFC1123Z))
+	if err != nil {
+		httpError(w, err.Error())
+		return
+	}
+
+	// generate unique ID
+	uid := shortuuid.New() + "@mailpit"
+	// update Message-Id with unique ID
+	msg, err = tools.UpdateMessageHeader(msg, "Message-Id", "<"+uid+">")
+	if err != nil {
+		httpError(w, err.Error())
+		return
+	}
+
+	if err := smtpd.MailHandler(&net.IPAddr{IP: net.ParseIP(clientIP)}, fromEmail, toEmails, msg); err != nil {
+		logger.Log().Errorf("[smtp] error sending message: %s", err.Error())
+		httpError(w, "SMTP error: "+err.Error())
+		return
+	}
+
+	w.Header().Add("Content-Type", "text/plain")
+	_, _ = w.Write([]byte("ok"))
+}
 
 // GetMessages returns a paginated list of messages as JSON
 func GetMessages(w http.ResponseWriter, r *http.Request) {
