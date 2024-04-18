@@ -456,7 +456,7 @@ func parseRelayConfig(c string) error {
 
 	// DEPRECATED 2024/03/12
 	if SMTPRelayConfig.RecipientAllowlist != "" {
-		logger.Log().Warn("[smtp] relay 'recipient-allowlist' is deprecated, use 'allowed_recipients' instead")
+		logger.Log().Warn("[smtp] relay 'recipient-allowlist' is deprecated, use 'allowed-recipients' instead")
 		if SMTPRelayConfig.AllowedRecipients == "" {
 			SMTPRelayConfig.AllowedRecipients = SMTPRelayConfig.RecipientAllowlist
 		}
