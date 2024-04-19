@@ -34,14 +34,15 @@ Documentation:
 			os.Exit(1)
 		}
 		if err := storage.InitDB(); err != nil {
-			logger.Log().Error(err.Error())
+			logger.Log().Fatal(err.Error())
 			os.Exit(1)
 		}
 
 		go server.Listen()
 
 		if err := smtpd.Listen(); err != nil {
-			logger.Log().Error(err.Error())
+			storage.Close()
+			logger.Log().Fatal(err.Error())
 			os.Exit(1)
 		}
 	},

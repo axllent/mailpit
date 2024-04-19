@@ -105,11 +105,19 @@ func Listen() {
 	}
 
 	if config.UITLSCert != "" && config.UITLSKey != "" {
+		if err := server.ListenAndServeTLS(config.UITLSCert, config.UITLSKey); err != nil {
+			storage.Close()
+			logger.Log().Fatal(err)
+		}
+
 		logger.Log().Infof("[http] accessible via https://%s%s", logger.CleanHTTPIP(config.HTTPListen), config.Webroot)
-		logger.Log().Fatal(server.ListenAndServeTLS(config.UITLSCert, config.UITLSKey))
 	} else {
+		if err := server.ListenAndServe(); err != nil {
+			storage.Close()
+			logger.Log().Fatal(err)
+		}
+
 		logger.Log().Infof("[http] accessible via http://%s%s", logger.CleanHTTPIP(config.HTTPListen), config.Webroot)
-		logger.Log().Fatal(server.ListenAndServe())
 	}
 }
 
