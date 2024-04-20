@@ -114,9 +114,15 @@ var (
 	// ReleaseEnabled is whether message releases are enabled, requires a valid SMTPRelayConfigFile
 	ReleaseEnabled = false
 
-	// SMTPRelayAllIncoming is whether to relay all incoming messages via pre-configured SMTP server.
+	// SMTPRelayAll is whether to relay all incoming messages via pre-configured SMTP server.
 	// Use with extreme caution!
-	SMTPRelayAllIncoming = false
+	SMTPRelayAll = false
+
+	// SMTPRelayMatching if set, will auto-release to recipients matching this regular expression
+	SMTPRelayMatching string
+
+	// SMTPRelayMatchingRegexp is the compiled version of SMTPRelayMatching
+	SMTPRelayMatchingRegexp *regexp.Regexp
 
 	// POP3Listen address - if set then Mailpit will start the POP3 server and listen on this address
 	POP3Listen = "[::]:1110"
@@ -405,7 +411,7 @@ func VerifyConfig() error {
 		}
 
 		SMTPAllowedRecipientsRegexp = restrictRegexp
-		logger.Log().Infof("[smtp] only allowing recipients matching the following regexp: %s", SMTPAllowedRecipients)
+		logger.Log().Infof("[smtp] only allowing recipients matching regexp: %s", SMTPAllowedRecipients)
 	}
 
 	if err := parseRelayConfig(SMTPRelayConfigFile); err != nil {
@@ -417,13 +423,28 @@ func VerifyConfig() error {
 		return err
 	}
 
-	if !ReleaseEnabled && SMTPRelayAllIncoming {
-		return errors.New("[smtp] relay config must be set to relay all messages")
+	if !ReleaseEnabled && SMTPRelayAll || !ReleaseEnabled && SMTPRelayMatching != "" {
+		return errors.New("[relay] a relay configuration must be set to auto-relay any messages")
 	}
 
-	if SMTPRelayAllIncoming {
+	if SMTPRelayMatching != "" {
+		if SMTPRelayAll {
+			logger.Log().Warnf("[relay] ignoring smtp-relay-matching when smtp-relay-all is enabled")
+		} else {
+			restrictRegexp, err := regexp.Compile(SMTPRelayMatching)
+			if err != nil {
+				return fmt.Errorf("[relay] failed to compile smtp-relay-matching regexp: %s", err.Error())
+			}
+
+			SMTPRelayMatchingRegexp = restrictRegexp
+			logger.Log().Infof("[relay] auto-relaying new messages to recipients matching \"%s\" via %s:%d",
+				SMTPRelayMatching, SMTPRelayConfig.Host, SMTPRelayConfig.Port)
+		}
+	}
+
+	if SMTPRelayAll {
 		// this deserves a warning
-		logger.Log().Warnf("[smtp] enabling automatic relay of all new messages via %s:%d", SMTPRelayConfig.Host, SMTPRelayConfig.Port)
+		logger.Log().Warnf("[relay] auto-relaying all new messages via %s:%d", SMTPRelayConfig.Host, SMTPRelayConfig.Port)
 	}
 
 	return nil

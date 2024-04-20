@@ -640,13 +640,7 @@ func ReleaseMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tos := data.To
-	if len(tos) == 0 {
-		httpError(w, "No valid addresses found")
-		return
-	}
-
-	for _, to := range tos {
+	for _, to := range data.To {
 		address, err := mail.ParseAddress(to)
 
 		if err != nil {
@@ -660,6 +654,11 @@ func ReleaseMessage(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	if len(data.To) == 0 {
+		httpError(w, "No valid addresses found")
+		return
+	}
+
 	reader := bytes.NewReader(msg)
 	m, err := mail.ReadMessage(reader)
 	if err != nil {
@@ -670,6 +669,11 @@ func ReleaseMessage(w http.ResponseWriter, r *http.Request) {
 	froms, err := m.Header.AddressList("From")
 	if err != nil {
 		httpError(w, err.Error())
+		return
+	}
+
+	if len(froms) == 0 {
+		httpError(w, "No From header found")
 		return
 	}
 
@@ -716,7 +720,7 @@ func ReleaseMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := smtpd.Send(from, tos, msg); err != nil {
+	if err := smtpd.Send(from, data.To, msg); err != nil {
 		logger.Log().Errorf("[smtp] error sending message: %s", err.Error())
 		httpError(w, "SMTP error: "+err.Error())
 		return

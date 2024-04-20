@@ -74,14 +74,8 @@ func mailHandler(origin net.Addr, from string, to []string, data []byte) error {
 		}
 	}
 
-	// if enabled, this will route the email 1:1 through to the preconfigured smtp server
-	if config.SMTPRelayAllIncoming {
-		if err := Send(from, to, data); err != nil {
-			logger.Log().Warnf("[smtp] error relaying message: %s", err.Error())
-		} else {
-			logger.Log().Debugf("[smtp] relayed message from %s via %s:%d", from, config.SMTPRelayConfig.Host, config.SMTPRelayConfig.Port)
-		}
-	}
+	// if enabled, this may conditionally relay the email through to the preconfigured smtp server
+	autoRelayMessage(from, to, &data)
 
 	// build array of all addresses in the header to compare to the []to array
 	emails, hasBccHeader := scanAddressesInHeader(msg.Header)

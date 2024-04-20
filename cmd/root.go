@@ -116,8 +116,9 @@ func init() {
 	rootCmd.Flags().BoolVar(&smtpd.DisableReverseDNS, "smtp-disable-rdns", smtpd.DisableReverseDNS, "Disable SMTP reverse DNS lookups")
 
 	// SMTP relay
-	rootCmd.Flags().StringVar(&config.SMTPRelayConfigFile, "smtp-relay-config", config.SMTPRelayConfigFile, "SMTP configuration file to allow releasing messages")
-	rootCmd.Flags().BoolVar(&config.SMTPRelayAllIncoming, "smtp-relay-all", config.SMTPRelayAllIncoming, "Relay all incoming messages via external SMTP server (caution!)")
+	rootCmd.Flags().StringVar(&config.SMTPRelayConfigFile, "smtp-relay-config", config.SMTPRelayConfigFile, "SMTP relay configuration file to allow releasing messages")
+	rootCmd.Flags().BoolVar(&config.SMTPRelayAll, "smtp-relay-all", config.SMTPRelayAll, "Auto-relay all new messages via external SMTP server (caution!)")
+	rootCmd.Flags().StringVar(&config.SMTPRelayMatching, "smtp-relay-matching", config.SMTPRelayMatching, "Auto-relay new messages to only matching recipients (regular expression)")
 
 	// POP3 server
 	rootCmd.Flags().StringVar(&config.POP3Listen, "pop3", config.POP3Listen, "POP3 server bind interface and port")
@@ -253,8 +254,9 @@ func initConfigFromEnv() {
 	// SMTP relay
 	config.SMTPRelayConfigFile = os.Getenv("MP_SMTP_RELAY_CONFIG")
 	if getEnabledFromEnv("MP_SMTP_RELAY_ALL") {
-		config.SMTPRelayAllIncoming = true
+		config.SMTPRelayAll = true
 	}
+	config.SMTPRelayMatching = os.Getenv("MP_SMTP_RELAY_MATCHING")
 	config.SMTPRelayConfig = config.SMTPRelayConfigStruct{}
 	config.SMTPRelayConfig.Host = os.Getenv("MP_SMTP_RELAY_HOST")
 	if len(os.Getenv("MP_SMTP_RELAY_PORT")) > 0 {
