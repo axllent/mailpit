@@ -357,14 +357,6 @@ body.blur {
 	}
 }
 
-#ReleaseModal {
-	.form-control.dropdown {
-		div {
-			@extend .form-control;
-		}
-	}
-}
-
 /* PrismJS 1.29.0 - modified!
 https://prismjs.com/download.html#themes=prism-coy&languages=markup+css */
 code[class*="language-"],
