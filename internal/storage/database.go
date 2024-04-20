@@ -127,13 +127,19 @@ func tenant(table string) string {
 	return fmt.Sprintf("%s%s", config.TenantID, table)
 }
 
-// Close will close the database, and delete if a temporary table
+// Close will close the database, and delete if temporary
 func Close() {
+	// on a fatal exit (eg: ports blocked), allow Mailpit to run migration tasks before closing the DB
+	time.Sleep(200 * time.Millisecond)
+
 	if db != nil {
 		if err := db.Close(); err != nil {
 			logger.Log().Warn("[db] error closing database, ignoring")
 		}
 	}
+
+	// allow SQLite to finish closing DB & write WAL logs if local
+	time.Sleep(100 * time.Millisecond)
 
 	if dbIsTemp && isFile(dbFile) {
 		logger.Log().Debugf("[db] deleting temporary file %s", dbFile)

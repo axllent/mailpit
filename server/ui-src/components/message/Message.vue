@@ -69,6 +69,14 @@ export default {
 		}
 	},
 
+	computed: {
+		hasAnyChecksEnabled: function() {
+			return (mailbox.showHTMLCheck && this.message.HTML)
+				|| mailbox.showLinkCheck 
+				|| (mailbox.showSpamCheck && mailbox.uiConfig.SpamAssassin)
+		}
+	},
+
 	mounted() {
 		let self = this
 		self.canSaveTags = false
@@ -263,7 +271,7 @@ export default {
 						<tr class="small">
 							<th>To</th>
 							<td class="privacy">
-								<span v-if="message.To && message.To.length" v-for="(   t, i   ) in    message.To   ">
+								<span v-if="message.To && message.To.length" v-for="(t, i) in message.To">
 									<template v-if="i > 0">, </template>
 									<span>
 										<span class="text-spaces">{{ t.Name }}</span>
@@ -278,7 +286,7 @@ export default {
 						<tr v-if="message.Cc && message.Cc.length" class="small">
 							<th>Cc</th>
 							<td class="privacy">
-								<span v-for="(   t, i   ) in    message.Cc   ">
+								<span v-for="(t, i) in message.Cc">
 									<template v-if="i > 0">,</template>
 									<span class="text-spaces">{{ t.Name }}</span>
 									&lt;<a :href="searchURI(t.Address)" class="text-body">
@@ -423,16 +431,16 @@ export default {
 					role="tab" aria-controls="nav-raw" aria-selected="false">
 					Raw
 				</button>
-				<div class="dropdown d-xl-none">
+				<div class="dropdown d-xl-none" v-show="hasAnyChecksEnabled">
 					<button class="nav-link dropdown-toggle" type="button" data-bs-toggle="dropdown"
 						aria-expanded="false">
 						Checks
 					</button>
 					<ul class="dropdown-menu checks">
-						<li>
+						<li v-if="mailbox.showHTMLCheck && message.HTML != ''">
 							<button class="dropdown-item" id="nav-html-check-tab" data-bs-toggle="tab"
 								data-bs-target="#nav-html-check" type="button" role="tab" aria-controls="nav-html"
-								aria-selected="false" v-if="!mailbox.uiConfig.DisableHTMLCheck && message.HTML != ''">
+								aria-selected="false">
 								HTML Check
 								<span class="badge rounded-pill p-1 float-end" :class="htmlScoreColor"
 									v-if="htmlScore !== false">
@@ -440,7 +448,7 @@ export default {
 								</span>
 							</button>
 						</li>
-						<li>
+						<li v-if="mailbox.showLinkCheck">
 							<button class="dropdown-item" id="nav-link-check-tab" data-bs-toggle="tab"
 								data-bs-target="#nav-link-check" type="button" role="tab" aria-controls="nav-link-check"
 								aria-selected="false">
@@ -453,7 +461,7 @@ export default {
 								</span>
 							</button>
 						</li>
-						<li v-if="mailbox.uiConfig.SpamAssassin">
+						<li v-if="mailbox.showSpamCheck && mailbox.uiConfig.SpamAssassin">
 							<button class="dropdown-item" id="nav-spam-check-tab" data-bs-toggle="tab"
 								data-bs-target="#nav-spam-check" type="button" role="tab" aria-controls="nav-html"
 								aria-selected="false">
@@ -469,7 +477,7 @@ export default {
 				<button class="d-none d-xl-inline-block nav-link position-relative" id="nav-html-check-tab"
 					data-bs-toggle="tab" data-bs-target="#nav-html-check" type="button" role="tab"
 					aria-controls="nav-html" aria-selected="false"
-					v-if="!mailbox.uiConfig.DisableHTMLCheck && message.HTML != ''">
+					v-if="mailbox.showHTMLCheck && message.HTML != ''">
 					HTML Check
 					<span class="badge rounded-pill p-1" :class="htmlScoreColor" v-if="htmlScore !== false">
 						<small>{{ Math.floor(htmlScore) }}%</small>
@@ -477,7 +485,7 @@ export default {
 				</button>
 				<button class="d-none d-xl-inline-block nav-link" id="nav-link-check-tab" data-bs-toggle="tab"
 					data-bs-target="#nav-link-check" type="button" role="tab" aria-controls="nav-link-check"
-					aria-selected="false">
+					aria-selected="false" v-if="mailbox.showLinkCheck">
 					Link Check
 					<i class="bi bi-check-all text-success" v-if="linkCheckErrors === 0"></i>
 					<span class="badge rounded-pill bg-danger" v-else-if="linkCheckErrors > 0">
@@ -486,7 +494,7 @@ export default {
 				</button>
 				<button class="d-none d-xl-inline-block nav-link position-relative" id="nav-spam-check-tab"
 					data-bs-toggle="tab" data-bs-target="#nav-spam-check" type="button" role="tab"
-					aria-controls="nav-html" aria-selected="false" v-if="mailbox.uiConfig.SpamAssassin">
+					aria-controls="nav-html" aria-selected="false" v-if="mailbox.showSpamCheck && mailbox.uiConfig.SpamAssassin">
 					Spam Analysis
 					<span class="badge rounded-pill" :class="spamScoreColor" v-if="spamScore !== false">
 						<small>{{ spamScore }}</small>
@@ -537,16 +545,16 @@ export default {
 			</div>
 			<div class="tab-pane fade" id="nav-html-check" role="tabpanel" aria-labelledby="nav-html-check-tab"
 				tabindex="0">
-				<HTMLCheck v-if="!mailbox.uiConfig.DisableHTMLCheck && message.HTML != ''" :message="message"
-					@setHtmlScore="(n) => htmlScore = n" @set-badge-style="(v) => htmlScoreColor = v" />
+				<HTMLCheck v-if="mailbox.showHTMLCheck && message.HTML != ''"
+					:message="message" @setHtmlScore="(n) => htmlScore = n" @set-badge-style="(v) => htmlScoreColor = v" />
 			</div>
 			<div class="tab-pane fade" id="nav-spam-check" role="tabpanel" aria-labelledby="nav-spam-check-tab"
-				tabindex="0">
-				<SpamAssassin v-if="mailbox.uiConfig.SpamAssassin" :message="message"
+				tabindex="0" v-if="mailbox.showSpamCheck && mailbox.uiConfig.SpamAssassin">
+				<SpamAssassin :message="message"
 					@setSpamScore="(n) => spamScore = n" @set-badge-style="(v) => spamScoreColor = v" />
 			</div>
 			<div class="tab-pane fade" id="nav-link-check" role="tabpanel" aria-labelledby="nav-html-check-tab"
-				tabindex="0">
+				tabindex="0" v-if="mailbox.showLinkCheck">
 				<LinkCheck :message="message" @setLinkErrors="(n) => linkCheckErrors = n" />
 			</div>
 		</div>

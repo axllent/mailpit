@@ -247,11 +247,6 @@ export default {
 					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 				</div>
 				<div class="modal-body">
-					<p>
-						Link check is currently in beta. Constructive feedback is welcome via
-						<a href="https://github.com/axllent/mailpit/issues" target="_blank">GitHub</a>.
-					</p>
-
 					<h6 class="mt-4">Follow HTTP redirects (status 301 & 302)</h6>
 					<div class="form-check form-switch mb-4">
 						<input class="form-check-input" type="checkbox" role="switch" v-model="followRedirects"
@@ -293,10 +288,6 @@ export default {
 					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 				</div>
 				<div class="modal-body">
-					<p>
-						Link check is currently in beta. Constructive feedback is welcome via
-						<a href="https://github.com/axllent/mailpit/issues" target="_blank">GitHub</a>.
-					</p>
 					<div class="accordion" id="LinkCheckAboutAccordion">
 						<div class="accordion-item">
 							<h2 class="accordion-header">

@@ -27,9 +27,6 @@ type webUIConfiguration struct {
 		RecipientAllowlist string
 	}
 
-	// Whether the HTML check has been globally disabled
-	DisableHTMLCheck bool
-
 	// Whether SpamAssassin is enabled
 	SpamAssassin bool
 
@@ -65,7 +62,6 @@ func WebUIConfig(w http.ResponseWriter, _ *http.Request) {
 		conf.MessageRelay.RecipientAllowlist = config.SMTPRelayConfig.AllowedRecipients
 	}
 
-	conf.DisableHTMLCheck = config.DisableHTMLCheck
 	conf.SpamAssassin = config.EnableSpamAssassin != ""
 	conf.DuplicatesIgnored = config.IgnoreDuplicateIDs
 

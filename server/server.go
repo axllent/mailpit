@@ -105,11 +105,19 @@ func Listen() {
 	}
 
 	if config.UITLSCert != "" && config.UITLSKey != "" {
+		if err := server.ListenAndServeTLS(config.UITLSCert, config.UITLSKey); err != nil {
+			storage.Close()
+			logger.Log().Fatal(err)
+		}
+
 		logger.Log().Infof("[http] accessible via https://%s%s", logger.CleanHTTPIP(config.HTTPListen), config.Webroot)
-		logger.Log().Fatal(server.ListenAndServeTLS(config.UITLSCert, config.UITLSKey))
 	} else {
+		if err := server.ListenAndServe(); err != nil {
+			storage.Close()
+			logger.Log().Fatal(err)
+		}
+
 		logger.Log().Infof("[http] accessible via http://%s%s", logger.CleanHTTPIP(config.HTTPListen), config.Webroot)
-		logger.Log().Fatal(server.ListenAndServe())
 	}
 }
 
@@ -129,9 +137,7 @@ func apiRoutes() *mux.Router {
 	r.HandleFunc(config.Webroot+"api/v1/message/{id}/headers", middleWareFunc(apiv1.GetHeaders)).Methods("GET")
 	r.HandleFunc(config.Webroot+"api/v1/message/{id}/raw", middleWareFunc(apiv1.DownloadRaw)).Methods("GET")
 	r.HandleFunc(config.Webroot+"api/v1/message/{id}/release", middleWareFunc(apiv1.ReleaseMessage)).Methods("POST")
-	if !config.DisableHTMLCheck {
-		r.HandleFunc(config.Webroot+"api/v1/message/{id}/html-check", middleWareFunc(apiv1.HTMLCheck)).Methods("GET")
-	}
+	r.HandleFunc(config.Webroot+"api/v1/message/{id}/html-check", middleWareFunc(apiv1.HTMLCheck)).Methods("GET")
 	r.HandleFunc(config.Webroot+"api/v1/message/{id}/link-check", middleWareFunc(apiv1.LinkCheck)).Methods("GET")
 	if config.EnableSpamAssassin != "" {
 		r.HandleFunc(config.Webroot+"api/v1/message/{id}/sa-check", middleWareFunc(apiv1.SpamAssassinCheck)).Methods("GET")

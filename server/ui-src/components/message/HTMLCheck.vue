@@ -20,7 +20,6 @@ export default {
 	data() {
 		return {
 			error: false,
-			enabled: true,
 			check: false,
 			platforms: [],
 			allPlatforms: {
@@ -37,7 +36,6 @@ export default {
 	},
 
 	mounted() {
-		this.enabled = !localStorage.getItem('htmlCheckDisabled')
 		this.loadConfig()
 		this.doCheck()
 	},
@@ -46,7 +44,7 @@ export default {
 		summary: function () {
 			let self = this
 
-			if (!this.enabled || !this.check) {
+			if (!this.check) {
 				return false
 			}
 
@@ -199,23 +197,19 @@ export default {
 		platforms(v) {
 			localStorage.setItem('html-check-platforms', JSON.stringify(v))
 		},
-		enabled(v) {
-			if (!v) {
-				localStorage.setItem('htmlCheckDisabled', true)
-				this.$emit('setHtmlScore', false)
-			} else {
-				localStorage.removeItem('htmlCheckDisabled')
-				this.doCheck()
-			}
-		}
+		// enabled(v) {
+		// 	if (!v) {
+		// 		localStorage.setItem('htmlCheckDisabled', true)
+		// 		this.$emit('setHtmlScore', false)
+		// 	} else {
+		// 		localStorage.removeItem('htmlCheckDisabled')
+		// 		this.doCheck()
+		// 	}
+		// }
 	},
 
 	methods: {
 		doCheck: function () {
-			if (!this.enabled) {
-				return
-			}
-
 			this.check = false
 
 			if (this.message.HTML == "") {
@@ -314,20 +308,6 @@ export default {
 		</div>
 	</template>
 
-	<template v-if="!enabled">
-		<h2 class="h4 text-secondary">HTML check is currently disabled</h2>
-		<p class="text-secondary">
-			This feature is currently in beta. Constructive feedback is welcome via
-			<a href="https://github.com/axllent/mailpit/issues" target="_blank">GitHub</a>.
-		</p>
-		<div class="form-check form-switch">
-			<input class="form-check-input" type="checkbox" role="switch" v-model="enabled" id="inlineEnableHTMLCheck">
-			<label class="form-check-label" for="inlineEnableHTMLCheck">
-				Enable HTML check
-			</label>
-		</div>
-	</template>
-
 	<template v-if="summary">
 		<div class="mt-5 mb-3">
 			<div class="row w-100">
@@ -367,10 +347,6 @@ export default {
 							data-bs-target="#AboutHTMLCheckResults">
 							<i class="bi bi-info-circle-fill"></i>
 							Help
-						</button>
-						<button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#HTMLCheckOptions">
-							<i class="bi bi-gear-fill"></i>
-							Settings
 						</button>
 					</div>
 				</div>
@@ -500,10 +476,6 @@ export default {
 						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 					</div>
 					<div class="modal-body">
-						<p>
-							HTML check is currently in beta. Constructive feedback is welcome via
-							<a href="https://github.com/axllent/mailpit/issues" target="_blank">GitHub</a>.
-						</p>
 						<div class="accordion" id="HTMLCheckAboutAccordion">
 							<div class="accordion-item">
 								<h2 class="accordion-header">
@@ -635,36 +607,4 @@ export default {
 			</div>
 		</div>
 	</template>
-
-	<div class="modal fade" id="HTMLCheckOptions" tabindex="-1" aria-labelledby="HTMLCheckOptionsLabel" aria-hidden="true">
-		<div class="modal-dialog modal-lg modal-dialog-scrollable">
-			<div class="modal-content">
-				<div class="modal-header">
-					<h1 class="modal-title fs-5" id="HTMLCheckOptionsLabel">HTML check options</h1>
-					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-				</div>
-				<div class="modal-body">
-					<p>
-						HTML check is currently in beta. Constructive feedback is welcome via
-						<a href="https://github.com/axllent/mailpit/issues" target="_blank">GitHub</a>.
-					</p>
-					<div class="form-check form-switch mb-3">
-						<input class="form-check-input" type="checkbox" role="switch" v-model="enabled"
-							id="HTMLCheckSwitch">
-						<label class="form-check-label" for="HTMLCheckSwitch">
-							<template v-if="enabled">HTML check is enabled in the web UI</template>
-							<template v-else>HTML check is disabled in the web UI</template>
-						</label>
-					</div>
-					<p class="mt-4 small text-center text-secondary">
-						HTML check can be globally disabled with <code>--disable-html-check</code><br>
-						Remote CSS and font support can be globally blocked with <code>--block-remote-css-and-fonts</code>
-					</p>
-				</div>
-				<div class="modal-footer">
-					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-				</div>
-			</div>
-		</div>
-	</div>
 </template>

@@ -12,9 +12,9 @@ import (
 
 	"github.com/axllent/mailpit/internal/logger"
 	"github.com/axllent/mailpit/internal/storage"
-	"github.com/disintegration/imaging"
 	"github.com/gorilla/mux"
 	"github.com/jhillyerd/enmime"
+	"github.com/kovidgoyal/imaging"
 )
 
 var (
@@ -74,7 +74,7 @@ func Thumbnail(w http.ResponseWriter, r *http.Request) {
 
 	buf := bytes.NewBuffer(a.Content)
 
-	img, err := imaging.Decode(buf)
+	img, err := imaging.Decode(buf, imaging.AutoOrientation(true))
 	if err != nil {
 		// it's not an image, return default
 		logger.Log().Warnf("[image] %s", err.Error())

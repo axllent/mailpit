@@ -1,17 +1,19 @@
 module github.com/axllent/mailpit
 
-go 1.20
+go 1.21.0
+
+toolchain go1.22.1
 
 require (
 	github.com/PuerkitoBio/goquery v1.9.1
 	github.com/araddon/dateparse v0.0.0-20210429162001-6b43995a97de
 	github.com/axllent/semver v0.0.1
-	github.com/disintegration/imaging v1.6.2
-	github.com/gomarkdown/markdown v0.0.0-20240328165702-4d01890c35c0
+	github.com/gomarkdown/markdown v0.0.0-20240419095408-642f0ee99ae2
 	github.com/gorilla/mux v1.8.1
 	github.com/gorilla/websocket v1.5.1
 	github.com/jhillyerd/enmime v1.2.0
 	github.com/klauspost/compress v1.17.8
+	github.com/kovidgoyal/imaging v1.6.3
 	github.com/leporo/sqlf v1.4.0
 	github.com/lithammer/shortuuid/v4 v4.0.0
 	github.com/mhale/smtpd v0.8.2
@@ -26,7 +28,7 @@ require (
 	golang.org/x/text v0.14.0
 	golang.org/x/time v0.5.0
 	gopkg.in/yaml.v3 v3.0.1
-	modernc.org/sqlite v1.29.6
+	modernc.org/sqlite v1.29.8
 )
 
 require (
