@@ -63,6 +63,17 @@ func InitDB() error {
 
 	config.Database = p
 
+	if sqlDriver == "sqlite" {
+		if !isFile(p) {
+			// try create a file to ensure permissions
+			f, err := os.Create(p)
+			if err != nil {
+				return fmt.Errorf("[db] %s", err.Error())
+			}
+			_ = f.Close()
+		}
+	}
+
 	var err error
 
 	db, err = sql.Open(sqlDriver, dsn)
@@ -73,7 +84,7 @@ func InitDB() error {
 	for i := 1; i < 6; i++ {
 		if err := Ping(); err != nil {
 			logger.Log().Errorf("[db] %s", err.Error())
-			logger.Log().Infof("[db] reconnecting in 5 seconds (%d/5)", i)
+			logger.Log().Infof("[db] reconnecting in 5 seconds (attempt %d/5)", i)
 			time.Sleep(5 * time.Second)
 		} else {
 			continue
