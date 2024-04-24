@@ -221,7 +221,7 @@ func VerifyConfig() error {
 		UIAuthFile = filepath.Clean(UIAuthFile)
 
 		if !isFile(UIAuthFile) {
-			return fmt.Errorf("[ui] HTTP password file not found: %s", UIAuthFile)
+			return fmt.Errorf("[ui] HTTP password file not found or readable: %s", UIAuthFile)
 		}
 
 		b, err := os.ReadFile(UIAuthFile)
@@ -243,11 +243,11 @@ func VerifyConfig() error {
 		UITLSKey = filepath.Clean(UITLSKey)
 
 		if !isFile(UITLSCert) {
-			return fmt.Errorf("[ui] TLS certificate not found: %s", UITLSCert)
+			return fmt.Errorf("[ui] TLS certificate not found or readable: %s", UITLSCert)
 		}
 
 		if !isFile(UITLSKey) {
-			return fmt.Errorf("[ui] TLS key not found: %s", UITLSKey)
+			return fmt.Errorf("[ui] TLS key not found or readable: %s", UITLSKey)
 		}
 	}
 
@@ -260,11 +260,11 @@ func VerifyConfig() error {
 		SMTPTLSKey = filepath.Clean(SMTPTLSKey)
 
 		if !isFile(SMTPTLSCert) {
-			return fmt.Errorf("[smtp] TLS certificate not found: %s", SMTPTLSCert)
+			return fmt.Errorf("[smtp] TLS certificate not found or readable: %s", SMTPTLSCert)
 		}
 
 		if !isFile(SMTPTLSKey) {
-			return fmt.Errorf("[smtp] TLS key not found: %s", SMTPTLSKey)
+			return fmt.Errorf("[smtp] TLS key not found or readable: %s", SMTPTLSKey)
 		}
 	} else if SMTPRequireTLS {
 		return errors.New("[smtp] TLS cannot be required without an SMTP TLS certificate and key")
@@ -282,7 +282,7 @@ func VerifyConfig() error {
 		SMTPAuthFile = filepath.Clean(SMTPAuthFile)
 
 		if !isFile(SMTPAuthFile) {
-			return fmt.Errorf("[smtp] password file not found: %s", SMTPAuthFile)
+			return fmt.Errorf("[smtp] password file not found or readable: %s", SMTPAuthFile)
 		}
 
 		b, err := os.ReadFile(SMTPAuthFile)
@@ -321,11 +321,11 @@ func VerifyConfig() error {
 		POP3TLSKey = filepath.Clean(POP3TLSKey)
 
 		if !isFile(POP3TLSCert) {
-			return fmt.Errorf("[pop3] TLS certificate not found: %s", POP3TLSCert)
+			return fmt.Errorf("[pop3] TLS certificate not found or readable: %s", POP3TLSCert)
 		}
 
 		if !isFile(POP3TLSKey) {
-			return fmt.Errorf("[pop3] TLS key not found: %s", POP3TLSKey)
+			return fmt.Errorf("[pop3] TLS key not found or readable: %s", POP3TLSKey)
 		}
 	}
 	if POP3TLSCert != "" && POP3TLSKey == "" || POP3TLSCert == "" && POP3TLSKey != "" {
@@ -341,7 +341,7 @@ func VerifyConfig() error {
 		POP3AuthFile = filepath.Clean(POP3AuthFile)
 
 		if !isFile(POP3AuthFile) {
-			return fmt.Errorf("[pop3] password file not found: %s", POP3AuthFile)
+			return fmt.Errorf("[pop3] password file not found or readable: %s", POP3AuthFile)
 		}
 
 		b, err := os.ReadFile(POP3AuthFile)
@@ -459,7 +459,7 @@ func parseRelayConfig(c string) error {
 	c = filepath.Clean(c)
 
 	if !isFile(c) {
-		return fmt.Errorf("[smtp] relay configuration not found: %s", c)
+		return fmt.Errorf("[smtp] relay configuration not found or readable: %s", c)
 	}
 
 	data, err := os.ReadFile(c)
@@ -536,20 +536,17 @@ func validateRelayConfig() error {
 	return nil
 }
 
-// IsFile returns if a path is a file
+// IsFile returns whether a file exists and is readable
 func isFile(path string) bool {
-	info, err := os.Stat(path)
-	if os.IsNotExist(err) || !info.Mode().IsRegular() {
-		return false
-	}
-
-	return true
+	f, err := os.Open(filepath.Clean(path))
+	defer f.Close()
+	return err == nil
 }
 
 // IsDir returns whether a path is a directory
 func isDir(path string) bool {
 	info, err := os.Stat(path)
-	if os.IsNotExist(err) || !info.IsDir() {
+	if err != nil || os.IsNotExist(err) || !info.IsDir() {
 		return false
 	}
 

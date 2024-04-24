@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"sync"
 
 	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/internal/logger"
@@ -15,6 +16,7 @@ import (
 
 var (
 	addressPlusRe = regexp.MustCompile(`(?U)^(.*){1,}\+(.*)@`)
+	addTagMutex   sync.RWMutex
 )
 
 // SetMessageTags will set the tags for a given database ID
@@ -58,14 +60,18 @@ func SetMessageTags(id string, tags []string) error {
 
 // AddMessageTag adds a tag to a message
 func AddMessageTag(id, name string) error {
+	// prevent two identical tags being added at the same time
+	addTagMutex.Lock()
+
 	var tagID int
 
 	q := sqlf.From(tenant("tags")).
 		Select("ID").To(&tagID).
 		Where("Name = ?", name)
 
-	// tag exists - add tag to message
+	// if tag exists - add tag to message
 	if err := q.QueryRowAndClose(context.TODO(), db); err == nil {
+		addTagMutex.Unlock()
 		// check message does not already have this tag
 		var count int
 		if _, err := sqlf.From(tenant("message_tags")).
@@ -89,15 +95,17 @@ func AddMessageTag(id, name string) error {
 		return err
 	}
 
-	logger.Log().Debugf("[tags] adding tag \"%s\" to %s", name, id)
-
-	// tag dos not exist, add new one
+	// new tag, add to the database
 	if _, err := sqlf.InsertInto(tenant("tags")).
 		Set("Name", name).
 		ExecAndClose(context.TODO(), db); err != nil {
+		addTagMutex.Unlock()
 		return err
 	}
 
+	addTagMutex.Unlock()
+
+	// add tag to the message
 	return AddMessageTag(id, name)
 }
 
