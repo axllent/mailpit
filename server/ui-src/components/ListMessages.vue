@@ -1,7 +1,7 @@
 <script>
 import { mailbox } from '../stores/mailbox'
 import CommonMixins from '../mixins/CommonMixins'
-import moment from 'moment'
+import dayjs from 'dayjs'
 
 export default {
 	mixins: [
@@ -19,6 +19,8 @@ export default {
 	},
 
 	mounted() {
+		let relativeTime = require('dayjs/plugin/relativeTime')
+		dayjs.extend(relativeTime)
 		this.refreshUI()
 	},
 
@@ -36,7 +38,7 @@ export default {
 
 		getRelativeCreated: function (message) {
 			let d = new Date(message.Created)
-			return moment(d).fromNow().toString()
+			return dayjs(d).fromNow()
 		},
 
 		getPrimaryEmailTo: function (message) {
@@ -104,7 +106,8 @@ export default {
 <template>
 	<template v-if="mailbox.messages && mailbox.messages.length">
 		<div class="list-group my-2">
-			<RouterLink v-for="message in mailbox.messages" :to="'/view/' + message.ID" :key="message.ID" :id="message.ID"
+			<RouterLink v-for="message in mailbox.messages" :to="'/view/' + message.ID" :key="message.ID"
+				:id="message.ID"
 				class="row gx-1 message d-flex small list-group-item list-group-item-action border-start-0 border-end-0"
 				:class="message.Read ? 'read' : '', isSelected(message.ID) ? 'selected' : ''"
 				v-on:click.ctrl="toggleSelected($event, message.ID)" v-on:click.shift="selectRange($event, message.ID)">
@@ -115,15 +118,15 @@ export default {
 					</div>
 					<div class="text-truncate d-lg-none privacy">
 						<span v-if="message.From" :title="'From: ' + message.From.Address">{{
-							message.From.Name ?
-							message.From.Name : message.From.Address
-						}}</span>
+		message.From.Name ?
+			message.From.Name : message.From.Address
+	}}</span>
 					</div>
 					<div class="text-truncate d-none d-lg-block privacy">
 						<b v-if="message.From" :title="'From: ' + message.From.Address">{{
-							message.From.Name ?
-							message.From.Name : message.From.Address
-						}}</b>
+		message.From.Name ?
+			message.From.Name : message.From.Address
+	}}</b>
 					</div>
 					<div class="d-none d-lg-block text-truncate text-muted small privacy">
 						{{ getPrimaryEmailTo(message) }}
