@@ -2,6 +2,17 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.17.1]
+
+### Chore
+- Update node dependencies
+- Update Go dependencies
+- Clearer error messages for read/write permission failures ([#281](https://github.com/axllent/mailpit/issues/281))
+
+### Fix
+- Prevent error when two identical tags are added at the exact same time ([#283](https://github.com/axllent/mailpit/issues/283))
+
+
 ## [v1.17.0]
 
 ### Chore
