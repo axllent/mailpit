@@ -1,5 +1,5 @@
 import axios from 'axios'
-import moment from 'moment'
+import dayjs from 'dayjs'
 import ColorHash from 'color-hash'
 import { Modal, Offcanvas } from 'bootstrap'
 
@@ -45,11 +45,11 @@ export default {
 		},
 
 		messageDate: function (d) {
-			return moment(d).format('ddd, D MMM YYYY, h:mm a')
+			return dayjs(d).format('ddd, D MMM YYYY, h:mm a')
 		},
 
 		secondsToRelative: function (d) {
-			return moment().subtract(d, 'seconds').fromNow()
+			return dayjs().subtract(d, 'seconds').fromNow()
 		},
 
 		tagEncodeURI: function (tag) {
