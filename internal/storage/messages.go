@@ -71,13 +71,6 @@ func Store(body *[]byte) (string, error) {
 		return "", err
 	}
 
-	// extract tags from body matches based on --tag, plus addresses & X-Tags header
-	tagStr := findTagsInRawMessage(body) + "," +
-		obj.tagsFromPlusAddresses() + "," +
-		strings.TrimSpace(env.Root.Header.Get("X-Tags"))
-
-	tagData := uniqueTagsFromString(tagStr)
-
 	// begin a transaction to ensure both the message
 	// and data are stored successfully
 	ctx := context.Background()
@@ -119,9 +112,18 @@ func Store(body *[]byte) (string, error) {
 		return "", err
 	}
 
-	if len(tagData) > 0 {
-		// set tags after tx.Commit()
-		if err := SetMessageTags(id, tagData); err != nil {
+	// extract tags from body matches based on --tag, plus addresses & X-Tags header
+	rawTags := findTagsInRawMessage(body)
+	plusTags := obj.tagsFromPlusAddresses()
+	xTags := tools.SetTagCasing(strings.Split(strings.TrimSpace(env.Root.Header.Get("X-Tags")), ","))
+	searchTags := TagFilterMatches(id)
+
+	tags := append(rawTags, plusTags...)
+	tags = append(tags, xTags...)
+	tags = sortedUniqueTags(append(tags, searchTags...))
+
+	if len(tags) > 0 {
+		if err := SetMessageTags(id, tags); err != nil {
 			return "", err
 		}
 	}
@@ -137,7 +139,7 @@ func Store(body *[]byte) (string, error) {
 	c.Attachments = attachments
 	c.Subject = subject
 	c.Size = size
-	c.Tags = tagData
+	c.Tags = tags
 	c.Snippet = snippet
 
 	websockets.Broadcast("new", c)

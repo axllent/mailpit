@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"regexp"
@@ -19,7 +20,7 @@ var (
 	addTagMutex   sync.RWMutex
 )
 
-// SetMessageTags will set the tags for a given database ID
+// SetMessageTags will set the tags for a given database ID, removing any not in the array
 func SetMessageTags(id string, tags []string) error {
 	applyTags := []string{}
 	for _, t := range tags {
@@ -33,7 +34,6 @@ func SetMessageTags(id string, tags []string) error {
 	origTagCount := len(currentTags)
 
 	for _, t := range applyTags {
-		t = tools.CleanTag(t)
 		if t == "" || !config.ValidTagRegexp.MatchString(t) || inArray(t, currentTags) {
 			continue
 		}
@@ -74,14 +74,15 @@ func AddMessageTag(id, name string) error {
 		addTagMutex.Unlock()
 		// check message does not already have this tag
 		var count int
-		if _, err := sqlf.From(tenant("message_tags")).
+
+		if err := sqlf.From(tenant("message_tags")).
 			Select("COUNT(ID)").To(&count).
 			Where("ID = ?", id).
 			Where("TagID = ?", tagID).
-			ExecAndClose(context.TODO(), db); err != nil {
+			QueryRowAndClose(context.Background(), db); err != nil {
 			return err
 		}
-		if count != 0 {
+		if count > 0 {
 			// already exists
 			return nil
 		}
@@ -213,26 +214,28 @@ func pruneUnusedTags() error {
 	return nil
 }
 
-// Find tags set via --tags in raw message.
+// Find tags set via --tags in raw message, useful for matching all headers etc.
+// This function is largely superseded by the database searching, however this
+// includes literally everything and is kept for backwards compatibility.
 // Returns a comma-separated string.
-func findTagsInRawMessage(message *[]byte) string {
-	tagStr := ""
+func findTagsInRawMessage(message *[]byte) []string {
+	tags := []string{}
 	if len(config.SMTPTags) == 0 {
-		return tagStr
+		return tags
 	}
 
-	str := strings.ToLower(string(*message))
+	str := bytes.ToLower(*message)
 	for _, t := range config.SMTPTags {
-		if strings.Contains(str, t.Match) {
-			tagStr += "," + t.Tag
+		if bytes.Contains(str, []byte(t.Match)) {
+			tags = append(tags, t.Tag)
 		}
 	}
 
-	return tagStr
+	return tags
 }
 
 // Returns tags found in email plus addresses (eg: test+tagname@example.com)
-func (d DBMailSummary) tagsFromPlusAddresses() string {
+func (d DBMailSummary) tagsFromPlusAddresses() []string {
 	tags := []string{}
 	for _, c := range d.To {
 		matches := addressPlusRe.FindAllStringSubmatch(c.Address, 1)
@@ -257,7 +260,7 @@ func (d DBMailSummary) tagsFromPlusAddresses() string {
 		tags = append(tags, strings.Split(matches[0][2], "+")...)
 	}
 
-	return strings.Join(tags, ",")
+	return tools.SetTagCasing(tags)
 }
 
 // Get message tags from the database for a given database ID
@@ -282,24 +285,27 @@ func getMessageTags(id string) []string {
 	return tags
 }
 
-// UniqueTagsFromString will split a string with commas, and extract a unique slice of formatted tags
-func uniqueTagsFromString(s string) []string {
+// SortedUniqueTags will return a unique slice of normalised tags
+func sortedUniqueTags(s []string) []string {
 	tags := []string{}
+	added := make(map[string]bool)
 
-	if s == "" {
+	if len(s) == 0 {
 		return tags
 	}
 
-	parts := strings.Split(s, ",")
-	for _, p := range parts {
+	for _, p := range s {
 		w := tools.CleanTag(p)
 		if w == "" {
 			continue
 		}
+		lc := strings.ToLower(w)
+		if _, exists := added[lc]; exists {
+			continue
+		}
 		if config.ValidTagRegexp.MatchString(w) {
-			if !inArray(w, tags) {
-				tags = append(tags, w)
-			}
+			added[lc] = true
+			tags = append(tags, w)
 		} else {
 			logger.Log().Debugf("[tags] ignoring invalid tag: %s", w)
 		}
