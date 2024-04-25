@@ -93,7 +93,7 @@ var (
 	ValidTagRegexp = regexp.MustCompile(`^([a-zA-Z0-9\-\ \_\.]){1,}$`)
 
 	// SMTPTags are expressions to apply tags to new mail
-	SMTPTags []AutoTag
+	SMTPTags []autoTag
 
 	// SMTPRelayConfigFile to parse a yaml file and store config of relay SMTP server
 	SMTPRelayConfigFile string
@@ -162,7 +162,7 @@ var (
 )
 
 // AutoTag struct for auto-tagging
-type AutoTag struct {
+type autoTag struct {
 	Tag   string
 	Match string
 }
@@ -381,7 +381,7 @@ func VerifyConfig() error {
 		}
 	}
 
-	SMTPTags = []AutoTag{}
+	SMTPTags = []autoTag{}
 
 	if SMTPCLITags != "" {
 		args := tools.ArgsParser(SMTPCLITags)
@@ -397,7 +397,7 @@ func VerifyConfig() error {
 				if len(match) == 0 {
 					return fmt.Errorf("[tag] invalid tag match (%s) - no search detected", tag)
 				}
-				SMTPTags = append(SMTPTags, AutoTag{Tag: tag, Match: match})
+				SMTPTags = append(SMTPTags, autoTag{Tag: tag, Match: match})
 			} else {
 				return fmt.Errorf("[tag] error parsing tags (%s)", a)
 			}
