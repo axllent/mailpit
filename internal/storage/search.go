@@ -294,6 +294,16 @@ func searchQueryBuilder(searchString, timezone string) *sqlf.Stmt {
 					q.Where("ReplyToJSON LIKE ?", "%"+escPercentChar(w)+"%")
 				}
 			}
+		} else if strings.HasPrefix(lw, "addressed:") {
+			w = cleanString(w[10:])
+			arg := "%" + escPercentChar(w) + "%"
+			if w != "" {
+				if exclude {
+					q.Where("(ToJSON NOT LIKE ? AND FromJSON NOT LIKE ? AND CcJSON NOT LIKE ? AND BccJSON NOT LIKE ? AND ReplyToJSON NOT LIKE ?)", arg, arg, arg, arg, arg)
+				} else {
+					q.Where("(ToJSON LIKE ? OR FromJSON LIKE ? OR CcJSON LIKE ? OR BccJSON LIKE ? OR ReplyToJSON LIKE ?)", arg, arg, arg, arg, arg)
+				}
+			}
 		} else if strings.HasPrefix(lw, "subject:") {
 			w = w[8:]
 			if w != "" {

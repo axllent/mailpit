@@ -64,9 +64,11 @@ export default {
 					}
 
 					for (let i in response.Data.Tags) {
-						if (mailbox.tags.indexOf(response.Data.Tags[i]) < 0) {
+						if (mailbox.tags.findIndex(e => { return e.toLowerCase() === response.Data.Tags[i].toLowerCase() }) < 0) {
 							mailbox.tags.push(response.Data.Tags[i])
-							mailbox.tags.sort()
+							mailbox.tags.sort((a, b) => {
+								return a.toLowerCase().localeCompare(b.toLowerCase())
+							})
 						}
 					}
 
