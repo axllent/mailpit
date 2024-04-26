@@ -127,7 +127,8 @@ func init() {
 	rootCmd.Flags().StringVar(&config.POP3TLSKey, "pop3-tls-key", config.POP3TLSKey, "Optional TLS key for POP3 server - requires pop3-tls-cert")
 
 	// Tagging
-	rootCmd.Flags().StringVarP(&config.SMTPCLITags, "tag", "t", config.SMTPCLITags, "Tag new messages matching filters")
+	rootCmd.Flags().StringVarP(&config.CLITagsArg, "tag", "t", config.CLITagsArg, "Tag new messages matching filters")
+	rootCmd.Flags().StringVar(&config.TagsConfig, "tags-config", config.TagsConfig, "Load tags filters from yaml configuration file")
 	rootCmd.Flags().BoolVar(&tools.TagsTitleCase, "tags-title-case", tools.TagsTitleCase, "TitleCase new tags generated from plus-addresses and X-Tags")
 
 	// Webhook
@@ -283,12 +284,9 @@ func initConfigFromEnv() {
 	config.POP3TLSKey = os.Getenv("MP_POP3_TLS_KEY")
 
 	// Tagging
-	if len(os.Getenv("MP_TAG")) > 0 {
-		config.SMTPCLITags = os.Getenv("MP_TAG")
-	}
-	if getEnabledFromEnv("MP_TAGS_TITLE_CASE") {
-		tools.TagsTitleCase = getEnabledFromEnv("MP_TAGS_TITLE_CASE")
-	}
+	config.CLITagsArg = os.Getenv("MP_TAG")
+	config.TagsConfig = os.Getenv("MP_TAGS_CONFIG")
+	tools.TagsTitleCase = getEnabledFromEnv("MP_TAGS_TITLE_CASE")
 
 	// Webhook
 	if len(os.Getenv("MP_WEBHOOK_URL")) > 0 {

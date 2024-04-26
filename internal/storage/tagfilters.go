@@ -3,17 +3,19 @@ package storage
 import (
 	"context"
 	"database/sql"
+	"strings"
 
 	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/internal/logger"
+	"github.com/axllent/mailpit/internal/tools"
 	"github.com/leporo/sqlf"
 )
 
 // TagFilter struct
 type TagFilter struct {
-	Search string
-	SQL    *sqlf.Stmt
-	Tags   []string
+	Match string
+	SQL   *sqlf.Stmt
+	Tags  []string
 }
 
 var tagFilters = []TagFilter{}
@@ -22,13 +24,37 @@ var tagFilters = []TagFilter{}
 func LoadTagFilters() {
 	tagFilters = []TagFilter{}
 
-	for _, t := range config.SMTPTags {
-		tagFilters = append(tagFilters, TagFilter{Search: t.Match, Tags: []string{t.Tag}, SQL: searchQueryBuilder(t.Match, "")})
+	for _, t := range config.TagFilters {
+		match := strings.TrimSpace(t.Match)
+		if match == "" {
+			logger.Log().Warnf("[tags] ignoring tag item with missing 'match'")
+			continue
+		}
+		if t.Tags == nil || len(t.Tags) == 0 {
+			logger.Log().Warnf("[tags] ignoring tag items with missing 'tags' array")
+			continue
+		}
+
+		validTags := []string{}
+		for _, tag := range t.Tags {
+			tagName := tools.CleanTag(tag)
+			if !config.ValidTagRegexp.MatchString(tagName) || len(tagName) == 0 {
+				logger.Log().Warnf("[tags] invalid tag (%s) - can only contain spaces, letters, numbers, - & _", tagName)
+				continue
+			}
+			validTags = append(validTags, tagName)
+		}
+
+		if len(validTags) == 0 {
+			continue
+		}
+
+		tagFilters = append(tagFilters, TagFilter{Match: match, Tags: validTags, SQL: searchQueryBuilder(match, "")})
 	}
 }
 
 // TagFilterMatches returns a slice of matching tags from a message
-func TagFilterMatches(id string) []string {
+func tagFilterMatches(id string) []string {
 	tags := []string{}
 
 	if len(tagFilters) == 0 {

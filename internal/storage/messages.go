@@ -112,14 +112,19 @@ func Store(body *[]byte) (string, error) {
 		return "", err
 	}
 
-	// extract tags from body matches based on --tag, plus addresses & X-Tags header
+	// extract tags from body matches
 	rawTags := findTagsInRawMessage(body)
+	// extract plus addresses tags from enmime.Envelope
 	plusTags := obj.tagsFromPlusAddresses()
+	// extract tags from X-Tags header
 	xTags := tools.SetTagCasing(strings.Split(strings.TrimSpace(env.Root.Header.Get("X-Tags")), ","))
-	searchTags := TagFilterMatches(id)
+	// extract tags from search matches
+	searchTags := tagFilterMatches(id)
 
+	// combine all tags into one slice
 	tags := append(rawTags, plusTags...)
 	tags = append(tags, xTags...)
+	// sort and extract only unique tags
 	tags = sortedUniqueTags(append(tags, searchTags...))
 
 	if len(tags) > 0 {

@@ -220,14 +220,14 @@ func pruneUnusedTags() error {
 // Returns a comma-separated string.
 func findTagsInRawMessage(message *[]byte) []string {
 	tags := []string{}
-	if len(config.SMTPTags) == 0 {
+	if len(tagFilters) == 0 {
 		return tags
 	}
 
 	str := bytes.ToLower(*message)
-	for _, t := range config.SMTPTags {
+	for _, t := range tagFilters {
 		if bytes.Contains(str, []byte(t.Match)) {
-			tags = append(tags, t.Tag)
+			tags = append(tags, t.Tags...)
 		}
 	}
 
