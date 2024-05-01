@@ -5,7 +5,7 @@ go 1.21.0
 toolchain go1.22.1
 
 require (
-	github.com/PuerkitoBio/goquery v1.9.1
+	github.com/PuerkitoBio/goquery v1.9.2
 	github.com/araddon/dateparse v0.0.0-20210429162001-6b43995a97de
 	github.com/axllent/semver v0.0.1
 	github.com/gomarkdown/markdown v0.0.0-20240419095408-642f0ee99ae2
