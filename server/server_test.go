@@ -21,8 +21,8 @@ import (
 
 var (
 	putDataStruct struct {
-		Read bool     `json:"read"`
-		IDs  []string `json:"ids"`
+		Read bool
+		IDs  []string
 	}
 )
 

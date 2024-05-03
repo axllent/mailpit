@@ -666,18 +666,18 @@ func ReleaseMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	froms, err := m.Header.AddressList("From")
+	fromAddresses, err := m.Header.AddressList("From")
 	if err != nil {
 		httpError(w, err.Error())
 		return
 	}
 
-	if len(froms) == 0 {
+	if len(fromAddresses) == 0 {
 		httpError(w, "No From header found")
 		return
 	}
 
-	from := froms[0].Address
+	from := fromAddresses[0].Address
 
 	// if sender is used, then change from to the sender
 	if senders, err := m.Header.AddressList("Sender"); err == nil {

@@ -70,9 +70,9 @@ export default {
 	},
 
 	computed: {
-		hasAnyChecksEnabled: function() {
+		hasAnyChecksEnabled: function () {
 			return (mailbox.showHTMLCheck && this.message.HTML)
-				|| mailbox.showLinkCheck 
+				|| mailbox.showLinkCheck
 				|| (mailbox.showSpamCheck && mailbox.uiConfig.SpamAssassin)
 		}
 	},
@@ -198,8 +198,8 @@ export default {
 			let self = this
 
 			var data = {
-				ids: [this.message.ID],
-				tags: this.messageTags
+				IDs: [this.message.ID],
+				Tags: this.messageTags
 			}
 
 			self.put(self.resolve('/api/v1/tags'), data, function (response) {
@@ -476,8 +476,7 @@ export default {
 				</div>
 				<button class="d-none d-xl-inline-block nav-link position-relative" id="nav-html-check-tab"
 					data-bs-toggle="tab" data-bs-target="#nav-html-check" type="button" role="tab"
-					aria-controls="nav-html" aria-selected="false"
-					v-if="mailbox.showHTMLCheck && message.HTML != ''">
+					aria-controls="nav-html" aria-selected="false" v-if="mailbox.showHTMLCheck && message.HTML != ''">
 					HTML Check
 					<span class="badge rounded-pill p-1" :class="htmlScoreColor" v-if="htmlScore !== false">
 						<small>{{ Math.floor(htmlScore) }}%</small>
@@ -494,7 +493,8 @@ export default {
 				</button>
 				<button class="d-none d-xl-inline-block nav-link position-relative" id="nav-spam-check-tab"
 					data-bs-toggle="tab" data-bs-target="#nav-spam-check" type="button" role="tab"
-					aria-controls="nav-html" aria-selected="false" v-if="mailbox.showSpamCheck && mailbox.uiConfig.SpamAssassin">
+					aria-controls="nav-html" aria-selected="false"
+					v-if="mailbox.showSpamCheck && mailbox.uiConfig.SpamAssassin">
 					Spam Analysis
 					<span class="badge rounded-pill" :class="spamScoreColor" v-if="spamScore !== false">
 						<small>{{ spamScore }}</small>
@@ -545,13 +545,13 @@ export default {
 			</div>
 			<div class="tab-pane fade" id="nav-html-check" role="tabpanel" aria-labelledby="nav-html-check-tab"
 				tabindex="0">
-				<HTMLCheck v-if="mailbox.showHTMLCheck && message.HTML != ''"
-					:message="message" @setHtmlScore="(n) => htmlScore = n" @set-badge-style="(v) => htmlScoreColor = v" />
+				<HTMLCheck v-if="mailbox.showHTMLCheck && message.HTML != ''" :message="message"
+					@setHtmlScore="(n) => htmlScore = n" @set-badge-style="(v) => htmlScoreColor = v" />
 			</div>
 			<div class="tab-pane fade" id="nav-spam-check" role="tabpanel" aria-labelledby="nav-spam-check-tab"
 				tabindex="0" v-if="mailbox.showSpamCheck && mailbox.uiConfig.SpamAssassin">
-				<SpamAssassin :message="message"
-					@setSpamScore="(n) => spamScore = n" @set-badge-style="(v) => spamScoreColor = v" />
+				<SpamAssassin :message="message" @setSpamScore="(n) => spamScore = n"
+					@set-badge-style="(v) => spamScoreColor = v" />
 			</div>
 			<div class="tab-pane fade" id="nav-link-check" role="tabpanel" aria-labelledby="nav-html-check-tab"
 				tabindex="0" v-if="mailbox.showLinkCheck">

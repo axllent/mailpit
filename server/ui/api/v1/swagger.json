@@ -927,13 +927,12 @@
       "description": "Delete request",
       "type": "object",
       "properties": {
-        "ids": {
+        "IDs": {
           "description": "Array of message database IDs",
           "type": "array",
           "items": {
             "type": "string"
           },
-          "x-go-name": "IDs",
           "example": [
             "5dec4247-812e-4b77-9101-e25ad406e9ea",
             "8ac66bbc-2d9a-4c41-ad99-00aa75fa674e"
@@ -1670,16 +1669,15 @@
       "description": "Release request",
       "type": "object",
       "required": [
-        "to"
+        "To"
       ],
       "properties": {
-        "to": {
+        "To": {
           "description": "Array of email addresses to relay the message to",
           "type": "array",
           "items": {
             "type": "string"
           },
-          "x-go-name": "To",
           "example": [
             "user1@example.com",
             "user2@example.com"
@@ -1692,23 +1690,21 @@
       "description": "Set read status request",
       "type": "object",
       "properties": {
-        "ids": {
+        "IDs": {
           "description": "Array of message database IDs",
           "type": "array",
           "items": {
             "type": "string"
           },
-          "x-go-name": "IDs",
           "example": [
             "5dec4247-812e-4b77-9101-e25ad406e9ea",
             "8ac66bbc-2d9a-4c41-ad99-00aa75fa674e"
           ]
         },
-        "read": {
+        "Read": {
           "description": "Read status",
           "type": "boolean",
           "default": false,
-          "x-go-name": "Read",
           "example": true
         }
       },
@@ -1718,29 +1714,27 @@
       "description": "Set tags request",
       "type": "object",
       "required": [
-        "tags",
-        "ids"
+        "Tags",
+        "IDs"
       ],
       "properties": {
-        "ids": {
+        "IDs": {
           "description": "Array of message database IDs",
           "type": "array",
           "items": {
             "type": "string"
           },
-          "x-go-name": "IDs",
           "example": [
             "5dec4247-812e-4b77-9101-e25ad406e9ea",
             "8ac66bbc-2d9a-4c41-ad99-00aa75fa674e"
           ]
         },
-        "tags": {
+        "Tags": {
           "description": "Array of tag names to set",
           "type": "array",
           "items": {
             "type": "string"
           },
-          "x-go-name": "Tags",
           "example": [
             "Tag 1",
             "Tag 2"
@@ -1761,7 +1755,7 @@
       }
     },
     "BinaryResponse": {
-      "description": "Binary data response inherits the attachment's content type",
+      "description": "Binary data response inherits the attachment's content type.",
       "schema": {
         "type": "string"
       }

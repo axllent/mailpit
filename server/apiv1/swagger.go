@@ -47,7 +47,7 @@ type deleteMessagesRequestBody struct {
 	//
 	// required: false
 	// example: ["5dec4247-812e-4b77-9101-e25ad406e9ea", "8ac66bbc-2d9a-4c41-ad99-00aa75fa674e"]
-	IDs []string `json:"ids"`
+	IDs []string
 }
 
 // swagger:parameters SetReadStatus
@@ -64,13 +64,13 @@ type setReadStatusRequestBody struct {
 	// required: false
 	// default: false
 	// example: true
-	Read bool `json:"read"`
+	Read bool
 
 	// Array of message database IDs
 	//
 	// required: false
 	// example: ["5dec4247-812e-4b77-9101-e25ad406e9ea", "8ac66bbc-2d9a-4c41-ad99-00aa75fa674e"]
-	IDs []string `json:"ids"`
+	IDs []string
 }
 
 // swagger:parameters SetTags
@@ -86,13 +86,13 @@ type setTagsRequestBody struct {
 	//
 	// required: true
 	// example: ["Tag 1", "Tag 2"]
-	Tags []string `json:"tags"`
+	Tags []string
 
 	// Array of message database IDs
 	//
 	// required: true
 	// example: ["5dec4247-812e-4b77-9101-e25ad406e9ea", "8ac66bbc-2d9a-4c41-ad99-00aa75fa674e"]
-	IDs []string `json:"ids"`
+	IDs []string
 }
 
 // swagger:parameters ReleaseMessage
@@ -112,10 +112,9 @@ type releaseMessageParams struct {
 // swagger:model releaseMessageRequestBody
 type releaseMessageRequestBody struct {
 	// Array of email addresses to relay the message to
-	//
 	// required: true
 	// example: ["user1@example.com", "user2@example.com"]
-	To []string `json:"to"`
+	To []string
 }
 
 // swagger:parameters HTMLCheck
@@ -156,7 +155,7 @@ type spamAssassinCheckParams struct {
 	ID string
 }
 
-// Binary data response inherits the attachment's content type
+// Binary data response inherits the attachment's content type.
 // swagger:response BinaryResponse
 type binaryResponse string
 
