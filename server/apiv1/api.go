@@ -900,6 +900,19 @@ func httpError(w http.ResponseWriter, msg string) {
 	fmt.Fprint(w, msg)
 }
 
+// httpJSONError returns a basic error message (400 response) in JSON format
+func httpJSONError(w http.ResponseWriter, msg string) {
+	w.Header().Set("Referrer-Policy", "no-referrer")
+	w.Header().Set("Content-Security-Policy", config.ContentSecurityPolicy)
+	w.WriteHeader(http.StatusBadRequest)
+	e := JSONErrorMessage{
+		Error: msg,
+	}
+	bytes, _ := json.Marshal(e)
+	w.Header().Add("Content-Type", "application/json")
+	_, _ = w.Write(bytes)
+}
+
 // Get the start and limit based on query params. Defaults to 0, 50
 func getStartLimit(req *http.Request) (start int, limit int) {
 	start = 0

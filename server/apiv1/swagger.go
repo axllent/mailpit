@@ -170,6 +170,7 @@ type htmlResponse string
 
 // HTTP error response will return with a >= 400 response code
 // swagger:response ErrorResponse
+// example: invalid request
 type errorResponse string
 
 // Plain text "ok" response
@@ -179,3 +180,21 @@ type okResponse string
 // Plain JSON array response
 // swagger:response ArrayResponse
 type arrayResponse []string
+
+// Confirmation message for HTTP send API
+// swagger:response sendMessageResponse
+type sendMessageResponse struct {
+	// Response for sending messages via the HTTP API
+	//
+	// in: body
+	Body SendMessageConfirmation
+}
+
+// JSON error response
+// swagger:response jsonErrorResponse
+type jsonErrorResponse struct {
+	// A JSON-encoded error response
+	//
+	// in: body
+	Body JSONErrorMessage
+}

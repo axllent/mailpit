@@ -23,7 +23,15 @@ var (
 	DisableReverseDNS bool
 )
 
+// MailHandler handles the incoming message to store in the database
 func mailHandler(origin net.Addr, from string, to []string, data []byte) error {
+	_, err := Store(origin, from, to, data)
+
+	return err
+}
+
+// Store will attempt to save a message to the database
+func Store(origin net.Addr, from string, to []string, data []byte) (string, error) {
 	if !config.SMTPStrictRFCHeaders {
 		// replace all <CR><CR><LF> (\r\r\n) with <CR><LF> (\r\n)
 		// @see https://github.com/axllent/mailpit/issues/87 & https://github.com/axllent/mailpit/issues/153
@@ -34,7 +42,7 @@ func mailHandler(origin net.Addr, from string, to []string, data []byte) error {
 	if err != nil {
 		logger.Log().Errorf("[smtpd] error parsing message: %s", err.Error())
 		stats.LogSMTPRejected()
-		return err
+		return "", err
 	}
 
 	// check / set the Return-Path based on SMTP from
@@ -70,7 +78,7 @@ func mailHandler(origin net.Addr, from string, to []string, data []byte) error {
 		if storage.MessageIDExists(messageID) {
 			logger.Log().Debugf("[smtpd] duplicate message found, ignoring %s", messageID)
 			stats.LogSMTPIgnored()
-			return nil
+			return "", nil
 		}
 	}
 
@@ -117,10 +125,10 @@ func mailHandler(origin net.Addr, from string, to []string, data []byte) error {
 		logger.Log().Debugf("[smtpd] added missing addresses to Bcc header: %s", strings.Join(missingAddresses, ", "))
 	}
 
-	_, err = storage.Store(&data)
+	id, err := storage.Store(&data)
 	if err != nil {
 		logger.Log().Errorf("[db] error storing message: %s", err.Error())
-		return err
+		return "", err
 	}
 
 	stats.LogSMTPAccepted(len(data))
@@ -130,7 +138,7 @@ func mailHandler(origin net.Addr, from string, to []string, data []byte) error {
 	subject := msg.Header.Get("Subject")
 	logger.Log().Debugf("[smtpd] received (%s) from:%s subject:%q", cleanIP(origin), from, subject)
 
-	return nil
+	return id, err
 }
 
 func authHandler(remoteAddr net.Addr, mechanism string, username []byte, password []byte, _ []byte) (bool, error) {
