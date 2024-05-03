@@ -666,18 +666,18 @@ func ReleaseMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	froms, err := m.Header.AddressList("From")
+	fromAddresses, err := m.Header.AddressList("From")
 	if err != nil {
 		httpError(w, err.Error())
 		return
 	}
 
-	if len(froms) == 0 {
+	if len(fromAddresses) == 0 {
 		httpError(w, "No From header found")
 		return
 	}
 
-	from := froms[0].Address
+	from := fromAddresses[0].Address
 
 	// if sender is used, then change from to the sender
 	if senders, err := m.Header.AddressList("Sender"); err == nil {
@@ -898,6 +898,19 @@ func httpError(w http.ResponseWriter, msg string) {
 	w.WriteHeader(http.StatusBadRequest)
 	w.Header().Set("Content-Type", "text/plain")
 	fmt.Fprint(w, msg)
+}
+
+// httpJSONError returns a basic error message (400 response) in JSON format
+func httpJSONError(w http.ResponseWriter, msg string) {
+	w.Header().Set("Referrer-Policy", "no-referrer")
+	w.Header().Set("Content-Security-Policy", config.ContentSecurityPolicy)
+	w.WriteHeader(http.StatusBadRequest)
+	e := JSONErrorMessage{
+		Error: msg,
+	}
+	bytes, _ := json.Marshal(e)
+	w.Header().Add("Content-Type", "application/json")
+	_, _ = w.Write(bytes)
 }
 
 // Get the start and limit based on query params. Defaults to 0, 50

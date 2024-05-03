@@ -21,8 +21,8 @@ import (
 
 var (
 	putDataStruct struct {
-		Read bool     `json:"read"`
-		IDs  []string `json:"ids"`
+		Read bool
+		IDs  []string
 	}
 )
 
@@ -202,6 +202,106 @@ func TestAPIv1Search(t *testing.T) {
 	assertSearchEqual(t, ts.URL+"/api/v1/search", "!tag:\"Test tag 023\"", 99)
 }
 
+func TestAPIv1Send(t *testing.T) {
+	setup()
+	defer storage.Close()
+
+	r := apiRoutes()
+
+	ts := httptest.NewServer(r)
+	defer ts.Close()
+
+	jsonData := `{
+		"From": {
+		  "Email": "john@example.com",
+		  "Name": "John Doe"
+		},
+		"To": [
+		  {
+			"Email": "jane@example.com",
+			"Name": "Jane Doe"
+		  }
+		],
+		"Cc": [
+		  {
+			"Email": "manager1@example.com",
+			"Name": "Manager 1"
+		  },
+		  {
+			"Email": "manager2@example.com",
+			"Name": "Manager 2"
+		  }
+		],
+		"Bcc": ["jack@example.com"],
+		"Headers": {
+			"X-IP": "1.2.3.4"
+		},
+		"Subject": "Mailpit message via the HTTP API",
+		"Text": "This is the text body",
+		"HTML": "<p style=\"font-family: arial\">Mailpit is <b>awesome</b>!</p>",
+		"Attachments": [
+		  {
+			"Content": "VGhpcyBpcyBhIHBsYWluIHRleHQgYXR0YWNobWVudA==",
+			"Filename": "Attached File.txt"
+		  }
+		],
+		"ReplyTo": [
+		  {
+			"Email": "secretary@example.com",
+			"Name": "Secretary"
+		  }
+		],
+		"Tags": [
+		  "Tag 1",
+		  "Tag 2"
+		]
+	  }`
+
+	t.Log("Sending message via HTTP API")
+	b, err := clientPost(ts.URL+"/api/v1/send", jsonData)
+	if err != nil {
+		t.Errorf("Expected nil, received %s", err.Error())
+	}
+
+	resp := apiv1.SendMessageConfirmation{}
+
+	if err := json.Unmarshal(b, &resp); err != nil {
+		t.Errorf(err.Error())
+		return
+	}
+
+	t.Logf("Fetching response for message %s", resp.ID)
+	msg, err := fetchMessage(ts.URL + "/api/v1/message/" + resp.ID)
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+
+	t.Logf("Testing response for message %s", resp.ID)
+	assertEqual(t, `Mailpit message via the HTTP API`, msg.Subject, "wrong subject")
+	assertEqual(t, `This is the text body`, msg.Text, "wrong text")
+	assertEqual(t, `<p style="font-family: arial">Mailpit is <b>awesome</b>!</p>`, msg.HTML, "wrong HTML")
+	assertEqual(t, `"John Doe" <john@example.com>`, msg.From.String(), "wrong HTML")
+	assertEqual(t, 1, len(msg.To), "wrong To count")
+	assertEqual(t, `"Jane Doe" <jane@example.com>`, msg.To[0].String(), "wrong To address")
+	assertEqual(t, 2, len(msg.Cc), "wrong Cc count")
+	assertEqual(t, `"Manager 1" <manager1@example.com>`, msg.Cc[0].String(), "wrong Cc address")
+	assertEqual(t, `"Manager 2" <manager2@example.com>`, msg.Cc[1].String(), "wrong Cc address")
+	assertEqual(t, 1, len(msg.Bcc), "wrong Bcc count")
+	assertEqual(t, `<jack@example.com>`, msg.Bcc[0].String(), "wrong Bcc address")
+	assertEqual(t, 1, len(msg.ReplyTo), "wrong Reply-To count")
+	assertEqual(t, `"Secretary" <secretary@example.com>`, msg.ReplyTo[0].String(), "wrong Reply-To address")
+	assertEqual(t, 2, len(msg.Tags), "wrong Tags count")
+	assertEqual(t, `Tag 1,Tag 2`, strings.Join(msg.Tags, ","), "wrong Tags")
+	assertEqual(t, 1, len(msg.Attachments), "wrong Attachment count")
+	assertEqual(t, `Attached File.txt`, msg.Attachments[0].FileName, "wrong Attachment name")
+
+	attachmentBytes, err := clientGet(ts.URL + "/api/v1/message/" + resp.ID + "/part/" + msg.Attachments[0].PartID)
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+	assertEqual(t, `This is a plain text attachment`, string(attachmentBytes), "wrong Attachment content")
+}
+
 func setup() {
 	logger.NoLogging = true
 	config.MaxMessages = 0
@@ -288,7 +388,21 @@ func insertEmailData(t *testing.T) {
 			t.Fail()
 		}
 	}
+}
 
+func fetchMessage(url string) (storage.Message, error) {
+	m := storage.Message{}
+
+	data, err := clientGet(url)
+	if err != nil {
+		return m, err
+	}
+
+	if err := json.Unmarshal(data, &m); err != nil {
+		return m, err
+	}
+
+	return m, nil
 }
 
 func fetchMessages(url string) (apiv1.MessagesSummary, error) {
@@ -352,6 +466,31 @@ func clientPut(url, body string) ([]byte, error) {
 
 	b := strings.NewReader(body)
 	req, err := http.NewRequest("PUT", url, b)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("%s returned status %d", url, resp.StatusCode)
+	}
+
+	data, err := io.ReadAll(resp.Body)
+
+	return data, err
+}
+
+func clientPost(url, body string) ([]byte, error) {
+	client := new(http.Client)
+
+	b := strings.NewReader(body)
+	req, err := http.NewRequest("POST", url, b)
 	if err != nil {
 		return nil, err
 	}

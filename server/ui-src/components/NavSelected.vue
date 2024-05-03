@@ -29,7 +29,7 @@ export default {
             if (!mailbox.selected.length) {
                 return false
             }
-            self.put(self.resolve(`/api/v1/messages`), { 'read': true, 'ids': mailbox.selected }, function (response) {
+            self.put(self.resolve(`/api/v1/messages`), { 'Read': true, 'IDs': mailbox.selected }, function (response) {
                 window.scrollInPlace = true
                 self.loadMessages()
             })
@@ -45,7 +45,7 @@ export default {
             if (!mailbox.selected.length) {
                 return false
             }
-            self.put(self.resolve(`/api/v1/messages`), { 'read': false, 'ids': mailbox.selected }, function (response) {
+            self.put(self.resolve(`/api/v1/messages`), { 'Read': false, 'IDs': mailbox.selected }, function (response) {
                 window.scrollInPlace = true
                 self.loadMessages()
             })
@@ -59,7 +59,7 @@ export default {
             if (!ids.length) {
                 return false
             }
-            self.delete(self.resolve(`/api/v1/messages`), { 'ids': ids }, function (response) {
+            self.delete(self.resolve(`/api/v1/messages`), { 'IDs': ids }, function (response) {
                 window.scrollInPlace = true
                 self.loadMessages()
             })

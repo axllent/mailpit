@@ -19,18 +19,29 @@ var (
 	TagsTitleCase bool
 )
 
-// CleanTag returns a clean tag, removing whitespace and invalid characters
+// CleanTag returns a clean tag, trimming whitespace and replacing invalid characters
 func CleanTag(s string) string {
-	s = strings.TrimSpace(
+	return strings.TrimSpace(
 		multiSpaceRe.ReplaceAllString(
 			tagsInvalidChars.ReplaceAllString(s, " "),
 			" ",
 		),
 	)
+}
 
-	if TagsTitleCase {
-		return cases.Title(language.Und, cases.NoLower).String(s)
+// SetTagCasing returns the slice of tags, title-casing if set
+func SetTagCasing(s []string) []string {
+	if !TagsTitleCase {
+		return s
 	}
 
-	return s
+	titleTags := []string{}
+
+	c := cases.Title(language.Und, cases.NoLower)
+
+	for _, t := range s {
+		titleTags = append(titleTags, c.String(t))
+	}
+
+	return titleTags
 }

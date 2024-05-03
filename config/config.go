@@ -15,7 +15,6 @@ import (
 	"github.com/axllent/mailpit/internal/auth"
 	"github.com/axllent/mailpit/internal/logger"
 	"github.com/axllent/mailpit/internal/spamassassin"
-	"github.com/axllent/mailpit/internal/tools"
 	"gopkg.in/yaml.v3"
 )
 
@@ -86,14 +85,17 @@ var (
 	// BlockRemoteCSSAndFonts used to disable remote CSS & fonts
 	BlockRemoteCSSAndFonts = false
 
-	// SMTPCLITags is used to map the CLI args
-	SMTPCLITags string
+	// CLITagsArg is used to map the CLI args
+	CLITagsArg string
 
 	// ValidTagRegexp represents a valid tag
 	ValidTagRegexp = regexp.MustCompile(`^([a-zA-Z0-9\-\ \_\.]){1,}$`)
 
-	// SMTPTags are expressions to apply tags to new mail
-	SMTPTags []AutoTag
+	// TagsConfig is a yaml file to pre-load tags
+	TagsConfig string
+
+	// TagFilters are used to apply tags to new mail
+	TagFilters []autoTag
 
 	// SMTPRelayConfigFile to parse a yaml file and store config of relay SMTP server
 	SMTPRelayConfigFile string
@@ -162,9 +164,9 @@ var (
 )
 
 // AutoTag struct for auto-tagging
-type AutoTag struct {
-	Tag   string
+type autoTag struct {
 	Match string
+	Tags  []string
 }
 
 // SMTPRelayConfigStruct struct for parsing yaml & storing variables
@@ -381,27 +383,13 @@ func VerifyConfig() error {
 		}
 	}
 
-	SMTPTags = []AutoTag{}
-
-	if SMTPCLITags != "" {
-		args := tools.ArgsParser(SMTPCLITags)
-
-		for _, a := range args {
-			t := strings.Split(a, "=")
-			if len(t) > 1 {
-				tag := tools.CleanTag(t[0])
-				if !ValidTagRegexp.MatchString(tag) || len(tag) == 0 {
-					return fmt.Errorf("[tag] invalid tag (%s) - can only contain spaces, letters, numbers, - & _", tag)
-				}
-				match := strings.TrimSpace(strings.ToLower(strings.Join(t[1:], "=")))
-				if len(match) == 0 {
-					return fmt.Errorf("[tag] invalid tag match (%s) - no search detected", tag)
-				}
-				SMTPTags = append(SMTPTags, AutoTag{Tag: tag, Match: match})
-			} else {
-				return fmt.Errorf("[tag] error parsing tags (%s)", a)
-			}
-		}
+	// load tag filters
+	TagFilters = []autoTag{}
+	if err := loadTagsFromArgs(CLITagsArg); err != nil {
+		return err
+	}
+	if err := loadTagsFromConfig(TagsConfig); err != nil {
+		return err
 	}
 
 	if SMTPAllowedRecipients != "" {

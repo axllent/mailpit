@@ -1,6 +1,10 @@
 package htmlcheck
 
-import "sort"
+import (
+	"sort"
+
+	"github.com/axllent/mailpit/internal/tools"
+)
 
 // Platforms returns all platforms with their respective email clients
 func Platforms() (map[string][]string, error) {
@@ -19,7 +23,7 @@ func Platforms() (map[string][]string, error) {
 				if !found {
 					data[platform] = []string{}
 				}
-				if !inArray(niceFamily, c) {
+				if !tools.InArray(niceFamily, c) {
 					c = append(c, niceFamily)
 					data[platform] = c
 				}

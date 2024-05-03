@@ -2,6 +2,25 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.18.0]
+
+### Chore
+- Update node dependencies
+- Update Go dependencies
+- Update go-release-action
+- JSON key case-consistency for posted API data (backwards-compatible)
+- Remove function duplication - use common tools.InArray()
+- Improve tag sorting in web UI, ignore casing
+- Replace moment JS library with dayjs
+- Auto-update relative received message times
+
+### Feature
+- API endpoint for sending ([#278](https://github.com/axllent/mailpit/issues/278))
+- Set tagging filters via a config file
+- Search filter support for auto-tagging
+- New search filter prefix `addressed:` includes From, To, Cc, Bcc & Reply-To
+
+
 ## [v1.17.1]
 
 ### Chore

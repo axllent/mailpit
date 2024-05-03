@@ -108,6 +108,8 @@ func InitDB() error {
 		return err
 	}
 
+	LoadTagFilters()
+
 	dbFile = p
 	dbLastAction = time.Now()
 

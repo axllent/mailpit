@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
+	"github.com/axllent/mailpit/internal/tools"
 	"github.com/gomarkdown/markdown"
 	"github.com/gomarkdown/markdown/html"
 	"github.com/gomarkdown/markdown/parser"
@@ -136,12 +137,12 @@ func (c CanIEmail) getTest(k string) (Warning, error) {
 	var y, n, p float32
 
 	for family, stats := range found.Stats {
-		if len(LimitFamilies) != 0 && !inArray(family, LimitFamilies) {
+		if len(LimitFamilies) != 0 && !tools.InArray(family, LimitFamilies) {
 			continue
 		}
 
 		for platform, clients := range stats.(map[string]interface{}) {
-			if len(LimitPlatforms) != 0 && !inArray(platform, LimitPlatforms) {
+			if len(LimitPlatforms) != 0 && !tools.InArray(platform, LimitPlatforms) {
 				continue
 			}
 			for version, support := range clients.(map[string]interface{}) {
@@ -180,18 +181,6 @@ func (c CanIEmail) getTest(k string) (Warning, error) {
 	warning.Score.Partial = p / total * 100
 
 	return warning, nil
-}
-
-func inArray(n string, h []string) bool {
-	n = strings.ToLower(n)
-
-	for _, v := range h {
-		if strings.ToLower(v) == n {
-			return true
-		}
-	}
-
-	return false
 }
 
 // Convert markdown to HTML, stripping <p> & </p>

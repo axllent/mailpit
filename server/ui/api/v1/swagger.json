@@ -606,6 +606,43 @@
         }
       }
     },
+    "/api/v1/send": {
+      "post": {
+        "description": "Send a message via the HTTP API.",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "message"
+        ],
+        "summary": "Send a message",
+        "operationId": "SendMessage",
+        "parameters": [
+          {
+            "name": "Body",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/SendRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/sendMessageResponse"
+          },
+          "default": {
+            "$ref": "#/responses/jsonErrorResponse"
+          }
+        }
+      }
+    },
     "/api/v1/tags": {
       "get": {
         "description": "Returns a JSON array of all unique message tags.",
@@ -890,13 +927,12 @@
       "description": "Delete request",
       "type": "object",
       "properties": {
-        "ids": {
+        "IDs": {
           "description": "Array of message database IDs",
           "type": "array",
           "items": {
             "type": "string"
           },
-          "x-go-name": "IDs",
           "example": [
             "5dec4247-812e-4b77-9101-e25ad406e9ea",
             "8ac66bbc-2d9a-4c41-ad99-00aa75fa674e"
@@ -1082,6 +1118,18 @@
       },
       "x-go-name": "Warning",
       "x-go-package": "github.com/axllent/mailpit/internal/htmlcheck"
+    },
+    "JSONErrorMessage": {
+      "description": "JSONErrorMessage struct",
+      "type": "object",
+      "properties": {
+        "Error": {
+          "description": "Error message",
+          "type": "string",
+          "example": "invalid format"
+        }
+      },
+      "x-go-package": "github.com/axllent/mailpit/server/apiv1"
     },
     "Link": {
       "description": "Link struct",
@@ -1375,6 +1423,182 @@
       },
       "x-go-package": "github.com/axllent/mailpit/internal/spamassassin"
     },
+    "SendMessageConfirmation": {
+      "description": "SendMessageConfirmation struct",
+      "type": "object",
+      "properties": {
+        "ID": {
+          "description": "Database ID",
+          "type": "string",
+          "example": "iAfZVVe2UQFNSG5BAjgYwa"
+        }
+      },
+      "x-go-package": "github.com/axllent/mailpit/server/apiv1"
+    },
+    "SendRequest": {
+      "description": "SendRequest to send a message via HTTP",
+      "type": "object",
+      "required": [
+        "From"
+      ],
+      "properties": {
+        "Attachments": {
+          "description": "Attachments",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "Content",
+              "Filename"
+            ],
+            "properties": {
+              "Content": {
+                "description": "Base64-encoded string of the file content",
+                "type": "string",
+                "example": "VGhpcyBpcyBhIHBsYWluIHRleHQgYXR0YWNobWVudA=="
+              },
+              "Filename": {
+                "description": "Filename",
+                "type": "string",
+                "example": "AttachedFile.txt"
+              }
+            }
+          }
+        },
+        "Bcc": {
+          "description": "Bcc recipients email addresses only",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "example": [
+            "jack@example.com"
+          ]
+        },
+        "Cc": {
+          "description": "Cc recipients",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "Email"
+            ],
+            "properties": {
+              "Email": {
+                "description": "Email address",
+                "type": "string",
+                "example": "manager@example.com"
+              },
+              "Name": {
+                "description": "Optional name",
+                "type": "string",
+                "example": "Manager"
+              }
+            }
+          }
+        },
+        "From": {
+          "description": "\"From\" recipient",
+          "type": "object",
+          "required": [
+            "Email"
+          ],
+          "properties": {
+            "Email": {
+              "description": "Email address",
+              "type": "string",
+              "example": "john@example.com"
+            },
+            "Name": {
+              "description": "Optional name",
+              "type": "string",
+              "example": "John Doe"
+            }
+          }
+        },
+        "HTML": {
+          "description": "Message body (HTML)",
+          "type": "string",
+          "example": "\u003cp style=\"font-family: arial\"\u003eMailpit is \u003cb\u003eawesome\u003c/b\u003e!\u003c/p\u003e"
+        },
+        "Headers": {
+          "description": "Optional headers in {\"key\":\"value\"} format",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "example": {
+            "X-IP": "1.2.3.4"
+          }
+        },
+        "ReplyTo": {
+          "description": "Optional Reply-To recipients",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "Email"
+            ],
+            "properties": {
+              "Email": {
+                "description": "Email address",
+                "type": "string",
+                "example": "secretary@example.com"
+              },
+              "Name": {
+                "description": "Optional name",
+                "type": "string",
+                "example": "Secretary"
+              }
+            }
+          }
+        },
+        "Subject": {
+          "description": "Subject",
+          "type": "string",
+          "example": "Mailpit message via the HTTP API"
+        },
+        "Tags": {
+          "description": "Mailpit tags",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "example": [
+            "Tag 1",
+            "Tag 2"
+          ]
+        },
+        "Text": {
+          "description": "Message body (text)",
+          "type": "string",
+          "example": "This is the text body"
+        },
+        "To": {
+          "description": "\"To\" recipients",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "Email"
+            ],
+            "properties": {
+              "Email": {
+                "description": "Email address",
+                "type": "string",
+                "example": "jane@example.com"
+              },
+              "Name": {
+                "description": "Optional name",
+                "type": "string",
+                "example": "Jane Doe"
+              }
+            }
+          }
+        }
+      },
+      "x-go-package": "github.com/axllent/mailpit/server/apiv1"
+    },
     "SpamAssassinResponse": {
       "description": "Result is a SpamAssassin result",
       "type": "object",
@@ -1445,16 +1669,15 @@
       "description": "Release request",
       "type": "object",
       "required": [
-        "to"
+        "To"
       ],
       "properties": {
-        "to": {
+        "To": {
           "description": "Array of email addresses to relay the message to",
           "type": "array",
           "items": {
             "type": "string"
           },
-          "x-go-name": "To",
           "example": [
             "user1@example.com",
             "user2@example.com"
@@ -1467,23 +1690,21 @@
       "description": "Set read status request",
       "type": "object",
       "properties": {
-        "ids": {
+        "IDs": {
           "description": "Array of message database IDs",
           "type": "array",
           "items": {
             "type": "string"
           },
-          "x-go-name": "IDs",
           "example": [
             "5dec4247-812e-4b77-9101-e25ad406e9ea",
             "8ac66bbc-2d9a-4c41-ad99-00aa75fa674e"
           ]
         },
-        "read": {
+        "Read": {
           "description": "Read status",
           "type": "boolean",
           "default": false,
-          "x-go-name": "Read",
           "example": true
         }
       },
@@ -1493,29 +1714,27 @@
       "description": "Set tags request",
       "type": "object",
       "required": [
-        "tags",
-        "ids"
+        "Tags",
+        "IDs"
       ],
       "properties": {
-        "ids": {
+        "IDs": {
           "description": "Array of message database IDs",
           "type": "array",
           "items": {
             "type": "string"
           },
-          "x-go-name": "IDs",
           "example": [
             "5dec4247-812e-4b77-9101-e25ad406e9ea",
             "8ac66bbc-2d9a-4c41-ad99-00aa75fa674e"
           ]
         },
-        "tags": {
+        "Tags": {
           "description": "Array of tag names to set",
           "type": "array",
           "items": {
             "type": "string"
           },
-          "x-go-name": "Tags",
           "example": [
             "Tag 1",
             "Tag 2"
@@ -1536,7 +1755,7 @@
       }
     },
     "BinaryResponse": {
-      "description": "Binary data response inherits the attachment's content type",
+      "description": "Binary data response inherits the attachment's content type.",
       "schema": {
         "type": "string"
       }
@@ -1581,6 +1800,18 @@
       "description": "Web UI configuration",
       "schema": {
         "$ref": "#/definitions/WebUIConfiguration"
+      }
+    },
+    "jsonErrorResponse": {
+      "description": "JSON error response",
+      "schema": {
+        "$ref": "#/definitions/JSONErrorMessage"
+      }
+    },
+    "sendMessageResponse": {
+      "description": "Confirmation message for HTTP send API",
+      "schema": {
+        "$ref": "#/definitions/SendMessageConfirmation"
       }
     }
   }

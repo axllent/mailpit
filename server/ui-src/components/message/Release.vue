@@ -1,4 +1,3 @@
-
 <script>
 import AjaxLoader from '../AjaxLoader.vue'
 import Tags from "bootstrap5-tags"
@@ -60,7 +59,7 @@ export default {
 				}
 
 				let data = {
-					to: self.addresses
+					To: self.addresses
 				}
 
 				self.post(self.resolve('/api/v1/message/' + self.message.ID + '/release'), data, function (response) {
@@ -103,8 +102,9 @@ export default {
 						<label class="col-sm-2 col-form-label text-body-secondary">Send to</label>
 						<div class="col-sm-10">
 							<select class="form-select tag-selector" v-model="addresses" multiple data-allow-new="true"
-								data-clear-end="true" data-allow-clear="true" data-placeholder="Enter email addresses..."
-								data-add-on-blur="true" data-badge-style="primary"
+								data-clear-end="true" data-allow-clear="true"
+								data-placeholder="Enter email addresses..." data-add-on-blur="true"
+								data-badge-style="primary"
 								data-regex='^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$'
 								data-separator="|,|">
 								<option value="">Enter email addresses...</option>
@@ -127,16 +127,17 @@ export default {
 						</div>
 					</div>
 					<div class="form-text text-center" v-if="mailbox.uiConfig.MessageRelay.AllowedRecipients != ''">
-						Note: A recipient allowlist has been configured. Any mail address not matching it will be rejected.
-						<br class="d-none d-md-inline">
+						Note: A recipient allowlist has been configured. Any mail address not matching it will be
+						rejected.<br class="d-none d-md-inline">
 						Allowed recipients: <b>{{ mailbox.uiConfig.MessageRelay.AllowedRecipients }}</b>
 					</div>
 					<div class="form-text text-center">
 						Note: For testing purposes, a unique Message-Id will be generated on send.
 						<br class="d-none d-md-inline">
 						SMTP delivery failures will bounce back to
-						<b v-if="mailbox.uiConfig.MessageRelay.ReturnPath != ''">{{ mailbox.uiConfig.MessageRelay.ReturnPath
-						}}</b>
+						<b v-if="mailbox.uiConfig.MessageRelay.ReturnPath != ''">
+							{{ mailbox.uiConfig.MessageRelay.ReturnPath }}
+						</b>
 						<b v-else>{{ message.ReturnPath }}</b>.
 					</div>
 				</div>
