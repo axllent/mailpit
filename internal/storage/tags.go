@@ -25,7 +25,7 @@ func SetMessageTags(id string, tags []string) error {
 	applyTags := []string{}
 	for _, t := range tags {
 		t = tools.CleanTag(t)
-		if t != "" && config.ValidTagRegexp.MatchString(t) && !inArray(t, applyTags) {
+		if t != "" && config.ValidTagRegexp.MatchString(t) && !tools.InArray(t, applyTags) {
 			applyTags = append(applyTags, t)
 		}
 	}
@@ -34,7 +34,7 @@ func SetMessageTags(id string, tags []string) error {
 	origTagCount := len(currentTags)
 
 	for _, t := range applyTags {
-		if t == "" || !config.ValidTagRegexp.MatchString(t) || inArray(t, currentTags) {
+		if t == "" || !config.ValidTagRegexp.MatchString(t) || tools.InArray(t, currentTags) {
 			continue
 		}
 
@@ -47,7 +47,7 @@ func SetMessageTags(id string, tags []string) error {
 		currentTags = getMessageTags(id)
 
 		for _, t := range currentTags {
-			if !inArray(t, applyTags) {
+			if !tools.InArray(t, applyTags) {
 				if err := DeleteMessageTag(id, t); err != nil {
 					return err
 				}
