@@ -24,10 +24,8 @@ func AppInfo(w http.ResponseWriter, _ *http.Request) {
 	//		200: InfoResponse
 	//		default: ErrorResponse
 
-	info := stats.Load()
-
-	bytes, _ := json.Marshal(info)
-
 	w.Header().Add("Content-Type", "application/json")
-	_, _ = w.Write(bytes)
+	if err := json.NewEncoder(w).Encode(stats.Load()); err != nil {
+		httpError(w, err.Error())
+	}
 }

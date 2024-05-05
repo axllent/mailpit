@@ -324,8 +324,6 @@ func index(w http.ResponseWriter, _ *http.Request) {
 		panic(err)
 	}
 
-	buff.Bytes()
-
 	w.Header().Add("Content-Type", "text/html")
 	_, _ = w.Write(buff.Bytes())
 }
