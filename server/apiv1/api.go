@@ -727,7 +727,7 @@ func ReleaseMessage(w http.ResponseWriter, r *http.Request) {
 func HTMLCheck(w http.ResponseWriter, r *http.Request) {
 	// swagger:route GET /api/v1/message/{ID}/html-check Other HTMLCheck
 	//
-	// # HTML check (beta)
+	// # HTML check
 	//
 	// Returns the summary of the message HTML checker.
 	//
@@ -780,7 +780,7 @@ func HTMLCheck(w http.ResponseWriter, r *http.Request) {
 func LinkCheck(w http.ResponseWriter, r *http.Request) {
 	// swagger:route GET /api/v1/message/{ID}/link-check Other LinkCheck
 	//
-	// # Link check (beta)
+	// # Link check
 	//
 	// Returns the summary of the message Link checker.
 	//
@@ -831,12 +831,9 @@ func LinkCheck(w http.ResponseWriter, r *http.Request) {
 func SpamAssassinCheck(w http.ResponseWriter, r *http.Request) {
 	// swagger:route GET /api/v1/message/{ID}/sa-check Other SpamAssassinCheck
 	//
-	// # SpamAssassin check (beta)
+	// # SpamAssassin check
 	//
-	// Returns the SpamAssassin (if enabled) summary of the message.
-	//
-	// NOTE: This feature is currently in beta and is documented for reference only.
-	// Please do not integrate with it (yet) as there may be changes.
+	// Returns the SpamAssassin summary (if enabled) of the message.
 	//
 	//	Produces:
 	//	- application/json
