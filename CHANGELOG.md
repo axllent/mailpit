@@ -2,6 +2,17 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.18.1]
+
+### Chore
+- Update node dependencies
+- Update Go dependencies
+- Simplify JSON HTTP responses
+
+### Feature
+- Return queued Message ID in SMTP response ([#293](https://github.com/axllent/mailpit/issues/293))
+
+
 ## [v1.18.0]
 
 ### Chore
