@@ -125,7 +125,7 @@ export default {
 			]
 		},
 
-		scoreColor: function() {
+		scoreColor: function () {
 			return this.graphSections[0].color
 		},
 	}
@@ -206,10 +206,6 @@ export default {
 					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 				</div>
 				<div class="modal-body">
-					<p>
-						Spam Analysis is currently in beta. Constructive feedback is welcome via
-						<a href="https://github.com/axllent/mailpit/issues" target="_blank">GitHub</a>.
-					</p>
 					<div class="accordion" id="SpamAnalysisAboutAccordion">
 						<div class="accordion-item">
 							<h2 class="accordion-header">
@@ -218,13 +214,14 @@ export default {
 									What is Spam Analysis?
 								</button>
 							</h2>
-							<div id="col1" class="accordion-collapse collapse" data-bs-parent="#SpamAnalysisAboutAccordion">
+							<div id="col1" class="accordion-collapse collapse"
+								data-bs-parent="#SpamAnalysisAboutAccordion">
 								<div class="accordion-body">
 									<p>
 										Mailpit integrates with SpamAssassin to provide you with some insight into the
 										"spamminess" of your messages. It sends your complete message (including any
-										attachments) to a running SpamAssassin server and then displays the results returned
-										by SpamAssassin.
+										attachments) to a running SpamAssassin server and then displays the results
+										returned by SpamAssassin.
 									</p>
 								</div>
 							</div>
@@ -236,16 +233,17 @@ export default {
 									How does the point system work?
 								</button>
 							</h2>
-							<div id="col2" class="accordion-collapse collapse" data-bs-parent="#SpamAnalysisAboutAccordion">
+							<div id="col2" class="accordion-collapse collapse"
+								data-bs-parent="#SpamAnalysisAboutAccordion">
 								<div class="accordion-body">
 									<p>
 										The default spam threshold is <code>5</code>, meaning any score lower than 5 is
 										considered ham (not spam), and any score of 5 or above is spam.
 									</p>
 									<p>
-										SpamAssassin will also return the tests which are triggered by the message. These
-										tests can differ depending on the configuration of your SpamAssassin server. The
-										total of this score makes up the the "spamminess" of the message.
+										SpamAssassin will also return the tests which are triggered by the message.
+										These tests can differ depending on the configuration of your SpamAssassin
+										server. The total of this score makes up the the "spamminess" of the message.
 									</p>
 								</div>
 							</div>
@@ -257,7 +255,8 @@ export default {
 									But I don't agree with the results...
 								</button>
 							</h2>
-							<div id="col3" class="accordion-collapse collapse" data-bs-parent="#SpamAnalysisAboutAccordion">
+							<div id="col3" class="accordion-collapse collapse"
+								data-bs-parent="#SpamAnalysisAboutAccordion">
 								<div class="accordion-body">
 									<p>
 										Mailpit does not manipulate the results nor determine the "spamminess" of
@@ -265,8 +264,9 @@ export default {
 										dependent on how SpamAssassin is set up and optionally trained.
 									</p>
 									<p>
-										This tool is simply provided as an aid to assist you. If you are running your own
-										instance of SpamAssassin, then you look into your SpamAssassin configuration.
+										This tool is simply provided as an aid to assist you. If you are running your
+										own instance of SpamAssassin, then you look into your SpamAssassin
+										configuration.
 									</p>
 								</div>
 							</div>
@@ -278,14 +278,15 @@ export default {
 									Where can I find more information about the triggered rules?
 								</button>
 							</h2>
-							<div id="col4" class="accordion-collapse collapse" data-bs-parent="#SpamAnalysisAboutAccordion">
+							<div id="col4" class="accordion-collapse collapse"
+								data-bs-parent="#SpamAnalysisAboutAccordion">
 								<div class="accordion-body">
 									<p>
 										Unfortunately the current <a href="https://spamassassin.apache.org/"
 											target="_blank">SpamAssassin website</a> no longer contains any relative
-										documentation
-										about these, most likely because the rules come from different locations and change
-										often. You will need to search the internet for these yourself.
+										documentation about these, most likely because the rules come from different
+										locations and change often. You will need to search the internet for these
+										yourself.
 									</p>
 								</div>
 							</div>

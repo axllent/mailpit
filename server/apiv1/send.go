@@ -157,10 +157,10 @@ func SendMessageHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	bytes, _ := json.Marshal(SendMessageConfirmation{ID: id})
-
 	w.Header().Add("Content-Type", "application/json")
-	_, _ = w.Write(bytes)
+	if err := json.NewEncoder(w).Encode(SendMessageConfirmation{ID: id}); err != nil {
+		httpError(w, err.Error())
+	}
 }
 
 // Send will validate the message structure and attempt to send to Mailpit.

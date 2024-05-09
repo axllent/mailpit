@@ -135,7 +135,7 @@
         "tags": [
           "Other"
         ],
-        "summary": "HTML check (beta)",
+        "summary": "HTML check",
         "operationId": "HTMLCheck",
         "parameters": [
           {
@@ -172,7 +172,7 @@
         "tags": [
           "Other"
         ],
-        "summary": "Link check (beta)",
+        "summary": "Link check",
         "operationId": "LinkCheck",
         "parameters": [
           {
@@ -368,7 +368,7 @@
     },
     "/api/v1/message/{ID}/sa-check": {
       "get": {
-        "description": "Returns the SpamAssassin (if enabled) summary of the message.\n\nNOTE: This feature is currently in beta and is documented for reference only.\nPlease do not integrate with it (yet) as there may be changes.",
+        "description": "Returns the SpamAssassin summary (if enabled) of the message.",
         "produces": [
           "application/json"
         ],
@@ -379,7 +379,7 @@
         "tags": [
           "Other"
         ],
-        "summary": "SpamAssassin check (beta)",
+        "summary": "SpamAssassin check",
         "operationId": "SpamAssassinCheck",
         "parameters": [
           {
