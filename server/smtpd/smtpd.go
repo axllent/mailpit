@@ -24,10 +24,8 @@ var (
 )
 
 // MailHandler handles the incoming message to store in the database
-func mailHandler(origin net.Addr, from string, to []string, data []byte) error {
-	_, err := Store(origin, from, to, data)
-
-	return err
+func mailHandler(origin net.Addr, from string, to []string, data []byte) (string, error) {
+	return Store(origin, from, to, data)
 }
 
 // Store will attempt to save a message to the database
@@ -212,10 +210,10 @@ func Listen() error {
 	return listenAndServe(config.SMTPListen, mailHandler, authHandler)
 }
 
-func listenAndServe(addr string, handler smtpd.Handler, authHandler smtpd.AuthHandler) error {
+func listenAndServe(addr string, handler smtpd.MsgIDHandler, authHandler smtpd.AuthHandler) error {
 	srv := &smtpd.Server{
 		Addr:              addr,
-		Handler:           handler,
+		MsgIDHandler:      handler,
 		HandlerRcpt:       handlerRcpt,
 		Appname:           "Mailpit",
 		Hostname:          "",
