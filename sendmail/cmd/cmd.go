@@ -21,6 +21,7 @@ import (
 	"net/smtp"
 	"os"
 	"os/user"
+	"regexp"
 	"strings"
 
 	"github.com/axllent/mailpit/config"
@@ -42,15 +43,19 @@ var (
 )
 
 func init() {
+	// ensure only valid characters are used, ie: windows
+	re := regexp.MustCompile(`[^a-zA-Z\-\.\_]`)
 	host, err := os.Hostname()
 	if err != nil {
 		host = "localhost"
+	} else {
+		host = re.ReplaceAllString(host, "-")
 	}
 
 	username := "nobody"
 	user, err := user.Current()
 	if err == nil && user != nil && len(user.Username) > 0 {
-		username = user.Username
+		username = re.ReplaceAllString(user.Username, "-")
 	}
 
 	if FromAddr == "" {
@@ -62,7 +67,7 @@ func init() {
 func Run() {
 	var recipients []string
 
-	// defaults from envars if provided
+	// defaults from env vars if provided
 	if len(os.Getenv("MP_SENDMAIL_SMTP_ADDR")) > 0 {
 		SMTPAddr = os.Getenv("MP_SENDMAIL_SMTP_ADDR")
 	}
