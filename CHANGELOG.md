@@ -2,6 +2,15 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.18.2]
+
+### Chore
+- Update node dependencies
+
+### Fix
+- Replace invalid Windows username characters in sendmail ([#294](https://github.com/axllent/mailpit/issues/294))
+
+
 ## [v1.18.1]
 
 ### Chore
