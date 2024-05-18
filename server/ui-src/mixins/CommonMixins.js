@@ -243,6 +243,9 @@ export default {
 			if (['zip', 'tar', 'rar', 'bz2', 'gz', 'xz'].includes(ext)) {
 				return 'bi-file-zip-fill'
 			}
+			if (['ics'].includes(ext)) {
+				return 'bi-calendar-event'
+			}
 			if (a.ContentType.match(/^audio\//)) {
 				return 'bi-file-music-fill'
 			}
