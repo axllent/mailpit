@@ -239,6 +239,13 @@ func handleClient(conn net.Conn) {
 
 			size := len(raw)
 			sendData(conn, fmt.Sprintf("+OK %d octets", size))
+
+			// When all lines of the response have been sent, a
+			// final line is sent, consisting of a termination octet (decimal code
+			// 046, ".") and a CRLF pair. If any line of the multi-line response
+			// begins with the termination octet, the line is "byte-stuffed" by
+			// pre-pending the termination octet to that line of the response.
+			// @see: https://www.ietf.org/rfc/rfc1939.txt
 			sendData(conn, strings.Replace(string(raw), "\n.", "\n..", -1))
 			sendData(conn, ".")
 
