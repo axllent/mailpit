@@ -2,6 +2,19 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.18.3]
+
+### Chore
+- Update Go dependencies
+- Update node dependencies
+
+### Feature
+- iCalendar (ICS) viewer ([#298](https://github.com/axllent/mailpit/issues/298))
+
+### Fix
+- Add dot stuffing for POP3 ([#300](https://github.com/axllent/mailpit/issues/300))
+
+
 ## [v1.18.2]
 
 ### Chore
