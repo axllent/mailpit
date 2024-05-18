@@ -239,7 +239,7 @@ func handleClient(conn net.Conn) {
 
 			size := len(raw)
 			sendData(conn, fmt.Sprintf("+OK %d octets", size))
-			sendData(conn, string(raw))
+			sendData(conn, strings.Replace(string(raw), "\n.", "\n..", -1))
 			sendData(conn, ".")
 
 		} else if cmd == "TOP" && state == TRANSACTION {
