@@ -16,15 +16,22 @@ jobs:
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
 
-    - name: Login to DockerHub
+    - name: Log into Docker Hub
       uses: docker/login-action@v3
       with:
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_ACCESS_TOKEN }}
 
+    - name: Log into GitHub Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.repository_owner }}
+        password: ${{ github.token }}
+
     - name: Parse semver
       id: semver_parser 
-      uses: booxmedialtd/ws-action-parse-semver@v1.4.7
+      uses: booxmedialtd/ws-action-parse-semver@v1.4
       with:
         input_string: '${{ github.ref_name }}'
         version_extractor_regex: 'v(.*)$'
@@ -33,7 +40,6 @@ jobs:
       uses: docker/build-push-action@v5
       with:
         context: .
-        # platforms: linux/386,linux/amd64,linux/arm,linux/arm64
         platforms: linux/386,linux/amd64,linux/arm64
         build-args: |
           "VERSION=${{ github.ref_name }}"
@@ -42,3 +48,6 @@ jobs:
           axllent/mailpit:latest
           axllent/mailpit:${{ github.ref_name }}
           axllent/mailpit:v${{ steps.semver_parser.outputs.major }}.${{ steps.semver_parser.outputs.minor }}
+          ghcr.io/${{ github.repository }}:latest
+          ghcr.io/${{ github.repository }}:${{ github.ref_name }}
+          ghcr.io/${{ github.repository }}:v${{ steps.semver_parser.outputs.major }}.${{ steps.semver_parser.outputs.minor }}
