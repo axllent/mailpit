@@ -67,9 +67,22 @@ export default {
 			if (query == '') {
 				this.$router.push('/')
 			} else {
-				this.$router.push('/search?q=' + encodeURIComponent(query))
+				const params = new URLSearchParams({
+					q: query,
+					start: pagination.start.toString(),
+					limit: pagination.limit.toString(),
+				})
+				this.$router.push('/search?' + params.toString())
 			}
-		}
+		},
+
+		toTagUrl(tag) {
+			const params = new URLSearchParams({
+				start: pagination.start.toString(),
+				limit: pagination.limit.toString(),
+			})
+			return '/search?q=' + this.tagEncodeURI(tag) + '&' + params.toString()
+		},
 	}
 }
 </script>
@@ -91,7 +104,7 @@ export default {
 			</ul>
 		</div>
 		<div class="list-group mt-1 mb-5 pb-3">
-			<RouterLink v-for="tag in mailbox.tags" :to="'/search?q=' + tagEncodeURI(tag)" @click="hideNav"
+			<RouterLink v-for="tag in mailbox.tags" :to="toTagUrl(tag)" @click="hideNav"
 				v-on:click="reloadFilter(tag)" v-on:click.ctrl="toggleTag($event, tag)"
 				:style="mailbox.showTagColors ? { borderLeftColor: colorHash(tag), borderLeftWidth: '4px' } : ''"
 				class="list-group-item list-group-item-action small px-2" :class="inSearch(tag) ? 'active' : ''">

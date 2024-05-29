@@ -184,9 +184,18 @@ export default {
 			mailbox.lastMessage = this.$route.params.id
 
 			if (mailbox.searching) {
-				this.$router.push('/search?q=' + encodeURIComponent(mailbox.searching))
+				const params = new URLSearchParams({
+					q: mailbox.searching,
+					start: pagination.start.toString(),
+					limit: pagination.limit.toString(),
+				})
+				this.$router.push('/search?' + params.toString())
 			} else {
-				this.$router.push('/')
+				const params = new URLSearchParams({
+					start: pagination.start.toString(),
+					limit: pagination.limit.toString(),
+				})
+				this.$router.push('/?' + params.toString())
 			}
 		},
 
