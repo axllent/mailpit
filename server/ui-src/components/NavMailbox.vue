@@ -32,6 +32,7 @@ export default {
 	methods: {
 		reloadInbox: function () {
 			pagination.start = 0
+			this.$router.push('/')
 			this.loadMessages()
 		},
 

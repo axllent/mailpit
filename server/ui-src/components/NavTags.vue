@@ -78,7 +78,7 @@ export default {
 
 		toTagUrl(tag) {
 			const params = new URLSearchParams({
-				start: pagination.start.toString(),
+				start: String(0),
 				limit: pagination.limit.toString(),
 			})
 			return '/search?q=' + this.tagEncodeURI(tag) + '&' + params.toString()
