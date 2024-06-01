@@ -16,7 +16,7 @@ export default {
 	},
 
 	watch: {
-		theme: function(v) {
+		theme: function (v) {
 			if (v == 'auto') {
 				localStorage.removeItem('theme')
 			} else {
@@ -68,7 +68,7 @@ export default {
 					</div>
 					<div class="mb-3">
 						<label for="timezone" class="form-label">Timezone (for date searches)</label>
-						<select class="form-select tz" v-model="mailbox.timeZone" id="timezone">
+						<select class="form-select tz" v-model="mailbox.timeZone" id="timezone" data-allow-same="true">
 							<option disabled hidden value="">Select a timezone...</option>
 							<option v-for="t in timezones" :value="t.tzCode">{{ t.label }}</option>
 						</select>
