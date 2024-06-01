@@ -2,6 +2,14 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.18.4]
+
+### Chore
+- Update node dependencies
+- Update Go dependencies
+- Clone new Docker images to ghcr.io ([#302](https://github.com/axllent/mailpit/issues/302))
+
+
 ## [v1.18.3]
 
 ### Chore
