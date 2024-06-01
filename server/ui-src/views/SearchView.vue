@@ -33,17 +33,25 @@ export default {
 
 	watch: {
 		$route(to, from) {
-			this.doSearch(true)
+			this.doSearch()
 		}
 	},
 
 	mounted() {
+		const paginationParams = this.getPaginationParams()
+		if (paginationParams?.start) {
+			pagination.start = paginationParams.start
+		}
+		if (paginationParams?.limit) {
+			pagination.limit = paginationParams.limit
+		}
+
 		mailbox.searching = this.getSearch()
-		this.doSearch(false)
+		this.doSearch()
 	},
 
 	methods: {
-		doSearch: function (resetPagination) {
+		doSearch: function () {
 			let s = this.getSearch()
 
 			if (!s) {
@@ -53,10 +61,6 @@ export default {
 			}
 
 			mailbox.searching = s
-
-			if (resetPagination) {
-				pagination.start = 0
-			}
 
 			this.apiURI = this.resolve(`/api/v1/search`) + '?query=' + encodeURIComponent(s)
 			if (mailbox.timeZone != '' && (s.indexOf('after:') != -1 || s.indexOf('before:') != -1)) {

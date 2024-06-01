@@ -60,6 +60,13 @@ export default {
 						} else {
 							// update pagination offset
 							pagination.start++
+							const path = self.$route.path
+							const params = new URLSearchParams({
+								...self.$route.query,
+								start: pagination.start.toString(),
+								limit: pagination.limit.toString(),
+							})
+							self.$router.push(path + '?' + params.toString())
 						}
 					}
 
