@@ -1,7 +1,7 @@
 <script>
 import CommonMixins from '../mixins/CommonMixins'
 import { mailbox } from '../stores/mailbox'
-import {limitOptions, pagination} from '../stores/pagination'
+import { limitOptions, pagination } from '../stores/pagination'
 
 export default {
 
@@ -66,11 +66,20 @@ export default {
 
 		updateQueryParams: function () {
 			const path = this.$route.path
-			const params = new URLSearchParams({
-				...this.$route.query,
-				start: pagination.start.toString(),
-				limit: pagination.limit.toString(),
-			})
+			const p = {
+				...this.$route.query
+			}
+			if (pagination.start > 0) {
+				p.start = pagination.start.toString()
+			} else {
+				delete p.start
+			}
+			if (pagination.limit != pagination.defaultLimit) {
+				p.limit = pagination.limit.toString()
+			} else {
+				delete p.limit
+			}
+			const params = new URLSearchParams(p)
 			this.$router.push(path + '?' + params.toString())
 		},
 	}
@@ -80,7 +89,7 @@ export default {
 <template>
 	<select v-model="pagination.limit" @change="changeLimit" class="form-select form-select-sm d-inline w-auto me-2"
 		:disabled="total == 0">
-		<option v-for="option in limitOptions" :key="option" :value="option">{{option}}</option>
+		<option v-for="option in limitOptions" :key="option" :value="option">{{ option }}</option>
 	</select>
 
 	<small>

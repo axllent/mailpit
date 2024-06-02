@@ -11,25 +11,11 @@ export default {
 	data() {
 		return {
 			mailbox,
+			pagination,
 		}
 	},
 
 	methods: {
-		// if the current filter is active then reload view
-		reloadFilter: function (tag) {
-			const urlParams = new URLSearchParams(window.location.search)
-			const query = urlParams.get('q')
-			if (!query) {
-				return false
-			}
-
-			let re = new RegExp(`^tag:"?${tag}"?$`, 'i')
-			if (query.match(re)) {
-				pagination.start = 0
-				this.$emit('loadMessages')
-			}
-		},
-
 		// test whether a tag is currently being searched for (in the URL)
 		inSearch: function (tag) {
 			const urlParams = new URLSearchParams(window.location.search)
@@ -76,12 +62,18 @@ export default {
 			}
 		},
 
-		toTagUrl(tag) {
-			const params = new URLSearchParams({
-				start: String(0),
-				limit: pagination.limit.toString(),
-			})
-			return '/search?q=' + this.tagEncodeURI(tag) + '&' + params.toString()
+		toTagUrl(t) {
+			if (t.match(/ /)) {
+				t = `"${t}"`
+			}
+			const p = {
+				q: 'tag:' + t
+			}
+			if (pagination.limit != pagination.defaultLimit) {
+				p.limit = pagination.limit.toString()
+			}
+			const params = new URLSearchParams(p)
+			return '/search?' + params.toString()
 		},
 	}
 }
@@ -105,7 +97,7 @@ export default {
 		</div>
 		<div class="list-group mt-1 mb-5 pb-3">
 			<RouterLink v-for="tag in mailbox.tags" :to="toTagUrl(tag)" @click="hideNav"
-				v-on:click="reloadFilter(tag)" v-on:click.ctrl="toggleTag($event, tag)"
+				v-on:click="pagination.start = 0" v-on:click.ctrl="toggleTag($event, tag)"
 				:style="mailbox.showTagColors ? { borderLeftColor: colorHash(tag), borderLeftWidth: '4px' } : ''"
 				class="list-group-item list-group-item-action small px-2" :class="inSearch(tag) ? 'active' : ''">
 				<i class="bi bi-tag-fill" v-if="inSearch(tag)"></i>
