@@ -1,7 +1,7 @@
 <script>
 import CommonMixins from '../mixins/CommonMixins'
 import { mailbox } from '../stores/mailbox'
-import { pagination } from '../stores/pagination'
+import { limitOptions, pagination } from '../stores/pagination'
 
 export default {
 
@@ -17,6 +17,7 @@ export default {
 		return {
 			pagination,
 			mailbox,
+			limitOptions,
 		}
 	},
 
@@ -44,11 +45,13 @@ export default {
 		changeLimit: function () {
 			pagination.start = 0
 			this.$emit('loadMessages')
+			this.updateQueryParams()
 		},
 
 		viewNext: function () {
 			pagination.start = parseInt(pagination.start, 10) + parseInt(pagination.limit, 10)
 			this.$emit('loadMessages')
+			this.updateQueryParams()
 		},
 
 		viewPrev: function () {
@@ -58,6 +61,26 @@ export default {
 			}
 			pagination.start = s
 			this.$emit('loadMessages')
+			this.updateQueryParams()
+		},
+
+		updateQueryParams: function () {
+			const path = this.$route.path
+			const p = {
+				...this.$route.query
+			}
+			if (pagination.start > 0) {
+				p.start = pagination.start.toString()
+			} else {
+				delete p.start
+			}
+			if (pagination.limit != pagination.defaultLimit) {
+				p.limit = pagination.limit.toString()
+			} else {
+				delete p.limit
+			}
+			const params = new URLSearchParams(p)
+			this.$router.push(path + '?' + params.toString())
 		},
 	}
 }
@@ -66,10 +89,7 @@ export default {
 <template>
 	<select v-model="pagination.limit" @change="changeLimit" class="form-select form-select-sm d-inline w-auto me-2"
 		:disabled="total == 0">
-		<option value="25">25</option>
-		<option value="50">50</option>
-		<option value="100">100</option>
-		<option value="200">200</option>
+		<option v-for="option in limitOptions" :key="option" :value="option">{{ option }}</option>
 	</select>
 
 	<small>

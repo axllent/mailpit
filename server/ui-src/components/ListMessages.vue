@@ -2,6 +2,7 @@
 import { mailbox } from '../stores/mailbox'
 import CommonMixins from '../mixins/CommonMixins'
 import dayjs from 'dayjs'
+import { pagination } from "../stores/pagination";
 
 export default {
 	mixins: [
@@ -15,6 +16,7 @@ export default {
 	data() {
 		return {
 			mailbox,
+			pagination,
 		}
 	},
 
@@ -99,6 +101,20 @@ export default {
 				}
 			}
 		},
+
+		toTagUrl: function (t) {
+			if (t.match(/ /)) {
+				t = `"${t}"`
+			}
+			const p = {
+				q: 'tag:' + t
+			}
+			if (pagination.limit != pagination.defaultLimit) {
+				p.limit = pagination.limit.toString()
+			}
+			const params = new URLSearchParams(p)
+			return '/search?' + params.toString()
+		},
 	}
 }
 </script>
@@ -143,7 +159,8 @@ export default {
 						{{ message.Snippet }}
 					</div>
 					<div v-if="message.Tags.length">
-						<RouterLink class="badge me-1" v-for="t in message.Tags" :to="'/search?q=' + tagEncodeURI(t)"
+						<RouterLink class="badge me-1" v-for="t in message.Tags" :to="toTagUrl(t)"
+							v-on:click="pagination.start = 0"
 							:style="mailbox.showTagColors ? { backgroundColor: colorHash(t) } : { backgroundColor: '#6c757d' }"
 							:title="'Filter messages tagged with ' + t">
 							{{ t }}

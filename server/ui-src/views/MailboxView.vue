@@ -9,6 +9,7 @@ import NavTags from '../components/NavTags.vue'
 import Pagination from '../components/Pagination.vue'
 import SearchForm from '../components/SearchForm.vue'
 import { mailbox } from '../stores/mailbox'
+import {pagination} from "../stores/pagination";
 
 export default {
 	mixins: [CommonMixins, MessagesMixins],
@@ -30,6 +31,14 @@ export default {
 	},
 
 	mounted() {
+		const paginationParams = this.getPaginationParams()
+		if (paginationParams?.start) {
+			pagination.start = paginationParams.start
+		}
+		if (paginationParams?.limit) {
+			pagination.limit = paginationParams.limit
+		}
+
 		mailbox.searching = false
 		this.apiURI = this.resolve(`/api/v1/messages`)
 		this.loadMessages()
