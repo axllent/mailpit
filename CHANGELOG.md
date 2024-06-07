@@ -2,6 +2,16 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.18.5]
+
+### Chore
+- Update node dependencies
+- Update Go dependencies
+
+### Feature
+- Add pagination & limits to URL parameters ([#303](https://github.com/axllent/mailpit/issues/303))
+
+
 ## [v1.18.4]
 
 ### Chore
