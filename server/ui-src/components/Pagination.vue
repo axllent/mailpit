@@ -11,8 +11,6 @@ export default {
 		total: Number,
 	},
 
-	emits: ['loadMessages'],
-
 	data() {
 		return {
 			pagination,
@@ -44,13 +42,11 @@ export default {
 	methods: {
 		changeLimit: function () {
 			pagination.start = 0
-			this.$emit('loadMessages')
 			this.updateQueryParams()
 		},
 
 		viewNext: function () {
 			pagination.start = parseInt(pagination.start, 10) + parseInt(pagination.limit, 10)
-			this.$emit('loadMessages')
 			this.updateQueryParams()
 		},
 
@@ -60,7 +56,6 @@ export default {
 				s = 0
 			}
 			pagination.start = s
-			this.$emit('loadMessages')
 			this.updateQueryParams()
 		},
 

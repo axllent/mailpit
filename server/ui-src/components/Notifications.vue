@@ -149,8 +149,9 @@ export default {
 					delete p.limit
 				}
 
+				mailbox.autoPaginating = false // prevent reload of messages when URL changes
 				const params = new URLSearchParams(p)
-				this.$router.push(path + '?' + params.toString())
+				this.$router.replace(path + '?' + params.toString())
 
 				this.paginationDelayed = false
 			}, 500)

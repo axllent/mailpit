@@ -38,14 +38,6 @@ export default {
 	},
 
 	mounted() {
-		const paginationParams = this.getPaginationParams()
-		if (paginationParams?.start) {
-			pagination.start = paginationParams.start
-		}
-		if (paginationParams?.limit) {
-			pagination.limit = paginationParams.limit
-		}
-
 		mailbox.searching = this.getSearch()
 		this.doSearch()
 	},
@@ -90,7 +82,7 @@ export default {
 					<i class="bi bi-list"></i>
 				</button>
 			</div>
-			<Pagination @loadMessages="loadMessages" :total="mailbox.count" />
+			<Pagination :total="mailbox.count" />
 		</div>
 	</div>
 

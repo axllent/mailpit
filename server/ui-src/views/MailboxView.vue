@@ -9,7 +9,7 @@ import NavTags from '../components/NavTags.vue'
 import Pagination from '../components/Pagination.vue'
 import SearchForm from '../components/SearchForm.vue'
 import { mailbox } from '../stores/mailbox'
-import {pagination} from "../stores/pagination";
+import { pagination } from "../stores/pagination";
 
 export default {
 	mixins: [CommonMixins, MessagesMixins],
@@ -30,19 +30,33 @@ export default {
 		}
 	},
 
-	mounted() {
-		const paginationParams = this.getPaginationParams()
-		if (paginationParams?.start) {
-			pagination.start = paginationParams.start
+	watch: {
+		$route(to, from) {
+			this.loadMailbox()
 		}
-		if (paginationParams?.limit) {
-			pagination.limit = paginationParams.limit
-		}
+	},
 
+	mounted() {
 		mailbox.searching = false
 		this.apiURI = this.resolve(`/api/v1/messages`)
-		this.loadMessages()
+		this.loadMailbox()
 	},
+
+	methods: {
+		loadMailbox: function () {
+			const paginationParams = this.getPaginationParams()
+			if (paginationParams?.start) {
+				pagination.start = paginationParams.start
+			} else {
+				pagination.start = 0
+			}
+			if (paginationParams?.limit) {
+				pagination.limit = paginationParams.limit
+			}
+
+			this.loadMessages()
+		}
+	}
 }
 </script>
 
@@ -64,7 +78,7 @@ export default {
 					<i class="bi bi-list"></i>
 				</button>
 			</div>
-			<Pagination @loadMessages="loadMessages" :total="mailbox.total" />
+			<Pagination :total="mailbox.total" />
 		</div>
 	</div>
 
