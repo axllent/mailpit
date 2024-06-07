@@ -31,8 +31,14 @@ export default {
 
 	methods: {
 		reloadInbox: function () {
-			pagination.start = 0
-			this.loadMessages()
+			const paginationParams = this.getPaginationParams()
+			const reload = paginationParams?.start ? false : true
+
+			this.$router.push('/')
+			if (reload) {
+				// already on first page, reload messages
+				this.loadMessages()
+			}
 		},
 
 
@@ -114,7 +120,8 @@ export default {
 			</div>
 		</div>
 
-		<div class="modal fade" id="DeleteAllModal" tabindex="-1" aria-labelledby="DeleteAllModalLabel" aria-hidden="true">
+		<div class="modal fade" id="DeleteAllModal" tabindex="-1" aria-labelledby="DeleteAllModalLabel"
+			aria-hidden="true">
 			<div class="modal-dialog">
 				<div class="modal-content">
 					<div class="modal-header">

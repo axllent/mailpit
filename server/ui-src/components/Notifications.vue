@@ -15,7 +15,8 @@ export default {
 			reconnectRefresh: false,
 			socketURI: false,
 			pauseNotifications: false, // prevent spamming
-			version: false
+			version: false,
+			paginationDelayed: false, // for delayed pagination URL changes
 		}
 	},
 
@@ -60,6 +61,8 @@ export default {
 						} else {
 							// update pagination offset
 							pagination.start++
+							// prevent "Too many calls to Location or History APIs within a short timeframe"
+							self.delayedPaginationUpdate()
 						}
 					}
 
@@ -119,6 +122,39 @@ export default {
 			ws.onerror = function (err) {
 				ws.close()
 			}
+		},
+
+		// This will only update the pagination offset at a maximum of 2x per second
+		// when viewing the inbox on > page 1, while receiving an influx of new messages.
+		delayedPaginationUpdate: function () {
+			if (this.paginationDelayed) {
+				return
+			}
+
+			this.paginationDelayed = true
+
+			window.setTimeout(() => {
+				const path = this.$route.path
+				const p = {
+					...this.$route.query
+				}
+				if (pagination.start > 0) {
+					p.start = pagination.start.toString()
+				} else {
+					delete p.start
+				}
+				if (pagination.limit != pagination.defaultLimit) {
+					p.limit = pagination.limit.toString()
+				} else {
+					delete p.limit
+				}
+
+				mailbox.autoPaginating = false // prevent reload of messages when URL changes
+				const params = new URLSearchParams(p)
+				this.$router.replace(path + '?' + params.toString())
+
+				this.paginationDelayed = false
+			}, 500)
 		},
 
 		browserNotify: function (title, message) {

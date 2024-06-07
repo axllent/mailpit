@@ -184,9 +184,27 @@ export default {
 			mailbox.lastMessage = this.$route.params.id
 
 			if (mailbox.searching) {
-				this.$router.push('/search?q=' + encodeURIComponent(mailbox.searching))
+				const p = {
+					q: mailbox.searching
+				}
+				if (pagination.start > 0) {
+					p.start = pagination.start.toString()
+				}
+				if (pagination.limit != pagination.defaultLimit) {
+					p.limit = pagination.limit.toString()
+				}
+				const params = new URLSearchParams(p)
+				this.$router.push('/search?' + params.toString())
 			} else {
-				this.$router.push('/')
+				const p = {}
+				if (pagination.start > 0) {
+					p.start = pagination.start.toString()
+				}
+				if (pagination.limit != pagination.defaultLimit) {
+					p.limit = pagination.limit.toString()
+				}
+				const params = new URLSearchParams(p)
+				this.$router.push('/?' + params.toString())
 			}
 		},
 
@@ -221,7 +239,8 @@ export default {
 				<i class="bi bi-eye-slash"></i> <span class="d-none d-md-inline">Mark unread</span>
 			</button>
 			<button class="btn btn-outline-light me-1 me-sm-2" title="Release message"
-				v-if="mailbox.uiConfig.MessageRelay && mailbox.uiConfig.MessageRelay.Enabled" v-on:click="initReleaseModal">
+				v-if="mailbox.uiConfig.MessageRelay && mailbox.uiConfig.MessageRelay.Enabled"
+				v-on:click="initReleaseModal">
 				<i class="bi bi-send"></i> <span class="d-none d-md-inline">Release</span>
 			</button>
 			<button class="btn btn-outline-light me-1 me-sm-2" title="Delete message" v-on:click="deleteMessage">
@@ -341,6 +360,7 @@ export default {
 
 	<AboutMailpit modals />
 	<AjaxLoader :loading="loading" />
-	<Release v-if="mailbox.uiConfig.MessageRelay && message" ref="ReleaseRef" :message="message" @delete="deleteMessage" />
+	<Release v-if="mailbox.uiConfig.MessageRelay && message" ref="ReleaseRef" :message="message"
+		@delete="deleteMessage" />
 	<Screenshot v-if="message" ref="ScreenshotRef" :message="message" />
 </template>

@@ -40,7 +40,18 @@ export default {
 					pagination.start = 0
 					this.$emit('loadMessages')
 				}
-				this.$router.push('/search?q=' + encodeURIComponent(this.search))
+				const p = {
+					q: this.search
+				}
+				if (pagination.start > 0) {
+					p.start = pagination.start.toString()
+				}
+				if (pagination.limit != pagination.defaultLimit) {
+					p.limit = pagination.limit.toString()
+				}
+
+				const params = new URLSearchParams(p)
+				this.$router.push('/search?' + params.toString())
 			}
 
 			e.preventDefault()

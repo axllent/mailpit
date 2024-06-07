@@ -36,6 +36,13 @@ export default {
 				return
 			}
 
+			// auto-pagination changes the URL but should not fetch new messages
+			// when viewing page > 0 and new messages are received (inbox only)
+			if (!mailbox.autoPaginating) {
+				mailbox.autoPaginating = true // reset
+				return
+			}
+
 			let self = this
 			let params = {}
 			mailbox.selected = []
