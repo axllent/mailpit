@@ -19,6 +19,7 @@ import (
 	"github.com/axllent/mailpit/internal/auth"
 	"github.com/axllent/mailpit/internal/logger"
 	"github.com/axllent/mailpit/internal/storage"
+	"github.com/axllent/mailpit/server/websockets"
 )
 
 const (
@@ -96,8 +97,8 @@ func handleClient(conn net.Conn) {
 				_ = storage.DeleteMessages([]string{id})
 			}
 			if len(toDelete) > 0 {
-				// Perform additional actions for update mode
-				// (e.g., update web UI to remove deleted messages)
+				// Update web UI to remove deleted messages
+				websockets.Broadcast("prune", nil)
 			}
 		}
 
@@ -113,6 +114,7 @@ func handleClient(conn net.Conn) {
 	// First welcome the new connection
 	sendResponse(conn, "+OK Mailpit POP3 server")
 
+	// Set 10 minutes timeout according to RFC1939
 	timeoutDuration := 600 * time.Second
 
 	for {
