@@ -193,10 +193,11 @@ func handleClient(conn net.Conn) {
 
 			// print all sizes
 			for row, m := range messages {
-				sendData(conn, fmt.Sprintf("%d %d", row+1, m.Size))
+				sendData(conn, fmt.Sprintf("%d %d", row+1, int64(m.Size))) // Convert Size to int64 when printing
 			}
 			// end
 			sendData(conn, ".")
+
 
 		} else if cmd == "UIDL" && state == TRANSACTION {
 			totalSize := float64(0)
