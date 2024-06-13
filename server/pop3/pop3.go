@@ -118,7 +118,7 @@ func handleClient(conn net.Conn) {
 	// First welcome the new connection
 	sendResponse(conn, "+OK Mailpit POP3 server")
 
-	timeoutDuration := 30 * time.Second
+	timeoutDuration := 600 * time.Second
 
 	for {
 		// POP3 server enforced a timeout of 30 seconds
@@ -197,7 +197,6 @@ func handleClient(conn net.Conn) {
 			}
 			// end
 			sendData(conn, ".")
-
 
 		} else if cmd == "UIDL" && state == TRANSACTION {
 			totalSize := float64(0)
