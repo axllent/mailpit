@@ -118,7 +118,7 @@ func handleClient(conn net.Conn) {
 	// First welcome the new connection
 	sendResponse(conn, "+OK Mailpit POP3 server")
 
-	timeoutDuration := 30 * time.Second
+	timeoutDuration := 600 * time.Second
 
 	for {
 		// POP3 server enforced a timeout of 30 seconds
@@ -193,7 +193,7 @@ func handleClient(conn net.Conn) {
 
 			// print all sizes
 			for row, m := range messages {
-				sendData(conn, fmt.Sprintf("%d %d", row+1, m.Size))
+				sendData(conn, fmt.Sprintf("%d %d", row+1, int64(m.Size))) // Convert Size to int64 when printing
 			}
 			// end
 			sendData(conn, ".")
