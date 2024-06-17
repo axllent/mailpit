@@ -72,5 +72,5 @@ func getSafeArg(args []string, nr int) (string, error) {
 	if nr < len(args) {
 		return args[nr], nil
 	}
-	return "", errors.New("Out of range")
+	return "", errors.New("-ERR out of range")
 }
