@@ -114,7 +114,8 @@ func handleClient(conn net.Conn) {
 	// First welcome the new connection
 	sendResponse(conn, "+OK Mailpit POP3 server")
 
-	// Set 10 minutes timeout according to RFC1939
+
+  // Set 10 minutes timeout according to RFC1939
 	timeoutDuration := 600 * time.Second
 
 	for {
@@ -168,7 +169,6 @@ func handleClient(conn net.Conn) {
 					sendResponse(conn, "-ERR must supply a password")
 					return
 				}
-
 				pass := args[0]
 				if authUser(user, pass) {
 					sendResponse(conn, "+OK signed in")
@@ -183,7 +183,7 @@ func handleClient(conn net.Conn) {
 				}
 			} else {
 				sendResponse(conn, "-ERR user not specified")
-			}
+		}
 		case "STAT":
 			if state == TRANSACTION {
 				totalSize := float64(0)
