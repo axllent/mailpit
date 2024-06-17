@@ -1,3 +1,8 @@
+// Package pop3 is a simple POP3 server for Mailpit.
+// By default it is disabled unless password credentials have been loaded.
+//
+// References: https://github.com/r0stig/golang-pop3 | https://github.com/inbucket/inbucket
+// See RFC: https://datatracker.ietf.org/doc/html/rfc1939
 package pop3
 
 import (
