@@ -2,6 +2,20 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.18.6]
+
+### Chore
+- Update caniemail database
+- Update node dependencies
+- Update Go dependencies
+- Delete multiple POP3 messages in single action
+- Handle POP3 RSET command
+
+### Fix
+- POP3 end of file reached error ([#315](https://github.com/axllent/mailpit/issues/315))
+- POP3 size output to show compatible sizes ([#312](https://github.com/axllent/mailpit/issues/312))
+
+
 ## [v1.18.5]
 
 ### Chore
