@@ -188,7 +188,7 @@ func handleClient(conn net.Conn) {
 			} else {
 				sendResponse(conn, "-ERR user not specified")
 			}
-		case "STAT", "LIST", "UIDL", "RETR", "TOP", "NOOP", "DELE":
+		case "STAT", "LIST", "UIDL", "RETR", "TOP", "NOOP", "DELE", "RSET":
 			if state == TRANSACTION {
 				handleTransactionCommand(conn, cmd, args, messages, &toDelete)
 			} else {
@@ -306,6 +306,9 @@ func handleTransactionCommand(conn net.Conn, cmd string, args []string, messages
 		m := messages[nr-1]
 		*toDelete = append(*toDelete, m.ID)
 		sendResponse(conn, "+OK message marked for deletion")
+	case "RSET":
+		*toDelete = []string{}
+		sendResponse(conn, "+OK")
 	default:
 		sendResponse(conn, "-ERR unknown command")
 	}
