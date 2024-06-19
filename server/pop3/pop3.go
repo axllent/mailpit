@@ -144,7 +144,7 @@ func handleClient(conn net.Conn) {
 		switch cmd {
 		case "CAPA":
 			// List our capabilities per RFC2449
-			sendResponse(conn, "+OK Capability list follows")
+			sendResponse(conn, "+OK capability list follows")
 			sendResponse(conn, "TOP")
 			sendResponse(conn, "USER")
 			sendResponse(conn, "UIDL")
@@ -195,7 +195,7 @@ func handleClient(conn net.Conn) {
 				sendResponse(conn, "-ERR user not authenticated")
 			}
 		case "QUIT":
-			sendResponse(conn, "+OK Goodbye")
+			sendResponse(conn, "+OK goodbye")
 			state = UPDATE
 			return
 		default:
@@ -289,7 +289,7 @@ func handleTransactionCommand(conn net.Conn, cmd string, args []string, messages
 			return
 		}
 
-		sendResponse(conn, "+OK Top of message follows")
+		sendResponse(conn, "+OK top of message follows")
 		sendData(conn, headers+"\r\n")
 		sendData(conn, body)
 		sendResponse(conn, ".")
