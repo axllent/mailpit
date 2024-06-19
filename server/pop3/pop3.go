@@ -93,10 +93,10 @@ func handleClient(conn net.Conn) {
 
 	defer func() {
 		if state == UPDATE {
-			for _, id := range toDelete {
-				_ = storage.DeleteMessages([]string{id})
-			}
 			if len(toDelete) > 0 {
+				if err := storage.DeleteMessages(toDelete); err != nil {
+					logger.Log().Errorf("[pop3] error deleting: %s", err.Error())
+				}
 				// Update web UI to remove deleted messages
 				websockets.Broadcast("prune", nil)
 			}
