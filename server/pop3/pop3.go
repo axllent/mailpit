@@ -163,6 +163,10 @@ func handleClient(conn net.Conn) {
 			}
 		case "PASS":
 			if state == AUTHORIZATION {
+				if user == "" {
+					sendResponse(conn, "-ERR must supply a user")
+					return
+				}
 				if len(args) != 1 {
 					sendResponse(conn, "-ERR must supply a password")
 					return
