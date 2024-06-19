@@ -23,9 +23,12 @@ import (
 )
 
 const (
+	// AUTHORIZATION is the initial state
 	AUTHORIZATION = 1
-	TRANSACTION   = 2
-	UPDATE        = 3
+	// TRANSACTION is the state after login
+	TRANSACTION = 2
+	// UPDATE is the state before closing
+	UPDATE = 3
 )
 
 // Run will start the POP3 server if enabled
@@ -134,6 +137,7 @@ func handleClient(conn net.Conn) {
 
 		// Parses the command
 		cmd, args := getCommand(rawLine)
+		cmd = strings.ToUpper(cmd) // Commands in the POP3 are case-insensitive
 
 		logger.Log().Debugf("[pop3] received: %s (%s)", strings.TrimSpace(rawLine), conn.RemoteAddr().String())
 
