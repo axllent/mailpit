@@ -54,7 +54,12 @@ export default {
 
 <template>
 	<template v-if="!modals">
-		<div class="list-group my-2">
+		<div class="text-center badge text-bg-primary py-2 mt-2 w-100 text-truncate fw-normal"
+			v-if="mailbox.uiConfig.Label">
+			{{ mailbox.uiConfig.Label }}
+		</div>
+
+		<div class="list-group my-2" :class="mailbox.uiConfig.Label ? 'mt-1' : ''">
 			<RouterLink to="/" class="list-group-item list-group-item-action" @click="pagination.start = 0">
 				<i class="bi bi-arrow-return-left me-1"></i>
 				<span class="ms-1">Inbox</span>
@@ -77,7 +82,8 @@ export default {
 
 	<template v-else>
 		<!-- Modals -->
-		<div class="modal fade" id="DeleteAllModal" tabindex="-1" aria-labelledby="DeleteAllModalLabel" aria-hidden="true">
+		<div class="modal fade" id="DeleteAllModal" tabindex="-1" aria-labelledby="DeleteAllModalLabel"
+			aria-hidden="true">
 			<div class="modal-dialog">
 				<div class="modal-content">
 					<div class="modal-header">
