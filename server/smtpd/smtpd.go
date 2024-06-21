@@ -223,6 +223,10 @@ func listenAndServe(addr string, handler smtpd.MsgIDHandler, authHandler smtpd.A
 		DisableReverseDNS: DisableReverseDNS,
 	}
 
+	if config.Label != "" {
+		srv.Appname = fmt.Sprintf("Mailpit (%s)", config.Label)
+	}
+
 	if config.SMTPAuthAllowInsecure {
 		srv.AuthMechs = map[string]bool{"CRAM-MD5": false, "PLAIN": true, "LOGIN": true}
 	}

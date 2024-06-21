@@ -2,6 +2,7 @@ package tools
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 )
 
@@ -23,4 +24,15 @@ func InArray(k string, arr []string) bool {
 	}
 
 	return false
+}
+
+// Normalize will remove any extra spaces, remove newlines, and trim leading and trailing spaces
+func Normalize(s string) string {
+	nlRe := regexp.MustCompile(`\r?\r`)
+	re := regexp.MustCompile(`\s+`)
+
+	s = nlRe.ReplaceAllString(s, " ")
+	s = re.ReplaceAllString(s, " ")
+
+	return strings.TrimSpace(s)
 }

@@ -15,6 +15,7 @@ import (
 	"github.com/axllent/mailpit/internal/auth"
 	"github.com/axllent/mailpit/internal/logger"
 	"github.com/axllent/mailpit/internal/spamassassin"
+	"github.com/axllent/mailpit/internal/tools"
 	"gopkg.in/yaml.v3"
 )
 
@@ -31,6 +32,10 @@ var (
 	// TenantID is an optional prefix to be applied to all database tables,
 	// allowing multiple isolated instances of Mailpit to share a database.
 	TenantID = ""
+
+	// Label to identify this Mailpit instance (optional).
+	// This gets applied to web UI, SMTP and optional POP3 server.
+	Label = ""
 
 	// MaxMessages is the maximum number of messages a mailbox can have (auto-pruned every minute)
 	MaxMessages = 500
@@ -201,7 +206,9 @@ func VerifyConfig() error {
 		Database = filepath.Join(Database, "mailpit.db")
 	}
 
-	TenantID = strings.TrimSpace(TenantID)
+	Label = tools.Normalize(Label)
+
+	TenantID = tools.Normalize(TenantID)
 	if TenantID != "" {
 		logger.Log().Infof("[db] using tenant \"%s\"", TenantID)
 		re := regexp.MustCompile(`[^a-zA-Z0-9\_]`)

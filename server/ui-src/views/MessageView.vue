@@ -317,8 +317,12 @@ export default {
 	<div class="row flex-fill" style="min-height:0">
 		<div class="d-none d-md-block col-xl-2 col-md-3 mh-100 position-relative"
 			style="overflow-y: auto; overflow-x: hidden;">
+			<div class="text-center badge text-bg-primary py-2 mt-2 w-100 text-truncate fw-normal"
+				v-if="mailbox.uiConfig.Label">
+				{{ mailbox.uiConfig.Label }}
+			</div>
 
-			<div class="list-group my-2">
+			<div class="list-group my-2" :class="mailbox.uiConfig.Label ? 'mt-1' : ''">
 				<button @click="goBack()" class="list-group-item list-group-item-action">
 					<i class="bi bi-arrow-return-left me-1"></i>
 					<span class="ms-1">Return</span>

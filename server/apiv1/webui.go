@@ -12,6 +12,8 @@ import (
 //
 // swagger:model WebUIConfiguration
 type webUIConfiguration struct {
+	// Optional label to identify this Mailpit instance
+	Label string
 	// Message Relay information
 	MessageRelay struct {
 		// Whether message relaying (release) is enabled
@@ -53,6 +55,7 @@ func WebUIConfig(w http.ResponseWriter, _ *http.Request) {
 	//		default: ErrorResponse
 	conf := webUIConfiguration{}
 
+	conf.Label = config.Label
 	conf.MessageRelay.Enabled = config.ReleaseEnabled
 	if config.ReleaseEnabled {
 		conf.MessageRelay.SMTPServer = fmt.Sprintf("%s:%d", config.SMTPRelayConfig.Host, config.SMTPRelayConfig.Port)
