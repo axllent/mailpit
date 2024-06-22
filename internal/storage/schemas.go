@@ -137,7 +137,9 @@ func dbApplySchemas() error {
 
 		buf := new(bytes.Buffer)
 
-		err = t1.Execute(buf, nil)
+		if err := t1.Execute(buf, nil); err != nil {
+			return err
+		}
 
 		if _, err := db.Exec(buf.String()); err != nil {
 			return err

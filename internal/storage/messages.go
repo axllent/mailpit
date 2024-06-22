@@ -593,7 +593,9 @@ func DeleteMessages(ids []string) error {
 		}
 	}
 
-	err = tx.Commit()
+	if err := tx.Commit(); err != nil {
+		return err
+	}
 
 	dbLastAction = time.Now()
 	addDeletedSize(int64(totalSize))

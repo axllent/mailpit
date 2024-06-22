@@ -67,7 +67,7 @@ func TestPOP3(t *testing.T) {
 		return
 	}
 
-	count, size, err = c.Stat()
+	count, _, err = c.Stat()
 	if err != nil {
 		t.Errorf(err.Error())
 		return
