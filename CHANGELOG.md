@@ -2,6 +2,19 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.18.7]
+
+### Feature
+- Add optional label to identify Mailpit instance ([#316](https://github.com/axllent/mailpit/issues/316))
+
+### Chore
+- Refactor JavaScript, use arrow functions instead of "self" aliasing
+- Handle websocket errors caused by persistent connection failures ([#319](https://github.com/axllent/mailpit/issues/319))
+
+### Testing
+- Add POP3 integration tests
+
+
 ## [v1.18.6]
 
 ### Chore
@@ -18,12 +31,12 @@ Notable changes to Mailpit will be documented in this file.
 
 ## [v1.18.5]
 
+### Feature
+- Add pagination & limits to URL parameters ([#303](https://github.com/axllent/mailpit/issues/303))
+
 ### Chore
 - Update node dependencies
 - Update Go dependencies
-
-### Feature
-- Add pagination & limits to URL parameters ([#303](https://github.com/axllent/mailpit/issues/303))
 
 
 ## [v1.18.4]
@@ -36,12 +49,12 @@ Notable changes to Mailpit will be documented in this file.
 
 ## [v1.18.3]
 
+### Feature
+- iCalendar (ICS) viewer ([#298](https://github.com/axllent/mailpit/issues/298))
+
 ### Chore
 - Update Go dependencies
 - Update node dependencies
-
-### Feature
-- iCalendar (ICS) viewer ([#298](https://github.com/axllent/mailpit/issues/298))
 
 ### Fix
 - Add dot stuffing for POP3 ([#300](https://github.com/axllent/mailpit/issues/300))
@@ -58,16 +71,22 @@ Notable changes to Mailpit will be documented in this file.
 
 ## [v1.18.1]
 
+### Feature
+- Return queued Message ID in SMTP response ([#293](https://github.com/axllent/mailpit/issues/293))
+
 ### Chore
 - Update node dependencies
 - Update Go dependencies
 - Simplify JSON HTTP responses
 
-### Feature
-- Return queued Message ID in SMTP response ([#293](https://github.com/axllent/mailpit/issues/293))
-
 
 ## [v1.18.0]
+
+### Feature
+- API endpoint for sending ([#278](https://github.com/axllent/mailpit/issues/278))
+- Set tagging filters via a config file
+- Search filter support for auto-tagging
+- New search filter prefix `addressed:` includes From, To, Cc, Bcc & Reply-To
 
 ### Chore
 - Update node dependencies
@@ -78,12 +97,6 @@ Notable changes to Mailpit will be documented in this file.
 - Improve tag sorting in web UI, ignore casing
 - Replace moment JS library with dayjs
 - Auto-update relative received message times
-
-### Feature
-- API endpoint for sending ([#278](https://github.com/axllent/mailpit/issues/278))
-- Set tagging filters via a config file
-- Search filter support for auto-tagging
-- New search filter prefix `addressed:` includes From, To, Cc, Bcc & Reply-To
 
 
 ## [v1.17.1]
@@ -99,6 +112,10 @@ Notable changes to Mailpit will be documented in this file.
 
 ## [v1.17.0]
 
+### Feature
+- Option to auto relay for matching recipient expression only ([#274](https://github.com/axllent/mailpit/issues/274))
+- Add UI settings screen
+
 ### Chore
 - Update caniemail database
 - Update node dependencies
@@ -109,26 +126,22 @@ Notable changes to Mailpit will be documented in this file.
 - Move Link check & HTML check features out of beta
 - Remove deprecated --disable-html-check option
 
-### Feature
-- Option to auto relay for matching recipient expression only ([#274](https://github.com/axllent/mailpit/issues/274))
-- Add UI settings screen
-
 ### Fix
 - Add delay to close database on fatal exit ([#280](https://github.com/axllent/mailpit/issues/280))
 
 
 ## [v1.16.0]
 
+### Feature
+- Search support for before: and after: dates ([#252](https://github.com/axllent/mailpit/issues/252))
+- Add optional tenant ID to isolate data in shared databases ([#254](https://github.com/axllent/mailpit/issues/254))
+- Option to use rqlite database storage ([#254](https://github.com/axllent/mailpit/issues/254))
+
 ### Chore
 - Update caniemail test database
 - Update node dependencies
 - Update Go dependencies
 - Switch database flag/env to `--database` / `MP_DATABASE`
-
-### Feature
-- Search support for before: and after: dates ([#252](https://github.com/axllent/mailpit/issues/252))
-- Add optional tenant ID to isolate data in shared databases ([#254](https://github.com/axllent/mailpit/issues/254))
-- Option to use rqlite database storage ([#254](https://github.com/axllent/mailpit/issues/254))
 
 ### Fix
 - Remove duplicated authentication check ([#276](https://github.com/axllent/mailpit/issues/276))
@@ -138,22 +151,22 @@ Notable changes to Mailpit will be documented in this file.
 
 ## [v1.15.1]
 
+### Feature
+- Add readyz subcommand for Docker healthcheck ([#270](https://github.com/axllent/mailpit/issues/270))
+
 ### Chore
 - Code cleanup, remove redundant functionality
 - Add labels to Docker image ([#267](https://github.com/axllent/mailpit/issues/267))
 
-### Feature
-- Add readyz subcommand for Docker healthcheck ([#270](https://github.com/axllent/mailpit/issues/270))
-
 
 ## [v1.15.0]
+
+### Feature
+- Add SMTP TLS option ([#265](https://github.com/axllent/mailpit/issues/265))
 
 ### Chore
 - Update node dependencies
 - Update Go dependencies
-
-### Feature
-- Add SMTP TLS option ([#265](https://github.com/axllent/mailpit/issues/265))
 
 ### Fix
 - Enforce SMTP STARTTLS by default if authentication is set
@@ -161,12 +174,12 @@ Notable changes to Mailpit will be documented in this file.
 
 ## [v1.14.4]
 
+### Feature
+- Allow setting SMTP relay configuration values via environment variables ([#262](https://github.com/axllent/mailpit/issues/262))
+
 ### Chore
 - Update caniemail test data
 - Reorder CLI flags to group by related functionality
-
-### Feature
-- Allow setting SMTP relay configuration values via environment variables ([#262](https://github.com/axllent/mailpit/issues/262))
 
 
 ## [v1.14.3]
@@ -190,20 +203,23 @@ Notable changes to Mailpit will be documented in this file.
 
 ## [v1.14.1]
 
+### Feature
+- Option to enforce TitleCasing for all newly created tags
+- Set message tags using plus addressing ([#253](https://github.com/axllent/mailpit/issues/253))
+
 ### Chore
 - Tag names now allow `.` and must be a minimum of 1 character
 - Update node dependencies
 - Update Go dependencies
-
-### Feature
-- Option to enforce TitleCasing for all newly created tags
-- Set message tags using plus addressing ([#253](https://github.com/axllent/mailpit/issues/253))
 
 ### Fix
 - Handle null values in Mailpit settings, set DeletedSize=0 if null
 
 
 ## [v1.14.0]
+
+### Feature
+- Optional POP3 server ([#249](https://github.com/axllent/mailpit/issues/249))
 
 ### Chore
 - Update node dependencies
@@ -216,14 +232,11 @@ Notable changes to Mailpit will be documented in this file.
 ### Docker
 - Add edge Docker images for latest unreleased features
 
-### Feature
-- Optional POP3 server ([#249](https://github.com/axllent/mailpit/issues/249))
-
 
 ## [v1.13.3]
 
-### API
-- Include Reply-To information in message summaries for message list & websocket events
+### Feature
+- Add reply-to:<search> search filter ([#247](https://github.com/axllent/mailpit/issues/247))
 
 ### Chore
 - Update node dependencies
@@ -231,11 +244,14 @@ Notable changes to Mailpit will be documented in this file.
 - Compress database only when >= 1% of total message size has been deleted
 - Update "About" modal layout when new version is available
 
-### Feature
-- Add reply-to:<search> search filter ([#247](https://github.com/axllent/mailpit/issues/247))
+### API
+- Include Reply-To information in message summaries for message list & websocket events
 
 
 ## [v1.13.2]
+
+### Feature
+- Add option to log output to file ([#246](https://github.com/axllent/mailpit/issues/246))
 
 ### Chore
 - Update caniemail data
@@ -244,37 +260,34 @@ Notable changes to Mailpit will be documented in this file.
 - Bump actions build requirement versions
 - Update esbuild
 
-### Feature
-- Add option to log output to file ([#246](https://github.com/axllent/mailpit/issues/246))
-
 
 ## [v1.13.1]
+
+### Feature
+- Add TLSRequired option for smtpd ([#241](https://github.com/axllent/mailpit/issues/241))
 
 ### Chore
 - Update node dependencies
 - Update Go dependencies
 
-### Feature
-- Add TLSRequired option for smtpd ([#241](https://github.com/axllent/mailpit/issues/241))
+### UI
+- Only show number of messages ignored statistics if `--ignore-duplicate-ids` is set
 
 ### Fix
 - Workaround for specific field searches containing unicode characters ([#239](https://github.com/axllent/mailpit/issues/239))
 
-### UI
-- Only show number of messages ignored statistics if `--ignore-duplicate-ids` is set
-
 
 ## [v1.13.0]
-
-### Chore
-- Compress compiled assets with `npm run build`
-- Update Go modules
-- Update node modules
 
 ### Feature
 - Add option to disable SMTP reverse DNS (rDNS) lookup ([#230](https://github.com/axllent/mailpit/issues/230))
 - Display List-Unsubscribe & List-Unsubscribe-Post header info with syntax validation ([#236](https://github.com/axllent/mailpit/issues/236))
 - Add optional SpamAssassin integration to display scores ([#233](https://github.com/axllent/mailpit/issues/233))
+
+### Chore
+- Compress compiled assets with `npm run build`
+- Update Go modules
+- Update node modules
 
 ### Fix
 - Display multiple whitespace characters in message subject & recipient names ([#238](https://github.com/axllent/mailpit/issues/238))
@@ -283,26 +296,26 @@ Notable changes to Mailpit will be documented in this file.
 
 ## [v1.12.1]
 
+### Feature
+- Add option to only allow SMTP recipients matching a regular expression (disable open-relay behaviour [#219](https://github.com/axllent/mailpit/issues/219))
+
 ### Chore
 - Significantly increase database performance using WAL (Write-Ahead-Log)
 - Standardize error logging & formatting
 
-### Feature
-- Add option to only allow SMTP recipients matching a regular expression (disable open-relay behaviour [#219](https://github.com/axllent/mailpit/issues/219))
+### UI
+- Automatically refresh connected browsers if Mailpit is upgraded (version change)
+
+### Libs
+- Update node modules
 
 ### Fix
 - Log total deleted messages when auto-pruning messages (--max)
 - Prevent rare error from websocket connection (unexpected non-whitespace character)
 - Log total deleted messages when deleting all messages from search
 
-### Libs
-- Update node modules
-
 ### Tests
 - Run tests on Linux, Windows & Mac
-
-### UI
-- Automatically refresh connected browsers if Mailpit is upgraded (version change)
 
 
 ## [v1.12.0]
@@ -314,37 +327,37 @@ Notable changes to Mailpit will be documented in this file.
 - Convert to many-to-many message tag relationships
 - Standardize error logging & formatting
 
+### UI
+- Refresh search results when search resubmitted or active tag filter clicked
+
 ### Libs
 - Update node modules
 - Update Go modules
-
-### UI
-- Refresh search results when search resubmitted or active tag filter clicked
 
 
 ## [v1.11.1]
 
-### Fix
-- Fix regression to support for search query params to all `/latest` endpoints ([#206](https://github.com/axllent/mailpit/issues/206))
+### UI
+- Allow multiple tags  to be searched using Ctrl-click ([#216](https://github.com/axllent/mailpit/issues/216))
 
 ### Libs
 - Update node modules
 - Update Go modules
 
+### Fix
+- Fix regression to support for search query params to all `/latest` endpoints ([#206](https://github.com/axllent/mailpit/issues/206))
+
 ### Testing
 - Add new `ingest` subcommand to import an email file or maildir folder over SMTP
-
-### UI
-- Allow multiple tags  to be searched using Ctrl-click ([#216](https://github.com/axllent/mailpit/issues/216))
 
 
 ## [v1.11.0]
 
-### API
-- Allow ID "latest" for message summary, headers, raw version & HTML/link checks
-
 ### Feature
 - Add configuration option to set maximum SMTP recipients ([#205](https://github.com/axllent/mailpit/issues/205))
+
+### API
+- Allow ID "latest" for message summary, headers, raw version & HTML/link checks
 
 ### Libs
 - Update node modules
@@ -359,35 +372,35 @@ Notable changes to Mailpit will be documented in this file.
 
 ## [v1.10.3]
 
-### Chore
-- Update caniemail library & add `hr` element test
-
 ### Feature
 - Add @ as valid character for webroot ([#215](https://github.com/axllent/mailpit/issues/215))
 
-### Fix
-- New favicon notification badge to fix rendering issues ([#210](https://github.com/axllent/mailpit/issues/210))
+### Chore
+- Update caniemail library & add `hr` element test
 
 ### Libs
 - Update node modules
 - Update Go modules
 
+### Fix
+- New favicon notification badge to fix rendering issues ([#210](https://github.com/axllent/mailpit/issues/210))
+
 
 ## [v1.10.2]
+
+### Feature
+- Allow port binding using hostname
 
 ### Chore
 - Add favicon fallback font (sans-serif) for unread count
 - Clearer log messages for bound SMTP & HTTP addresses
 
-### Feature
-- Allow port binding using hostname
+### UI
+- Enable tag colors by default
 
 ### Libs
 - Update node modules
 - Update Go modules
-
-### UI
-- Enable tag colors by default
 
 
 ## [v1.10.1]
@@ -395,12 +408,12 @@ Notable changes to Mailpit will be documented in this file.
 ### Chore
 - Use NextReader() instead of ReadMessage() for websocket reading ([#207](https://github.com/axllent/mailpit/issues/207))
 
-### Fix
-- Prevent JavaScript error if message is missing `From` header ([#209](https://github.com/axllent/mailpit/issues/209))
-
 ### Libs
 - Update node modules
 - Update Go modules
+
+### Fix
+- Prevent JavaScript error if message is missing `From` header ([#209](https://github.com/axllent/mailpit/issues/209))
 
 ### Swagger
 - Revert BinaryResponse type to string
@@ -413,39 +426,39 @@ Notable changes to Mailpit will be documented in this file.
 - Option to allow untrusted HTTPS certificates for screenshots & link checking ([#204](https://github.com/axllent/mailpit/issues/204))
 - Add URL redirect (`/view/latest`) to view latest message in web UI ([#166](https://github.com/axllent/mailpit/issues/166))
 
-### Fix
-- Correctly close websockets on client disconnect ([#207](https://github.com/axllent/mailpit/issues/207))
-
 ### Libs
 - Update node modules
 - Update Go modules
 
+### Fix
+- Correctly close websockets on client disconnect ([#207](https://github.com/axllent/mailpit/issues/207))
+
 
 ## [v1.9.10]
 
-### Docs
-- Update documentation links
-
-### Fix
-- Correctly display "About" modal when update check fails (resolves [#199](https://github.com/axllent/mailpit/issues/199))
+### UI
+- Fix column width in search view
 
 ### Libs
 - Update node modules
 - Update Go modules
 - Update caniemail test data
 
-### UI
-- Fix column width in search view
+### Fix
+- Correctly display "About" modal when update check fails (resolves [#199](https://github.com/axllent/mailpit/issues/199))
+
+### Docs
+- Update documentation links
 
 
 ## [v1.9.9]
 
-### Chore
-- Move html2text module to internal/html2text
-
 ### Feature
 - Set optional webhook for received messages ([#195](https://github.com/axllent/mailpit/issues/195))
 - Reset message date on release ([#194](https://github.com/axllent/mailpit/issues/194))
+
+### Chore
+- Move html2text module to internal/html2text
 
 ### Libs
 - update node modules
@@ -472,23 +485,23 @@ Notable changes to Mailpit will be documented in this file.
 
 ## [v1.9.7]
 
-### Fix
-- Enable delete button when new messages arrive
-
 ### Libs
 - Update node modules
 - Downgrade microcosm-cc/bluemonday, revert to Go 1.20
 - Update Go modules & minimum Go version (1.21)
 
+### Fix
+- Enable delete button when new messages arrive
+
 
 ## [v1.9.6]
+
+### UI
+- Display message previews on separate line ([#175](https://github.com/axllent/mailpit/issues/175))
 
 ### Libs
 - Update node modules
 - Update Go modules
-
-### UI
-- Display message previews on separate line ([#175](https://github.com/axllent/mailpit/issues/175))
 
 
 ## [v1.9.5]
@@ -508,18 +521,18 @@ Notable changes to Mailpit will be documented in this file.
 
 ## [v1.9.4]
 
+### Feature
+- Set auth credentials directly from environment variables
+
 ### Chore
 - Remove some flags deprecated 08/2022
 
-### Feature
-- Set auth credentials directly from environment variables
+### UI
+- Add option to delete a message after release
 
 ### Libs
 - Update node modules
 - Update Go modules
-
-### UI
-- Add option to delete a message after release
 
 
 ## [v1.9.3]
@@ -530,6 +543,11 @@ Notable changes to Mailpit will be documented in this file.
 - Update internal import paths
 - Move utils/* packages to internal/*
 
+### UI
+- Do not show excluded search tags as "current" in nav
+- Display "Loading messages" instead of "No results" while loading results
+- Only queue broadcast events if clients are connected
+
 ### Testing
 - Add endpoints for integration tests
 
@@ -537,26 +555,21 @@ Notable changes to Mailpit will be documented in this file.
 - Add more API tests
 - Add tests for ArgsParser & CleanTag
 
-### UI
-- Do not show excluded search tags as "current" in nav
-- Display "Loading messages" instead of "No results" while loading results
-- Only queue broadcast events if clients are connected
-
 
 ## [v1.9.2]
 
-### Fix
-- Delete all messages matching search when more than 1000 results
+### UI
+- Reset pagination when returning to inbox from search
 
 ### Libs
 - Update node modules
 
+### Fix
+- Delete all messages matching search when more than 1000 results
+
 ### Tests
 - Add message tag tests
 - Add search delete tests
-
-### UI
-- Reset pagination when returning to inbox from search
 
 
 ## [v1.9.1]
@@ -564,39 +577,39 @@ Notable changes to Mailpit will be documented in this file.
 ### Chore
 - Update caniemail data
 
-### Libs
-- Update Go modules
-
 ### UI
 - Set 404 page when loading a non-existent message
 - Link email addresses in message summary to search
 - Better support for mobile screen sizes
 
+### Libs
+- Update Go modules
+
 
 ## [v1.9.0]
+
+### Feature
+- Improved search parser
+- New search filter `[!]is:tagged`
+
+### UI
+- Rewrite web UI, add URL routing and components
 
 ### API
 - Remove redundant `Read` status from message (always true)
 - Delete by search filter
 - Add endpoint to return all tags in use
 
-### Feature
-- Improved search parser
-- New search filter `[!]is:tagged`
-
-### Fix
-- Correctly escape certain characters in search (eg: `'`)
-
 ### Libs
 - Update minimum Go version to 1.20
 - Update Go modules
 - Update node modules
 
+### Fix
+- Correctly escape certain characters in search (eg: `'`)
+
 ### Tests
 - Bump Go version to 1.21
-
-### UI
-- Rewrite web UI, add URL routing and components
 
 
 ## [v1.8.4]
@@ -610,95 +623,95 @@ Notable changes to Mailpit will be documented in this file.
 ### Feature
 - HTML screenshots
 
-### Libs
-- Update node modules
-
 ### UI
 - Group message tabs on mobile
 
+### Libs
+- Update node modules
+
 
 ## [v1.8.2]
-
-### Build
-- Update wangyoucao577/go-release-action[@v1](https://github.com/v1).39
 
 ### Feature
 - Link check to test message links
 - Workaround for non-RFC-compliant message headers containing <CR><CR><LF>
 
+### UI
+- Set hostname in page meta title to identify Mailpit instance
+
 ### Libs
 - Update Go libs
 
-### UI
-- Set hostname in page meta title to identify Mailpit instance
+### Build
+- Update wangyoucao577/go-release-action[@v1](https://github.com/v1).39
 
 
 ## [v1.8.1]
 
-### Docs
-- Add pagination to swagger search documentation
+### Libs
+- Update node modules
+- Update Go modules
 
 ### Fix
 - Check/set message Reply-To using SMTP FROM
 - Exclude "sendmail" from recipients list when using `mailpit sendmail <options>`
 - Exclude <script type="application/json"> from HTML check tests
 
-### Libs
-- Update node modules
-- Update Go modules
+### Docs
+- Add pagination to swagger search documentation
 
 
 ## [v1.8.0]
 
-### Docs
-- Update brew installation instructions
-
 ### Feature
 - HTML check to test & score mail client compatibility with HTML emails
-
-### Fix
-- Add basePath to swagger.json if webroot is specified
-
-### Libs
-- Update node modules
-- Update Go modules
-
-### Swagger
-- Update swagger docs
 
 ### UI
 - Add flag to block all access to remote CSS and fonts (CSP)
 - Remove `<base />` tag if set in HTML preview
 - Pagination support for search, all results
 
+### Libs
+- Update node modules
+- Update Go modules
+
+### Fix
+- Add basePath to swagger.json if webroot is specified
+
+### Docs
+- Update brew installation instructions
+
+### Swagger
+- Update swagger docs
+
 
 ## [v1.7.1]
-
-### Libs
-- Update Go modules
-- Update node modules
 
 ### UI
 - Wrap HTML source lines
 - Dark mode color adjustments
 - Update dark mode loading background color
 
+### Libs
+- Update Go modules
+- Update node modules
+
 
 ## [v1.7.0]
+
+### UI
+- Theme toggler - auto, light and dark themes
 
 ### API
 - Ignore SMTP relay error when one of multiple recipients doesn't exist
 - Set raw message Content-Type to UTF-8
 
-### Build
-- Define Vue build options in esbuild
-
 ### Libs
 - Update node modules
 - Update Go modules
 
-### UI
-- Theme toggler - auto, light and dark themes
+### Build
+- Define Vue build options in esbuild
 
 
 ## [v1.6.22]
@@ -734,12 +747,12 @@ Notable changes to Mailpit will be documented in this file.
 
 ## [v1.6.18]
 
-### API
-- Sort tags before saving
-
 ### UI
 - Add option to enable tag colors based on tag name hash
 - Display message tags below subject in message overview
+
+### API
+- Sort tags before saving
 
 
 ## [v1.6.17]
@@ -787,22 +800,22 @@ Notable changes to Mailpit will be documented in this file.
 
 ## [v1.6.11]
 
+### UI
+- Check for secure context instead of HTTPS ([#114](https://github.com/axllent/mailpit/issues/114))
+
 ### Libs
 - Update node modules
 - Update Go modules
-
-### UI
-- Check for secure context instead of HTTPS ([#114](https://github.com/axllent/mailpit/issues/114))
 
 
 ## [v1.6.10]
 
+### UI
+- Remove "Noto Color Emoji" from default bootstrap font list
+
 ### Libs
 - Update node modules
 - Update Go modules
-
-### UI
-- Remove "Noto Color Emoji" from default bootstrap font list
 
 
 ## [v1.6.9]
@@ -810,22 +823,22 @@ Notable changes to Mailpit will be documented in this file.
 ### API
 - Return blank 200 response for OPTIONS requests (CORS)
 
-### Bugfix
-- Correctly escape JS cid regex
-
 ### Libs
 - Update node modules
 - Update Go modules
 
+### Bugfix
+- Correctly escape JS cid regex
+
 
 ## [v1.6.8]
-
-### Bugfix
-- Fix Date display when message doesn't contain a Date header
 
 ### Feature
 - Add allowlist to filter recipients before relaying messages ([#109](https://github.com/axllent/mailpit/issues/109))
 - Add `-S` short flag for sendmail `--smtp-addr`
+
+### Bugfix
+- Fix Date display when message doesn't contain a Date header
 
 
 ## [v1.6.7]
@@ -836,12 +849,15 @@ Notable changes to Mailpit will be documented in this file.
 
 ## [v1.6.6]
 
+### Feature
+- Option to ignore duplicate Message-IDs
+
+### UI
+- Style Undisclosed recipients in message view
+
 ### API
 - Set Access-Control-Allow-Headers when --api-cors is set
 - Include correct start value in search reponse
-
-### Feature
-- Option to ignore duplicate Message-IDs
 
 ### Libs
 - Update node modules
@@ -849,9 +865,6 @@ Notable changes to Mailpit will be documented in this file.
 
 ### Swagger
 - Update swagger field descriptions
-
-### UI
-- Style Undisclosed recipients in message view
 
 
 ## [v1.6.5]
@@ -886,30 +899,30 @@ Notable changes to Mailpit will be documented in this file.
 
 ## [v1.6.0]
 
-### API
-- Enable cross-origin resource sharing (CORS) configuration
-- Message relay / release
-- Include Return-Path in message summary data
-
 ### Feature
 - Inject/update Bcc header for missing addresses when SMTP recipients do not match messsage headers
-
-### Libs
-- Update Go modules
-- Update node modules
 
 ### UI
 - Display Return-Path if different to the From address
 - Message release functionality
 
+### API
+- Enable cross-origin resource sharing (CORS) configuration
+- Message relay / release
+- Include Return-Path in message summary data
+
+### Libs
+- Update Go modules
+- Update node modules
+
 
 ## [v1.5.5]
 
-### Docker
-- Add Docker image tag for major/minor version
-
 ### Feature
 - Update listen regex to allow IPv6 addresses ([#85](https://github.com/axllent/mailpit/issues/85))
+
+### Docker
+- Add Docker image tag for major/minor version
 
 
 ## [v1.5.4]
@@ -926,11 +939,11 @@ Notable changes to Mailpit will be documented in this file.
 
 ## [v1.5.2]
 
-### API
-- Include Reply-To in message summary (including Web UI)
-
 ### UI
 - Tab to view formatted message headers
+
+### API
+- Include Reply-To in message summary (including Web UI)
 
 
 ## [v1.5.1]
@@ -945,12 +958,6 @@ Notable changes to Mailpit will be documented in this file.
 
 ## [v1.5.0]
 
-### API
-- Return received datetime when message does not contain a date header
-
-### Bugfix
-- Fix JavaScript error when adding the first tag manually
-
 ### Feature
 - OpenAPI / Swagger schema
 - Download raw message, HTML/text body parts or attachments via single button
@@ -958,34 +965,40 @@ Notable changes to Mailpit will be documented in this file.
 - Options to support auth without STARTTLS, and accept any login
 - Option to use message dates as received dates (new messages only)
 
-
-## [v1.4.0]
-
 ### API
 - Return received datetime when message does not contain a date header
+
+### Bugfix
+- Fix JavaScript error when adding the first tag manually
+
+
+## [v1.4.0]
 
 ### Feature
 - Rename SSL to TLS, add deprecation warnings to flags & ENV variables referring to SSL
 - Options to support auth without STARTTLS, and accept any login
 - Option to use message dates as received dates (new messages only)
 
+### API
+- Return received datetime when message does not contain a date header
+
 
 ## [v1.3.11]
-
-### Docker
-- Expose default ports (1025/tcp 8025/tcp)
 
 ### Feature
 - Expand custom webroot path to include a-z A-Z 0-9 _ . - and /
 
+### Docker
+- Expose default ports (1025/tcp 8025/tcp)
+
 
 ## [v1.3.10]
 
-### Bugfix
-- Fix search with existing emails
-
 ### Libs
 - Update node modules
+
+### Bugfix
+- Fix search with existing emails
 
 
 ## [v1.3.9]
@@ -1006,11 +1019,11 @@ Notable changes to Mailpit will be documented in this file.
 
 ## [v1.3.8]
 
-### Bugfix
-- Restore notification icon
-
 ### UI
 - Compress SVG icons
+
+### Bugfix
+- Restore notification icon
 
 
 ## [v1.3.7]
@@ -1024,12 +1037,12 @@ Notable changes to Mailpit will be documented in this file.
 
 ## [v1.3.6]
 
-### Bugfix
-- Correctly index missing 'From' header in database
-
 ### Libs
 - Update node modules
 - Update go modules
+
+### Bugfix
+- Correctly index missing 'From' header in database
 
 
 ## [v1.3.5]
@@ -1058,24 +1071,24 @@ Notable changes to Mailpit will be documented in this file.
 
 ## [v1.3.1]
 
-### Bugfix
-- Append trailing slash to custom webroot for UI & API
+### UI
+- Rename "results" to "result" when singular message returned
 
 ### Libs
 - Upgrade esbuild & axios
 
-### UI
-- Rename "results" to "result" when singular message returned
+### Bugfix
+- Append trailing slash to custom webroot for UI & API
 
 
 ## [v1.3.0]
 
-### Build
-- Remove duplicate bootstrap CSS
-
 ### Libs
 - Update go modules
 - Update node modules
+
+### Build
+- Remove duplicate bootstrap CSS
 
 
 ## [v1.2.9]
@@ -1086,11 +1099,11 @@ Notable changes to Mailpit will be documented in this file.
 
 ## [v1.2.8]
 
-### Bugfix
-- Return empty arrays rather than null for message To, CC, BCC, Inlines & Attachments
-
 ### Feature
 - Message tags and auto-tagging
+
+### Bugfix
+- Return empty arrays rather than null for message To, CC, BCC, Inlines & Attachments
 
 
 ## [v1.2.7]
@@ -1126,11 +1139,11 @@ Notable changes to Mailpit will be documented in this file.
 
 ## [1.2.3]
 
-### API
-- Add limit and start parameters to search
-
 ### UI
 - Prevent double message index request on websocket connect
+
+### API
+- Add limit and start parameters to search
 
 
 ## [1.2.2]
@@ -1157,12 +1170,12 @@ Notable changes to Mailpit will be documented in this file.
 ### Feature
 - Add REST API
 
-### Testing
-- Add API tests
-
 ### UI
 - Changes to use new data API
 - Hide delete all / mark all read in message view
+
+### Testing
+- Add API tests
 
 
 ## [1.1.7]
@@ -1173,20 +1186,20 @@ Notable changes to Mailpit will be documented in this file.
 
 ## [1.1.6]
 
-### Fix
-- Workaround for Safari source matching bug blocking event listener
-
 ### UI
 - Add documentation link (wiki)
+
+### Fix
+- Workaround for Safari source matching bug blocking event listener
 
 
 ## [1.1.5]
 
-### Build
-- Switch to esbuild-sass-plugin
-
 ### UI
 - Support for inline images using filenames instead of cid
+
+### Build
+- Switch to esbuild-sass-plugin
 
 
 ## [1.1.4]
@@ -1194,13 +1207,13 @@ Notable changes to Mailpit will be documented in this file.
 ### Feature
 - Add --quiet flag to display only errors
 
-### Security
-- Add restrictive HTTP Content-Security-Policy
-
 ### UI
 - Minor UI color change & unread count position adjustment
 - Add favicon unread message counter
 - Remove left & right borders (message list)
+
+### Security
+- Add restrictive HTTP Content-Security-Policy
 
 
 ## [1.1.3]
@@ -1272,12 +1285,12 @@ This release includes a major backend storage change (SQLite) that will render a
 ### Feature
 - Email compression in storage
 
+### UI
+- Mobile compatibility improvements & functionality
+
 ### Testing
 - Enable testing on feature branches
 - Database total/unread statistics tests
-
-### UI
-- Mobile compatibility improvements & functionality
 
 
 ## [0.1.3]
@@ -1320,11 +1333,11 @@ This release includes a major backend storage change (SQLite) that will render a
 
 ## [0.0.9]
 
-### Bugfix
-- Include read status in search results
-
 ### Feature
 - HTTPS option for web UI
+
+### Bugfix
+- Include read status in search results
 
 ### Testing
 - Memory & physical database tests
@@ -1332,11 +1345,11 @@ This release includes a major backend storage change (SQLite) that will render a
 
 ## [0.0.8]
 
-### Bugfix
-- Fix total/unread count after failed message inserts
-
 ### UI
 - Add project links to help in CLI
+
+### Bugfix
+- Fix total/unread count after failed message inserts
 
 
 ## [0.0.7]
@@ -1359,12 +1372,6 @@ This release includes a major backend storage change (SQLite) that will render a
 
 ## [0.0.4]
 
-### Bugfix
-- Update to clover-v2.0.0-alpha.2 to fix sorting
-
-### Tests
-- Add search tests
-
 ### UI
 - Add date to console log
 - Add space in To fields
@@ -1372,6 +1379,12 @@ This release includes a major backend storage change (SQLite) that will render a
 - Minor UI & logging changes
 - Add space in To fields
 - cater for messages without From email address
+
+### Bugfix
+- Update to clover-v2.0.0-alpha.2 to fix sorting
+
+### Tests
+- Add search tests
 
 
 ## [0.0.3]
