@@ -30,22 +30,20 @@ export default {
 	},
 
 	methods: {
-		loadMessages: function () {
+		loadMessages() {
 			this.hideNav() // hide mobile menu
 			this.$emit('loadMessages')
 		},
 
-		deleteAllMessages: function () {
-			let s = this.getSearch()
+		deleteAllMessages() {
+			const s = this.getSearch()
 			if (!s) {
 				return
 			}
 
-			let self = this
-
-			let uri = this.resolve(`/api/v1/search`) + '?query=' + encodeURIComponent(s)
-			this.delete(uri, false, function (response) {
-				self.$router.push('/')
+			const uri = this.resolve(`/api/v1/search`) + '?query=' + encodeURIComponent(s)
+			this.delete(uri, false, (response) => {
+				this.$router.push('/')
 			})
 		}
 	}

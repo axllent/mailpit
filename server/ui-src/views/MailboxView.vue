@@ -43,7 +43,7 @@ export default {
 	},
 
 	methods: {
-		loadMailbox: function () {
+		loadMailbox() {
 			const paginationParams = this.getPaginationParams()
 			if (paginationParams?.start) {
 				pagination.start = paginationParams.start

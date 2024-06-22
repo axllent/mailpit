@@ -25,12 +25,12 @@ export default {
 	},
 
 	methods: {
-		reloadMailbox: function () {
+		reloadMailbox() {
 			pagination.start = 0
 			this.loadMessages()
 		},
 
-		loadMessages: function () {
+		loadMessages() {
 			if (!this.apiURI) {
 				alert('apiURL not set!')
 				return
@@ -43,8 +43,7 @@ export default {
 				return
 			}
 
-			let self = this
-			let params = {}
+			const params = {}
 			mailbox.selected = []
 
 			params['limit'] = pagination.limit
@@ -52,7 +51,7 @@ export default {
 				params['start'] = pagination.start
 			}
 
-			self.get(this.apiURI, params, function (response) {
+			this.get(this.apiURI, params, (response) => {
 				mailbox.total = response.data.total // all messages
 				mailbox.unread = response.data.unread // all unread messages
 				mailbox.tags = response.data.tags // all tags
@@ -63,18 +62,18 @@ export default {
 
 				if (response.data.count == 0 && response.data.start > 0) {
 					pagination.start = 0
-					return self.loadMessages()
+					return this.loadMessages()
 				}
 
 				if (mailbox.lastMessage) {
 					window.setTimeout(() => {
-						let m = document.getElementById(mailbox.lastMessage)
+						const m = document.getElementById(mailbox.lastMessage)
 						if (m) {
 							m.focus()
 							// m.scrollIntoView({ behavior: 'smooth', block: 'center' })
 							m.scrollIntoView({ block: 'center' })
 						} else {
-							let mp = document.getElementById('message-page')
+							const mp = document.getElementById('message-page')
 							if (mp) {
 								mp.scrollTop = 0
 							}
@@ -84,7 +83,7 @@ export default {
 					}, 50)
 
 				} else if (!window.scrollInPlace) {
-					let mp = document.getElementById('message-page')
+					const mp = document.getElementById('message-page')
 					if (mp) {
 						mp.scrollTop = 0
 					}

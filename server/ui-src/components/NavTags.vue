@@ -17,7 +17,7 @@ export default {
 
 	methods: {
 		// test whether a tag is currently being searched for (in the URL)
-		inSearch: function (tag) {
+		inSearch(tag) {
 			const urlParams = new URLSearchParams(window.location.search)
 			const query = urlParams.get('q')
 			if (!query) {
@@ -29,7 +29,7 @@ export default {
 		},
 
 		// toggle a tag search in the search URL, add or remove it accordingly
-		toggleTag: function (e, tag) {
+		toggleTag(e, tag) {
 			e.preventDefault()
 
 			const urlParams = new URLSearchParams(window.location.search)

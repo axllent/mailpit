@@ -41,16 +41,14 @@ export default {
 	},
 
 	methods: {
-		loadMessage: function () {
-			let self = this
+		loadMessage() {
 			this.message = false
-			let uri = self.resolve('/api/v1/message/' + this.$route.params.id)
-			self.get(uri, false, function (response) {
-				self.errorMessage = false
+			const uri = this.resolve('/api/v1/message/' + this.$route.params.id)
+			this.get(uri, false, (response) => {
+				this.errorMessage = false
+				const d = response.data
 
-				let d = response.data
-
-				if (self.wasUnread(d.ID)) {
+				if (this.wasUnread(d.ID)) {
 					mailbox.unread--
 				}
 
@@ -61,14 +59,14 @@ export default {
 						if (a.ContentID != '') {
 							d.HTML = d.HTML.replace(
 								new RegExp('(=["\']?)(cid:' + a.ContentID + ')(["|\'|\\s|\\/|>|;])', 'g'),
-								'$1' + self.resolve('/api/v1/message/' + d.ID + '/part/' + a.PartID) + '$3'
+								'$1' + this.resolve('/api/v1/message/' + d.ID + '/part/' + a.PartID) + '$3'
 							)
 						}
 						if (a.FileName.match(/^[a-zA-Z0-9\_\-\.]+$/)) {
 							// some old email clients use the filename
 							d.HTML = d.HTML.replace(
 								new RegExp('(=["\']?)(' + a.FileName + ')(["|\'|\\s|\\/|>|;])', 'g'),
-								'$1' + self.resolve('/api/v1/message/' + d.ID + '/part/' + a.PartID) + '$3'
+								'$1' + this.resolve('/api/v1/message/' + d.ID + '/part/' + a.PartID) + '$3'
 							)
 						}
 					}
@@ -81,43 +79,43 @@ export default {
 						if (a.ContentID != '') {
 							d.HTML = d.HTML.replace(
 								new RegExp('(=["\']?)(cid:' + a.ContentID + ')(["|\'|\\s|\\/|>|;])', 'g'),
-								'$1' + self.resolve('/api/v1/message/' + d.ID + '/part/' + a.PartID) + '$3'
+								'$1' + this.resolve('/api/v1/message/' + d.ID + '/part/' + a.PartID) + '$3'
 							)
 						}
 						if (a.FileName.match(/^[a-zA-Z0-9\_\-\.]+$/)) {
 							// some old email clients use the filename
 							d.HTML = d.HTML.replace(
 								new RegExp('(=["\']?)(' + a.FileName + ')(["|\'|\\s|\\/|>|;])', 'g'),
-								'$1' + self.resolve('/api/v1/message/' + d.ID + '/part/' + a.PartID) + '$3'
+								'$1' + this.resolve('/api/v1/message/' + d.ID + '/part/' + a.PartID) + '$3'
 							)
 						}
 					}
 				}
 
-				self.message = d
+				this.message = d
 
-				self.detectPrevNext()
+				this.detectPrevNext()
 			},
-				function (error) {
-					self.errorMessage = true
+				(error) => {
+					this.errorMessage = true
 					if (error.response && error.response.data) {
 						if (error.response.data.Error) {
-							self.errorMessage = error.response.data.Error
+							this.errorMessage = error.response.data.Error
 						} else {
-							self.errorMessage = error.response.data
+							this.errorMessage = error.response.data
 						}
 					} else if (error.request) {
 						// The request was made but no response was received
-						self.errorMessage = 'Error sending data to the server. Please refresh the page.'
+						this.errorMessage = 'Error sending data to the server. Please refresh the page.'
 					} else {
 						// Something happened in setting up the request that triggered an Error
-						self.errorMessage = error.message
+						this.errorMessage = error.message
 					}
 				})
 		},
 
 		// try detect whether this message was unread based on messages listing
-		wasUnread: function (id) {
+		wasUnread(id) {
 			for (let m in mailbox.messages) {
 				if (mailbox.messages[m].ID == id) {
 					if (!mailbox.messages[m].Read) {
@@ -129,7 +127,7 @@ export default {
 			}
 		},
 
-		detectPrevNext: function () {
+		detectPrevNext() {
 			// generate the prev/next links based on current message list
 			this.prevLink = false
 			this.nextLink = false
@@ -147,40 +145,38 @@ export default {
 			}
 		},
 
-		downloadMessageBody: function (str, ext) {
-			let dl = document.createElement('a')
+		downloadMessageBody(str, ext) {
+			const dl = document.createElement('a')
 			dl.href = "data:text/plain," + encodeURIComponent(str)
 			dl.target = '_blank'
 			dl.download = this.message.ID + '.' + ext
 			dl.click()
 		},
 
-		screenshotMessageHTML: function () {
+		screenshotMessageHTML() {
 			this.$refs.ScreenshotRef.initScreenshot()
 		},
 
 		// mark current message as read
-		markUnread: function () {
-			let self = this
-			if (!self.message) {
+		markUnread() {
+			if (!this.message) {
 				return false
 			}
-			let uri = self.resolve('/api/v1/messages')
-			self.put(uri, { 'read': false, 'ids': [self.message.ID] }, function (response) {
-				self.goBack()
+			const uri = this.resolve('/api/v1/messages')
+			this.put(uri, { 'read': false, 'ids': [this.message.ID] }, (response) => {
+				this.goBack()
 			})
 		},
 
-		deleteMessage: function () {
-			let self = this
-			let ids = [self.message.ID]
-			let uri = self.resolve('/api/v1/messages')
-			self.delete(uri, { 'ids': ids }, function () {
-				self.goBack()
+		deleteMessage() {
+			const ids = [this.message.ID]
+			const uri = this.resolve('/api/v1/messages')
+			this.delete(uri, { 'ids': ids }, () => {
+				this.goBack()
 			})
 		},
 
-		goBack: function () {
+		goBack() {
 			mailbox.lastMessage = this.$route.params.id
 
 			if (mailbox.searching) {
@@ -208,16 +204,13 @@ export default {
 			}
 		},
 
-		initReleaseModal: function () {
-			let self = this
-			self.modal('ReleaseModal').show()
-			window.setTimeout(function () {
-				window.setTimeout(function () {
-					// delay to allow elements to load / focus
-					self.$refs.ReleaseRef.initTags()
-					document.querySelector('#ReleaseModal input[role="combobox"]').focus()
-				}, 500)
-			}, 300)
+		initReleaseModal() {
+			this.modal('ReleaseModal').show()
+			window.setTimeout(() => {
+				// delay to allow elements to load / focus
+				this.$refs.ReleaseRef.initTags()
+				document.querySelector('#ReleaseModal input[role="combobox"]').focus()
+			}, 500)
 		},
 	}
 }

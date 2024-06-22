@@ -24,18 +24,18 @@ export default {
 	},
 
 	methods: {
-		searchFromURL: function () {
+		searchFromURL() {
 			const urlParams = new URLSearchParams(window.location.search)
 			this.search = urlParams.get('q') ? urlParams.get('q') : ''
 		},
 
-		doSearch: function (e) {
+		doSearch(e) {
 			pagination.start = 0
 			if (this.search == '') {
 				this.$router.push('/')
 			} else {
 				const urlParams = new URLSearchParams(window.location.search)
-				let curr = urlParams.get('q')
+				const curr = urlParams.get('q')
 				if (curr && curr == this.search) {
 					pagination.start = 0
 					this.$emit('loadMessages')
@@ -57,7 +57,7 @@ export default {
 			e.preventDefault()
 		},
 
-		resetSearch: function () {
+		resetSearch() {
 			this.search = ''
 			this.$router.push('/')
 		}

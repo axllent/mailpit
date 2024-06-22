@@ -20,16 +20,16 @@ export default {
 	},
 
 	computed: {
-		canPrev: function () {
+		canPrev() {
 			return pagination.start > 0
 		},
 
-		canNext: function () {
+		canNext() {
 			return this.total > (pagination.start + mailbox.messages.length)
 		},
 
 		// returns the number of next X messages
-		nextMessages: function () {
+		nextMessages() {
 			let t = pagination.start + parseInt(pagination.limit, 10)
 			if (t > this.total) {
 				t = this.total
@@ -40,17 +40,17 @@ export default {
 	},
 
 	methods: {
-		changeLimit: function () {
+		changeLimit() {
 			pagination.start = 0
 			this.updateQueryParams()
 		},
 
-		viewNext: function () {
+		viewNext() {
 			pagination.start = parseInt(pagination.start, 10) + parseInt(pagination.limit, 10)
 			this.updateQueryParams()
 		},
 
-		viewPrev: function () {
+		viewPrev() {
 			let s = pagination.start - pagination.limit
 			if (s < 0) {
 				s = 0
@@ -59,7 +59,7 @@ export default {
 			this.updateQueryParams()
 		},
 
-		updateQueryParams: function () {
+		updateQueryParams() {
 			const path = this.$route.path
 			const p = {
 				...this.$route.query

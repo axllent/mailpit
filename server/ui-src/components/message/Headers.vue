@@ -1,4 +1,3 @@
-
 <script>
 import commonMixins from '../../mixins/CommonMixins'
 
@@ -16,10 +15,9 @@ export default {
     },
 
     mounted() {
-        let self = this;
-        let uri = self.resolve('/api/v1/message/' + self.message.ID + '/headers')
-        self.get(uri, false, function (response) {
-            self.headers = response.data
+        let uri = this.resolve('/api/v1/message/' + this.message.ID + '/headers')
+        this.get(uri, false, (response) => {
+            this.headers = response.data
         });
     },
 

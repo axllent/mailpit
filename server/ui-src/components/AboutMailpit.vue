@@ -26,15 +26,14 @@ export default {
 	},
 
 	methods: {
-		loadInfo: function () {
-			let self = this
-			self.get(self.resolve('/api/v1/info'), false, function (response) {
+		loadInfo() {
+			this.get(this.resolve('/api/v1/info'), false, (response) => {
 				mailbox.appInfo = response.data
-				self.modal('AppInfoModal').show()
+				this.modal('AppInfoModal').show()
 			})
 		},
 
-		requestNotifications: function () {
+		requestNotifications() {
 			// check if the browser supports notifications
 			if (!("Notification" in window)) {
 				alert("This browser does not support desktop notifications")
@@ -42,7 +41,6 @@ export default {
 
 			// we need to ask the user for permission
 			else if (Notification.permission !== "denied") {
-				let self = this
 				Notification.requestPermission().then(function (permission) {
 					if (permission === "granted") {
 						mailbox.notificationsEnabled = true
@@ -180,7 +178,9 @@ export default {
 													<td>
 														{{ formatNumber(mailbox.appInfo.RuntimeStats.SMTPAccepted) }}
 														<small class="text-secondary">
-															({{ getFileSize(mailbox.appInfo.RuntimeStats.SMTPAcceptedSize) }})
+															({{
+		getFileSize(mailbox.appInfo.RuntimeStats.SMTPAcceptedSize)
+	}})
 														</small>
 													</td>
 												</tr>
@@ -245,6 +245,6 @@ export default {
 
 		<Settings />
 	</template>
-	
+
 	<AjaxLoader :loading="loading" />
 </template>

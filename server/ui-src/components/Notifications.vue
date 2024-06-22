@@ -43,8 +43,7 @@ export default {
 		// websocket connect
 		connect() {
 			const ws = new WebSocket(this.socketURI)
-			let self = this
-			ws.onmessage = function (e) {
+			ws.onmessage = (e) => {
 				let response
 				try {
 					response = JSON.parse(e.data)
@@ -65,7 +64,7 @@ export default {
 							// update pagination offset
 							pagination.start++
 							// prevent "Too many calls to Location or History APIs within a short timeframe"
-							self.delayedPaginationUpdate()
+							this.delayedPaginationUpdate()
 						}
 					}
 
@@ -79,13 +78,13 @@ export default {
 					}
 
 					// send notifications
-					if (!self.pauseNotifications) {
-						self.pauseNotifications = true
+					if (!this.pauseNotifications) {
+						this.pauseNotifications = true
 						let from = response.Data.From != null ? response.Data.From.Address : '[unknown]'
-						self.browserNotify("New mail from: " + from, response.Data.Subject)
-						self.setMessageToast(response.Data)
+						this.browserNotify("New mail from: " + from, response.Data.Subject)
+						this.setMessageToast(response.Data)
 						// delay notifications by 2s
-						window.setTimeout(() => { self.pauseNotifications = false }, 2000)
+						window.setTimeout(() => { this.pauseNotifications = false }, 2000)
 					}
 				} else if (response.Type == "prune") {
 					// messages have been deleted, reload messages to adjust
@@ -98,24 +97,24 @@ export default {
 					mailbox.unread = response.Data.Unread
 
 					// detect version updated, refresh is needed
-					if (self.version != response.Data.Version) {
+					if (this.version != response.Data.Version) {
 						location.reload()
 					}
 				}
 			}
 
-			ws.onopen = function () {
+			ws.onopen = () => {
 				mailbox.connected = true
-				self.socketLastConnection = Date.now()
-				if (self.reconnectRefresh) {
-					self.reconnectRefresh = false
+				this.socketLastConnection = Date.now()
+				if (this.reconnectRefresh) {
+					this.reconnectRefresh = false
 					mailbox.refresh = true // trigger refresh
 					window.setTimeout(() => { mailbox.refresh = false }, 500)
 				}
 			}
 
-			ws.onclose = function (e) {
-				if (self.socketLastConnection == 0) {
+			ws.onclose = (e) => {
+				if (this.socketLastConnection == 0) {
 					// connection failed immediately after connecting to Mailpit implies proxy websockets aren't configured
 					console.log('Unable to connect to websocket, disabling websocket support')
 					return
@@ -123,27 +122,27 @@ export default {
 
 				if (mailbox.connected) {
 					// count disconnections
-					self.socketBreaks++
+					this.socketBreaks++
 				}
 
 				// set disconnected state
 				mailbox.connected = false
 
-				if (self.socketBreaks > 3) {
+				if (this.socketBreaks > 3) {
 					// give up after > 3 successful socket connections & disconnections within a 15 second window,
 					// something is not working right on their end, see issue #319
 					console.log('Unstable websocket connection, disabling websocket support')
 					return
 				}
-				if (Date.now() - self.socketLastConnection > 5000) {
+				if (Date.now() - this.socketLastConnection > 5000) {
 					// only refresh mailbox if the last successful connection was broken for > 5 seconds
-					self.reconnectRefresh = true
+					this.reconnectRefresh = true
 				} else {
-					self.reconnectRefresh = false
+					this.reconnectRefresh = false
 				}
 
-				setTimeout(function () {
-					self.connect() // reconnect
+				setTimeout(() => {
+					this.connect() // reconnect
 				}, 1000)
 			}
 
@@ -214,11 +213,10 @@ export default {
 
 			this.toastMessage = m
 
-			let self = this
 			const el = document.getElementById('messageToast')
 			if (el) {
 				el.addEventListener('hidden.bs.toast', () => {
-					self.toastMessage = false
+					this.toastMessage = false
 				})
 
 				Toast.getOrCreateInstance(el).show()

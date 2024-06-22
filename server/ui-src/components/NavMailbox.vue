@@ -30,7 +30,7 @@ export default {
 	},
 
 	methods: {
-		reloadInbox: function () {
+		reloadInbox() {
 			const paginationParams = this.getPaginationParams()
 			const reload = paginationParams?.start ? false : true
 
@@ -41,24 +41,22 @@ export default {
 			}
 		},
 
-		loadMessages: function () {
+		loadMessages() {
 			this.hideNav() // hide mobile menu
 			this.$emit('loadMessages')
 		},
 
-		markAllRead: function () {
-			let self = this
-			self.put(self.resolve(`/api/v1/messages`), { 'read': true }, function (response) {
+		markAllRead() {
+			this.put(this.resolve(`/api/v1/messages`), { 'read': true }, (response) => {
 				window.scrollInPlace = true
-				self.loadMessages()
+				this.loadMessages()
 			})
 		},
 
-		deleteAllMessages: function () {
-			let self = this
-			self.delete(self.resolve(`/api/v1/messages`), false, function (response) {
+		deleteAllMessages() {
+			this.delete(this.resolve(`/api/v1/messages`), false, (response) => {
 				pagination.start = 0
-				self.loadMessages()
+				this.loadMessages()
 			})
 		}
 	}

@@ -46,26 +46,25 @@ export default {
 
 	methods: {
 		// triggered manually after modal is shown
-		initTags: function () {
+		initTags() {
 			Tags.init("select[multiple]")
 		},
 
-		releaseMessage: function () {
-			let self = this
+		releaseMessage() {
 			// set timeout to allow for user clicking send before the tag filter has applied the tag
-			window.setTimeout(function () {
-				if (!self.addresses.length) {
+			window.setTimeout(() => {
+				if (!this.addresses.length) {
 					return false
 				}
 
 				let data = {
-					To: self.addresses
+					To: this.addresses
 				}
 
-				self.post(self.resolve('/api/v1/message/' + self.message.ID + '/release'), data, function (response) {
-					self.modal("ReleaseModal").hide()
-					if (self.deleteAfterRelease) {
-						self.$emit('delete')
+				this.post(this.resolve('/api/v1/message/' + this.message.ID + '/release'), data, (response) => {
+					this.modal("ReleaseModal").hide()
+					if (this.deleteAfterRelease) {
+						this.$emit('delete')
 					}
 				})
 			}, 100)

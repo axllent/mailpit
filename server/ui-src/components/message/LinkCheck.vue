@@ -64,7 +64,7 @@ export default {
 	},
 
 	computed: {
-		groupedStatuses: function () {
+		groupedStatuses() {
 			let results = {}
 
 			if (!this.check) {
@@ -114,7 +114,7 @@ export default {
 	},
 
 	methods: {
-		doCheck: function () {
+		doCheck() {
 			this.check = false
 			this.loading = true
 			let uri = this.resolve('/api/v1/message/' + this.message.ID + '/link-check')
@@ -122,38 +122,37 @@ export default {
 				uri += '?follow=true'
 			}
 
-			let self = this
 			// ignore any error, do not show loader
 			axios.get(uri, null)
-				.then(function (result) {
-					self.check = result.data
-					self.error = false
+				.then((result) => {
+					this.check = result.data
+					this.error = false
 
-					self.$emit('setLinkErrors', result.data.Errors)
+					this.$emit('setLinkErrors', result.data.Errors)
 				})
-				.catch(function (error) {
+				.catch((error) => {
 					// handle error
 					if (error.response && error.response.data) {
 						// The request was made and the server responded with a status code
 						// that falls out of the range of 2xx
 						if (error.response.data.Error) {
-							self.error = error.response.data.Error
+							this.error = error.response.data.Error
 						} else {
-							self.error = error.response.data
+							this.error = error.response.data
 						}
 					} else if (error.request) {
 						// The request was made but no response was received
 						// `error.request` is an instance of XMLHttpRequest in the browser and an instance of
 						// http.ClientRequest in node.js
-						self.error = 'Error sending data to the server. Please try again.'
+						this.error = 'Error sending data to the server. Please try again.'
 					} else {
 						// Something happened in setting up the request that triggered an Error
-						self.error = error.message
+						this.error = error.message
 					}
 				})
-				.then(function (result) {
+				.then((result) => {
 					// always run
-					self.loading = false
+					this.loading = false
 				})
 		},
 	}
@@ -239,7 +238,8 @@ export default {
 
 	</div>
 
-	<div class="modal fade" id="LinkCheckOptions" tabindex="-1" aria-labelledby="LinkCheckOptionsLabel" aria-hidden="true">
+	<div class="modal fade" id="LinkCheckOptions" tabindex="-1" aria-labelledby="LinkCheckOptionsLabel"
+		aria-hidden="true">
 		<div class="modal-dialog modal-lg modal-dialog-scrollable">
 			<div class="modal-content">
 				<div class="modal-header">
@@ -296,11 +296,12 @@ export default {
 									What is Link check?
 								</button>
 							</h2>
-							<div id="col1" class="accordion-collapse collapse" data-bs-parent="#LinkCheckAboutAccordion">
+							<div id="col1" class="accordion-collapse collapse"
+								data-bs-parent="#LinkCheckAboutAccordion">
 								<div class="accordion-body">
 									Link check scans your message HTML and text for all unique links, images and linked
-									stylesheets. It then does a HTTP <code>HEAD</code> request to each link, 5 at a time, to
-									test whether the link/image/stylesheet exists.
+									stylesheets. It then does a HTTP <code>HEAD</code> request to each link, 5 at a
+									time, to test whether the link/image/stylesheet exists.
 								</div>
 							</div>
 						</div>
@@ -311,14 +312,16 @@ export default {
 									What are "301" and "302" links?
 								</button>
 							</h2>
-							<div id="col2" class="accordion-collapse collapse" data-bs-parent="#LinkCheckAboutAccordion">
+							<div id="col2" class="accordion-collapse collapse"
+								data-bs-parent="#LinkCheckAboutAccordion">
 								<div class="accordion-body">
 									<p>
 										These are links that redirect you to another URL, for example newsletters
 										often use redirect links to track user clicks.
 									</p>
 									<p>
-										By default Link check will not follow these links, however you can turn this on via
+										By default Link check will not follow these links, however you can turn this on
+										via
 										the settings and Link check will "follow" those redirects.
 									</p>
 								</div>
@@ -331,7 +334,8 @@ export default {
 									Why are some links returning an error but work in my browser?
 								</button>
 							</h2>
-							<div id="col3" class="accordion-collapse collapse" data-bs-parent="#LinkCheckAboutAccordion">
+							<div id="col3" class="accordion-collapse collapse"
+								data-bs-parent="#LinkCheckAboutAccordion">
 								<div class="accordion-body">
 									<p>This may be due to various reasons, for instance:</p>
 									<ul>
@@ -353,11 +357,12 @@ export default {
 									What are the risks of running Link check automatically?
 								</button>
 							</h2>
-							<div id="col4" class="accordion-collapse collapse" data-bs-parent="#LinkCheckAboutAccordion">
+							<div id="col4" class="accordion-collapse collapse"
+								data-bs-parent="#LinkCheckAboutAccordion">
 								<div class="accordion-body">
 									<p>
-										Depending on the type of messages you are testing, opening all links on all messages
-										may have undesired consequences:
+										Depending on the type of messages you are testing, opening all links on all
+										messages may have undesired consequences:
 									</p>
 									<ul>
 										<li>If the message contains tracking links this may reveal your identity.</li>
@@ -366,13 +371,13 @@ export default {
 											unsubscribe you.
 										</li>
 										<li>
-											To speed up the checking process, Link check will attempt 5 URLs at a time. This
-											could lead to temporary heady load on the remote server.
+											To speed up the checking process, Link check will attempt 5 URLs at a time.
+											This could lead to temporary heady load on the remote server.
 										</li>
 									</ul>
 									<p>
-										Unless you know what messages you receive, it is advised to only run the Link check
-										manually.
+										Unless you know what messages you receive, it is advised to only run the Link
+										check manually.
 									</p>
 								</div>
 							</div>

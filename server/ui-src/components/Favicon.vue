@@ -39,10 +39,9 @@ export default {
             }
 
             this.iconProcessing = true
-            let self = this
 
             window.setTimeout(() => {
-                self.icoUpdate()
+                this.icoUpdate()
             }, this.iconTimeout)
         },
     },

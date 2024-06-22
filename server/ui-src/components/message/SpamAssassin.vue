@@ -38,41 +38,39 @@ export default {
 	},
 
 	methods: {
-		doCheck: function () {
+		doCheck() {
 			this.check = false
 
-			let self = this
-
 			// ignore any error, do not show loader
-			axios.get(self.resolve('/api/v1/message/' + self.message.ID + '/sa-check'), null)
-				.then(function (result) {
-					self.check = result.data
-					self.error = false
-					self.setIcons()
+			axios.get(this.resolve('/api/v1/message/' + this.message.ID + '/sa-check'), null)
+				.then((result) => {
+					this.check = result.data
+					this.error = false
+					this.setIcons()
 				})
-				.catch(function (error) {
+				.catch((error) => {
 					// handle error
 					if (error.response && error.response.data) {
 						// The request was made and the server responded with a status code
 						// that falls out of the range of 2xx
 						if (error.response.data.Error) {
-							self.error = error.response.data.Error
+							this.error = error.response.data.Error
 						} else {
-							self.error = error.response.data
+							this.error = error.response.data
 						}
 					} else if (error.request) {
 						// The request was made but no response was received
 						// `error.request` is an instance of XMLHttpRequest in the browser and an instance of
 						// http.ClientRequest in node.js
-						self.error = 'Error sending data to the server. Please try again.'
+						this.error = 'Error sending data to the server. Please try again.'
 					} else {
 						// Something happened in setting up the request that triggered an Error
-						self.error = error.message
+						this.error = error.message
 					}
 				})
 		},
 
-		badgeStyle: function (ignorePadding = false) {
+		badgeStyle(ignorePadding = false) {
 			let badgeStyle = 'bg-success'
 			if (this.check.Error) {
 				badgeStyle = 'bg-warning text-primary'
@@ -90,7 +88,7 @@ export default {
 			return badgeStyle
 		},
 
-		setIcons: function () {
+		setIcons() {
 			let score = this.check.Score
 			if (this.check.Error && this.check.Error != '') {
 				score = '!'
@@ -102,7 +100,7 @@ export default {
 	},
 
 	computed: {
-		graphSections: function () {
+		graphSections() {
 			let score = this.check.Score
 			let p = Math.round(score / 5 * 100)
 			if (p > 100) {
@@ -125,7 +123,7 @@ export default {
 			]
 		},
 
-		scoreColor: function () {
+		scoreColor() {
 			return this.graphSections[0].color
 		},
 	}
