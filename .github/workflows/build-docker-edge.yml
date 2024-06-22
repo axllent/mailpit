@@ -29,13 +29,16 @@ jobs:
         username: ${{ github.repository_owner }}
         password: ${{ github.token }}
 
+    - uses: benjlevesque/short-sha@v3.0
+        id: short-sha
+
     - name: Build and push
       uses: docker/build-push-action@v5
       with:
         context: .
         platforms: linux/386,linux/amd64,linux/arm64
         build-args: |
-          "VERSION=edge-${{ github.sha }}"
+          "VERSION=edge-${{ steps.short-sha.outputs.sha }}"
         push: true
         tags: |
           axllent/mailpit:edge
