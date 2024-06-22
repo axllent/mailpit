@@ -30,7 +30,7 @@ jobs:
         password: ${{ github.token }}
 
     - uses: benjlevesque/short-sha@v3.0
-        id: short-sha
+      id: short-sha
 
     - name: Build and push
       uses: docker/build-push-action@v5
