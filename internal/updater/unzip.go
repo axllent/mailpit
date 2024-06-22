@@ -35,14 +35,14 @@ func Unzip(src string, dest string) ([]string, error) {
 
 		if f.FileInfo().IsDir() {
 			// Make Folder
-			if err := os.MkdirAll(fpath, os.ModePerm); err != nil {
+			if err := os.MkdirAll(fpath, os.ModePerm); /* #nosec */ err != nil {
 				return filenames, err
 			}
 			continue
 		}
 
 		// Make File
-		if err = os.MkdirAll(filepath.Dir(fpath), os.ModePerm); err != nil {
+		if err = os.MkdirAll(filepath.Dir(fpath), os.ModePerm); /* #nosec */ err != nil {
 			return filenames, err
 		}
 

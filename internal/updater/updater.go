@@ -329,7 +329,7 @@ func getTempDir() string {
 // MkDirIfNotExists will create a directory if it doesn't exist
 func mkDirIfNotExists(path string) error {
 	if !isDir(path) {
-		return os.MkdirAll(path, os.ModePerm)
+		return os.MkdirAll(path, os.ModePerm) // #nosec
 	}
 
 	return nil

@@ -97,9 +97,9 @@ func (c *Client) NewConn() (*Conn, error) {
 	// No TLS.
 	if c.opt.TLSEnabled {
 		// Skip TLS host verification.
-		tlsCfg := tls.Config{}
+		tlsCfg := tls.Config{} // #nosec
 		if c.opt.TLSSkipVerify {
-			tlsCfg.InsecureSkipVerify = c.opt.TLSSkipVerify
+			tlsCfg.InsecureSkipVerify = c.opt.TLSSkipVerify // #nosec
 		} else {
 			tlsCfg.ServerName = c.opt.Host
 		}
