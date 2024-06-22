@@ -14,6 +14,8 @@ export default {
 			toastMessage: false,
 			reconnectRefresh: false,
 			socketURI: false,
+			socketLastConnection: 0, // timestamp to track reconnection times & avoid reloading mailbox on short disconnections
+			socketBreaks: 0, // to track sockets that continually connect & disconnect, reset every 15s
 			pauseNotifications: false, // prevent spamming
 			version: false,
 			paginationDelayed: false, // for delayed pagination URL changes
@@ -21,14 +23,15 @@ export default {
 	},
 
 	mounted() {
-		let d = document.getElementById('app')
+		const d = document.getElementById('app')
 		if (d) {
 			this.version = d.dataset.version
 		}
 
-		let proto = location.protocol == 'https:' ? 'wss' : 'ws'
+		const proto = location.protocol == 'https:' ? 'wss' : 'ws'
 		this.socketURI = proto + "://" + document.location.host + this.resolve(`/api/events`)
 
+		this.socketBreakReset()
 		this.connect()
 
 		mailbox.notificationsSupported = window.isSecureContext
@@ -38,8 +41,8 @@ export default {
 
 	methods: {
 		// websocket connect
-		connect: function () {
-			let ws = new WebSocket(this.socketURI)
+		connect() {
+			const ws = new WebSocket(this.socketURI)
 			let self = this
 			ws.onmessage = function (e) {
 				let response
@@ -103,6 +106,7 @@ export default {
 
 			ws.onopen = function () {
 				mailbox.connected = true
+				self.socketLastConnection = Date.now()
 				if (self.reconnectRefresh) {
 					self.reconnectRefresh = false
 					mailbox.refresh = true // trigger refresh
@@ -111,8 +115,32 @@ export default {
 			}
 
 			ws.onclose = function (e) {
+				if (self.socketLastConnection == 0) {
+					// connection failed immediately after connecting to Mailpit implies proxy websockets aren't configured
+					console.log('Unable to connect to websocket, disabling websocket support')
+					return
+				}
+
+				if (mailbox.connected) {
+					// count disconnections
+					self.socketBreaks++
+				}
+
+				// set disconnected state
 				mailbox.connected = false
-				self.reconnectRefresh = true
+
+				if (self.socketBreaks > 3) {
+					// give up after > 3 successful socket connections & disconnections within a 15 second window,
+					// something is not working right on their end, see issue #319
+					console.log('Unstable websocket connection, disabling websocket support')
+					return
+				}
+				if (Date.now() - self.socketLastConnection > 5000) {
+					// only refresh mailbox if the last successful connection was broken for > 5 seconds
+					self.reconnectRefresh = true
+				} else {
+					self.reconnectRefresh = false
+				}
 
 				setTimeout(function () {
 					self.connect() // reconnect
@@ -124,9 +152,16 @@ export default {
 			}
 		},
 
+		socketBreakReset() {
+			window.setTimeout(() => {
+				this.socketBreaks = 0
+				this.socketBreakReset()
+			}, 15000)
+		},
+
 		// This will only update the pagination offset at a maximum of 2x per second
 		// when viewing the inbox on > page 1, while receiving an influx of new messages.
-		delayedPaginationUpdate: function () {
+		delayedPaginationUpdate() {
 			if (this.paginationDelayed) {
 				return
 			}
@@ -157,13 +192,12 @@ export default {
 			}, 500)
 		},
 
-		browserNotify: function (title, message) {
+		browserNotify(title, message) {
 			if (!("Notification" in window)) {
 				return
 			}
 
 			if (Notification.permission === "granted") {
-				let b = message.Subject
 				let options = {
 					body: message,
 					icon: this.resolve('/notification.png')
@@ -172,7 +206,7 @@ export default {
 			}
 		},
 
-		setMessageToast: function (m) {
+		setMessageToast(m) {
 			// don't display if browser notifications are enabled, or a toast is already displayed
 			if (mailbox.notificationsEnabled || this.toastMessage) {
 				return
@@ -181,7 +215,7 @@ export default {
 			this.toastMessage = m
 
 			let self = this
-			let el = document.getElementById('messageToast')
+			const el = document.getElementById('messageToast')
 			if (el) {
 				el.addEventListener('hidden.bs.toast', () => {
 					self.toastMessage = false
@@ -191,8 +225,8 @@ export default {
 			}
 		},
 
-		closeToast: function () {
-			let el = document.getElementById('messageToast')
+		closeToast() {
+			const el = document.getElementById('messageToast')
 			if (el) {
 				Toast.getOrCreateInstance(el).hide()
 			}
