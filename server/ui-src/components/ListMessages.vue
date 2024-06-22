@@ -21,29 +21,25 @@ export default {
 	},
 
 	mounted() {
-		let relativeTime = require('dayjs/plugin/relativeTime')
+		const relativeTime = require('dayjs/plugin/relativeTime')
 		dayjs.extend(relativeTime)
 		this.refreshUI()
 	},
 
 	methods: {
-		refreshUI: function () {
-			let self = this
-			window.setTimeout(
-				() => {
-					self.$forceUpdate()
-					self.refreshUI()
-				},
-				30000
-			)
+		refreshUI() {
+			window.setTimeout(() => {
+				this.$forceUpdate()
+				this.refreshUI()
+			}, 30000)
 		},
 
-		getRelativeCreated: function (message) {
-			let d = new Date(message.Created)
+		getRelativeCreated(message) {
+			const d = new Date(message.Created)
 			return dayjs(d).fromNow()
 		},
 
-		getPrimaryEmailTo: function (message) {
+		getPrimaryEmailTo(message) {
 			for (let i in message.To) {
 				return message.To[i].Address
 			}
@@ -51,11 +47,11 @@ export default {
 			return '[ Undisclosed recipients ]'
 		},
 
-		isSelected: function (id) {
+		isSelected(id) {
 			return mailbox.selected.indexOf(id) != -1
 		},
 
-		toggleSelected: function (e, id) {
+		toggleSelected(e, id) {
 			e.preventDefault()
 
 			if (this.isSelected(id)) {
@@ -67,7 +63,7 @@ export default {
 			}
 		},
 
-		selectRange: function (e, id) {
+		selectRange(e, id) {
 			e.preventDefault()
 
 			let selecting = false
@@ -102,7 +98,7 @@ export default {
 			}
 		},
 
-		toTagUrl: function (t) {
+		toTagUrl(t) {
 			if (t.match(/ /)) {
 				t = `"${t}"`
 			}
@@ -133,16 +129,14 @@ export default {
 						{{ getRelativeCreated(message) }}
 					</div>
 					<div class="text-truncate d-lg-none privacy">
-						<span v-if="message.From" :title="'From: ' + message.From.Address">{{
-		message.From.Name ?
-			message.From.Name : message.From.Address
-	}}</span>
+						<span v-if="message.From" :title="'From: ' + message.From.Address">
+							{{ message.From.Name ? message.From.Name : message.From.Address }}
+						</span>
 					</div>
 					<div class="text-truncate d-none d-lg-block privacy">
-						<b v-if="message.From" :title="'From: ' + message.From.Address">{{
-		message.From.Name ?
-			message.From.Name : message.From.Address
-	}}</b>
+						<b v-if="message.From" :title="'From: ' + message.From.Address">
+							{{ message.From.Name ? message.From.Name : message.From.Address }}
+						</b>
 					</div>
 					<div class="d-none d-lg-block text-truncate text-muted small privacy">
 						{{ getPrimaryEmailTo(message) }}

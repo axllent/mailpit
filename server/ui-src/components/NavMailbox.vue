@@ -30,7 +30,7 @@ export default {
 	},
 
 	methods: {
-		reloadInbox: function () {
+		reloadInbox() {
 			const paginationParams = this.getPaginationParams()
 			const reload = paginationParams?.start ? false : true
 
@@ -41,25 +41,22 @@ export default {
 			}
 		},
 
-
-		loadMessages: function () {
+		loadMessages() {
 			this.hideNav() // hide mobile menu
 			this.$emit('loadMessages')
 		},
 
-		markAllRead: function () {
-			let self = this
-			self.put(self.resolve(`/api/v1/messages`), { 'read': true }, function (response) {
+		markAllRead() {
+			this.put(this.resolve(`/api/v1/messages`), { 'read': true }, (response) => {
 				window.scrollInPlace = true
-				self.loadMessages()
+				this.loadMessages()
 			})
 		},
 
-		deleteAllMessages: function () {
-			let self = this
-			self.delete(self.resolve(`/api/v1/messages`), false, function (response) {
+		deleteAllMessages() {
+			this.delete(this.resolve(`/api/v1/messages`), false, (response) => {
 				pagination.start = 0
-				self.loadMessages()
+				this.loadMessages()
 			})
 		}
 	}
@@ -68,7 +65,12 @@ export default {
 
 <template>
 	<template v-if="!modals">
-		<div class="list-group my-2">
+		<div class="text-center badge text-bg-primary py-2 mt-2 w-100 text-truncate fw-normal"
+			v-if="mailbox.uiConfig.Label">
+			{{ mailbox.uiConfig.Label }}
+		</div>
+
+		<div class="list-group my-2" :class="mailbox.uiConfig.Label ? 'mt-0' : ''">
 			<button @click="reloadInbox" class="list-group-item list-group-item-action active">
 				<i class="bi bi-envelope-fill me-1" v-if="mailbox.connected"></i>
 				<i class="bi bi-arrow-clockwise me-1" v-else></i>

@@ -1,4 +1,3 @@
-
 <script>
 import AjaxLoader from '../AjaxLoader.vue'
 import CommonMixins from '../../mixins/CommonMixins'
@@ -23,9 +22,8 @@ export default {
     },
 
     methods: {
-        initScreenshot: function () {
+        initScreenshot() {
             this.loading = 1
-            let self = this
             // remove base tag, if set
             let h = this.message.HTML.replace(/<base .*>/mi, '')
             let proxy = this.resolve('/proxy')
@@ -38,11 +36,11 @@ export default {
 
             // update any inline `url(...)` absolute links
             const urlRegex = /(url\((\'|\")?(https?:\/\/[^\)\'\"]+)(\'|\")?\))/mgi;
-            h = h.replaceAll(urlRegex, function (match, p1, p2, p3) {
+            h = h.replaceAll(urlRegex, (match, p1, p2, p3) => {
                 if (typeof p2 === 'string') {
-                    return `url(${p2}${proxy}?url=` + encodeURIComponent(self.decodeEntities(p3)) + `${p2})`
+                    return `url(${p2}${proxy}?url=` + encodeURIComponent(this.decodeEntities(p3)) + `${p2})`
                 }
-                return `url(${proxy}?url=` + encodeURIComponent(self.decodeEntities(p3)) + `)`
+                return `url(${proxy}?url=` + encodeURIComponent(this.decodeEntities(p3)) + `)`
             })
 
             // create temporary document to manipulate
@@ -63,7 +61,7 @@ export default {
                 let src = i.getAttribute('href')
 
                 if (src && src.match(/^https?:\/\//i) && src.indexOf(window.location.origin + window.location.pathname) !== 0) {
-                    i.setAttribute('href', `${proxy}?url=` + encodeURIComponent(self.decodeEntities(src)))
+                    i.setAttribute('href', `${proxy}?url=` + encodeURIComponent(this.decodeEntities(src)))
                 }
             }
 
@@ -72,7 +70,7 @@ export default {
             for (let i of images) {
                 let src = i.getAttribute('src')
                 if (src && src.match(/^https?:\/\//i) && src.indexOf(window.location.origin + window.location.pathname) !== 0) {
-                    i.setAttribute('src', `${proxy}?url=` + encodeURIComponent(self.decodeEntities(src)))
+                    i.setAttribute('src', `${proxy}?url=` + encodeURIComponent(this.decodeEntities(src)))
                 }
             }
 
@@ -83,7 +81,7 @@ export default {
 
                 if (src && src.match(/^https?:\/\//i) && src.indexOf(window.location.origin + window.location.pathname) !== 0) {
                     // replace with proxy link
-                    i.setAttribute('background', `${proxy}?url=` + encodeURIComponent(self.decodeEntities(src)))
+                    i.setAttribute('background', `${proxy}?url=` + encodeURIComponent(this.decodeEntities(src)))
                 }
             }
 
@@ -92,7 +90,7 @@ export default {
         },
 
         // HTML decode function
-        decodeEntities: function (s) {
+        decodeEntities(s) {
             let e = document.createElement('div')
             e.innerHTML = s
             let str = e.textContent
@@ -100,8 +98,7 @@ export default {
             return str
         },
 
-        doScreenshot: function () {
-            let self = this
+        doScreenshot() {
             let width = document.getElementById('message-view').getBoundingClientRect().width
 
             let prev = document.getElementById('preview-html')
@@ -113,7 +110,7 @@ export default {
                 width = 300
             }
 
-            let i = document.getElementById('screenshot-html')
+            const i = document.getElementById('screenshot-html')
 
             // set the iframe width
             i.style.width = width + 'px'
@@ -127,11 +124,11 @@ export default {
                 width: width,
             }).then(dataUrl => {
                 const link = document.createElement('a')
-                link.download = self.message.ID + '.png'
+                link.download = this.message.ID + '.png'
                 link.href = dataUrl
                 link.click()
-                self.loading = 0
-                self.html = false
+                this.loading = 0
+                this.html = false
             })
         }
     }

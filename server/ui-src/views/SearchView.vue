@@ -43,8 +43,8 @@ export default {
 	},
 
 	methods: {
-		doSearch: function () {
-			let s = this.getSearch()
+		doSearch() {
+			const s = this.getSearch()
 
 			if (!s) {
 				mailbox.searching = false

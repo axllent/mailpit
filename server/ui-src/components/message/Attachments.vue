@@ -18,7 +18,7 @@ export default {
 	},
 
 	methods: {
-		openAttachment: function (part, e) {
+		openAttachment(part, e) {
 			let filename = part.FileName
 			let contentType = part.ContentType
 			let href = this.resolve('/api/v1/message/' + this.message.ID + '/part/' + part.PartID)

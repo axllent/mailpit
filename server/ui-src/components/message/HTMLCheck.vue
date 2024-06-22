@@ -41,9 +41,7 @@ export default {
 	},
 
 	computed: {
-		summary: function () {
-			let self = this
-
+		summary() {
 			if (!this.check) {
 				return false
 			}
@@ -65,8 +63,8 @@ export default {
 				}
 
 				// filter by enabled platforms
-				let results = o.Results.filter(function (w) {
-					return self.platforms.indexOf(w.Platform) != -1
+				let results = o.Results.filter((w) => {
+					return this.platforms.indexOf(w.Platform) != -1
 				})
 
 				if (results.length == 0) {
@@ -98,7 +96,7 @@ export default {
 			}
 
 			let maxPartial = 0, maxUnsupported = 0
-			result.Warnings.forEach(function (w) {
+			result.Warnings.forEach((w) => {
 				let scoreWeight = 1
 				if (w.Score.Found < result.Total.Nodes) {
 					// each error is weighted based on the number of occurrences vs: the total message nodes
@@ -108,7 +106,7 @@ export default {
 				// pseudo-classes & at-rules need to be weighted lower as we do not know how many times they
 				// are actually used in the HTML, and including things like bootstrap styles completely throws
 				// off the calculation as these dominate.
-				if (self.isPseudoClassOrAtRule(w.Title)) {
+				if (this.isPseudoClassOrAtRule(w.Title)) {
 					scoreWeight = 0.05
 					w.PseudoClassOrAtRule = true
 				}
@@ -124,15 +122,15 @@ export default {
 			})
 
 			// sort warnings by final score
-			result.Warnings.sort(function (a, b) {
+			result.Warnings.sort((a, b) => {
 				let aWeight = a.Score.Found > result.Total.Nodes ? result.Total.Nodes : a.Score.Found / result.Total.Nodes
 				let bWeight = b.Score.Found > result.Total.Nodes ? result.Total.Nodes : b.Score.Found / result.Total.Nodes
 
-				if (self.isPseudoClassOrAtRule(a.Title)) {
+				if (this.isPseudoClassOrAtRule(a.Title)) {
 					aWeight = 0.05
 				}
 
-				if (self.isPseudoClassOrAtRule(b.Title)) {
+				if (this.isPseudoClassOrAtRule(b.Title)) {
 					bWeight = 0.05
 				}
 
@@ -148,7 +146,7 @@ export default {
 			return result
 		},
 
-		graphSections: function () {
+		graphSections() {
 			let s = Math.round(this.summary.Total.Supported)
 			let p = Math.round(this.summary.Total.Partial)
 			let u = 100 - s - p
@@ -172,7 +170,7 @@ export default {
 		},
 
 		// colors depend on both varying unsupported & partially unsupported percentages
-		scoreColor: function () {
+		scoreColor() {
 			if (this.summary.Total.Unsupported < 5 && this.summary.Total.Partial < 10) {
 				this.$emit('setBadgeStyle', 'bg-success')
 				return 'text-success'
@@ -197,62 +195,51 @@ export default {
 		platforms(v) {
 			localStorage.setItem('html-check-platforms', JSON.stringify(v))
 		},
-		// enabled(v) {
-		// 	if (!v) {
-		// 		localStorage.setItem('htmlCheckDisabled', true)
-		// 		this.$emit('setHtmlScore', false)
-		// 	} else {
-		// 		localStorage.removeItem('htmlCheckDisabled')
-		// 		this.doCheck()
-		// 	}
-		// }
 	},
 
 	methods: {
-		doCheck: function () {
+		doCheck() {
 			this.check = false
 
 			if (this.message.HTML == "") {
 				return
 			}
 
-			let self = this
-
 			// ignore any error, do not show loader
-			axios.get(self.resolve('/api/v1/message/' + self.message.ID + '/html-check'), null)
-				.then(function (result) {
-					self.check = result.data
-					self.error = false
+			axios.get(this.resolve('/api/v1/message/' + this.message.ID + '/html-check'), null)
+				.then((result) => {
+					this.check = result.data
+					this.error = false
 
 					// set tooltips
-					window.setTimeout(function () {
+					window.setTimeout(() => {
 						const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
 						[...tooltipTriggerList].map(tooltipTriggerEl => new Tooltip(tooltipTriggerEl))
 					}, 500)
 				})
-				.catch(function (error) {
+				.catch((error) => {
 					// handle error
 					if (error.response && error.response.data) {
 						// The request was made and the server responded with a status code
 						// that falls out of the range of 2xx
 						if (error.response.data.Error) {
-							self.error = error.response.data.Error
+							this.error = error.response.data.Error
 						} else {
-							self.error = error.response.data
+							this.error = error.response.data
 						}
 					} else if (error.request) {
 						// The request was made but no response was received
 						// `error.request` is an instance of XMLHttpRequest in the browser and an instance of
 						// http.ClientRequest in node.js
-						self.error = 'Error sending data to the server. Please try again.'
+						this.error = 'Error sending data to the server. Please try again.'
 					} else {
 						// Something happened in setting up the request that triggered an Error
-						self.error = error.message
+						this.error = error.message
 					}
 				})
 		},
 
-		loadConfig: function () {
+		loadConfig() {
 			let platforms = localStorage.getItem('html-check-platforms')
 			if (platforms) {
 				try {
@@ -268,7 +255,7 @@ export default {
 		},
 
 		// return a platform's families (email clients)
-		families: function (k) {
+		families(k) {
 			if (this.check.Platforms[k]) {
 				return this.check.Platforms[k]
 			}
@@ -277,19 +264,19 @@ export default {
 		},
 
 		// return whether the test string is a pseudo class (:<test>) or at rule (@<test>)
-		isPseudoClassOrAtRule: function (t) {
+		isPseudoClassOrAtRule(t) {
 			return t.match(/^(:|@)/)
 		},
 
-		round: function (v) {
+		round(v) {
 			return Math.round(v)
 		},
 
-		round2dm: function (v) {
+		round2dm(v) {
 			return Math.round(v * 100) / 100
 		},
 
-		scrollToWarnings: function () {
+		scrollToWarnings() {
 			if (!this.$refs.warnings) {
 				return
 			}
@@ -312,9 +299,9 @@ export default {
 		<div class="mt-5 mb-3">
 			<div class="row w-100">
 				<div class="col-md-8">
-					<Donut :sections="graphSections" background="var(--bs-body-bg)" :size="180" unit="px" :thickness="20"
-						has-legend legend-placement="bottom" :total="100" :start-angle="0" :auto-adjust-text-size="true"
-						@section-click="scrollToWarnings">
+					<Donut :sections="graphSections" background="var(--bs-body-bg)" :size="180" unit="px"
+						:thickness="20" has-legend legend-placement="bottom" :total="100" :start-angle="0"
+						:auto-adjust-text-size="true" @section-click="scrollToWarnings">
 						<h2 class="m-0" :class="scoreColor" @click="scrollToWarnings">
 							{{ round2dm(summary.Total.Supported) }}%
 						</h2>
@@ -388,8 +375,9 @@ export default {
 								<div class="col-sm mt-2 mt-sm-0">
 									<div class="progress-stacked">
 										<div class="progress" role="progressbar" aria-label="Supported"
-											:aria-valuenow="warning.Score.Supported" aria-valuemin="0" aria-valuemax="100"
-											:style="{ width: warning.Score.Supported + '%' }" title="Supported">
+											:aria-valuenow="warning.Score.Supported" aria-valuemin="0"
+											aria-valuemax="100" :style="{ width: warning.Score.Supported + '%' }"
+											title="Supported">
 											<div class="progress-bar bg-success">
 												{{ round(warning.Score.Supported) + '%' }}
 											</div>
@@ -402,8 +390,9 @@ export default {
 											</div>
 										</div>
 										<div class="progress" role="progressbar" aria-label="No"
-											:aria-valuenow="warning.Score.Unsupported" aria-valuemin="0" aria-valuemax="100"
-											:style="{ width: warning.Score.Unsupported + '%' }" title="Not supported">
+											:aria-valuenow="warning.Score.Unsupported" aria-valuemin="0"
+											aria-valuemax="100" :style="{ width: warning.Score.Unsupported + '%' }"
+											title="Not supported">
 											<div class="progress-bar bg-danger">
 												{{ round(warning.Score.Unsupported) + '%' }}
 											</div>
@@ -420,7 +409,8 @@ export default {
 									<i class="bi bi-info-circle me-2"></i>
 									Detected {{ warning.Score.Found }} <code>{{ warning.Title }}</code>
 									propert<template v-if="warning.Score.Found === 1">y</template><template
-										v-else>ies</template> in the CSS styles, but unable to test if used or not.
+										v-else>ies</template> in the CSS
+									styles, but unable to test if used or not.
 								</span>
 								<span v-if="warning.Description != ''" v-html="warning.Description" class="me-2"></span>
 							</p>
@@ -487,9 +477,9 @@ export default {
 								<div id="col1" class="accordion-collapse collapse"
 									data-bs-parent="#HTMLCheckAboutAccordion">
 									<div class="accordion-body">
-										The support for HTML/CSS messages varies greatly across email clients. HTML check
-										attempts to calculate the overall support for your email for all selected platforms
-										to give you some idea of the general compatibility of your HTML email.
+										The support for HTML/CSS messages varies greatly across email clients. HTML
+										check attempts to calculate the overall support for your email for all selected
+										platforms to give you some idea of the general compatibility of your HTML email.
 									</div>
 								</div>
 							</div>
@@ -507,29 +497,31 @@ export default {
 											Internally the original HTML message is run against
 											<b>{{ check.Total.Tests }}</b> different HTML and CSS tests. All tests
 											(except for <code>&lt;script&gt;</code>) correspond to a test on
-											<a href="https://www.caniemail.com/" target="_blank">caniemail.com</a>, and the
-											final score is calculated using the available compatibility data.
+											<a href="https://www.caniemail.com/" target="_blank">caniemail.com</a>, and
+											the final score is calculated using the available compatibility data.
 										</p>
 										<p>
-											CSS support is very difficult to programmatically test, especially if a message
-											contains CSS style blocks or is linked to remote stylesheets. Remote stylesheets
-											are, unless blocked via <code>--block-remote-css-and-fonts</code>, downloaded
-											and injected into the message as style blocks. The email is then
-											<a href="https://github.com/vanng822/go-premailer" target="_blank">inlined</a>
+											CSS support is very difficult to programmatically test, especially if a
+											message contains CSS style blocks or is linked to remote stylesheets. Remote
+											stylesheets are, unless blocked via
+											<code>--block-remote-css-and-fonts</code>,
+											downloaded and injected into the message as style blocks. The email is then
+											<a href="https://github.com/vanng822/go-premailer"
+												target="_blank">inlined</a>
 											to matching HTML elements. This gives Mailpit fairly accurate results.
 										</p>
 										<p>
 											CSS properties such as <code>@font-face</code>, <code>:visited</code>,
 											<code>:hover</code> etc cannot be inlined however, so these are searched for
-											within CSS blocks. This method is not accurate as Mailpit does not know how many
-											nodes it actually applies to, if any, so they are weighted lightly (5%) as not
-											to affect the score. An example of this would be any email linking to the full
-											bootstrap CSS which contains dozens of unused attributes.
+											within CSS blocks. This method is not accurate as Mailpit does not know how
+											many nodes it actually applies to, if any, so they are weighted lightly (5%)
+											as not to affect the score. An example of this would be any email linking to
+											the full bootstrap CSS which contains dozens of unused attributes.
 										</p>
 										<p>
-											All warnings are displayed with their respective support, including any specific
-											notes, and it is up to you to decide what you do with that information and how
-											badly it may impact your message.
+											All warnings are displayed with their respective support, including any
+											specific notes, and it is up to you to decide what you do with that
+											information and how badly it may impact your message.
 										</p>
 									</div>
 								</div>
@@ -552,13 +544,15 @@ export default {
 										<p>
 											For each test, Mailpit calculates both the unsupported & partially-supported
 											percentages in relation to the number of matches against the total number of
-											nodes (elements) in the HTML. The maximum unsupported and partially-supported
-											weighted scores are then used for the final score (ie: worst case scenario).
+											nodes (elements) in the HTML. The maximum unsupported and
+											partially-supported weighted scores are then used for the final score (ie:
+											worst case scenario).
 										</p>
 										<p>
 											To try explain this logic in very simple terms: Assuming a
-											<code>&lt;script&gt;</code> node (element) has 100% failure (not supported in
-											any email client), and a <code>&lt;p&gt;</code> node has 100% pass (supported).
+											<code>&lt;script&gt;</code> node (element) has 100% failure (not supported
+											in any email client), and a <code>&lt;p&gt;</code> node has 100% pass
+											(supported).
 										</p>
 										<ul>
 											<li>
@@ -575,7 +569,8 @@ export default {
 											</li>
 										</ul>
 										<p>
-											Mailpit will sort the warnings according to their weighted unsupported scores.
+											Mailpit will sort the warnings according to their weighted unsupported
+											scores.
 										</p>
 									</div>
 								</div>
@@ -591,9 +586,9 @@ export default {
 								<div id="col4" class="accordion-collapse collapse"
 									data-bs-parent="#HTMLCheckAboutAccordion">
 									<div class="accordion-body">
-										HTML check does not detect if the original HTML is valid. In order to detect applied
-										styles to every node, the HTML email is run through a parser which is very good at
-										turning invalid input into valid output. It is what it is...
+										HTML check does not detect if the original HTML is valid. In order to detect
+										applied styles to every node, the HTML email is run through a parser which is
+										very good at turning invalid input into valid output. It is what it is...
 									</div>
 								</div>
 							</div>

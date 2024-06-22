@@ -19,54 +19,52 @@ export default {
     },
 
     methods: {
-        loadMessages: function () {
+        loadMessages() {
             this.$emit('loadMessages')
         },
 
         // mark selected messages as read
-        markSelectedRead: function () {
-            let self = this
+        markSelectedRead() {
             if (!mailbox.selected.length) {
                 return false
             }
-            self.put(self.resolve(`/api/v1/messages`), { 'Read': true, 'IDs': mailbox.selected }, function (response) {
+            this.put(this.resolve(`/api/v1/messages`), { 'Read': true, 'IDs': mailbox.selected }, (response) => {
                 window.scrollInPlace = true
-                self.loadMessages()
+                this.loadMessages()
             })
         },
 
-        isSelected: function (id) {
+        isSelected(id) {
             return mailbox.selected.indexOf(id) != -1
         },
 
         // mark selected messages as unread
-        markSelectedUnread: function () {
-            let self = this
+        markSelectedUnread() {
             if (!mailbox.selected.length) {
                 return false
             }
-            self.put(self.resolve(`/api/v1/messages`), { 'Read': false, 'IDs': mailbox.selected }, function (response) {
+            this.put(this.resolve(`/api/v1/messages`), { 'Read': false, 'IDs': mailbox.selected }, (response) => {
                 window.scrollInPlace = true
-                self.loadMessages()
+                this.loadMessages()
             })
         },
 
         // universal handler to delete current or selected messages
-        deleteMessages: function () {
+        deleteMessages() {
             let ids = []
-            let self = this
             ids = JSON.parse(JSON.stringify(mailbox.selected))
             if (!ids.length) {
                 return false
             }
-            self.delete(self.resolve(`/api/v1/messages`), { 'IDs': ids }, function (response) {
+
+            this.delete(this.resolve(`/api/v1/messages`), { 'IDs': ids }, (response) => {
                 window.scrollInPlace = true
-                self.loadMessages()
+                this.loadMessages()
             })
         },
 
         // test if any selected emails are unread
-        selectedHasUnread: function () {
+        selectedHasUnread() {
             if (!mailbox.selected.length) {
                 return false
             }
@@ -79,7 +77,7 @@ export default {
         },
 
         // test of any selected emails are read
-        selectedHasRead: function () {
+        selectedHasRead() {
             if (!mailbox.selected.length) {
                 return false
             }

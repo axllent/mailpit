@@ -112,7 +112,11 @@ func handleClient(conn net.Conn) {
 	logger.Log().Debugf("[pop3] connection opened by %s", conn.RemoteAddr().String())
 
 	// First welcome the new connection
-	sendResponse(conn, "+OK Mailpit POP3 server")
+	serverName := "Mailpit"
+	if config.Label != "" {
+		serverName = fmt.Sprintf("Mailpit (%s)", config.Label)
+	}
+	sendResponse(conn, fmt.Sprintf("+OK %s POP3 server", serverName))
 
 	// Set 10 minutes timeout according to RFC1939
 	timeoutDuration := 600 * time.Second

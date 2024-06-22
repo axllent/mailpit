@@ -17,6 +17,24 @@ options:
       fix: Fix
     #   perf: Performance Improvements
     #   refactor: Code Refactoring
+    sort_by: Custom
+    title_order:
+      - Feature
+      - Chore
+      - UI
+      - API
+      - Libs
+      - Docker
+      - Security
+      - Fix
+      - Bugfix
+      - Docs
+      - Swagger
+      - Build
+      - Testing
+      - Test
+      - Tests
+      - Pull Requests
   header:
     pattern: "^(\\w*)(?:\\(([\\w\\$\\.\\-\\*\\s]*)\\))?\\:\\s(.*)$"
     pattern_maps:

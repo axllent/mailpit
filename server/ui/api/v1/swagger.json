@@ -1635,6 +1635,10 @@
           "description": "Whether messages with duplicate IDs are ignored",
           "type": "boolean"
         },
+        "Label": {
+          "description": "Optional label to identify this Mailpit instance",
+          "type": "string"
+        },
         "MessageRelay": {
           "description": "Message Relay information",
           "type": "object",

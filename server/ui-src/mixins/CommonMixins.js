@@ -2,7 +2,7 @@ import axios from 'axios'
 import dayjs from 'dayjs'
 import ColorHash from 'color-hash'
 import { Modal, Offcanvas } from 'bootstrap'
-import {limitOptions} from "../stores/pagination";
+import { limitOptions } from "../stores/pagination";
 
 // BootstrapElement is used to return a fake Bootstrap element
 // if the ID returns nothing to prevent errors.
@@ -25,15 +25,15 @@ export default {
 	},
 
 	methods: {
-		resolve: function (u) {
+		resolve(u) {
 			return this.$router.resolve(u).href
 		},
 
-		searchURI: function (s) {
+		searchURI(s) {
 			return this.resolve('/search') + '?q=' + encodeURIComponent(s)
 		},
 
-		getFileSize: function (bytes) {
+		getFileSize(bytes) {
 			if (bytes == 0) {
 				return '0B'
 			}
@@ -41,19 +41,19 @@ export default {
 			return (bytes / Math.pow(1024, i)).toFixed(1) * 1 + ' ' + ['B', 'kB', 'MB', 'GB', 'TB'][i]
 		},
 
-		formatNumber: function (nr) {
+		formatNumber(nr) {
 			return new Intl.NumberFormat().format(nr)
 		},
 
-		messageDate: function (d) {
+		messageDate(d) {
 			return dayjs(d).format('ddd, D MMM YYYY, h:mm a')
 		},
 
-		secondsToRelative: function (d) {
+		secondsToRelative(d) {
 			return dayjs().subtract(d, 'seconds').fromNow()
 		},
 
-		tagEncodeURI: function (tag) {
+		tagEncodeURI(tag) {
 			if (tag.match(/ /)) {
 				tag = `"${tag}"`
 			}
@@ -61,7 +61,7 @@ export default {
 			return encodeURIComponent(`tag:${tag}`)
 		},
 
-		getSearch: function () {
+		getSearch() {
 			if (!window.location.search) {
 				return false
 			}
@@ -75,7 +75,7 @@ export default {
 			return q
 		},
 
-		getPaginationParams: function () {
+		getPaginationParams() {
 			if (!window.location.search) {
 				return null
 			}
@@ -90,8 +90,8 @@ export default {
 		},
 
 		// generic modal get/set function
-		modal: function (id) {
-			let e = document.getElementById(id)
+		modal(id) {
+			const e = document.getElementById(id)
 			if (e) {
 				return Modal.getOrCreateInstance(e)
 			}
@@ -100,8 +100,8 @@ export default {
 		},
 
 		// close mobile navigation
-		hideNav: function () {
-			let e = document.getElementById('offcanvas')
+		hideNav() {
+			const e = document.getElementById('offcanvas')
 			if (e) {
 				Offcanvas.getOrCreateInstance(e).hide()
 			}
@@ -115,22 +115,21 @@ export default {
 		 * @params function callback function
 		 * @params function error callback function
 		 */
-		get: function (url, values, callback, errorCallback) {
-			let self = this
-			self.loading++
+		get(url, values, callback, errorCallback) {
+			this.loading++
 			axios.get(url, { params: values })
 				.then(callback)
-				.catch(function (err) {
+				.catch((err) => {
 					if (typeof errorCallback == 'function') {
 						return errorCallback(err)
 					}
 
-					self.handleError(err)
+					this.handleError(err)
 				})
-				.then(function () {
+				.then(() => {
 					// always executed
-					if (self.loading > 0) {
-						self.loading--
+					if (this.loading > 0) {
+						this.loading--
 					}
 				})
 		},
@@ -142,16 +141,15 @@ export default {
 		 * @params array    object/array values
 		 * @params function callback function
 		 */
-		post: function (url, data, callback) {
-			let self = this
-			self.loading++
+		post(url, data, callback) {
+			this.loading++
 			axios.post(url, data)
 				.then(callback)
-				.catch(self.handleError)
-				.then(function () {
+				.catch(this.handleError)
+				.then(() => {
 					// always executed
-					if (self.loading > 0) {
-						self.loading--
+					if (this.loading > 0) {
+						this.loading--
 					}
 				})
 		},
@@ -163,16 +161,15 @@ export default {
 		 * @params array    object/array values
 		 * @params function callback function
 		 */
-		delete: function (url, data, callback) {
-			let self = this
-			self.loading++
+		delete(url, data, callback) {
+			this.loading++
 			axios.delete(url, { data: data })
 				.then(callback)
-				.catch(self.handleError)
-				.then(function () {
+				.catch(this.handleError)
+				.then(() => {
 					// always executed
-					if (self.loading > 0) {
-						self.loading--
+					if (this.loading > 0) {
+						this.loading--
 					}
 				})
 		},
@@ -184,22 +181,21 @@ export default {
 		 * @params array    object/array values
 		 * @params function callback function
 		 */
-		put: function (url, data, callback) {
-			let self = this
-			self.loading++
+		put(url, data, callback) {
+			this.loading++
 			axios.put(url, data)
 				.then(callback)
-				.catch(self.handleError)
-				.then(function () {
+				.catch(this.handleError)
+				.then(() => {
 					// always executed
-					if (self.loading > 0) {
-						self.loading--
+					if (this.loading > 0) {
+						this.loading--
 					}
 				})
 		},
 
 		// Ajax error message
-		handleError: function (error) {
+		handleError(error) {
 			// handle error
 			if (error.response && error.response.data) {
 				// The request was made and the server responded with a status code
@@ -218,7 +214,7 @@ export default {
 			}
 		},
 
-		allAttachments: function (message) {
+		allAttachments(message) {
 			let a = []
 			for (let i in message.Attachments) {
 				a.push(message.Attachments[i])
@@ -237,7 +233,7 @@ export default {
 			return a.ContentType.match(/^image\//)
 		},
 
-		attachmentIcon: function (a) {
+		attachmentIcon(a) {
 			let ext = a.FileName.split('.').pop().toLowerCase()
 
 			if (a.ContentType.match(/^image\//)) {
@@ -279,7 +275,7 @@ export default {
 
 		// Returns a hex color based on a string.
 		// Values are stored in an array for faster lookup / processing.
-		colorHash: function (s) {
+		colorHash(s) {
 			if (this.tagColorCache[s] != undefined) {
 				return this.tagColorCache[s]
 			}

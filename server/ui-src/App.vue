@@ -14,11 +14,16 @@ export default {
 	},
 
 	beforeMount() {
-		document.title = document.title + ' - ' + location.hostname
 
 		// load global config
 		this.get(this.resolve('/api/v1/webui'), false, function (response) {
 			mailbox.uiConfig = response.data
+
+			if (mailbox.uiConfig.Label) {
+				document.title = document.title + ' - ' + mailbox.uiConfig.Label
+			} else {
+				document.title = document.title + ' - ' + location.hostname
+			}
 		})
 	},
 

@@ -16,7 +16,7 @@ export default {
 	},
 
 	watch: {
-		theme: function (v) {
+		theme(v) {
 			if (v == 'auto') {
 				localStorage.removeItem('theme')
 			} else {
@@ -34,7 +34,7 @@ export default {
 	},
 
 	methods: {
-		setTheme: function () {
+		setTheme() {
 			if (
 				this.theme === 'auto' &&
 				window.matchMedia('(prefers-color-scheme: dark)').matches

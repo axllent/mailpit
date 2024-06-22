@@ -61,16 +61,15 @@ export default {
 
 		scaleHTMLPreview(v) {
 			if (v == 'display') {
-				let self = this
-				window.setTimeout(function () {
-					self.resizeIFrames()
+				window.setTimeout(() => {
+					this.resizeIFrames()
 				}, 500)
 			}
 		}
 	},
 
 	computed: {
-		hasAnyChecksEnabled: function () {
+		hasAnyChecksEnabled() {
 			return (mailbox.showHTMLCheck && this.message.HTML)
 				|| mailbox.showLinkCheck
 				|| (mailbox.showSpamCheck && mailbox.uiConfig.SpamAssassin)
@@ -78,56 +77,53 @@ export default {
 	},
 
 	mounted() {
-		let self = this
-		self.canSaveTags = false
-		self.messageTags = self.message.Tags
-		self.renderUI()
+		this.canSaveTags = false
+		this.messageTags = this.message.Tags
+		this.renderUI()
 
-		window.addEventListener("resize", self.resizeIFrames)
+		window.addEventListener("resize", this.resizeIFrames)
 
 		let headersTab = document.getElementById('nav-headers-tab')
-		headersTab.addEventListener('shown.bs.tab', function (event) {
-			self.loadHeaders = true
+		headersTab.addEventListener('shown.bs.tab', (event) => {
+			this.loadHeaders = true
 		})
 
 		let rawTab = document.getElementById('nav-raw-tab')
-		rawTab.addEventListener('shown.bs.tab', function (event) {
-			self.srcURI = self.resolve('/api/v1/message/' + self.message.ID + '/raw')
-			self.resizeIFrames()
+		rawTab.addEventListener('shown.bs.tab', (event) => {
+			this.srcURI = this.resolve('/api/v1/message/' + this.message.ID + '/raw')
+			this.resizeIFrames()
 		})
 
 		// manually refresh tags
-		self.get(self.resolve(`/api/v1/tags`), false, function (response) {
-			self.availableTags = response.data
-			self.$nextTick(function () {
+		this.get(this.resolve(`/api/v1/tags`), false, (response) => {
+			this.availableTags = response.data
+			this.$nextTick(() => {
 				Tags.init('select[multiple]')
 				// delay tag change detection to allow Tags to load
-				window.setTimeout(function () {
-					self.canSaveTags = true
+				window.setTimeout(() => {
+					this.canSaveTags = true
 				}, 200)
 			})
 		})
 	},
 
 	methods: {
-		isHTMLTabSelected: function () {
+		isHTMLTabSelected() {
 			this.showMobileButtons = this.$refs.navhtml
 				&& this.$refs.navhtml.classList.contains('active')
 		},
 
-		renderUI: function () {
-			let self = this
-
+		renderUI() {
 			// activate the first non-disabled tab
 			document.querySelector('#nav-tab button:not([disabled])').click()
 			document.activeElement.blur() // blur focus
 			document.getElementById('message-view').scrollTop = 0
 
-			self.isHTMLTabSelected()
+			this.isHTMLTabSelected()
 
-			document.querySelectorAll('button[data-bs-toggle="tab"]').forEach(function (listObj) {
-				listObj.addEventListener('shown.bs.tab', function (event) {
-					self.isHTMLTabSelected()
+			document.querySelectorAll('button[data-bs-toggle="tab"]').forEach((listObj) => {
+				listObj.addEventListener('shown.bs.tab', (event) => {
+					this.isHTMLTabSelected()
 				})
 			})
 
@@ -135,7 +131,7 @@ export default {
 			[...tooltipTriggerList].map(tooltipTriggerEl => new Tooltip(tooltipTriggerEl))
 
 			// delay 0.2s until vue has rendered the iframe content
-			window.setTimeout(function () {
+			window.setTimeout(() => {
 				let p = document.getElementById('preview-html')
 				if (p) {
 					// make links open in new window
@@ -148,7 +144,7 @@ export default {
 							anchorEl.setAttribute('target', '_blank')
 						}
 					}
-					self.resizeIFrames()
+					this.resizeIFrames()
 				}
 			}, 200)
 
@@ -158,12 +154,12 @@ export default {
 			Prism.highlightAll()
 		},
 
-		resizeIframe: function (el) {
+		resizeIframe(el) {
 			let i = el.target
 			i.style.height = i.contentWindow.document.body.scrollHeight + 50 + 'px'
 		},
 
-		resizeIFrames: function () {
+		resizeIFrames() {
 			if (this.scaleHTMLPreview != 'display') {
 				return
 			}
@@ -175,7 +171,7 @@ export default {
 		},
 
 		// set the iframe body & text colors based on current theme
-		initRawIframe: function (el) {
+		initRawIframe(el) {
 			let bodyStyles = window.getComputedStyle(document.body, null)
 			let bg = bodyStyles.getPropertyValue('background-color')
 			let txt = bodyStyles.getPropertyValue('color')
@@ -189,27 +185,25 @@ export default {
 			this.resizeIframe(el)
 		},
 
-		sanitizeHTML: function (h) {
+		sanitizeHTML(h) {
 			// remove <base/> tag if set
 			return h.replace(/<base .*>/mi, '')
 		},
 
-		saveTags: function () {
-			let self = this
-
+		saveTags() {
 			var data = {
 				IDs: [this.message.ID],
 				Tags: this.messageTags
 			}
 
-			self.put(self.resolve('/api/v1/tags'), data, function (response) {
+			this.put(this.resolve('/api/v1/tags'), data, (response) => {
 				window.scrollInPlace = true
-				self.$emit('loadMessages')
+				this.$emit('loadMessages')
 			})
 		},
 
 		// Convert plain text to HTML including anchor links
-		textToHTML: function (s) {
+		textToHTML(s) {
 			let html = s
 
 			// full links with http(s)
