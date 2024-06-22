@@ -322,7 +322,7 @@ export default {
 				{{ mailbox.uiConfig.Label }}
 			</div>
 
-			<div class="list-group my-2" :class="mailbox.uiConfig.Label ? 'mt-1' : ''">
+			<div class="list-group my-2" :class="mailbox.uiConfig.Label ? 'mt-0' : ''">
 				<button @click="goBack()" class="list-group-item list-group-item-action">
 					<i class="bi bi-arrow-return-left me-1"></i>
 					<span class="ms-1">Return</span>

@@ -41,7 +41,6 @@ export default {
 			}
 		},
 
-
 		loadMessages: function () {
 			this.hideNav() // hide mobile menu
 			this.$emit('loadMessages')
@@ -73,7 +72,7 @@ export default {
 			{{ mailbox.uiConfig.Label }}
 		</div>
 
-		<div class="list-group my-2" :class="mailbox.uiConfig.Label ? 'mt-1' : ''">
+		<div class="list-group my-2" :class="mailbox.uiConfig.Label ? 'mt-0' : ''">
 			<button @click="reloadInbox" class="list-group-item list-group-item-action active">
 				<i class="bi bi-envelope-fill me-1" v-if="mailbox.connected"></i>
 				<i class="bi bi-arrow-clockwise me-1" v-else></i>

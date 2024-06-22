@@ -59,7 +59,7 @@ export default {
 			{{ mailbox.uiConfig.Label }}
 		</div>
 
-		<div class="list-group my-2" :class="mailbox.uiConfig.Label ? 'mt-1' : ''">
+		<div class="list-group my-2" :class="mailbox.uiConfig.Label ? 'mt-0' : ''">
 			<RouterLink to="/" class="list-group-item list-group-item-action" @click="pagination.start = 0">
 				<i class="bi bi-arrow-return-left me-1"></i>
 				<span class="ms-1">Inbox</span>
