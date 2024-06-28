@@ -11,6 +11,14 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+var (
+	// TagsDisablePlus disables message tagging using plus-addresses (user+tag@example.com) - set via verifyConfig()
+	TagsDisablePlus bool
+
+	// TagsDisableXTags disables message tagging via the X-Tags header - set via verifyConfig()
+	TagsDisableXTags bool
+)
+
 type yamlTags struct {
 	Filters []yamlTag `yaml:"filters"`
 }
@@ -76,6 +84,28 @@ func loadTagsFromArgs(c string) error {
 	}
 
 	logger.Log().Debugf("[tags] loaded %s from CLI args", tools.Plural(len(args), "tag filter", "tag filters"))
+
+	return nil
+}
+
+func parseTagsDisable(s string) error {
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return nil
+	}
+
+	parts := strings.Split(strings.ToLower(s), ",")
+
+	for _, p := range parts {
+		switch strings.TrimSpace(p) {
+		case "x-tags", "xtags":
+			TagsDisableXTags = true
+		case "plus-addresses", "plus-addressing":
+			TagsDisablePlus = true
+		default:
+			return fmt.Errorf("[tags] invalid --tags-disable option: %s", p)
+		}
+	}
 
 	return nil
 }
