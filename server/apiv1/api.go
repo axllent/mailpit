@@ -583,7 +583,7 @@ func SetMessageTags(w http.ResponseWriter, r *http.Request) {
 
 	if len(ids) > 0 {
 		for _, id := range ids {
-			if err := storage.SetMessageTags(id, data.Tags); err != nil {
+			if _, err := storage.SetMessageTags(id, data.Tags); err != nil {
 				httpError(w, err.Error())
 				return
 			}

@@ -383,7 +383,7 @@ func insertEmailData(t *testing.T) {
 			t.Fail()
 		}
 
-		if err := storage.SetMessageTags(id, []string{fmt.Sprintf("Test tag %03d", i)}); err != nil {
+		if _, err := storage.SetMessageTags(id, []string{fmt.Sprintf("Test tag %03d", i)}); err != nil {
 			t.Log("error ", err)
 			t.Fail()
 		}

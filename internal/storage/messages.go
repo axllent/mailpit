@@ -131,8 +131,10 @@ func Store(body *[]byte) (string, error) {
 	// extract tags from search matches, and sort and extract unique tags
 	tags = sortedUniqueTags(append(tags, tagFilterMatches(id)...))
 
+	setTags := []string{}
 	if len(tags) > 0 {
-		if err := SetMessageTags(id, tags); err != nil {
+		setTags, err = SetMessageTags(id, tags)
+		if err != nil {
 			return "", err
 		}
 	}
@@ -148,7 +150,7 @@ func Store(body *[]byte) (string, error) {
 	c.Attachments = attachments
 	c.Subject = subject
 	c.Size = size
-	c.Tags = tags
+	c.Tags = setTags
 	c.Snippet = snippet
 
 	websockets.Broadcast("new", c)
