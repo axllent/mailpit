@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
+	"fmt"
 	"regexp"
 	"sort"
 	"strings"
@@ -21,7 +22,7 @@ var (
 )
 
 // SetMessageTags will set the tags for a given database ID, removing any not in the array
-func SetMessageTags(id string, tags []string) error {
+func SetMessageTags(id string, tags []string) ([]string, error) {
 	applyTags := []string{}
 	for _, t := range tags {
 		t = tools.CleanTag(t)
@@ -30,6 +31,7 @@ func SetMessageTags(id string, tags []string) error {
 		}
 	}
 
+	tagNames := []string{}
 	currentTags := getMessageTags(id)
 	origTagCount := len(currentTags)
 
@@ -38,9 +40,12 @@ func SetMessageTags(id string, tags []string) error {
 			continue
 		}
 
-		if err := AddMessageTag(id, t); err != nil {
-			return err
+		name, err := AddMessageTag(id, t)
+		if err != nil {
+			return []string{}, err
 		}
+
+		tagNames = append(tagNames, name)
 	}
 
 	if origTagCount > 0 {
@@ -49,42 +54,44 @@ func SetMessageTags(id string, tags []string) error {
 		for _, t := range currentTags {
 			if !tools.InArray(t, applyTags) {
 				if err := DeleteMessageTag(id, t); err != nil {
-					return err
+					return []string{}, err
 				}
 			}
 		}
 	}
 
-	return nil
+	return tagNames, nil
 }
 
 // AddMessageTag adds a tag to a message
-func AddMessageTag(id, name string) error {
+func AddMessageTag(id, name string) (string, error) {
 	// prevent two identical tags being added at the same time
 	addTagMutex.Lock()
 
 	var tagID int
+	var foundName sql.NullString
 
 	q := sqlf.From(tenant("tags")).
 		Select("ID").To(&tagID).
+		Select("Name").To(&foundName).
 		Where("Name = ?", name)
 
 	// if tag exists - add tag to message
 	if err := q.QueryRowAndClose(context.TODO(), db); err == nil {
 		addTagMutex.Unlock()
 		// check message does not already have this tag
-		var count int
+		var exists int
 
 		if err := sqlf.From(tenant("message_tags")).
-			Select("COUNT(ID)").To(&count).
+			Select("COUNT(ID)").To(&exists).
 			Where("ID = ?", id).
 			Where("TagID = ?", tagID).
 			QueryRowAndClose(context.Background(), db); err != nil {
-			return err
+			return "", err
 		}
-		if count > 0 {
+		if exists > 0 {
 			// already exists
-			return nil
+			return foundName.String, nil
 		}
 
 		logger.Log().Debugf("[tags] adding tag \"%s\" to %s", name, id)
@@ -93,7 +100,7 @@ func AddMessageTag(id, name string) error {
 			Set("ID", id).
 			Set("TagID", tagID).
 			ExecAndClose(context.TODO(), db)
-		return err
+		return foundName.String, err
 	}
 
 	// new tag, add to the database
@@ -101,7 +108,7 @@ func AddMessageTag(id, name string) error {
 		Set("Name", name).
 		ExecAndClose(context.TODO(), db); err != nil {
 		addTagMutex.Unlock()
-		return err
+		return name, err
 	}
 
 	addTagMutex.Unlock()
@@ -172,6 +179,79 @@ func GetAllTagsCount() map[string]int64 {
 	}
 
 	return tags
+}
+
+// RenameTag renames a tag
+func RenameTag(from, to string) error {
+	to = tools.CleanTag(to)
+	if to == "" || !config.ValidTagRegexp.MatchString(to) {
+		return fmt.Errorf("invalid tag name: %s", to)
+	}
+
+	if from == to {
+		return nil // ignore
+	}
+
+	var id, existsID int
+
+	q := sqlf.From(tenant("tags")).
+		Select(`ID`).To(&id).
+		Where(`Name = ?`, from).
+		Limit(1)
+	err := q.QueryRowAndClose(context.Background(), db)
+	if err != nil {
+		return fmt.Errorf("tag not found: %s", from)
+	}
+
+	// check if another tag by this name already exists
+	q = sqlf.From(tenant("tags")).
+		Select("ID").To(&existsID).
+		Where(`Name = ?`, to).
+		Where(`ID != ?`, id).
+		Limit(1)
+	err = q.QueryRowAndClose(context.Background(), db)
+	if err == nil || existsID != 0 {
+		return fmt.Errorf("tag already exists: %s", to)
+	}
+
+	q = sqlf.Update(tenant("tags")).
+		Set("Name", to).
+		Where("ID = ?", id)
+	_, err = q.ExecAndClose(context.Background(), db)
+
+	return err
+}
+
+// DeleteTag deleted a tag and removed all references to the tag
+func DeleteTag(tag string) error {
+	var id int
+
+	q := sqlf.From(tenant("tags")).
+		Select(`ID`).To(&id).
+		Where(`Name = ?`, tag).
+		Limit(1)
+	err := q.QueryRowAndClose(context.Background(), db)
+	if err != nil {
+		return fmt.Errorf("tag not found: %s", tag)
+	}
+
+	// delete all references
+	q = sqlf.DeleteFrom(tenant("message_tags")).
+		Where(`TagID = ?`, id)
+	_, err = q.ExecAndClose(context.Background(), db)
+	if err != nil {
+		return fmt.Errorf("error deleting tag references: %s", err.Error())
+	}
+
+	// delete tag
+	q = sqlf.DeleteFrom(tenant("tags")).
+		Where(`ID = ?`, id)
+	_, err = q.ExecAndClose(context.Background(), db)
+	if err != nil {
+		return fmt.Errorf("error deleting tag: %s", err.Error())
+	}
+
+	return nil
 }
 
 // PruneUnusedTags will delete all unused tags from the database

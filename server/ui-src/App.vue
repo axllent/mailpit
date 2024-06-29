@@ -2,6 +2,7 @@
 import CommonMixins from './mixins/CommonMixins'
 import Favicon from './components/Favicon.vue'
 import Notifications from './components/Notifications.vue'
+import EditTags from './components/EditTags.vue'
 import { RouterView } from 'vue-router'
 import { mailbox } from "./stores/mailbox"
 
@@ -11,6 +12,7 @@ export default {
 	components: {
 		Favicon,
 		Notifications,
+		EditTags
 	},
 
 	beforeMount() {
@@ -41,4 +43,5 @@ export default {
 	<RouterView />
 	<Favicon />
 	<Notifications />
+	<EditTags />
 </template>

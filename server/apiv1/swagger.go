@@ -95,6 +95,22 @@ type setTagsRequestBody struct {
 	IDs []string
 }
 
+// swagger:parameters RenameTag
+type renameTagParams struct {
+	// in: body
+	Body *renameTagRequestBody
+}
+
+// Rename tag request
+// swagger:model renameTagRequestBody
+type renameTagRequestBody struct {
+	// New name
+	//
+	// required: true
+	// example: New name
+	Name string
+}
+
 // swagger:parameters ReleaseMessage
 type releaseMessageParams struct {
 	// Message database ID

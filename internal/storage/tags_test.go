@@ -24,7 +24,7 @@ func TestTags(t *testing.T) {
 	}
 
 	for i := 0; i < 10; i++ {
-		if err := SetMessageTags(ids[i], []string{fmt.Sprintf("Tag-%d", i)}); err != nil {
+		if _, err := SetMessageTags(ids[i], []string{fmt.Sprintf("Tag-%d", i)}); err != nil {
 			t.Log("error ", err)
 			t.Fail()
 		}
@@ -58,7 +58,7 @@ func TestTags(t *testing.T) {
 		// pad number with 0 to ensure they are returned alphabetically
 		newTags = append(newTags, fmt.Sprintf("AnotherTag %02d", i))
 	}
-	if err := SetMessageTags(id, newTags); err != nil {
+	if _, err := SetMessageTags(id, newTags); err != nil {
 		t.Log("error ", err)
 		t.Fail()
 	}
@@ -82,7 +82,7 @@ func TestTags(t *testing.T) {
 	assertEqual(t, "", strings.Join(returnedTags, "|"), "Message tags should be empty")
 
 	// apply the same tag twice
-	if err := SetMessageTags(id, []string{"Duplicate Tag", "Duplicate Tag"}); err != nil {
+	if _, err := SetMessageTags(id, []string{"Duplicate Tag", "Duplicate Tag"}); err != nil {
 		t.Log("error ", err)
 		t.Fail()
 	}
@@ -94,7 +94,7 @@ func TestTags(t *testing.T) {
 	}
 
 	// apply tag with invalid characters
-	if err := SetMessageTags(id, []string{"Dirty! \"Tag\""}); err != nil {
+	if _, err := SetMessageTags(id, []string{"Dirty! \"Tag\""}); err != nil {
 		t.Log("error ", err)
 		t.Fail()
 	}
