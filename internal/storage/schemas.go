@@ -137,7 +137,9 @@ func dbApplySchemas() error {
 
 		buf := new(bytes.Buffer)
 
-		err = t1.Execute(buf, nil)
+		if err := t1.Execute(buf, nil); err != nil {
+			return err
+		}
 
 		if _, err := db.Exec(buf.String()); err != nil {
 			return err
@@ -197,7 +199,7 @@ func migrateTagsToManyMany() {
 	if len(toConvert) > 0 {
 		logger.Log().Infof("[migration] converting %d message tags", len(toConvert))
 		for id, tags := range toConvert {
-			if err := SetMessageTags(id, tags); err != nil {
+			if _, err := SetMessageTags(id, tags); err != nil {
 				logger.Log().Errorf("[migration] %s", err.Error())
 			} else {
 				if _, err := sqlf.Update(tenant("mailbox")).

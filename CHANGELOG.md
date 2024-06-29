@@ -2,6 +2,17 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.19.0]
+
+### Feature
+- Add ability to rename and delete tags globally
+- Add option to disable auto-tagging for plus-addresses & X-Tags ([#323](https://github.com/axllent/mailpit/issues/323))
+
+### Chore
+- Update node dependencies
+- Update Go dependencies
+
+
 ## [v1.18.7]
 
 ### Feature

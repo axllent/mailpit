@@ -703,6 +703,79 @@
         }
       }
     },
+    "/api/v1/tags/{tag}": {
+      "put": {
+        "description": "Renames a tag.",
+        "produces": [
+          "text/plain"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "tags"
+        ],
+        "summary": "Rename a tag",
+        "operationId": "RenameTag",
+        "parameters": [
+          {
+            "name": "Body",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/renameTagRequestBody"
+            }
+          },
+          {
+            "type": "string",
+            "description": "The url-encoded tag name to rename",
+            "name": "tag",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/OKResponse"
+          },
+          "default": {
+            "$ref": "#/responses/ErrorResponse"
+          }
+        }
+      },
+      "delete": {
+        "description": "Deletes a tag. This will not delete any messages with this tag.",
+        "produces": [
+          "text/plain"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "tags"
+        ],
+        "summary": "Delete a tag",
+        "operationId": "DeleteTag",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "The url-encoded tag name to delete",
+            "name": "tag",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/OKResponse"
+          },
+          "default": {
+            "$ref": "#/responses/ErrorResponse"
+          }
+        }
+      }
+    },
     "/api/v1/webui": {
       "get": {
         "description": "Returns configuration settings for the web UI.\nIntended for web UI only!",
@@ -1686,6 +1759,21 @@
             "user1@example.com",
             "user2@example.com"
           ]
+        }
+      },
+      "x-go-package": "github.com/axllent/mailpit/server/apiv1"
+    },
+    "renameTagRequestBody": {
+      "description": "Rename tag request",
+      "type": "object",
+      "required": [
+        "Name"
+      ],
+      "properties": {
+        "Name": {
+          "description": "New name",
+          "type": "string",
+          "example": "New name"
         }
       },
       "x-go-package": "github.com/axllent/mailpit/server/apiv1"

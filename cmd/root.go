@@ -131,6 +131,7 @@ func init() {
 	rootCmd.Flags().StringVarP(&config.CLITagsArg, "tag", "t", config.CLITagsArg, "Tag new messages matching filters")
 	rootCmd.Flags().StringVar(&config.TagsConfig, "tags-config", config.TagsConfig, "Load tags filters from yaml configuration file")
 	rootCmd.Flags().BoolVar(&tools.TagsTitleCase, "tags-title-case", tools.TagsTitleCase, "TitleCase new tags generated from plus-addresses and X-Tags")
+	rootCmd.Flags().StringVar(&config.TagsDisable, "tags-disable", config.TagsDisable, "Disable auto-tagging, comma separated (eg: plus-addresses,x-tags)")
 
 	// Webhook
 	rootCmd.Flags().StringVar(&config.WebhookURL, "webhook-url", config.WebhookURL, "Send a webhook request for new messages")
@@ -290,6 +291,7 @@ func initConfigFromEnv() {
 	config.CLITagsArg = os.Getenv("MP_TAG")
 	config.TagsConfig = os.Getenv("MP_TAGS_CONFIG")
 	tools.TagsTitleCase = getEnabledFromEnv("MP_TAGS_TITLE_CASE")
+	config.TagsDisable = os.Getenv("MP_TAGS_DISABLE")
 
 	// Webhook
 	if len(os.Getenv("MP_WEBHOOK_URL")) > 0 {

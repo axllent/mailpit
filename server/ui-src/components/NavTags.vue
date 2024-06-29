@@ -87,6 +87,11 @@ export default {
 			</button>
 			<ul class="dropdown-menu dropdown-menu-end">
 				<li>
+					<button class="dropdown-item" data-bs-toggle="modal" data-bs-target="#EditTagsModal">
+						Edit tags
+					</button>
+				</li>
+				<li>
 					<button class="dropdown-item" @click="mailbox.showTagColors = !mailbox.showTagColors">
 						<template v-if="mailbox.showTagColors">Hide</template>
 						<template v-else>Show</template>

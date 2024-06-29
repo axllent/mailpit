@@ -102,6 +102,10 @@ var (
 	// TagFilters are used to apply tags to new mail
 	TagFilters []autoTag
 
+	// TagsDisable accepts a comma-separated list of tag types to disable
+	// including x-tags & plus-addresses
+	TagsDisable string
+
 	// SMTPRelayConfigFile to parse a yaml file and store config of relay SMTP server
 	SMTPRelayConfigFile string
 
@@ -390,12 +394,15 @@ func VerifyConfig() error {
 		}
 	}
 
-	// load tag filters
+	// load tag filters & options
 	TagFilters = []autoTag{}
 	if err := loadTagsFromArgs(CLITagsArg); err != nil {
 		return err
 	}
 	if err := loadTagsFromConfig(TagsConfig); err != nil {
+		return err
+	}
+	if err := parseTagsDisable(TagsDisable); err != nil {
 		return err
 	}
 
