@@ -1720,6 +1720,10 @@
               "description": "Only allow relaying to these recipients (regex)",
               "type": "string"
             },
+            "BlockedRecipients": {
+              "description": "Block relaying to these recipients (regex)",
+              "type": "string"
+            },
             "Enabled": {
               "description": "Whether message relaying (release) is enabled",
               "type": "boolean"

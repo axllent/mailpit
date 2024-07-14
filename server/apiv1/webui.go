@@ -24,6 +24,8 @@ type webUIConfiguration struct {
 		ReturnPath string
 		// Only allow relaying to these recipients (regex)
 		AllowedRecipients string
+		// Block relaying to these recipients (regex)
+		BlockedRecipients string
 		// DEPRECATED 2024/03/12
 		// swagger:ignore
 		RecipientAllowlist string
@@ -61,6 +63,7 @@ func WebUIConfig(w http.ResponseWriter, _ *http.Request) {
 		conf.MessageRelay.SMTPServer = fmt.Sprintf("%s:%d", config.SMTPRelayConfig.Host, config.SMTPRelayConfig.Port)
 		conf.MessageRelay.ReturnPath = config.SMTPRelayConfig.ReturnPath
 		conf.MessageRelay.AllowedRecipients = config.SMTPRelayConfig.AllowedRecipients
+		conf.MessageRelay.BlockedRecipients = config.SMTPRelayConfig.BlockedRecipients
 		// DEPRECATED 2024/03/12
 		conf.MessageRelay.RecipientAllowlist = config.SMTPRelayConfig.AllowedRecipients
 	}
