@@ -33,7 +33,7 @@ jobs:
       id: short-sha
 
     - name: Build and push
-      uses: docker/build-push-action@v5
+      uses: docker/build-push-action@v6
       with:
         context: .
         platforms: linux/386,linux/amd64,linux/arm64

@@ -75,7 +75,7 @@ export default {
 
 <template>
 	<div class="modal fade" id="ReleaseModal" tabindex="-1" aria-labelledby="AppInfoModalLabel" aria-hidden="true">
-		<div class="modal-dialog modal-lg" v-if="message">
+		<div class="modal-dialog modal-xl" v-if="message">
 			<div class="modal-content">
 				<div class="modal-header">
 					<h1 class="modal-title fs-5" id="AppInfoModalLabel">Release email</h1>
@@ -125,10 +125,38 @@ export default {
 
 						</div>
 					</div>
-					<div class="form-text text-center" v-if="mailbox.uiConfig.MessageRelay.AllowedRecipients != ''">
+					
+					<h6>Notes</h6>
+					<ul>
+						<li v-if="mailbox.uiConfig.MessageRelay.AllowedRecipients != ''" class="form-text">
+							A recipient <b>allowlist</b> has been configured. Any mail address not matching the following will be rejected:
+							<code>{{ mailbox.uiConfig.MessageRelay.AllowedRecipients }}</code>
+						</li>
+						<li v-if="mailbox.uiConfig.MessageRelay.BlockedRecipients != ''" class="form-text">
+							A recipient <b>blocklist</b> has been configured. Any mail address matching the following will be rejected:
+							<code>{{ mailbox.uiConfig.MessageRelay.BlockedRecipients }}</code>
+						</li>
+						<li class="form-text">
+							For testing purposes, a new unique <code>Message-Id</code> will be generated on send.
+						</li>
+						<li class="form-text">
+							SMTP delivery failures will bounce back to
+							<code v-if="mailbox.uiConfig.MessageRelay.ReturnPath != ''">
+								{{ mailbox.uiConfig.MessageRelay.ReturnPath }}
+							</code>
+							<code v-else>{{ message.ReturnPath }}</code>.
+						</li>
+					</ul>
+
+					<!-- <div class="form-text text-center" v-if="mailbox.uiConfig.MessageRelay.AllowedRecipients != ''">
 						Note: A recipient allowlist has been configured. Any mail address not matching it will be
 						rejected.<br class="d-none d-md-inline">
 						Allowed recipients: <b>{{ mailbox.uiConfig.MessageRelay.AllowedRecipients }}</b>
+					</div>
+					<div class="form-text text-center" v-if="mailbox.uiConfig.MessageRelay.BlockedRecipients != ''">
+						Note: A recipient blocklist has been configured. Any mail address matching it will be
+						rejected.<br class="d-none d-md-inline">
+						Blocked recipients: <b>{{ mailbox.uiConfig.MessageRelay.BlockedRecipients }}</b>
 					</div>
 					<div class="form-text text-center">
 						Note: For testing purposes, a unique Message-Id will be generated on send.
@@ -138,7 +166,7 @@ export default {
 							{{ mailbox.uiConfig.MessageRelay.ReturnPath }}
 						</b>
 						<b v-else>{{ message.ReturnPath }}</b>.
-					</div>
+					</div> -->
 				</div>
 				<div class="modal-footer">
 					<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>

@@ -8,6 +8,19 @@ import (
 )
 
 func autoRelayMessage(from string, to []string, data *[]byte) {
+	if config.SMTPRelayConfig.BlockedRecipientsRegexp != nil {
+		filteredTo := []string{}
+		for _, address := range to {
+			if config.SMTPRelayConfig.BlockedRecipientsRegexp.MatchString(address) {
+				logger.Log().Debugf("[smtp] ignoring auto-relay to %s: found in blocklist", address)
+				continue
+			}
+
+			filteredTo = append(filteredTo, address)
+		}
+		to = filteredTo
+	}
+
 	if len(to) == 0 {
 		return
 	}

@@ -9,18 +9,13 @@ import (
 	"net/mail"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/internal/htmlcheck"
 	"github.com/axllent/mailpit/internal/linkcheck"
-	"github.com/axllent/mailpit/internal/logger"
 	"github.com/axllent/mailpit/internal/spamassassin"
 	"github.com/axllent/mailpit/internal/storage"
-	"github.com/axllent/mailpit/internal/tools"
-	"github.com/axllent/mailpit/server/smtpd"
 	"github.com/gorilla/mux"
-	"github.com/lithammer/shortuuid/v4"
 )
 
 // GetMessages returns a paginated list of messages as JSON
@@ -517,135 +512,6 @@ func SetReadStatus(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 		}
-	}
-
-	w.Header().Add("Content-Type", "text/plain")
-	_, _ = w.Write([]byte("ok"))
-}
-
-// ReleaseMessage (method: POST) will release a message via a pre-configured external SMTP server.
-func ReleaseMessage(w http.ResponseWriter, r *http.Request) {
-	// swagger:route POST /api/v1/message/{ID}/release message ReleaseMessage
-	//
-	// # Release message
-	//
-	// Release a message via a pre-configured external SMTP server. This is only enabled if message relaying has been configured.
-	//
-	//	Consumes:
-	//	- application/json
-	//
-	//	Produces:
-	//	- text/plain
-	//
-	//	Schemes: http, https
-	//
-	//	Responses:
-	//		200: OKResponse
-	//		default: ErrorResponse
-
-	vars := mux.Vars(r)
-
-	id := vars["id"]
-
-	msg, err := storage.GetMessageRaw(id)
-	if err != nil {
-		fourOFour(w)
-		return
-	}
-
-	decoder := json.NewDecoder(r.Body)
-
-	data := releaseMessageRequestBody{}
-
-	if err := decoder.Decode(&data); err != nil {
-		httpError(w, err.Error())
-		return
-	}
-
-	for _, to := range data.To {
-		address, err := mail.ParseAddress(to)
-
-		if err != nil {
-			httpError(w, "Invalid email address: "+to)
-			return
-		}
-
-		if config.SMTPRelayConfig.AllowedRecipientsRegexp != nil && !config.SMTPRelayConfig.AllowedRecipientsRegexp.MatchString(address.Address) {
-			httpError(w, "Mail address does not match allowlist: "+to)
-			return
-		}
-	}
-
-	if len(data.To) == 0 {
-		httpError(w, "No valid addresses found")
-		return
-	}
-
-	reader := bytes.NewReader(msg)
-	m, err := mail.ReadMessage(reader)
-	if err != nil {
-		httpError(w, err.Error())
-		return
-	}
-
-	fromAddresses, err := m.Header.AddressList("From")
-	if err != nil {
-		httpError(w, err.Error())
-		return
-	}
-
-	if len(fromAddresses) == 0 {
-		httpError(w, "No From header found")
-		return
-	}
-
-	from := fromAddresses[0].Address
-
-	// if sender is used, then change from to the sender
-	if senders, err := m.Header.AddressList("Sender"); err == nil {
-		from = senders[0].Address
-	}
-
-	msg, err = tools.RemoveMessageHeaders(msg, []string{"Bcc"})
-	if err != nil {
-		httpError(w, err.Error())
-		return
-	}
-
-	// set the Return-Path and SMTP mfrom
-	if config.SMTPRelayConfig.ReturnPath != "" {
-		if m.Header.Get("Return-Path") != "<"+config.SMTPRelayConfig.ReturnPath+">" {
-			msg, err = tools.RemoveMessageHeaders(msg, []string{"Return-Path"})
-			if err != nil {
-				httpError(w, err.Error())
-				return
-			}
-			msg = append([]byte("Return-Path: <"+config.SMTPRelayConfig.ReturnPath+">\r\n"), msg...)
-		}
-
-		from = config.SMTPRelayConfig.ReturnPath
-	}
-
-	// update message date
-	msg, err = tools.UpdateMessageHeader(msg, "Date", time.Now().Format(time.RFC1123Z))
-	if err != nil {
-		httpError(w, err.Error())
-		return
-	}
-
-	// generate unique ID
-	uid := shortuuid.New() + "@mailpit"
-	// update Message-Id with unique ID
-	msg, err = tools.UpdateMessageHeader(msg, "Message-Id", "<"+uid+">")
-	if err != nil {
-		httpError(w, err.Error())
-		return
-	}
-
-	if err := smtpd.Send(from, data.To, msg); err != nil {
-		logger.Log().Errorf("[smtp] error sending message: %s", err.Error())
-		httpError(w, "SMTP error: "+err.Error())
-		return
 	}
 
 	w.Header().Add("Content-Type", "text/plain")

@@ -191,6 +191,9 @@ type SMTPRelayConfigStruct struct {
 	ReturnPath              string         `yaml:"return-path"`        // allow overriding the bounce address
 	AllowedRecipients       string         `yaml:"allowed-recipients"` // regex, if set needs to match for mails to be relayed
 	AllowedRecipientsRegexp *regexp.Regexp // compiled regexp using AllowedRecipients
+	BlockedRecipients       string         `yaml:"blocked-recipients"` // regex, if set prevents relating to these addresses
+	BlockedRecipientsRegexp *regexp.Regexp // compiled regexp using BlockedRecipients
+
 	// DEPRECATED 2024/03/12
 	RecipientAllowlist string `yaml:"recipient-allowlist"`
 }
@@ -433,12 +436,12 @@ func VerifyConfig() error {
 		if SMTPRelayAll {
 			logger.Log().Warnf("[relay] ignoring smtp-relay-matching when smtp-relay-all is enabled")
 		} else {
-			restrictRegexp, err := regexp.Compile(SMTPRelayMatching)
+			re, err := regexp.Compile(SMTPRelayMatching)
 			if err != nil {
 				return fmt.Errorf("[relay] failed to compile smtp-relay-matching regexp: %s", err.Error())
 			}
 
-			SMTPRelayMatchingRegexp = restrictRegexp
+			SMTPRelayMatchingRegexp = re
 			logger.Log().Infof("[relay] auto-relaying new messages to recipients matching \"%s\" via %s:%d",
 				SMTPRelayMatching, SMTPRelayConfig.Host, SMTPRelayConfig.Port)
 		}
@@ -525,14 +528,23 @@ func validateRelayConfig() error {
 	logger.Log().Infof("[smtp] enabling message relaying via %s:%d", SMTPRelayConfig.Host, SMTPRelayConfig.Port)
 
 	if SMTPRelayConfig.AllowedRecipients != "" {
-		allowlistRegexp, err := regexp.Compile(SMTPRelayConfig.AllowedRecipients)
+		re, err := regexp.Compile(SMTPRelayConfig.AllowedRecipients)
 		if err != nil {
 			return fmt.Errorf("[smtp] failed to compile relay recipient allowlist regexp: %s", err.Error())
 		}
 
-		SMTPRelayConfig.AllowedRecipientsRegexp = allowlistRegexp
+		SMTPRelayConfig.AllowedRecipientsRegexp = re
 		logger.Log().Infof("[smtp] relay recipient allowlist is active with the following regexp: %s", SMTPRelayConfig.AllowedRecipients)
+	}
 
+	if SMTPRelayConfig.BlockedRecipients != "" {
+		re, err := regexp.Compile(SMTPRelayConfig.BlockedRecipients)
+		if err != nil {
+			return fmt.Errorf("[smtp] failed to compile relay recipient blocklist regexp: %s", err.Error())
+		}
+
+		SMTPRelayConfig.BlockedRecipientsRegexp = re
+		logger.Log().Infof("[smtp] relay recipient blocklist is active with the following regexp: %s", SMTPRelayConfig.BlockedRecipients)
 	}
 
 	return nil
