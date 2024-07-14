@@ -2,6 +2,19 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.19.1]
+
+### Feature
+- Add optional relay recipient blocklist ([#333](https://github.com/axllent/mailpit/issues/333))
+
+### Chore
+- Update Go dependencies
+- Equal column widths in About modal
+- Bump esbuild to version 0.23.0
+- Bump esbuild from 0.21.5 to 0.22.0 ([#326](https://github.com/axllent/mailpit/issues/326))
+- Bump docker/build-push-action from 5 to 6 ([#327](https://github.com/axllent/mailpit/issues/327))
+
+
 ## [v1.19.0]
 
 ### Feature
