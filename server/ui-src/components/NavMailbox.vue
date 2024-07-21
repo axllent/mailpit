@@ -131,8 +131,8 @@ export default {
 						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 					</div>
 					<div class="modal-body">
-						This will permanently delete {{ formatNumber(mailbox.count) }}
-						message<span v-if="mailbox.count > 1">s</span>.
+						This will permanently delete {{ formatNumber(mailbox.total) }}
+						message<span v-if="mailbox.total > 1">s</span>.
 					</div>
 					<div class="modal-footer">
 						<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
