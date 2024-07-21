@@ -2,6 +2,15 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.19.2]
+
+### Chore
+- Update Go dependencies
+
+### Fix
+- Update Inbox "Delete All" count when new messages are detected ([#334](https://github.com/axllent/mailpit/issues/334))
+
+
 ## [v1.19.1]
 
 ### Feature
