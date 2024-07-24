@@ -298,7 +298,9 @@ func index(w http.ResponseWriter, _ *http.Request) {
 
 <body class="h-100">
 	<div class="container-fluid h-100 d-flex flex-column" id="app" data-webroot="{{ .Webroot }}" data-version="{{ .Version }}">
-		<noscript>You require JavaScript to use this app.</noscript>
+		<noscript class="alert alert-warning position-absolute top-50 start-50 translate-middle">
+			You need a browser with JavaScript support to use Mailpit
+		</noscript>
 	</div>
 
 	<script src="{{ .Webroot }}dist/app.js?{{ .Version }}"></script>
