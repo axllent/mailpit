@@ -2,6 +2,16 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.19.3]
+
+### Chore
+- Update Go dependencies
+- Display nicer noscript message when JavaScript is disabled
+
+### Fix
+- **Security:** Prevent bypass of Contend Security Policy using stored XSS, and sanitize preview HTML data (DOMPurify)
+
+
 ## [v1.19.2]
 
 ### Chore
