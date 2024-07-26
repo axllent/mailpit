@@ -205,6 +205,9 @@ func VerifyConfig() error {
 		cssFontRestriction = "'self'"
 	}
 
+	// The default Content Security Policy is updates on every application page load to replace script-src 'self'
+	// with a random nonce ID to prevent XSS. This applies to the Mailpit app & API.
+	// See server.middleWareFunc()
 	ContentSecurityPolicy = fmt.Sprintf("default-src 'self'; script-src 'self'; style-src %s 'unsafe-inline'; frame-src 'self'; img-src * data: blob:; font-src %s data:; media-src 'self'; connect-src 'self' ws: wss:; object-src 'none'; base-uri 'self';",
 		cssFontRestriction, cssFontRestriction,
 	)
