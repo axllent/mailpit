@@ -9,6 +9,7 @@ import Tags from 'bootstrap5-tags'
 import { Tooltip } from 'bootstrap'
 import commonMixins from '../../mixins/CommonMixins'
 import { mailbox } from '../../stores/mailbox'
+import DOMPurify from 'dompurify'
 
 export default {
 	props: {
@@ -73,6 +74,57 @@ export default {
 			return (mailbox.showHTMLCheck && this.message.HTML)
 				|| mailbox.showLinkCheck
 				|| (mailbox.showSpamCheck && mailbox.uiConfig.SpamAssassin)
+		},
+
+		// remove bad HTML, JavaScript, iframes etc
+		sanitizedHTML() {
+			DOMPurify.addHook('afterSanitizeAttributes', (node) => {
+				if (node.hasAttribute('href') && node.getAttribute('href').substring(0, 1) == '#') {
+					return
+				}
+				if ('target' in node) {
+					node.setAttribute('target', '_blank');
+					node.setAttribute('rel', 'noopener noreferrer');
+				}
+				if (!node.hasAttribute('target') && (node.hasAttribute('xlink:href') || node.hasAttribute('href'))) {
+					node.setAttribute('xlink:show', '_blank');
+				}
+			});
+
+			const clean = DOMPurify.sanitize(
+				this.message.HTML,
+				{
+					WHOLE_DOCUMENT: true,
+					SANITIZE_DOM: false,
+					ADD_TAGS: [
+						'link',
+						'meta',
+						'o:p',
+						'style',
+					],
+					ADD_ATTR: [
+						'bordercolor',
+						'charset',
+						'content',
+						'hspace',
+						'http-equiv',
+						'itemprop',
+						'itemscope',
+						'itemtype',
+						'link',
+						'vertical-align',
+						'vlink',
+						'vspace',
+						'xml:lang'
+					],
+					FORBID_ATTR: ['script'],
+				}
+			)
+
+			// for debugging
+			// this.debugDOMPurify(DOMPurify.removed)
+
+			return clean
 		}
 	},
 
@@ -133,7 +185,7 @@ export default {
 			// delay 0.2s until vue has rendered the iframe content
 			window.setTimeout(() => {
 				let p = document.getElementById('preview-html')
-				if (p) {
+				if (p && typeof p.contentWindow.document.body != 'undefined') {
 					// make links open in new window
 					let anchorEls = p.contentWindow.document.body.querySelectorAll('a')
 					for (var i = 0; i < anchorEls.length; i++) {
@@ -185,9 +237,31 @@ export default {
 			this.resizeIframe(el)
 		},
 
-		sanitizeHTML(h) {
-			// remove <base/> tag if set
-			return h.replace(/<base .*>/mi, '')
+		// this function is unused but kept here to use for debugging
+		debugDOMPurify(removed) {
+			if (!removed.length) {
+				return
+			}
+
+			const ignoreNodes = ['target', 'base', 'script', 'v:shapes']
+
+			let d = removed.filter((r) => {
+				if (typeof r.attribute != 'undefined' &&
+					(ignoreNodes.includes(r.attribute.nodeName) || r.attribute.nodeName.startsWith('xmlns:'))
+				) {
+					return false
+				}
+				// inline comments
+				if (typeof r.element != 'undefined' && (r.element.nodeType == 8 || r.element.tagName == 'SCRIPT')) {
+					return false
+				}
+
+				return true
+			})
+
+			if (d.length) {
+				console.log(d)
+			}
 		},
 
 		saveTags() {
@@ -292,7 +366,7 @@ export default {
 						<tr v-if="message.Bcc && message.Bcc.length" class="small">
 							<th>Bcc</th>
 							<td class="privacy">
-								<span v-for="(   t, i   ) in    message.Bcc   ">
+								<span v-for="(t, i) in message.Bcc">
 									<template v-if="i > 0">,</template>
 									<span class="text-spaces">{{ t.Name }}</span>
 									&lt;<a :href="searchURI(t.Address)" class="text-body">
@@ -510,9 +584,8 @@ export default {
 			<div v-if="message.HTML != ''" class="tab-pane fade show" id="nav-html" role="tabpanel"
 				aria-labelledby="nav-html-tab" tabindex="0">
 				<div id="responsive-view" :class="scaleHTMLPreview" :style="responsiveSizes[scaleHTMLPreview]">
-					<iframe target-blank="" class="tab-pane d-block" id="preview-html"
-						:srcdoc="sanitizeHTML(message.HTML)" v-on:load="resizeIframe" frameborder="0"
-						style="width: 100%; height: 100%; background: #fff;">
+					<iframe target-blank="" class="tab-pane d-block" id="preview-html" :srcdoc="sanitizedHTML"
+						v-on:load="resizeIframe" frameborder="0" style="width: 100%; height: 100%; background: #fff;">
 					</iframe>
 				</div>
 				<Attachments v-if="allAttachments(message).length" :message="message"

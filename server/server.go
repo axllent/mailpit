@@ -25,6 +25,7 @@ import (
 	"github.com/axllent/mailpit/server/pop3"
 	"github.com/axllent/mailpit/server/websockets"
 	"github.com/gorilla/mux"
+	"github.com/lithammer/shortuuid/v4"
 )
 
 //go:embed ui
@@ -75,11 +76,11 @@ func Listen() {
 	}
 
 	// UI shortcut
-	r.HandleFunc(config.Webroot+"view/latest", handlers.RedirectToLatestMessage).Methods("GET")
+	r.HandleFunc(config.Webroot+"view/latest", middleWareFunc(handlers.RedirectToLatestMessage)).Methods("GET")
 
 	// frontend testing
-	r.HandleFunc(config.Webroot+"view/{id}.html", handlers.GetMessageHTML).Methods("GET")
-	r.HandleFunc(config.Webroot+"view/{id}.txt", handlers.GetMessageText).Methods("GET")
+	r.HandleFunc(config.Webroot+"view/{id}.html", middleWareFunc(handlers.GetMessageHTML)).Methods("GET")
+	r.HandleFunc(config.Webroot+"view/{id}.txt", middleWareFunc(handlers.GetMessageText)).Methods("GET")
 
 	// web UI via virtual index.html
 	r.PathPrefix(config.Webroot + "view/").Handler(middleWareFunc(index)).Methods("GET")
@@ -179,7 +180,21 @@ func (w gzipResponseWriter) Write(b []byte) (int, error) {
 func middleWareFunc(fn http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Referrer-Policy", "no-referrer")
-		w.Header().Set("Content-Security-Policy", config.ContentSecurityPolicy)
+
+		// generate a new random nonce on every request
+		randomNonce := shortuuid.New()
+		// header used to pass nonce through to function
+		r.Header.Set("mp-nonce", randomNonce)
+
+		// Prevent JavaScript XSS by adding a nonce for script-src
+		cspHeader := strings.Replace(
+			config.ContentSecurityPolicy,
+			"script-src 'self';",
+			fmt.Sprintf("script-src 'nonce-%s';", randomNonce),
+			1,
+		)
+
+		w.Header().Set("Content-Security-Policy", cspHeader)
 
 		if AccessControlAllowOrigin != "" && strings.HasPrefix(r.RequestURI, config.Webroot+"api/") {
 			w.Header().Set("Access-Control-Allow-Origin", AccessControlAllowOrigin)
@@ -281,7 +296,7 @@ func swaggerBasePath(w http.ResponseWriter, _ *http.Request) {
 }
 
 // Just returns the default HTML template
-func index(w http.ResponseWriter, _ *http.Request) {
+func index(w http.ResponseWriter, r *http.Request) {
 
 	var h = `<!DOCTYPE html>
 <html lang="en" class="h-100">
@@ -303,7 +318,7 @@ func index(w http.ResponseWriter, _ *http.Request) {
 		</noscript>
 	</div>
 
-	<script src="{{ .Webroot }}dist/app.js?{{ .Version }}"></script>
+	<script src="{{ .Webroot }}dist/app.js?{{ .Version }}" nonce="{{ .Nonce }}"></script>
 </body>
 
 </html>`
@@ -316,9 +331,11 @@ func index(w http.ResponseWriter, _ *http.Request) {
 	data := struct {
 		Webroot string
 		Version string
+		Nonce   string
 	}{
 		Webroot: config.Webroot,
 		Version: config.Version,
+		Nonce:   r.Header.Get("mp-nonce"),
 	}
 
 	buff := new(bytes.Buffer)
