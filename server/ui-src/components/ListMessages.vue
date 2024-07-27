@@ -20,9 +20,12 @@ export default {
 		}
 	},
 
-	mounted() {
+	created() {
 		const relativeTime = require('dayjs/plugin/relativeTime')
 		dayjs.extend(relativeTime)
+	},
+
+	mounted() {
 		this.refreshUI()
 	},
 
