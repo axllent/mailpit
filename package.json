@@ -23,7 +23,7 @@
     "timezones-list": "^3.0.3",
     "vue": "^3.2.13",
     "vue-css-donut-chart": "^2.0.0",
-    "vue-router": "^4.2.4"
+    "vue-router": "^4.4.1"
   },
   "devDependencies": {
     "@popperjs/core": "^2.11.5",
