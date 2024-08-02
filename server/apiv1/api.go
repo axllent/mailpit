@@ -442,7 +442,7 @@ func DeleteMessages(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	w.Header().Add("Content-Type", "application/plain")
+	w.Header().Add("Content-Type", "text/plain")
 	_, _ = w.Write([]byte("ok"))
 }
 
