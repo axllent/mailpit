@@ -3,6 +3,7 @@ package websockets
 
 import (
 	"encoding/json"
+	"time"
 
 	"github.com/axllent/mailpit/internal/logger"
 )
@@ -82,6 +83,10 @@ func Broadcast(t string, msg interface{}) {
 		logger.Log().Errorf("[websocket] broadcast received invalid data: %s", err.Error())
 		return
 	}
+
+	// add a very small delay to prevent broadcasts from being interpreted
+	// as a multi-line messages (eg: storage.DeleteMessages() which can send a very quick series)
+	time.Sleep(time.Millisecond)
 
 	go func() { MessageHub.Broadcast <- b }()
 }
