@@ -165,7 +165,7 @@ func Store(body *[]byte) (string, error) {
 
 // List returns a subset of messages from the mailbox,
 // sorted latest to oldest
-func List(start, limit int) ([]MessageSummary, error) {
+func List(start int, beforeTS int64, limit int) ([]MessageSummary, error) {
 	results := []MessageSummary{}
 	tsStart := time.Now()
 
@@ -174,6 +174,10 @@ func List(start, limit int) ([]MessageSummary, error) {
 		OrderBy("m.Created DESC").
 		Limit(limit).
 		Offset(start)
+
+	if beforeTS > 0 {
+		q = q.Where("Created < ?", beforeTS)
+	}
 
 	if err := q.QueryAndClose(context.TODO(), db, func(row *sql.Rows) {
 		var created float64
@@ -428,12 +432,12 @@ func LatestID(r *http.Request) (string, error) {
 
 	search := strings.TrimSpace(r.URL.Query().Get("query"))
 	if search != "" {
-		messages, _, err = Search(search, r.URL.Query().Get("tz"), 0, 1)
+		messages, _, err = Search(search, r.URL.Query().Get("tz"), 0, 0, 1)
 		if err != nil {
 			return "", err
 		}
 	} else {
-		messages, err = List(0, 1)
+		messages, err = List(0, 0, 1)
 		if err != nil {
 			return "", err
 		}
@@ -461,6 +465,13 @@ func MarkRead(id string) error {
 	}
 
 	BroadcastMailboxStats()
+
+	d := struct {
+		ID   string
+		Read bool
+	}{ID: id, Read: true}
+
+	websockets.Broadcast("update", d)
 
 	return err
 }
@@ -533,6 +544,13 @@ func MarkUnread(id string) error {
 	dbLastAction = time.Now()
 
 	BroadcastMailboxStats()
+
+	d := struct {
+		ID   string
+		Read bool
+	}{ID: id, Read: false}
+
+	websockets.Broadcast("update", d)
 
 	return err
 }
@@ -621,6 +639,15 @@ func DeleteMessages(ids []string) error {
 
 	BroadcastMailboxStats()
 
+	// broadcast individual message deletions
+	for _, id := range toDelete {
+		d := struct {
+			ID string
+		}{ID: id}
+
+		websockets.Broadcast("delete", d)
+	}
+
 	return nil
 }
 
@@ -671,8 +698,9 @@ func DeleteAllMessages() error {
 
 	logMessagesDeleted(total)
 
-	websockets.Broadcast("prune", nil)
 	BroadcastMailboxStats()
+
+	websockets.Broadcast("truncate", nil)
 
 	return err
 }

@@ -60,6 +60,13 @@ func SetMessageTags(id string, tags []string) ([]string, error) {
 		}
 	}
 
+	d := struct {
+		ID   string
+		Tags []string
+	}{ID: id, Tags: applyTags}
+
+	websockets.Broadcast("update", d)
+
 	return tagNames, nil
 }
 

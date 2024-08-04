@@ -142,7 +142,7 @@ export default {
 						</b>
 					</div>
 					<div class="d-none d-lg-block text-truncate text-muted small privacy">
-						{{ getPrimaryEmailTo(message) }}
+						To: {{ getPrimaryEmailTo(message) }}
 						<span v-if="message.To && message.To.length > 1">
 							[+{{ message.To.length - 1 }}]
 						</span>

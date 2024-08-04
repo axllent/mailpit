@@ -17,6 +17,7 @@
     "dayjs": "^1.11.10",
     "dompurify": "^3.1.6",
     "ical.js": "^2.0.1",
+    "mitt": "^3.0.1",
     "modern-screenshot": "^4.4.30",
     "prismjs": "^1.29.0",
     "rapidoc": "^9.3.4",

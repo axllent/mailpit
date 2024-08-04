@@ -7,6 +7,9 @@ import { pagination } from '../stores/pagination'
 export default {
 	mixins: [CommonMixins],
 
+	// global event bus to handle message status changes
+	inject: ["eventBus"],
+
 	data() {
 		return {
 			pagination,
@@ -63,7 +66,7 @@ export default {
 						} else {
 							// update pagination offset
 							pagination.start++
-							// prevent "Too many calls to Location or History APIs within a short timeframe"
+							// prevent "Too many calls to Location or History APIs within a short time frame"
 							this.delayedPaginationUpdate()
 						}
 					}
@@ -91,6 +94,7 @@ export default {
 					window.scrollInPlace = true
 					mailbox.refresh = true // trigger refresh
 					window.setTimeout(() => { mailbox.refresh = false }, 500)
+					this.eventBus.emit("prune");
 				} else if (response.Type == "stats" && response.Data) {
 					// refresh mailbox stats
 					mailbox.total = response.Data.Total
@@ -100,6 +104,15 @@ export default {
 					if (this.version != response.Data.Version) {
 						location.reload()
 					}
+				} else if (response.Type == "delete" && response.Data) {
+					// broadcast for components
+					this.eventBus.emit("delete", response.Data);
+				} else if (response.Type == "update" && response.Data) {
+					// broadcast for components
+					this.eventBus.emit("update", response.Data);
+				} else if (response.Type == "truncate") {
+					// broadcast for components
+					this.eventBus.emit("truncate")
 				}
 			}
 
@@ -149,6 +162,11 @@ export default {
 			ws.onerror = function (err) {
 				ws.close()
 			}
+		},
+
+		handleMessageEvents(message) {
+			console.log("generic")
+			console.log(message)
 		},
 
 		socketBreakReset() {

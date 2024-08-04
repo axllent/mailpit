@@ -403,11 +403,13 @@ export default {
 								<small class="text-body-secondary" v-else>[ no subject ]</small>
 							</td>
 						</tr>
-						<tr class="d-md-none small">
+						<tr class="small">
 							<th class="small">Date</th>
-							<td>{{ messageDate(message.Date) }}</td>
+							<td>
+								{{ messageDate(message.Date) }}
+								<small class="ms-2">({{ getFileSize(message.Size) }})</small>
+							</td>
 						</tr>
-
 						<tr class="small">
 							<th>Tags</th>
 							<td>

@@ -26,9 +26,10 @@ func sendData(c net.Conn, m string) {
 	fmt.Fprintf(c, "%s\r\n", m)
 }
 
+// Get the latest 100 messages
 func getMessages() ([]message, error) {
 	messages := []message{}
-	list, err := storage.List(0, 100)
+	list, err := storage.List(0, 0, 100)
 	if err != nil {
 		return messages, err
 	}

@@ -14,6 +14,9 @@ import { pagination } from '../stores/pagination'
 export default {
 	mixins: [CommonMixins, MessagesMixins],
 
+	// global event bus to handle message status changes
+	inject: ["eventBus"],
+
 	components: {
 		AboutMailpit,
 		AjaxLoader,
@@ -28,6 +31,7 @@ export default {
 		return {
 			mailbox,
 			pagination,
+			delayedRefresh: false,
 		}
 	},
 
@@ -40,6 +44,18 @@ export default {
 	mounted() {
 		mailbox.searching = this.getSearch()
 		this.doSearch()
+
+		// subscribe to events
+		this.eventBus.on("update", this.handleWSUpdate)
+		this.eventBus.on("delete", this.handleWSDelete)
+		this.eventBus.on("truncate", this.handleWSTruncate)
+	},
+
+	unmounted() {
+		// unsubscribe from events
+		this.eventBus.off("update", this.handleWSUpdate)
+		this.eventBus.off("delete", this.handleWSDelete)
+		this.eventBus.off("truncate", this.handleWSTruncate)
 	},
 
 	methods: {
@@ -59,7 +75,50 @@ export default {
 				this.apiURI += '&tz=' + encodeURIComponent(mailbox.timeZone)
 			}
 			this.loadMessages()
-		}
+		},
+
+		// handler for websocket message updates
+		handleWSUpdate(data) {
+			for (let x = 0; x < this.mailbox.messages.length; x++) {
+				if (this.mailbox.messages[x].ID == data.ID) {
+					// update message
+					this.mailbox.messages[x] = { ...this.mailbox.messages[x], ...data }
+					return
+				}
+			}
+		},
+
+		// handler for websocket message deletion
+		handleWSDelete(data) {
+			let removed = 0;
+			for (let x = 0; x < this.mailbox.messages.length; x++) {
+				if (this.mailbox.messages[x].ID == data.ID) {
+					// remove message from the list
+					this.mailbox.messages.splice(x, 1)
+					removed++
+					continue
+				}
+			}
+
+			if (!removed || this.delayedRefresh) {
+				// nothing changed on this screen, or a refresh is queued, don't refresh
+				return
+			}
+
+			// delayedRefresh prevents unnecessary reloads when multiple messages are deleted
+			this.delayedRefresh = true
+
+			window.setTimeout(() => {
+				this.delayedRefresh = false
+				this.loadMessages()
+			}, 500)
+		},
+
+		// handler for websocket message truncation
+		handleWSTruncate() {
+			// all messages deleted, go back to inbox
+			this.$router.push('/')
+		},
 	}
 }
 </script>
@@ -93,18 +152,23 @@ export default {
 			<button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#offcanvas"
 				aria-label="Close"></button>
 		</div>
-		<div class="offcanvas-body">
-			<NavSearch @loadMessages="loadMessages" />
-			<NavTags @loadMessages="loadMessages" />
-			<AboutMailpit />
+		<div class="offcanvas-body pb-0">
+			<div class="d-flex flex-column h-100">
+				<div class="flex-grow-1 overflow-y-auto">
+					<NavSearch @loadMessages="loadMessages" />
+					<NavTags />
+				</div>
+				<AboutMailpit />
+			</div>
 		</div>
 	</div>
 
 	<div class="row flex-fill" style="min-height:0">
-		<div class="d-none d-md-block col-xl-2 col-md-3 mh-100 position-relative"
-			style="overflow-y: auto; overflow-x: hidden;">
-			<NavSearch @loadMessages="loadMessages" />
-			<NavTags @loadMessages="loadMessages" />
+		<div class="d-none d-md-flex h-100 col-xl-2 col-md-3 flex-column">
+			<div class="flex-grow-1 overflow-y-auto">
+				<NavSearch @loadMessages="loadMessages" />
+				<NavTags />
+			</div>
 			<AboutMailpit />
 		</div>
 

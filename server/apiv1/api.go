@@ -10,12 +10,15 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/araddon/dateparse"
 	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/internal/htmlcheck"
 	"github.com/axllent/mailpit/internal/linkcheck"
+	"github.com/axllent/mailpit/internal/logger"
 	"github.com/axllent/mailpit/internal/spamassassin"
 	"github.com/axllent/mailpit/internal/storage"
 	"github.com/gorilla/mux"
+	"github.com/jhillyerd/enmime"
 )
 
 // GetMessages returns a paginated list of messages as JSON
@@ -48,9 +51,9 @@ func GetMessages(w http.ResponseWriter, r *http.Request) {
 	//	Responses:
 	//		200: MessagesSummaryResponse
 	//		default: ErrorResponse
-	start, limit := getStartLimit(r)
+	start, beforeTS, limit := getStartLimit(r)
 
-	messages, err := storage.List(start, limit)
+	messages, err := storage.List(start, beforeTS, limit)
 	if err != nil {
 		httpError(w, err.Error())
 		return
@@ -120,9 +123,9 @@ func Search(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	start, limit := getStartLimit(r)
+	start, beforeTS, limit := getStartLimit(r)
 
-	messages, results, err := storage.Search(search, r.URL.Query().Get("tz"), start, limit)
+	messages, results, err := storage.Search(search, r.URL.Query().Get("tz"), start, beforeTS, limit)
 	if err != nil {
 		httpError(w, err.Error())
 		return
@@ -548,9 +551,17 @@ func HTMLCheck(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	msg, err := storage.GetMessage(id)
+	raw, err := storage.GetMessageRaw(id)
 	if err != nil {
 		fourOFour(w)
+		return
+	}
+
+	e := bytes.NewReader(raw)
+
+	msg, err := enmime.ReadEnvelope(e)
+	if err != nil {
+		httpError(w, err.Error())
 		return
 	}
 
@@ -704,9 +715,10 @@ func httpJSONError(w http.ResponseWriter, msg string) {
 }
 
 // Get the start and limit based on query params. Defaults to 0, 50
-func getStartLimit(req *http.Request) (start int, limit int) {
+func getStartLimit(req *http.Request) (start int, beforeTS int64, limit int) {
 	start = 0
 	limit = 50
+	beforeTS = 0 // timestamp
 
 	s := req.URL.Query().Get("start")
 	if n, err := strconv.Atoi(s); err == nil && n > 0 {
@@ -718,7 +730,17 @@ func getStartLimit(req *http.Request) (start int, limit int) {
 		limit = n
 	}
 
-	return start, limit
+	b := req.URL.Query().Get("before")
+	if b != "" {
+		t, err := dateparse.ParseLocal(b)
+		if err != nil {
+			logger.Log().Warnf("ignoring invalid before: date \"%s\"", b)
+		} else {
+			beforeTS = t.UnixMilli()
+		}
+	}
+
+	return start, beforeTS, limit
 }
 
 // GetOptions returns a blank response

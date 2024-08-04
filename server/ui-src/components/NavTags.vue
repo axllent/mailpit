@@ -100,7 +100,7 @@ export default {
 				</li>
 			</ul>
 		</div>
-		<div class="list-group mt-1 mb-5 pb-3">
+		<div class="list-group mt-1 mb-2">
 			<RouterLink v-for="tag in mailbox.tags" :to="toTagUrl(tag)" @click="hideNav"
 				v-on:click="pagination.start = 0" v-on:click.ctrl="toggleTag($event, tag)"
 				:style="mailbox.showTagColors ? { borderLeftColor: colorHash(tag), borderLeftWidth: '4px' } : ''"
