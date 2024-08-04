@@ -6,8 +6,6 @@ import { pagination } from '../stores/pagination'
 export default {
 	mixins: [CommonMixins],
 
-	emits: ['loadMessages'],
-
 	data() {
 		return {
 			mailbox,
@@ -24,7 +22,7 @@ export default {
 				return false
 			}
 
-			let re = new RegExp(`(^|\\s)tag:"?${tag}"?($|\\s)`, 'i')
+			let re = new RegExp(`\\btag:("${tag}"|${tag}\\b)`, 'i')
 			return query.match(re)
 		},
 
