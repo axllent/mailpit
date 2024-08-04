@@ -13,6 +13,7 @@ import (
 	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/internal/logger"
 	"github.com/axllent/mailpit/internal/tools"
+	"github.com/axllent/mailpit/server/websockets"
 	"github.com/leporo/sqlf"
 )
 
@@ -40,7 +41,7 @@ func SetMessageTags(id string, tags []string) ([]string, error) {
 			continue
 		}
 
-		name, err := AddMessageTag(id, t)
+		name, err := addMessageTag(id, t)
 		if err != nil {
 			return []string{}, err
 		}
@@ -53,7 +54,7 @@ func SetMessageTags(id string, tags []string) ([]string, error) {
 
 		for _, t := range currentTags {
 			if !tools.InArray(t, applyTags) {
-				if err := DeleteMessageTag(id, t); err != nil {
+				if err := deleteMessageTag(id, t); err != nil {
 					return []string{}, err
 				}
 			}
@@ -71,7 +72,7 @@ func SetMessageTags(id string, tags []string) ([]string, error) {
 }
 
 // AddMessageTag adds a tag to a message
-func AddMessageTag(id, name string) (string, error) {
+func addMessageTag(id, name string) (string, error) {
 	// prevent two identical tags being added at the same time
 	addTagMutex.Lock()
 
@@ -121,11 +122,11 @@ func AddMessageTag(id, name string) (string, error) {
 	addTagMutex.Unlock()
 
 	// add tag to the message
-	return AddMessageTag(id, name)
+	return addMessageTag(id, name)
 }
 
-// DeleteMessageTag deleted a tag from a message
-func DeleteMessageTag(id, name string) error {
+// DeleteMessageTag deletes a tag from a message
+func deleteMessageTag(id, name string) error {
 	if _, err := sqlf.DeleteFrom(tenant("message_tags")).
 		Where(tenant("message_tags.ID")+" = ?", id).
 		Where(tenant("message_tags.Key")+` IN (SELECT Key FROM `+tenant("message_tags")+` LEFT JOIN tags ON `+tenant("TagID")+"="+tenant("tags.ID")+` WHERE Name = ?)`, name).
@@ -180,7 +181,6 @@ func GetAllTagsCount() map[string]int64 {
 		OrderBy("Name").
 		QueryAndClose(context.TODO(), db, func(row *sql.Rows) {
 			tags[name] = total
-			// tags = append(tags, name)
 		}); err != nil {
 		logger.Log().Errorf("[db] %s", err.Error())
 	}
