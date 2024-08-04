@@ -91,44 +91,6 @@
 	}
 }
 
-.about-mailpit {
-	@include media-breakpoint-down(md) {
-		width: var(--bs-offcanvas-width);
-		margin-left: -1rem !important;
-	}
-}
-
-.message {
-	.subject {
-		color: $text-muted;
-
-		b {
-			color: $list-group-color;
-		}
-
-		small {
-			opacity: 0.5;
-		}
-	}
-
-	&.read {
-		color: $text-muted;
-
-		b {
-			opacity: 0.7;
-			font-weight: normal;
-			color: $list-group-color;
-		}
-
-		small {
-			opacity: 0.5;
-		}
-	}
-	&.selected {
-		background: var(--bs-primary-bg-subtle);
-	}
-}
-
 .text-spaces-nowrap {
 	white-space: pre;
 }
@@ -266,8 +228,35 @@
 	}
 }
 
-.list-group-item.message:first-child {
-	border-top: 0;
+#message-page {
+	.list-group-item.message:first-child {
+		border-top: 0;
+	}
+
+	.message {
+		.subject {
+			color: $text-muted;
+
+			b {
+				color: $list-group-color;
+			}
+
+			small {
+				opacity: 0.5;
+			}
+		}
+
+		&.read {
+			color: $text-muted;
+
+			b {
+				color: $list-group-color;
+			}
+		}
+		&.selected {
+			background: var(--bs-primary-bg-subtle);
+		}
+	}
 }
 
 body.blur {
@@ -318,6 +307,18 @@ body.blur {
 
 .form-select.tag-selector {
 	display: none;
+}
+
+.message {
+	&.read {
+		> div {
+			opacity: 0.7;
+		}
+
+		b {
+			font-weight: normal;
+		}
+	}
 }
 
 #message-view {

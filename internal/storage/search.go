@@ -18,7 +18,7 @@ import (
 // The search is broken up by segments (exact phrases can be quoted), and interprets specific terms such as:
 // is:read, is:unread, has:attachment, to:<term>, from:<term> & subject:<term>
 // Negative searches also also included by prefixing the search term with a `-` or `!`
-func Search(search, timezone string, start, limit int) ([]MessageSummary, int, error) {
+func Search(search, timezone string, start int, beforeTS int64, limit int) ([]MessageSummary, int, error) {
 	results := []MessageSummary{}
 	allResults := []MessageSummary{}
 	tsStart := time.Now()
@@ -28,6 +28,11 @@ func Search(search, timezone string, start, limit int) ([]MessageSummary, int, e
 	}
 
 	q := searchQueryBuilder(search, timezone)
+
+	if beforeTS > 0 {
+		q = q.Where(`Created < ?`, beforeTS)
+	}
+
 	var err error
 
 	if err := q.QueryAndClose(context.TODO(), db, func(row *sql.Rows) {
