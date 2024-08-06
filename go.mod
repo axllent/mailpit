@@ -8,7 +8,7 @@ require (
 	github.com/PuerkitoBio/goquery v1.9.2
 	github.com/araddon/dateparse v0.0.0-20210429162001-6b43995a97de
 	github.com/axllent/semver v0.0.1
-	github.com/gomarkdown/markdown v0.0.0-20240723152757-afa4a469d4f9
+	github.com/gomarkdown/markdown v0.0.0-20240730141124-034f12af3bf6
 	github.com/gorilla/mux v1.8.1
 	github.com/gorilla/websocket v1.5.3
 	github.com/jhillyerd/enmime v1.2.0
@@ -26,7 +26,7 @@ require (
 	github.com/vanng822/go-premailer v1.21.0
 	golang.org/x/net v0.27.0
 	golang.org/x/text v0.16.0
-	golang.org/x/time v0.5.0
+	golang.org/x/time v0.6.0
 	gopkg.in/yaml.v3 v3.0.1
 	modernc.org/sqlite v1.31.1
 )
@@ -56,10 +56,10 @@ require (
 	github.com/vanng822/css v1.0.1 // indirect
 	golang.org/x/crypto v0.25.0 // indirect
 	golang.org/x/image v0.18.0 // indirect
-	golang.org/x/sys v0.22.0 // indirect
+	golang.org/x/sys v0.23.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
-	modernc.org/gc/v3 v3.0.0-20240722195230-4a140ff9c08e // indirect
-	modernc.org/libc v1.55.4 // indirect
+	modernc.org/gc/v3 v3.0.0-20240801135723-a856999a2e4a // indirect
+	modernc.org/libc v1.56.0 // indirect
 	modernc.org/mathutil v1.6.0 // indirect
 	modernc.org/memory v1.8.0 // indirect
 	modernc.org/strutil v1.2.0 // indirect

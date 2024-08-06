@@ -185,17 +185,19 @@ export default {
 			// delay 0.2s until vue has rendered the iframe content
 			window.setTimeout(() => {
 				let p = document.getElementById('preview-html')
-				if (p && typeof p.contentWindow.document.body != 'undefined') {
-					// make links open in new window
-					let anchorEls = p.contentWindow.document.body.querySelectorAll('a')
-					for (var i = 0; i < anchorEls.length; i++) {
-						let anchorEl = anchorEls[i]
-						let href = anchorEl.getAttribute('href')
+				if (p && typeof p.contentWindow.document.body == 'object') {
+					try {
+						// make links open in new window
+						let anchorEls = p.contentWindow.document.body.querySelectorAll('a')
+						for (var i = 0; i < anchorEls.length; i++) {
+							let anchorEl = anchorEls[i]
+							let href = anchorEl.getAttribute('href')
 
-						if (href && href.match(/^http/)) {
-							anchorEl.setAttribute('target', '_blank')
+							if (href && href.match(/^http/)) {
+								anchorEl.setAttribute('target', '_blank')
+							}
 						}
-					}
+					} catch (error) { }
 					this.resizeIFrames()
 				}
 			}, 200)
@@ -208,7 +210,9 @@ export default {
 
 		resizeIframe(el) {
 			let i = el.target
-			i.style.height = i.contentWindow.document.body.scrollHeight + 50 + 'px'
+			if (typeof i.contentWindow.document.body.scrollHeight == 'number') {
+				i.style.height = i.contentWindow.document.body.scrollHeight + 50 + 'px'
+			}
 		},
 
 		resizeIFrames() {
@@ -217,7 +221,9 @@ export default {
 			}
 			let h = document.getElementById('preview-html')
 			if (h) {
-				h.style.height = h.contentWindow.document.body.scrollHeight + 50 + 'px'
+				if (typeof h.contentWindow.document.body.scrollHeight == 'number') {
+					h.style.height = h.contentWindow.document.body.scrollHeight + 50 + 'px'
+				}
 			}
 
 		},
@@ -306,7 +312,7 @@ export default {
 </script>
 
 <template>
-	<div v-if="message" id="message-view" class="px-2 px-md-0 mh-100" style="overflow-y: scroll;">
+	<div v-if="message" id="message-view" class="px-2 px-md-0 mh-100">
 		<div class="row w-100">
 			<div class="col-md">
 				<table class="messageHeaders">
@@ -403,11 +409,13 @@ export default {
 								<small class="text-body-secondary" v-else>[ no subject ]</small>
 							</td>
 						</tr>
-						<tr class="d-md-none small">
+						<tr class="small">
 							<th class="small">Date</th>
-							<td>{{ messageDate(message.Date) }}</td>
+							<td>
+								{{ messageDate(message.Date) }}
+								<small class="ms-2">({{ getFileSize(message.Size) }})</small>
+							</td>
 						</tr>
-
 						<tr class="small">
 							<th>Tags</th>
 							<td>

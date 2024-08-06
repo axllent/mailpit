@@ -66,7 +66,7 @@ func TestTags(t *testing.T) {
 	assertEqual(t, strings.Join(newTags, "|"), strings.Join(returnedTags, "|"), "Message tags do not match")
 
 	// remove first tag
-	if err := DeleteMessageTag(id, newTags[0]); err != nil {
+	if err := deleteMessageTag(id, newTags[0]); err != nil {
 		t.Log("error ", err)
 		t.Fail()
 	}

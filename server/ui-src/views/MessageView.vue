@@ -7,9 +7,13 @@ import Release from '../components/message/Release.vue'
 import Screenshot from '../components/message/Screenshot.vue'
 import { mailbox } from '../stores/mailbox'
 import { pagination } from '../stores/pagination'
+import dayjs from 'dayjs'
 
 export default {
 	mixins: [CommonMixins],
+
+	// global event bus to handle message status changes
+	inject: ["eventBus"],
 
 	components: {
 		AboutMailpit,
@@ -24,20 +28,105 @@ export default {
 			mailbox,
 			pagination,
 			message: false,
-			prevLink: false,
-			nextLink: false,
 			errorMessage: false,
+			apiSideNavURI: false,
+			apiSideNavParams: URLSearchParams,
+			apiIsMore: true,
+			messagesList: [],
+			scrollLoading: false,
+			canLoadMore: true,
 		}
 	},
 
 	watch: {
 		$route(to, from) {
 			this.loadMessage()
-		}
+		},
+	},
+
+	created() {
+		const relativeTime = require('dayjs/plugin/relativeTime')
+		dayjs.extend(relativeTime)
+
+		this.initLoadMoreAPIParams()
 	},
 
 	mounted() {
 		this.loadMessage()
+
+		this.messagesList = JSON.parse(JSON.stringify(this.mailbox.messages))
+		if (!this.messagesList.length) {
+			this.loadMore()
+		}
+
+		this.refreshUI()
+
+		// subscribe to events
+		this.eventBus.on("update", this.handleWSUpdate)
+		this.eventBus.on("delete", this.handleWSDelete)
+		this.eventBus.on("truncate", this.handleWSTruncate)
+	},
+
+	unmounted() {
+		// unsubscribe from events
+		this.eventBus.off("update", this.handleWSUpdate)
+		this.eventBus.off("delete", this.handleWSDelete)
+		this.eventBus.off("truncate", this.handleWSTruncate)
+	},
+
+	computed: {
+		// get current message read status
+		isRead() {
+			const l = this.messagesList.length
+			if (!this.message || !l) {
+				return true
+			}
+
+			let id = false
+			for (x = 0; x < l; x++) {
+				if (this.messagesList[x].ID == this.message.ID) {
+					return this.messagesList[x].Read
+				}
+			}
+
+			return true
+		},
+
+		// get the previous message ID
+		previousID() {
+			const l = this.messagesList.length
+			if (!this.message || !l) {
+				return false
+			}
+
+			let id = false
+			for (x = 0; x < l; x++) {
+				if (this.messagesList[x].ID == this.message.ID) {
+					return id
+				}
+				id = this.messagesList[x].ID
+			}
+
+			return false
+		},
+
+		// get the next message ID
+		nextID() {
+			const l = this.messagesList.length
+			if (!this.message || !l) {
+				return false
+			}
+
+			let id = false
+			for (x = l - 1; x > 0; x--) {
+				if (this.messagesList[x].ID == this.message.ID) {
+					return id
+				}
+				id = this.messagesList[x].ID
+			}
+
+			return id
+		}
 	},
 
 	methods: {
@@ -48,9 +137,8 @@ export default {
 				this.errorMessage = false
 				const d = response.data
 
-				if (this.wasUnread(d.ID)) {
-					mailbox.unread--
-				}
+				// update read status in case websockets is not working
+				this.handleWSUpdate({ 'ID': d.ID, Read: true })
 
 				// replace inline images embedded as inline attachments
 				if (d.HTML && d.Inline) {
@@ -94,7 +182,9 @@ export default {
 
 				this.message = d
 
-				this.detectPrevNext()
+				this.$nextTick(() => {
+					this.scrollSidebarToCurrent()
+				})
 			},
 				(error) => {
 					this.errorMessage = true
@@ -114,35 +204,143 @@ export default {
 				})
 		},
 
-		// try detect whether this message was unread based on messages listing
-		wasUnread(id) {
-			for (let m in mailbox.messages) {
-				if (mailbox.messages[m].ID == id) {
-					if (!mailbox.messages[m].Read) {
-						mailbox.messages[m].Read = true
-						return true
-					}
-					return false
+		// UI refresh ticker to adjust relative times
+		refreshUI() {
+			window.setTimeout(() => {
+				this.$forceUpdate()
+				this.refreshUI()
+			}, 30000)
+		},
+
+		// handler for websocket message updates
+		handleWSUpdate(data) {
+			for (let x = 0; x < this.messagesList.length; x++) {
+				if (this.messagesList[x].ID == data.ID) {
+					// update message
+					this.messagesList[x] = { ...this.messagesList[x], ...data }
+					return
 				}
 			}
 		},
 
-		detectPrevNext() {
-			// generate the prev/next links based on current message list
-			this.prevLink = false
-			this.nextLink = false
-			let found = false
-
-			for (let m in mailbox.messages) {
-				if (mailbox.messages[m].ID == this.message.ID) {
-					found = true
-				} else if (found && !this.nextLink) {
-					this.nextLink = mailbox.messages[m].ID
-					break
-				} else {
-					this.prevLink = mailbox.messages[m].ID
+		// handler for websocket message deletion
+		handleWSDelete(data) {
+			for (let x = 0; x < this.messagesList.length; x++) {
+				if (this.messagesList[x].ID == data.ID) {
+					// remove message from the list
+					this.messagesList.splice(x, 1)
+					return
 				}
 			}
+		},
+
+		// handler for websocket message truncation
+		handleWSTruncate() {
+			// all messages gone, go to inbox
+			this.$router.push('/')
+		},
+
+		// return whether the sidebar is visible
+		sidebarVisible() {
+			return this.$refs.MessageList.offsetParent != null
+		},
+
+		// scroll sidenav to current message if found
+		scrollSidebarToCurrent() {
+			const cont = document.getElementById('MessageList')
+			if (!cont) {
+				return
+			}
+			const c = cont.querySelector('.router-link-active')
+			if (c) {
+				const outer = cont.getBoundingClientRect()
+				const li = c.getBoundingClientRect()
+				if (outer.top > li.top || outer.bottom < li.bottom) {
+					c.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" })
+				}
+			}
+		},
+
+		scrollHandler(e) {
+			if (!this.canLoadMore || this.scrollLoading) {
+				return
+			}
+
+			const { scrollTop, offsetHeight, scrollHeight } = e.target
+			if ((scrollTop + offsetHeight + 150) >= scrollHeight) {
+				this.loadMore()
+			}
+		},
+
+		loadMore() {
+			if (this.messagesList.length) {
+				// get last created timestamp
+				const oldest = this.messagesList[this.messagesList.length - 1].Created
+				// if set append `before=<ts>` 
+				this.apiSideNavParams.set('before', oldest)
+			}
+
+			this.scrollLoading = true
+
+			this.get(this.apiSideNavURI, this.apiSideNavParams, (response) => {
+				if (response.data.messages.length) {
+					this.messagesList.push(...response.data.messages)
+				} else {
+					this.canLoadMore = false
+				}
+				this.$nextTick(() => {
+					this.scrollLoading = false
+				})
+			}, null, true)
+		},
+
+		initLoadMoreAPIParams() {
+			let apiURI = this.resolve(`/api/v1/messages`)
+			let p = {}
+
+			if (mailbox.searching) {
+				apiURI = this.resolve(`/api/v1/search`)
+				p.query = mailbox.searching
+			}
+
+			if (pagination.limit != pagination.defaultLimit) {
+				p.limit = pagination.limit.toString()
+			}
+
+			this.apiSideNavURI = apiURI
+
+			this.apiSideNavParams = new URLSearchParams(p)
+		},
+
+		getRelativeCreated(message) {
+			const d = new Date(message.Created)
+			return dayjs(d).fromNow()
+		},
+
+		getPrimaryEmailTo(message) {
+			for (let i in message.To) {
+				return message.To[i].Address
+			}
+
+			return '[ Undisclosed recipients ]'
+		},
+
+		isActive(id) {
+			return this.message.ID == id
+		},
+
+		toTagUrl(t) {
+			if (t.match(/ /)) {
+				t = `"${t}"`
+			}
+			const p = {
+				q: 'tag:' + t
+			}
+			if (pagination.limit != pagination.defaultLimit) {
+				p.limit = pagination.limit.toString()
+			}
+			const params = new URLSearchParams(p)
+			return '/search?' + params.toString()
 		},
 
 		downloadMessageBody(str, ext) {
@@ -157,25 +355,44 @@ export default {
 			this.$refs.ScreenshotRef.initScreenshot()
 		},
 
-		// mark current message as read
-		markUnread() {
+		// toggle current message read status
+		toggleRead() {
 			if (!this.message) {
 				return false
 			}
+			const read = !this.isRead
+
+			const ids = [this.message.ID]
 			const uri = this.resolve('/api/v1/messages')
-			this.put(uri, { 'read': false, 'ids': [this.message.ID] }, (response) => {
-				this.goBack()
+			this.put(uri, { 'Read': read, 'IDs': ids }, () => {
+				if (!this.sidebarVisible()) {
+					return this.goBack()
+				}
+
+				// manually update read status in case websockets is not working
+				this.handleWSUpdate({ 'ID': this.message.ID, Read: read })
 			})
 		},
 
 		deleteMessage() {
 			const ids = [this.message.ID]
 			const uri = this.resolve('/api/v1/messages')
-			this.delete(uri, { 'ids': ids }, () => {
-				this.goBack()
+			// calculate next ID before deletion to prevent WS race
+			const goToID = this.nextID ? this.nextID : this.previousID
+
+			this.delete(uri, { 'IDs': ids }, () => {
+				if (!this.sidebarVisible()) {
+					return this.goBack()
+				}
+				if (goToID) {
+					return this.$router.push('/view/' + goToID)
+				}
+
+				return this.goBack()
 			})
 		},
 
+		// return to mailbox or search based on origin
 		goBack() {
 			mailbox.lastMessage = this.$route.params.id
 
@@ -189,8 +406,7 @@ export default {
 				if (pagination.limit != pagination.defaultLimit) {
 					p.limit = pagination.limit.toString()
 				}
-				const params = new URLSearchParams(p)
-				this.$router.push('/search?' + params.toString())
+				this.$router.push('/search?' + new URLSearchParams(p).toString())
 			} else {
 				const p = {}
 				if (pagination.start > 0) {
@@ -199,8 +415,7 @@ export default {
 				if (pagination.limit != pagination.defaultLimit) {
 					p.limit = pagination.limit.toString()
 				}
-				const params = new URLSearchParams(p)
-				this.$router.push('/?' + params.toString())
+				this.$router.push('/?' + new URLSearchParams(p).toString())
 			}
 		},
 
@@ -218,25 +433,27 @@ export default {
 
 <template>
 	<div class="navbar navbar-expand-lg navbar-dark row flex-shrink-0 bg-primary text-white">
-		<div class="d-none d-md-block col-xl-2 col-md-3 col-auto pe-0">
+		<div class="d-none d-xl-block col-xl-3 col-auto pe-0">
 			<RouterLink to="/" class="navbar-brand text-white me-0" @click="pagination.start = 0">
 				<img :src="resolve('/mailpit.svg')" alt="Mailpit">
 				<span class="ms-2 d-none d-sm-inline">Mailpit</span>
 			</RouterLink>
 		</div>
-		<div class="col col-md-4k col-lg-5 col-xl-6" v-if="!errorMessage">
-			<button @click="goBack()" class="btn btn-outline-light me-3 me-sm-4 d-md-none" title="Return to messages">
+		<div class="col col-xl-5" v-if="!errorMessage">
+			<button @click="goBack()" class="btn btn-outline-light me-3 d-xl-none" title="Return to messages">
 				<i class="bi bi-arrow-return-left"></i>
+				<span class="ms-2 d-none d-lg-inline">Back</span>
 			</button>
-			<button class="btn btn-outline-light me-1 me-sm-2" title="Mark unread" v-on:click="markUnread">
-				<i class="bi bi-eye-slash"></i> <span class="d-none d-md-inline">Mark unread</span>
+			<button class="btn btn-outline-light me-1 me-sm-2" title="Mark unread" v-on:click="toggleRead()">
+				<i class="bi bi-eye-slash me-md-2" :class="isRead ? 'bi-eye-slash' : 'bi-eye'"></i>
+				<span class="d-none d-md-inline">Mark <template v-if="isRead">un</template>read</span>
 			</button>
 			<button class="btn btn-outline-light me-1 me-sm-2" title="Release message"
 				v-if="mailbox.uiConfig.MessageRelay && mailbox.uiConfig.MessageRelay.Enabled"
-				v-on:click="initReleaseModal">
+				v-on:click="initReleaseModal()">
 				<i class="bi bi-send"></i> <span class="d-none d-md-inline">Release</span>
 			</button>
-			<button class="btn btn-outline-light me-1 me-sm-2" title="Delete message" v-on:click="deleteMessage">
+			<button class="btn btn-outline-light me-1 me-sm-2" title="Delete message" v-on:click="deleteMessage()">
 				<i class="bi bi-trash-fill"></i> <span class="d-none d-md-inline">Delete</span>
 			</button>
 		</div>
@@ -297,19 +514,18 @@ export default {
 				</ul>
 			</div>
 
-			<RouterLink :to="'/view/' + prevLink" class="btn btn-outline-light ms-1 ms-sm-2 me-1"
-				:class="prevLink ? '' : 'disabled'" title="View previous message">
+			<RouterLink :to="'/view/' + previousID" class="btn btn-outline-light ms-1 ms-sm-2 me-1"
+				:class="previousID ? '' : 'disabled'" title="View previous message">
 				<i class="bi bi-caret-left-fill"></i>
 			</RouterLink>
-			<RouterLink :to="'/view/' + nextLink" class="btn btn-outline-light" :class="nextLink ? '' : 'disabled'">
+			<RouterLink :to="'/view/' + nextID" class="btn btn-outline-light" :class="nextID ? '' : 'disabled'">
 				<i class="bi bi-caret-right-fill" title="View next message"></i>
 			</RouterLink>
 		</div>
 	</div>
 
 	<div class="row flex-fill" style="min-height:0">
-		<div class="d-none d-md-block col-xl-2 col-md-3 mh-100 position-relative"
-			style="overflow-y: auto; overflow-x: hidden;">
+		<div class="d-none d-xl-flex col-xl-3 h-100 flex-column">
 			<div class="text-center badge text-bg-primary py-2 mt-2 w-100 text-truncate fw-normal"
 				v-if="mailbox.uiConfig.Label">
 				{{ mailbox.uiConfig.Label }}
@@ -318,7 +534,11 @@ export default {
 			<div class="list-group my-2" :class="mailbox.uiConfig.Label ? 'mt-0' : ''">
 				<button @click="goBack()" class="list-group-item list-group-item-action">
 					<i class="bi bi-arrow-return-left me-1"></i>
-					<span class="ms-1">Return</span>
+					<span class="ms-1">
+						Return to
+						<template v-if="mailbox.searching">search</template>
+						<template v-else>mailbox</template>
+					</span>
 					<span class="badge rounded-pill ms-1 float-end text-bg-secondary" title="Unread messages"
 						v-if="mailbox.unread && !errorMessage">
 						{{ formatNumber(mailbox.unread) }}
@@ -326,24 +546,45 @@ export default {
 				</button>
 			</div>
 
-			<div class="card mt-4" v-if="!errorMessage">
-				<div class="card-body text-body-secondary small">
-					<p class="card-text">
-						<b>Message date:</b><br>
-						<small>{{ messageDate(message.Date) }}</small>
-					</p>
-					<p class="card-text">
-						<b>Size:</b> {{ getFileSize(message.Size) }}
-					</p>
-					<p class="card-text" v-if="allAttachments(message).length">
-						<b>Attachments:</b> {{ allAttachments(message).length }}
-					</p>
-				</div>
+			<div class="flex-grow-1 overflow-y-auto px-1 me-n1" id="MessageList" ref="MessageList"
+				@scroll="scrollHandler">
+				<template v-if="messagesList && messagesList.length">
+					<div class="list-group">
+						<RouterLink v-for="message in messagesList" :to="'/view/' + message.ID" :key="message.ID"
+							:id="message.ID"
+							class="row gx-1 message d-flex small list-group-item list-group-item-action"
+							:class="message.Read ? 'read' : '', isActive(message.ID) ? 'active' : ''">
+							<div class="col-12 overflow-x-hidden">
+								<b>{{ message.Subject != "" ? message.Subject : "[ no subject ]" }}</b>
+							</div>
+							<div class="col overflow-x-hidden">
+								<div class="text-truncate privacy small">
+									To: {{ getPrimaryEmailTo(message) }}
+									<span v-if="message.To && message.To.length > 1">
+										[+{{ message.To.length - 1 }}]
+									</span>
+								</div>
+							</div>
+							<div class="col-auto small">
+								{{ getRelativeCreated(message) }}
+							</div>
+							<div v-if="message.Tags.length" class="col-12">
+								<RouterLink class="badge me-1" v-for="t in message.Tags" :to="toTagUrl(t)"
+									v-on:click="pagination.start = 0"
+									:style="mailbox.showTagColors ? { backgroundColor: colorHash(t) } : { backgroundColor: '#6c757d' }"
+									:title="'Filter messages tagged with ' + t">
+									{{ t }}
+								</RouterLink>
+							</div>
+						</RouterLink>
+					</div>
+				</template>
 			</div>
+
 			<AboutMailpit />
 		</div>
 
-		<div class="col-xl-10 col-md-9 mh-100 ps-0 ps-md-2 pe-0">
+		<div class="col-xl-9 mh-100 ps-0 ps-md-2 pe-0">
 			<div class="mh-100" style="overflow-y: auto;" id="message-page">
 				<template v-if="errorMessage">
 					<h3 class="text-center my-3">

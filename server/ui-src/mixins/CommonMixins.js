@@ -115,8 +115,10 @@ export default {
 		 * @params function callback function
 		 * @params function error callback function
 		 */
-		get(url, values, callback, errorCallback) {
-			this.loading++
+		get(url, values, callback, errorCallback, hideLoader) {
+			if (!hideLoader) {
+				this.loading++
+			}
 			axios.get(url, { params: values })
 				.then(callback)
 				.catch((err) => {
@@ -128,7 +130,7 @@ export default {
 				})
 				.then(() => {
 					// always executed
-					if (this.loading > 0) {
+					if (!hideLoader && this.loading > 0) {
 						this.loading--
 					}
 				})
@@ -271,6 +273,11 @@ export default {
 			}
 
 			return 'bi-file-arrow-down-fill'
+		},
+
+		// wrapper to update one or more messages with 
+		updateMessages(messages, updates) {
+
 		},
 
 		// Returns a hex color based on a string.

@@ -2,6 +2,25 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.20.0]
+
+### Feature
+- Add option to control message retention by age ([#338](https://github.com/axllent/mailpit/issues/338))
+- **UI:** List messages in side nav when viewing message for easy navigation ([#336](https://github.com/axllent/mailpit/issues/336))
+
+### Chore
+- Update caniemail database
+- Update Go dependencies
+- Update node dependencies
+- Make internal tagging methods private
+
+### Fix
+- Prevent potential JavaScript errors caused by race condition
+- Better regexp to detect tags in search
+- Prevent Vue race condition to initialize dayjs relativeTime plugin
+- **API:** Return `text/plain` header for message delete request
+
+
 ## [v1.19.3]
 
 ### Chore

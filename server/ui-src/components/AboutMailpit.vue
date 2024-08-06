@@ -54,14 +54,13 @@ export default {
 
 <template>
 	<template v-if="!modals">
-		<div
-			class="position-fixed bg-body bottom-0 ms-n1 py-2 text-muted small col-xl-2 col-md-3 pe-3 z-3 about-mailpit">
-			<button class="text-muted btn btn-sm" v-on:click="loadInfo">
+		<div class="bg-body ms-sm-n1 me-sm-n1 py-2 text-muted small about-mailpit">
+			<button class="text-muted btn btn-sm ps-0" v-on:click="loadInfo()">
 				<i class="bi bi-info-circle-fill me-1"></i>
 				About
 			</button>
 
-			<button class="btn btn-sm btn-outline-secondary float-end me-2" data-bs-toggle="modal"
+			<button class="btn btn-sm btn-outline-secondary float-end" data-bs-toggle="modal"
 				data-bs-target="#SettingsModal" title="Mailpit UI settings">
 				<i class="bi bi-gear-fill"></i>
 			</button>
@@ -152,7 +151,7 @@ export default {
 									<div class="card-header h4">
 										Runtime statistics
 										<button class="btn btn-sm btn-outline-secondary float-end"
-											v-on:click="loadInfo">
+											v-on:click="loadInfo()">
 											Refresh
 										</button>
 									</div>
@@ -183,8 +182,8 @@ export default {
 														{{ formatNumber(mailbox.appInfo.RuntimeStats.SMTPAccepted) }}
 														<small class="text-secondary">
 															({{
-		getFileSize(mailbox.appInfo.RuntimeStats.SMTPAcceptedSize)
-	}})
+																getFileSize(mailbox.appInfo.RuntimeStats.SMTPAcceptedSize)
+															}})
 														</small>
 													</td>
 												</tr>

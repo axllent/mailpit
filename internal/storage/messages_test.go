@@ -122,7 +122,7 @@ func TestMessageSummary(t *testing.T) {
 		t.Fail()
 	}
 
-	summaries, err := List(0, 1)
+	summaries, err := List(0, 0, 1)
 	if err != nil {
 		t.Log("error ", err)
 		t.Fail()
