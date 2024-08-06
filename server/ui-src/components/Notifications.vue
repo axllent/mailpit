@@ -164,11 +164,6 @@ export default {
 			}
 		},
 
-		handleMessageEvents(message) {
-			console.log("generic")
-			console.log(message)
-		},
-
 		socketBreakReset() {
 			window.setTimeout(() => {
 				this.socketBreaks = 0
