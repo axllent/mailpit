@@ -10,6 +10,7 @@ import (
 	"path"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/axllent/mailpit/internal/auth"
@@ -31,14 +32,21 @@ var (
 
 	// TenantID is an optional prefix to be applied to all database tables,
 	// allowing multiple isolated instances of Mailpit to share a database.
-	TenantID = ""
+	TenantID string
 
 	// Label to identify this Mailpit instance (optional).
 	// This gets applied to web UI, SMTP and optional POP3 server.
-	Label = ""
+	Label string
 
 	// MaxMessages is the maximum number of messages a mailbox can have (auto-pruned every minute)
 	MaxMessages = 500
+
+	// MaxAge is the maximum age of messages (auto-pruned every hour).
+	// Value can be either <int>h for hours or <int>d for days
+	MaxAge string
+
+	// MaxAgeInHours is the maximum age of messages in hours, set with parseMaxAge() using MaxAge value
+	MaxAgeInHours int
 
 	// UseMessageDates sets the Created date using the message date, not the delivered date
 	UseMessageDates bool
@@ -217,6 +225,10 @@ func VerifyConfig() error {
 	}
 
 	Label = tools.Normalize(Label)
+
+	if err := parseMaxAge(); err != nil {
+		return err
+	}
 
 	TenantID = tools.Normalize(TenantID)
 	if TenantID != "" {
@@ -455,6 +467,39 @@ func VerifyConfig() error {
 		logger.Log().Warnf("[relay] auto-relaying all new messages via %s:%d", SMTPRelayConfig.Host, SMTPRelayConfig.Port)
 	}
 
+	return nil
+}
+
+// Parse the --max-age value (if set)
+func parseMaxAge() error {
+	if MaxAge == "" {
+		return nil
+	}
+
+	re := regexp.MustCompile(`^\d+(h|d)$`)
+	if !re.MatchString(MaxAge) {
+		return fmt.Errorf("max-age must be either <int>h for hours or <int>d for days: %s", MaxAge)
+	}
+
+	if strings.HasSuffix(MaxAge, "h") {
+		hours, err := strconv.Atoi(strings.TrimSuffix(MaxAge, "h"))
+		if err != nil {
+			return err
+		}
+
+		MaxAgeInHours = hours
+
+		return nil
+	}
+
+	days, err := strconv.Atoi(strings.TrimSuffix(MaxAge, "d"))
+	if err != nil {
+		return err
+	}
+
+	logger.Log().Debugf("[db] auto-deleting messages older than %s", MaxAge)
+
+	MaxAgeInHours = days * 24
 	return nil
 }
 

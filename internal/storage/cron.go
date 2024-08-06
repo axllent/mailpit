@@ -9,6 +9,7 @@ import (
 
 	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/internal/logger"
+	"github.com/axllent/mailpit/internal/tools"
 	"github.com/axllent/mailpit/server/websockets"
 	"github.com/leporo/sqlf"
 )
@@ -48,34 +49,67 @@ func dbCron() {
 // PruneMessages will auto-delete the oldest messages if messages > config.MaxMessages.
 // Set config.MaxMessages to 0 to disable.
 func pruneMessages() {
-	if config.MaxMessages < 1 {
+	if config.MaxMessages < 1 && config.MaxAgeInHours == 0 {
 		return
 	}
 
 	start := time.Now()
 
-	q := sqlf.Select("ID, Size").
-		From(tenant("mailbox")).
-		OrderBy("Created DESC").
-		Limit(5000).
-		Offset(config.MaxMessages)
-
 	ids := []string{}
 	var prunedSize int64
 	var size float64
-	if err := q.QueryAndClose(context.TODO(), db, func(row *sql.Rows) {
-		var id string
 
-		if err := row.Scan(&id, &size); err != nil {
+	// prune using `--max` if set
+	if config.MaxMessages > 0 {
+		q := sqlf.Select("ID, Size").
+			From(tenant("mailbox")).
+			OrderBy("Created DESC").
+			Limit(5000).
+			Offset(config.MaxMessages)
+
+		if err := q.QueryAndClose(context.TODO(), db, func(row *sql.Rows) {
+			var id string
+
+			if err := row.Scan(&id, &size); err != nil {
+				logger.Log().Errorf("[db] %s", err.Error())
+				return
+			}
+			ids = append(ids, id)
+			prunedSize = prunedSize + int64(size)
+
+		}); err != nil {
 			logger.Log().Errorf("[db] %s", err.Error())
 			return
 		}
-		ids = append(ids, id)
-		prunedSize = prunedSize + int64(size)
+	}
 
-	}); err != nil {
-		logger.Log().Errorf("[db] %s", err.Error())
-		return
+	// prune using `--max-age` if set
+	if config.MaxAgeInHours > 0 {
+		// now() minus the number of hours
+		ts := time.Now().Add(time.Duration(-config.MaxAgeInHours) * time.Hour).UnixMilli()
+
+		q := sqlf.Select("ID, Size").
+			From(tenant("mailbox")).
+			Where("Created < ?", ts).
+			Limit(5000)
+
+		if err := q.QueryAndClose(context.TODO(), db, func(row *sql.Rows) {
+			var id string
+
+			if err := row.Scan(&id, &size); err != nil {
+				logger.Log().Errorf("[db] %s", err.Error())
+				return
+			}
+
+			if !tools.InArray(id, ids) {
+				ids = append(ids, id)
+				prunedSize = prunedSize + int64(size)
+			}
+
+		}); err != nil {
+			logger.Log().Errorf("[db] %s", err.Error())
+			return
+		}
 	}
 
 	if len(ids) == 0 {
