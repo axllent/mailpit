@@ -433,15 +433,16 @@ export default {
 
 <template>
 	<div class="navbar navbar-expand-lg navbar-dark row flex-shrink-0 bg-primary text-white">
-		<div class="d-none d-md-block col-xl-3 col-auto pe-0">
+		<div class="d-none d-xl-block col-xl-3 col-auto pe-0">
 			<RouterLink to="/" class="navbar-brand text-white me-0" @click="pagination.start = 0">
 				<img :src="resolve('/mailpit.svg')" alt="Mailpit">
 				<span class="ms-2 d-none d-sm-inline">Mailpit</span>
 			</RouterLink>
 		</div>
 		<div class="col col-xl-5" v-if="!errorMessage">
-			<button @click="goBack()" class="btn btn-outline-light me-3 me-sm-4 d-md-none" title="Return to messages">
+			<button @click="goBack()" class="btn btn-outline-light me-3 d-xl-none" title="Return to messages">
 				<i class="bi bi-arrow-return-left"></i>
+				<span class="ms-2 d-none d-lg-inline">Back</span>
 			</button>
 			<button class="btn btn-outline-light me-1 me-sm-2" title="Mark unread" v-on:click="toggleRead()">
 				<i class="bi bi-eye-slash me-md-2" :class="isRead ? 'bi-eye-slash' : 'bi-eye'"></i>

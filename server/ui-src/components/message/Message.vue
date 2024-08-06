@@ -312,7 +312,7 @@ export default {
 </script>
 
 <template>
-	<div v-if="message" id="message-view" class="px-2 px-md-0 mh-100" style="overflow-y: scroll;">
+	<div v-if="message" id="message-view" class="px-2 px-md-0 mh-100">
 		<div class="row w-100">
 			<div class="col-md">
 				<table class="messageHeaders">
