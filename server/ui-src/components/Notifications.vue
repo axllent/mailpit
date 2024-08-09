@@ -56,6 +56,8 @@ export default {
 
 				// new messages
 				if (response.Type == "new" && response.Data) {
+					this.eventBus.emit("new", response.Data)
+
 					if (!mailbox.searching) {
 						if (pagination.start < 1) {
 							// push results directly into first page
@@ -106,10 +108,10 @@ export default {
 					}
 				} else if (response.Type == "delete" && response.Data) {
 					// broadcast for components
-					this.eventBus.emit("delete", response.Data);
+					this.eventBus.emit("delete", response.Data)
 				} else if (response.Type == "update" && response.Data) {
 					// broadcast for components
-					this.eventBus.emit("update", response.Data);
+					this.eventBus.emit("update", response.Data)
 				} else if (response.Type == "truncate") {
 					// broadcast for components
 					this.eventBus.emit("truncate")

@@ -275,11 +275,6 @@ export default {
 			return 'bi-file-arrow-down-fill'
 		},
 
-		// wrapper to update one or more messages with 
-		updateMessages(messages, updates) {
-
-		},
-
 		// Returns a hex color based on a string.
 		// Values are stored in an array for faster lookup / processing.
 		colorHash(s) {
