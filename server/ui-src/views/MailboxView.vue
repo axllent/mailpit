@@ -31,6 +31,7 @@ export default {
 		return {
 			mailbox,
 			delayedRefresh: false,
+			paginationDelayed: false, // for delayed pagination URL changes
 		}
 	},
 
@@ -46,6 +47,7 @@ export default {
 		this.loadMailbox()
 
 		// subscribe to events
+		this.eventBus.on("new", this.handleWSNew)
 		this.eventBus.on("update", this.handleWSUpdate)
 		this.eventBus.on("delete", this.handleWSDelete)
 		this.eventBus.on("truncate", this.handleWSTruncate)
@@ -53,6 +55,7 @@ export default {
 
 	unmounted() {
 		// unsubscribe from events
+		this.eventBus.off("new", this.handleWSNew)
 		this.eventBus.off("update", this.handleWSUpdate)
 		this.eventBus.off("delete", this.handleWSDelete)
 		this.eventBus.off("truncate", this.handleWSTruncate)
@@ -71,6 +74,55 @@ export default {
 			}
 
 			this.loadMessages()
+		},
+
+		// This will only update the pagination offset at a maximum of 2x per second
+		// when viewing the inbox on > page 1, while receiving an influx of new messages.
+		delayedPaginationUpdate() {
+			if (this.paginationDelayed) {
+				return
+			}
+
+			this.paginationDelayed = true
+
+			window.setTimeout(() => {
+				const path = this.$route.path
+				const p = {
+					...this.$route.query
+				}
+				if (pagination.start > 0) {
+					p.start = pagination.start.toString()
+				} else {
+					delete p.start
+				}
+				if (pagination.limit != pagination.defaultLimit) {
+					p.limit = pagination.limit.toString()
+				} else {
+					delete p.limit
+				}
+
+				mailbox.autoPaginating = false // prevent reload of messages when URL changes
+				const params = new URLSearchParams(p)
+				this.$router.replace(path + '?' + params.toString())
+
+				this.paginationDelayed = false
+			}, 500)
+		},
+
+		// handler for websocket new messages
+		handleWSNew(data) {
+			if (pagination.start < 1) {
+				// push results directly into first page
+				mailbox.messages.unshift(data)
+				if (mailbox.messages.length > pagination.limit) {
+					mailbox.messages.pop()
+				}
+			} else {
+				// update pagination offset
+				pagination.start++
+				// prevent "Too many calls to Location or History APIs within a short time frame"
+				this.delayedPaginationUpdate()
+			}
 		},
 
 		// handler for websocket message updates
