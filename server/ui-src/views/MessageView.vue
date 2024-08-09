@@ -566,6 +566,7 @@ export default {
 								</div>
 							</div>
 							<div class="col-auto small">
+								<i class="bi bi-paperclip h6" v-if="message.Attachments"></i>
 								{{ getRelativeCreated(message) }}
 							</div>
 							<div v-if="message.Tags.length" class="col-12">
