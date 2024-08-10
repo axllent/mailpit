@@ -80,7 +80,7 @@ export default {
 <template>
 	<template v-if="mailbox.tags && mailbox.tags.length">
 		<div class="mt-4 text-muted">
-			<button class="btn btn-sm dropdown-toggle ms-n1" data-bs-toggle="dropdown" aria-expanded="false">
+			<button class="btn btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
 				Tags
 			</button>
 			<ul class="dropdown-menu dropdown-menu-end">
