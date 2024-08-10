@@ -21,7 +21,6 @@ export default {
 			socketBreaks: 0, // to track sockets that continually connect & disconnect, reset every 15s
 			pauseNotifications: false, // prevent spamming
 			version: false,
-			paginationDelayed: false, // for delayed pagination URL changes
 		}
 	},
 
@@ -56,20 +55,7 @@ export default {
 
 				// new messages
 				if (response.Type == "new" && response.Data) {
-					if (!mailbox.searching) {
-						if (pagination.start < 1) {
-							// push results directly into first page
-							mailbox.messages.unshift(response.Data)
-							if (mailbox.messages.length > pagination.limit) {
-								mailbox.messages.pop()
-							}
-						} else {
-							// update pagination offset
-							pagination.start++
-							// prevent "Too many calls to Location or History APIs within a short time frame"
-							this.delayedPaginationUpdate()
-						}
-					}
+					this.eventBus.emit("new", response.Data)
 
 					for (let i in response.Data.Tags) {
 						if (mailbox.tags.findIndex(e => { return e.toLowerCase() === response.Data.Tags[i].toLowerCase() }) < 0) {
@@ -106,10 +92,10 @@ export default {
 					}
 				} else if (response.Type == "delete" && response.Data) {
 					// broadcast for components
-					this.eventBus.emit("delete", response.Data);
+					this.eventBus.emit("delete", response.Data)
 				} else if (response.Type == "update" && response.Data) {
 					// broadcast for components
-					this.eventBus.emit("update", response.Data);
+					this.eventBus.emit("update", response.Data)
 				} else if (response.Type == "truncate") {
 					// broadcast for components
 					this.eventBus.emit("truncate")
@@ -169,39 +155,6 @@ export default {
 				this.socketBreaks = 0
 				this.socketBreakReset()
 			}, 15000)
-		},
-
-		// This will only update the pagination offset at a maximum of 2x per second
-		// when viewing the inbox on > page 1, while receiving an influx of new messages.
-		delayedPaginationUpdate() {
-			if (this.paginationDelayed) {
-				return
-			}
-
-			this.paginationDelayed = true
-
-			window.setTimeout(() => {
-				const path = this.$route.path
-				const p = {
-					...this.$route.query
-				}
-				if (pagination.start > 0) {
-					p.start = pagination.start.toString()
-				} else {
-					delete p.start
-				}
-				if (pagination.limit != pagination.defaultLimit) {
-					p.limit = pagination.limit.toString()
-				} else {
-					delete p.limit
-				}
-
-				mailbox.autoPaginating = false // prevent reload of messages when URL changes
-				const params = new URLSearchParams(p)
-				this.$router.replace(path + '?' + params.toString())
-
-				this.paginationDelayed = false
-			}, 500)
 		},
 
 		browserNotify(title, message) {

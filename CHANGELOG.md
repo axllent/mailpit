@@ -2,6 +2,17 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.20.1]
+
+### Chore
+- Shift inbox pagination to inbox component
+- Live load up to 100 new messages in sidebar ([#336](https://github.com/axllent/mailpit/issues/336))
+- Show icon attachment in new side navigation message listing ([#345](https://github.com/axllent/mailpit/issues/345))
+
+### Fix
+- Correctly decode X-Tags message headers (RFC 2047) ([#344](https://github.com/axllent/mailpit/issues/344))
+
+
 ## [v1.20.0]
 
 ### Feature

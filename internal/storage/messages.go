@@ -50,7 +50,7 @@ func Store(body *[]byte) (string, error) {
 		ReplyTo: addressToSlice(env, "Reply-To"),
 	}
 
-	messageID := strings.Trim(env.Root.Header.Get("Message-ID"), "<>")
+	messageID := strings.Trim(env.GetHeader("Message-ID"), "<>")
 	created := time.Now()
 
 	// use message date instead of created date
@@ -116,7 +116,7 @@ func Store(body *[]byte) (string, error) {
 	tags := findTagsInRawMessage(body)
 
 	if !config.TagsDisableXTags {
-		xTagsHdr := env.Root.Header.Get("X-Tags")
+		xTagsHdr := env.GetHeader("X-Tags")
 		if xTagsHdr != "" {
 			// extract tags from X-Tags header
 			tags = append(tags, tools.SetTagCasing(strings.Split(strings.TrimSpace(xTagsHdr), ","))...)

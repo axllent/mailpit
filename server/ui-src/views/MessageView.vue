@@ -33,6 +33,7 @@ export default {
 			apiSideNavParams: URLSearchParams,
 			apiIsMore: true,
 			messagesList: [],
+			liveLoaded: 0, // the number new messages prepended tp messageList
 			scrollLoading: false,
 			canLoadMore: true,
 		}
@@ -62,6 +63,7 @@ export default {
 		this.refreshUI()
 
 		// subscribe to events
+		this.eventBus.on("new", this.handleWSNew)
 		this.eventBus.on("update", this.handleWSUpdate)
 		this.eventBus.on("delete", this.handleWSDelete)
 		this.eventBus.on("truncate", this.handleWSTruncate)
@@ -69,6 +71,7 @@ export default {
 
 	unmounted() {
 		// unsubscribe from events
+		this.eventBus.off("new", this.handleWSNew)
 		this.eventBus.off("update", this.handleWSUpdate)
 		this.eventBus.off("delete", this.handleWSDelete)
 		this.eventBus.off("truncate", this.handleWSTruncate)
@@ -210,6 +213,18 @@ export default {
 				this.$forceUpdate()
 				this.refreshUI()
 			}, 30000)
+		},
+
+		// handler for websocket new messages
+		handleWSNew(data) {
+			// do not add when searching or >= 100 new messages have been received
+			if (this.mailbox.searching || this.liveLoaded >= 100) {
+				return
+			}
+
+			this.liveLoaded++
+			this.messagesList.unshift(data)
+			this.scrollSidebarToCurrent()
 		},
 
 		// handler for websocket message updates
@@ -419,6 +434,10 @@ export default {
 			}
 		},
 
+		reloadWindow() {
+			location.reload()
+		},
+
 		initReleaseModal() {
 			this.modal('ReleaseModal').show()
 			window.setTimeout(() => {
@@ -537,7 +556,7 @@ export default {
 					<span class="ms-1">
 						Return to
 						<template v-if="mailbox.searching">search</template>
-						<template v-else>mailbox</template>
+						<template v-else>inbox</template>
 					</span>
 					<span class="badge rounded-pill ms-1 float-end text-bg-secondary" title="Unread messages"
 						v-if="mailbox.unread && !errorMessage">
@@ -548,6 +567,9 @@ export default {
 
 			<div class="flex-grow-1 overflow-y-auto px-1 me-n1" id="MessageList" ref="MessageList"
 				@scroll="scrollHandler">
+				<button v-if="liveLoaded >= 100" class="w-100 alert alert-warning small" @click="reloadWindow()">
+					Reload to see newer messages
+				</button>
 				<template v-if="messagesList && messagesList.length">
 					<div class="list-group">
 						<RouterLink v-for="message in messagesList" :to="'/view/' + message.ID" :key="message.ID"
@@ -566,6 +588,7 @@ export default {
 								</div>
 							</div>
 							<div class="col-auto small">
+								<i class="bi bi-paperclip h6" v-if="message.Attachments"></i>
 								{{ getRelativeCreated(message) }}
 							</div>
 							<div v-if="message.Tags.length" class="col-12">
