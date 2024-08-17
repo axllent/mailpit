@@ -9,6 +9,7 @@ import (
 	"github.com/axllent/mailpit/internal/auth"
 	"github.com/axllent/mailpit/internal/logger"
 	"github.com/axllent/mailpit/internal/storage"
+	"github.com/axllent/mailpit/server/websockets"
 )
 
 func authUser(username, password string) bool {
@@ -19,6 +20,11 @@ func authUser(username, password string) bool {
 func sendResponse(c net.Conn, m string) {
 	fmt.Fprintf(c, "%s\r\n", m)
 	logger.Log().Debugf("[pop3] response: %s", m)
+
+	if strings.HasPrefix(m, "-ERR ") {
+		sub, _ := strings.CutPrefix(m, "-ERR ")
+		websockets.BroadCastClientError("error", "pop3", c.RemoteAddr().String(), sub)
+	}
 }
 
 // Send a response without debug logging (for data)

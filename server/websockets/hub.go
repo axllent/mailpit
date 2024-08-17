@@ -90,3 +90,20 @@ func Broadcast(t string, msg interface{}) {
 
 	go func() { MessageHub.Broadcast <- b }()
 }
+
+// BroadCastClientError is a wrapper to broadcast client errors to the web UI
+func BroadCastClientError(severity, errorType, ip, message string) {
+	msg := struct {
+		Level   string
+		Type    string
+		IP      string
+		Message string
+	}{
+		severity,
+		errorType,
+		ip,
+		message,
+	}
+
+	Broadcast("error", msg)
+}
