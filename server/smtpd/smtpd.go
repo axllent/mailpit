@@ -14,6 +14,7 @@ import (
 	"github.com/axllent/mailpit/internal/logger"
 	"github.com/axllent/mailpit/internal/stats"
 	"github.com/axllent/mailpit/internal/storage"
+	"github.com/axllent/mailpit/server/websockets"
 	"github.com/lithammer/shortuuid/v4"
 	"github.com/mhale/smtpd"
 )
@@ -21,6 +22,9 @@ import (
 var (
 	// DisableReverseDNS allows rDNS to be disabled
 	DisableReverseDNS bool
+
+	warningResponse = regexp.MustCompile(`^4\d\d `)
+	errorResponse   = regexp.MustCompile(`^5\d\d `)
 )
 
 // MailHandler handles the incoming message to store in the database
@@ -38,7 +42,7 @@ func Store(origin net.Addr, from string, to []string, data []byte) (string, erro
 
 	msg, err := mail.ReadMessage(bytes.NewReader(data))
 	if err != nil {
-		logger.Log().Errorf("[smtpd] error parsing message: %s", err.Error())
+		logger.Log().Warnf("[smtpd] error parsing message: %s", err.Error())
 		stats.LogSMTPRejected()
 		return "", err
 	}
@@ -210,7 +214,17 @@ func Listen() error {
 	return listenAndServe(config.SMTPListen, mailHandler, authHandler)
 }
 
+// Translate the smtpd verb from READ/WRITE
+func verbLogTranslator(verb string) string {
+	if verb == "READ" {
+		return "received"
+	}
+
+	return "response"
+}
+
 func listenAndServe(addr string, handler smtpd.MsgIDHandler, authHandler smtpd.AuthHandler) error {
+	smtpd.Debug = true // to enable Mailpit logging
 	srv := &smtpd.Server{
 		Addr:              addr,
 		MsgIDHandler:      handler,
@@ -221,6 +235,20 @@ func listenAndServe(addr string, handler smtpd.MsgIDHandler, authHandler smtpd.A
 		AuthRequired:      false,
 		MaxRecipients:     config.SMTPMaxRecipients,
 		DisableReverseDNS: DisableReverseDNS,
+		LogRead: func(remoteIP, verb, line string) {
+			logger.Log().Debugf("[smtpd] %s (%s) %s", verbLogTranslator(verb), remoteIP, line)
+		},
+		LogWrite: func(remoteIP, verb, line string) {
+			if warningResponse.MatchString(line) {
+				logger.Log().Warnf("[smtpd] %s (%s) %s", verbLogTranslator(verb), remoteIP, line)
+				websockets.BroadCastClientError("warning", "smtpd", remoteIP, line)
+			} else if errorResponse.MatchString(line) {
+				logger.Log().Errorf("[smtpd] %s (%s) %s", verbLogTranslator(verb), remoteIP, line)
+				websockets.BroadCastClientError("error", "smtpd", remoteIP, line)
+			} else {
+				logger.Log().Debugf("[smtpd] %s (%s) %s", verbLogTranslator(verb), remoteIP, line)
+			}
+		},
 	}
 
 	if config.Label != "" {

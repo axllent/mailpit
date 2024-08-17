@@ -21,6 +21,7 @@ export default {
 			socketBreaks: 0, // to track sockets that continually connect & disconnect, reset every 15s
 			pauseNotifications: false, // prevent spamming
 			version: false,
+			clientErrors: [], // errors received via websocket 
 		}
 	},
 
@@ -39,6 +40,8 @@ export default {
 		mailbox.notificationsSupported = window.isSecureContext
 			&& ("Notification" in window && Notification.permission !== "denied")
 		mailbox.notificationsEnabled = mailbox.notificationsSupported && Notification.permission == "granted"
+
+		this.errorNotificationCron()
 	},
 
 	methods: {
@@ -99,6 +102,9 @@ export default {
 				} else if (response.Type == "truncate") {
 					// broadcast for components
 					this.eventBus.emit("truncate")
+				} else if (response.Type == "error") {
+					// broadcast for components
+					this.addClientError(response.Data)
 				}
 			}
 
@@ -195,12 +201,43 @@ export default {
 				Toast.getOrCreateInstance(el).hide()
 			}
 		},
+
+		addClientError(d) {
+			d.expire = Date.now() + 5000 // expire after 5s
+			this.clientErrors.push(d)
+		},
+
+		errorNotificationCron() {
+			window.setTimeout(() => {
+				this.clientErrors.forEach((err, idx) => {
+					if (err.expire < Date.now()) {
+						this.clientErrors.splice(idx, 1)
+					}
+				})
+				this.errorNotificationCron()
+			}, 1000)
+		}
 	},
 }
 </script>
 
 <template>
 	<div class="toast-container position-fixed bottom-0 end-0 p-3">
+		<div v-for="error in clientErrors" class="toast show" role="alert" aria-live="assertive" aria-atomic="true">
+			<div class="toast-header">
+				<svg class="bd-placeholder-img rounded me-2" width="20" height="20" xmlns="http://www.w3.org/2000/svg"
+					aria-hidden="true" preserveAspectRatio="xMidYMid slice" focusable="false">
+					<rect width="100%" height="100%" :fill="error.Level == 'warning' ? '#ffc107' : '#dc3545'"></rect>
+				</svg>
+				<strong class="me-auto">{{ error.Type }}</strong>
+				<small class="text-body-secondary">{{ error.IP }}</small>
+				<button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+			</div>
+			<div class="toast-body">
+				{{ error.Message }}
+			</div>
+		</div>
+
 		<div id="messageToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
 			<div class="toast-header" v-if="toastMessage">
 				<i class="bi bi-envelope-exclamation-fill me-2"></i>

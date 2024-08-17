@@ -160,6 +160,8 @@ func Store(body *[]byte) (string, error) {
 
 	BroadcastMailboxStats()
 
+	logger.Log().Debugf("[db] saved message %s (%d bytes)", id, int64(size))
+
 	return id, nil
 }
 
