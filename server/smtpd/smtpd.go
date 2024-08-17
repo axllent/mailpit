@@ -212,13 +212,13 @@ func Listen() error {
 	return listenAndServe(config.SMTPListen, mailHandler, authHandler)
 }
 
-// Translate the smtpd verb from READ/WRITE to from/to
+// Translate the smtpd verb from READ/WRITE
 func verbLogTranslator(verb string) string {
 	if verb == "READ" {
-		return "from"
+		return "received"
 	}
 
-	return "to"
+	return "response"
 }
 
 func listenAndServe(addr string, handler smtpd.MsgIDHandler, authHandler smtpd.AuthHandler) error {
@@ -234,13 +234,13 @@ func listenAndServe(addr string, handler smtpd.MsgIDHandler, authHandler smtpd.A
 		MaxRecipients:     config.SMTPMaxRecipients,
 		DisableReverseDNS: DisableReverseDNS,
 		LogRead: func(remoteIP, verb, line string) {
-			logger.Log().Debugf("[smtpd] %s %s: %s", verbLogTranslator(verb), remoteIP, line)
+			logger.Log().Debugf("[smtpd] %s (%s) %s", verbLogTranslator(verb), remoteIP, line)
 		},
 		LogWrite: func(remoteIP, verb, line string) {
 			if errorResponse.MatchString(line) {
-				logger.Log().Warnf("[smtpd] %s %s: %s", verbLogTranslator(verb), remoteIP, line)
+				logger.Log().Warnf("[smtpd] %s (%s) %s", verbLogTranslator(verb), remoteIP, line)
 			} else {
-				logger.Log().Debugf("[smtpd] %s %s: %s", verbLogTranslator(verb), remoteIP, line)
+				logger.Log().Debugf("[smtpd] %s (%s) %s", verbLogTranslator(verb), remoteIP, line)
 			}
 		},
 	}
