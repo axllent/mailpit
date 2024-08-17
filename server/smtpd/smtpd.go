@@ -14,6 +14,7 @@ import (
 	"github.com/axllent/mailpit/internal/logger"
 	"github.com/axllent/mailpit/internal/stats"
 	"github.com/axllent/mailpit/internal/storage"
+	"github.com/axllent/mailpit/server/websockets"
 	"github.com/lithammer/shortuuid/v4"
 	"github.com/mhale/smtpd"
 )
@@ -22,7 +23,8 @@ var (
 	// DisableReverseDNS allows rDNS to be disabled
 	DisableReverseDNS bool
 
-	errorResponse = regexp.MustCompile(`^[45]\d\d `)
+	warningResponse = regexp.MustCompile(`^4\d\d `)
+	errorResponse   = regexp.MustCompile(`^5\d\d `)
 )
 
 // MailHandler handles the incoming message to store in the database
@@ -237,8 +239,12 @@ func listenAndServe(addr string, handler smtpd.MsgIDHandler, authHandler smtpd.A
 			logger.Log().Debugf("[smtpd] %s (%s) %s", verbLogTranslator(verb), remoteIP, line)
 		},
 		LogWrite: func(remoteIP, verb, line string) {
-			if errorResponse.MatchString(line) {
+			if warningResponse.MatchString(line) {
 				logger.Log().Warnf("[smtpd] %s (%s) %s", verbLogTranslator(verb), remoteIP, line)
+				websockets.BroadCastClientError("warning", "smtpd", remoteIP, line)
+			} else if errorResponse.MatchString(line) {
+				logger.Log().Errorf("[smtpd] %s (%s) %s", verbLogTranslator(verb), remoteIP, line)
+				websockets.BroadCastClientError("error", "smtpd", remoteIP, line)
 			} else {
 				logger.Log().Debugf("[smtpd] %s (%s) %s", verbLogTranslator(verb), remoteIP, line)
 			}
