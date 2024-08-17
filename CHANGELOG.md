@@ -2,6 +2,18 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.20.2]
+
+### Feature
+- Web UI notifications of smtpd & POP3 errors ([#347](https://github.com/axllent/mailpit/issues/347))
+
+### Chore
+- Update Go dependencies
+- Update node dependencies
+- Add debug database storage logging
+- Add smtpd server logging in the CLI ([#347](https://github.com/axllent/mailpit/issues/347))
+
+
 ## [v1.20.1]
 
 ### Chore
