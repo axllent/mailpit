@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"net/mail"
 	"net/smtp"
@@ -13,8 +14,6 @@ import (
 	"github.com/axllent/mailpit/internal/logger"
 	sendmail "github.com/axllent/mailpit/sendmail/cmd"
 	"github.com/spf13/cobra"
-	"golang.org/x/text/language"
-	"golang.org/x/text/message"
 )
 
 var (
@@ -36,7 +35,6 @@ The --recent flag will only consider files with a modification date within the l
 		var count int
 		var total int
 		var per100start = time.Now()
-		p := message.NewPrinter(language.English)
 
 		for _, a := range args {
 			err := filepath.Walk(a,
@@ -117,8 +115,7 @@ The --recent flag will only consider files with a modification date within the l
 					count++
 					total++
 					if count%100 == 0 {
-						formatted := p.Sprintf("%d", total)
-						logger.Log().Infof("[%s] 100 messages in %s", formatted, time.Since(per100start))
+						logger.Log().Infof("[%s] 100 messages in %s", format(total), time.Since(per100start))
 
 						per100start = time.Now()
 					}
@@ -148,4 +145,30 @@ func isFile(path string) bool {
 	}
 
 	return true
+}
+
+// Format a an integer 10000 => 10,000
+func format(n int) string {
+	in := fmt.Sprintf("%d", n)
+	numOfDigits := len(in)
+	if n < 0 {
+		numOfDigits-- // First character is the - sign (not a digit)
+	}
+	numOfCommas := (numOfDigits - 1) / 3
+
+	out := make([]byte, len(in)+numOfCommas)
+	if n < 0 {
+		in, out[0] = in[1:], '-'
+	}
+
+	for i, j, k := len(in)-1, len(out)-1, 0; ; i, j = i-1, j-1 {
+		out[j] = in[i]
+		if i == 0 {
+			return string(out)
+		}
+		if k++; k == 3 {
+			j, k = j-1, 0
+			out[j] = ','
+		}
+	}
 }
