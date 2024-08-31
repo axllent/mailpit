@@ -224,7 +224,6 @@ export default {
 
 			this.liveLoaded++
 			this.messagesList.unshift(data)
-			this.scrollSidebarToCurrent()
 		},
 
 		// handler for websocket message updates
