@@ -11,7 +11,7 @@ require (
 	github.com/gomarkdown/markdown v0.0.0-20240730141124-034f12af3bf6
 	github.com/gorilla/mux v1.8.1
 	github.com/gorilla/websocket v1.5.3
-	github.com/jhillyerd/enmime v1.2.0
+	github.com/jhillyerd/enmime v1.3.0
 	github.com/klauspost/compress v1.17.9
 	github.com/kovidgoyal/imaging v1.6.3
 	github.com/leporo/sqlf v1.4.0
