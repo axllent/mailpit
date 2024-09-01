@@ -2,6 +2,18 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.20.3]
+
+### Chore
+- Update caniemail database
+- Update node dependencies
+- Update Go dependencies
+- Do not recenter selected messages in sidebar on every new message
+
+### Fix
+- Disable automatic HTML/Text character detection when charset is provided ([#348](https://github.com/axllent/mailpit/issues/348))
+
+
 ## [v1.20.2]
 
 ### Feature
