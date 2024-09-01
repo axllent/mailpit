@@ -27,8 +27,10 @@ import (
 // Store will save an email to the database tables.
 // Returns the database ID of the saved message.
 func Store(body *[]byte) (string, error) {
+	parser := enmime.NewParser(enmime.DisableCharacterDetection(true))
+
 	// Parse message body with enmime
-	env, err := enmime.ReadEnvelope(bytes.NewReader(*body))
+	env, err := parser.ReadEnvelope(bytes.NewReader(*body))
 	if err != nil {
 		logger.Log().Warnf("[message] %s", err.Error())
 		return "", nil
@@ -245,7 +247,9 @@ func GetMessage(id string) (*Message, error) {
 
 	r := bytes.NewReader(raw)
 
-	env, err := enmime.ReadEnvelope(r)
+	parser := enmime.NewParser(enmime.DisableCharacterDetection(true))
+
+	env, err := parser.ReadEnvelope(r)
 	if err != nil {
 		return nil, err
 	}
@@ -396,7 +400,9 @@ func GetAttachmentPart(id, partID string) (*enmime.Part, error) {
 
 	r := bytes.NewReader(raw)
 
-	env, err := enmime.ReadEnvelope(r)
+	parser := enmime.NewParser(enmime.DisableCharacterDetection(true))
+
+	env, err := parser.ReadEnvelope(r)
 	if err != nil {
 		return nil, err
 	}
