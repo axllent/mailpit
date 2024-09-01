@@ -49,6 +49,8 @@ func ReindexAll() {
 		Metadata   string
 	}
 
+	parser := enmime.NewParser(enmime.DisableCharacterDetection(true))
+
 	for _, ids := range chunks {
 		updates := []updateStruct{}
 
@@ -61,7 +63,7 @@ func ReindexAll() {
 
 			r := bytes.NewReader(raw)
 
-			env, err := enmime.ReadEnvelope(r)
+			env, err := parser.ReadEnvelope(r)
 			if err != nil {
 				logger.Log().Errorf("[message] %s", err.Error())
 				continue
