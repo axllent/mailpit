@@ -1,5 +1,5 @@
 <script>
-import Donut from 'vue-css-donut-chart/src/components/Donut.vue'
+import { VcDonut } from 'vue-css-donut-chart'
 import axios from 'axios'
 import commonMixins from '../../mixins/CommonMixins'
 import { Tooltip } from 'bootstrap'
@@ -10,7 +10,7 @@ export default {
 	},
 
 	components: {
-		Donut,
+		VcDonut,
 	},
 
 	emits: ["setHtmlScore", "setBadgeStyle"],
@@ -299,7 +299,7 @@ export default {
 		<div class="mt-5 mb-3">
 			<div class="row w-100">
 				<div class="col-md-8">
-					<Donut :sections="graphSections" background="var(--bs-body-bg)" :size="180" unit="px"
+					<vc-donut :sections="graphSections" background="var(--bs-body-bg)" :size="180" unit="px"
 						:thickness="20" has-legend legend-placement="bottom" :total="100" :start-angle="0"
 						:auto-adjust-text-size="true" @section-click="scrollToWarnings">
 						<h2 class="m-0" :class="scoreColor" @click="scrollToWarnings">
@@ -327,7 +327,7 @@ export default {
 								calculated from {{ formatNumber(check.Total.Tests) }} tests
 							</p>
 						</template>
-					</Donut>
+					</vc-donut>
 
 					<div class="input-group justify-content-center mb-3">
 						<button class="btn btn-outline-secondary" data-bs-toggle="modal"
