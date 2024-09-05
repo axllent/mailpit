@@ -26,7 +26,7 @@ jobs:
         key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
         restore-keys: |
           ${{ runner.os }}-go-
-    - run: go test -p 1 ./internal/storage ./server ./server/pop3 ./internal/tools ./internal/html2text -v
+    - run: go test -p 1 ./internal/storage ./server ./server/pop3 ./internal/tools ./internal/html2text ./internal/linkcheck -v
     - run: go test -p 1 ./internal/storage ./internal/html2text -bench=.
     
     # build the assets
