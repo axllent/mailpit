@@ -10,7 +10,7 @@ import (
 	"github.com/axllent/mailpit/internal/tools"
 )
 
-var linkRe = regexp.MustCompile(`(?m)\b(http|ftp|https):\/\/([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:'!\/~+#-]*[\w@?^=%&\/~+#-])`)
+var linkRe = regexp.MustCompile(`(?im)\b(http|https):\/\/([\-\w@:%_\+'!.~#?,&\/\/=;]+)`)
 
 // RunTests will run all tests on an HTML string
 func RunTests(msg *storage.Message, followRedirects bool) (Response, error) {

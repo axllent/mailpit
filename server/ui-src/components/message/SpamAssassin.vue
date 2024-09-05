@@ -1,5 +1,5 @@
 <script>
-import Donut from 'vue-css-donut-chart/src/components/Donut.vue'
+import { VcDonut } from 'vue-css-donut-chart'
 import axios from 'axios'
 import commonMixins from '../../mixins/CommonMixins'
 
@@ -9,7 +9,7 @@ export default {
 	},
 
 	components: {
-		Donut,
+		VcDonut,
 	},
 
 	emits: ["setSpamScore", "setBadgeStyle"],
@@ -156,7 +156,7 @@ export default {
 	<template v-else-if="check">
 		<div class="row w-100 mt-5">
 			<div class="col-xl-5 mb-2">
-				<Donut :sections="graphSections" background="var(--bs-body-bg)" :size="230" unit="px" :thickness="20"
+				<vc-donut :sections="graphSections" background="var(--bs-body-bg)" :size="230" unit="px" :thickness="20"
 					:total="100" :start-angle="270" :auto-adjust-text-size="true" foreground="#198754">
 					<h2 class="m-0" :class="scoreColor" @click="scrollToWarnings">
 						{{ check.Score }} / 5
@@ -165,7 +165,7 @@ export default {
 						<span v-if="check.IsSpam" class="text-white badge rounded-pill bg-danger p-2">Spam</span>
 						<span v-else class="badge rounded-pill p-2" :class="badgeStyle()">Not spam</span>
 					</div>
-				</Donut>
+				</vc-donut>
 			</div>
 			<div class="col-xl-7">
 				<div class="row w-100 py-2 border-bottom">

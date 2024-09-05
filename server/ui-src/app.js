@@ -6,6 +6,7 @@ import mitt from 'mitt';
 import './assets/styles.scss'
 import 'bootstrap-icons/font/bootstrap-icons.scss'
 import 'bootstrap'
+import 'vue-css-donut-chart/src/styles/main.css'
 
 const app = createApp(App)
 

@@ -2,6 +2,17 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.20.4]
+
+### Chore
+- Update Go modules
+- Update node modules
+- Upgrade vue-css-donut-chart & related charts
+
+### Fix
+- Relax URL detection in link check tool ([#357](https://github.com/axllent/mailpit/issues/357))
+
+
 ## [v1.20.3]
 
 ### Chore
