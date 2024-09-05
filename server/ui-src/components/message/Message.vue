@@ -182,7 +182,7 @@ export default {
 			const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
 			[...tooltipTriggerList].map(tooltipTriggerEl => new Tooltip(tooltipTriggerEl))
 
-			// delay 0.2s until vue has rendered the iframe content
+			// delay 0.5s until vue has rendered the iframe content
 			window.setTimeout(() => {
 				let p = document.getElementById('preview-html')
 				if (p && typeof p.contentWindow.document.body == 'object') {
@@ -193,14 +193,14 @@ export default {
 							let anchorEl = anchorEls[i]
 							let href = anchorEl.getAttribute('href')
 
-							if (href && href.match(/^http/)) {
+							if (href && href.match(/^https?:\/\//i)) {
 								anchorEl.setAttribute('target', '_blank')
 							}
 						}
 					} catch (error) { }
 					this.resizeIFrames()
 				}
-			}, 200)
+			}, 500)
 
 			// html highlighting
 			window.Prism = window.Prism || {}
