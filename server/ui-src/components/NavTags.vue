@@ -22,7 +22,7 @@ export default {
 				return false
 			}
 
-			let re = new RegExp(`\\btag:("${tag}"|${tag}\\b)`, 'i')
+			let re = new RegExp(`(^|\\s)tag:("${tag}"|${tag}\\b)`, 'i')
 			return query.match(re)
 		},
 
