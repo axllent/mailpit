@@ -544,9 +544,10 @@ export default {
 
 	<div class="row flex-fill" style="min-height:0">
 		<div class="d-none d-xl-flex col-xl-3 h-100 flex-column">
-			<div class="text-center badge text-bg-primary py-2 mt-2 w-100 text-truncate fw-normal"
-				v-if="mailbox.uiConfig.Label">
-				{{ mailbox.uiConfig.Label }}
+			<div class="text-center badge text-bg-primary py-2 my-2 w-100" v-if="mailbox.uiConfig.Label">
+				<div class="text-truncate fw-normal">
+					{{ mailbox.uiConfig.Label }}
+				</div>
 			</div>
 
 			<div class="list-group my-2" :class="mailbox.uiConfig.Label ? 'mt-0' : ''">
