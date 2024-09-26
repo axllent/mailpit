@@ -61,25 +61,32 @@ func pruneMessages() {
 
 	// prune using `--max` if set
 	if config.MaxMessages > 0 {
-		q := sqlf.Select("ID, Size").
-			From(tenant("mailbox")).
-			OrderBy("Created DESC").
-			Limit(5000).
-			Offset(config.MaxMessages)
+		total := CountTotal()
+		if total > float64(config.MaxAgeInHours) {
+			offset := config.MaxMessages
+			if config.DemoMode {
+				offset = 500
+			}
+			q := sqlf.Select("ID, Size").
+				From(tenant("mailbox")).
+				OrderBy("Created DESC").
+				Limit(5000).
+				Offset(offset)
 
-		if err := q.QueryAndClose(context.TODO(), db, func(row *sql.Rows) {
-			var id string
+			if err := q.QueryAndClose(context.TODO(), db, func(row *sql.Rows) {
+				var id string
 
-			if err := row.Scan(&id, &size); err != nil {
+				if err := row.Scan(&id, &size); err != nil {
+					logger.Log().Errorf("[db] %s", err.Error())
+					return
+				}
+				ids = append(ids, id)
+				prunedSize = prunedSize + int64(size)
+
+			}); err != nil {
 				logger.Log().Errorf("[db] %s", err.Error())
 				return
 			}
-			ids = append(ids, id)
-			prunedSize = prunedSize + int64(size)
-
-		}); err != nil {
-			logger.Log().Errorf("[db] %s", err.Error())
-			return
 		}
 	}
 
@@ -165,6 +172,10 @@ func pruneMessages() {
 	logger.Log().Debugf("[db] auto-pruned %d messages in %s", len(ids), elapsed)
 
 	logMessagesDeleted(len(ids))
+
+	if config.DemoMode {
+		vacuumDb()
+	}
 
 	websockets.Broadcast("prune", nil)
 }

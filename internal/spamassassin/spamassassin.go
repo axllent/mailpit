@@ -71,7 +71,7 @@ func Ping() error {
 	}
 
 	var client *spamc.Client
-	if strings.HasPrefix("unix:", service) {
+	if strings.HasPrefix(service, "unix:") {
 		client = spamc.NewUnix(strings.TrimLeft(service, "unix:"))
 	} else {
 		client = spamc.NewTCP(service, timeout)
@@ -112,7 +112,7 @@ func Check(msg []byte) (Result, error) {
 		}
 	} else {
 		var client *spamc.Client
-		if strings.HasPrefix("unix:", service) {
+		if strings.HasPrefix(service, "unix:") {
 			client = spamc.NewUnix(strings.TrimLeft(service, "unix:"))
 		} else {
 			client = spamc.NewTCP(service, timeout)

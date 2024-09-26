@@ -601,6 +601,11 @@ func LinkCheck(w http.ResponseWriter, r *http.Request) {
 	//		200: LinkCheckResponse
 	//		default: ErrorResponse
 
+	if config.DemoMode {
+		httpError(w, "this functionality has been disabled for demonstration purposes")
+		return
+	}
+
 	vars := mux.Vars(r)
 	id := vars["id"]
 

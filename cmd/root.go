@@ -305,6 +305,9 @@ func initConfigFromEnv() {
 	if len(os.Getenv("MP_WEBHOOK_LIMIT")) > 0 {
 		webhook.RateLimit, _ = strconv.Atoi(os.Getenv("MP_WEBHOOK_LIMIT"))
 	}
+
+	// Demo mode
+	config.DemoMode = getEnabledFromEnv("MP_DEMO_MODE")
 }
 
 // load deprecated settings from environment and warn

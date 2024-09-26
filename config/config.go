@@ -178,6 +178,9 @@ var (
 
 	// DisableHTMLCheck DEPRECATED 2024/04/13 - kept here to display console warning only
 	DisableHTMLCheck = false
+
+	// DemoMode disables SMTP relay, link checking & HTTP send functionality
+	DemoMode = false
 )
 
 // AutoTag struct for auto-tagging
@@ -465,6 +468,12 @@ func VerifyConfig() error {
 	if SMTPRelayAll {
 		// this deserves a warning
 		logger.Log().Warnf("[relay] auto-relaying all new messages via %s:%d", SMTPRelayConfig.Host, SMTPRelayConfig.Port)
+	}
+
+	if DemoMode {
+		MaxMessages = 1000
+		// this deserves a warning
+		logger.Log().Info("demo mode enabled")
 	}
 
 	return nil

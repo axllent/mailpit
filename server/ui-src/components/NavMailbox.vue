@@ -65,9 +65,10 @@ export default {
 
 <template>
 	<template v-if="!modals">
-		<div class="text-center badge text-bg-primary py-2 mt-2 w-100 text-truncate fw-normal"
-			v-if="mailbox.uiConfig.Label">
-			{{ mailbox.uiConfig.Label }}
+		<div class="text-center badge text-bg-primary py-2 my-2 w-100" v-if="mailbox.uiConfig.Label">
+			<div class="text-truncate fw-normal">
+				{{ mailbox.uiConfig.Label }}
+			</div>
 		</div>
 
 		<div class="list-group my-2" :class="mailbox.uiConfig.Label ? 'mt-0' : ''">

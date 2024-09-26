@@ -37,6 +37,11 @@ func ReleaseMessage(w http.ResponseWriter, r *http.Request) {
 	//		200: OKResponse
 	//		default: ErrorResponse
 
+	if config.DemoMode {
+		httpError(w, "this functionality has been disabled for demonstration purposes")
+		return
+	}
+
 	vars := mux.Vars(r)
 
 	id := vars["id"]
