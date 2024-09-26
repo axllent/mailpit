@@ -2,6 +2,18 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.20.5]
+
+### Chore
+- Update node modules
+- Use consistent margins for Mailpit label if set
+- Improve tag detection in UI
+- Improve link detection in the HTML preview
+
+### Fix
+- Use correct parameter order in SpamAssassin socket detection ([#364](https://github.com/axllent/mailpit/issues/364))
+
+
 ## [v1.20.4]
 
 ### Chore
