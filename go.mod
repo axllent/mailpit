@@ -1,11 +1,10 @@
 module github.com/axllent/mailpit
 
 go 1.22.0
-
-toolchain go1.22.2
+toolchain go1.23.1
 
 require (
-	github.com/PuerkitoBio/goquery v1.9.2
+	github.com/PuerkitoBio/goquery v1.10.0
 	github.com/araddon/dateparse v0.0.0-20210429162001-6b43995a97de
 	github.com/axllent/semver v0.0.1
 	github.com/gomarkdown/markdown v0.0.0-20240730141124-034f12af3bf6
