@@ -43,10 +43,14 @@ func ReindexAll() {
 	logger.Log().Infof("reindexing %d messages", total)
 
 	type updateStruct struct {
-		ID         string
+		// ID in database
+		ID string
+		// SearchText for searching
 		SearchText string
-		Snippet    string
-		Metadata   string
+		// Snippet for UI
+		Snippet string
+		// Metadata info
+		Metadata string
 	}
 
 	parser := enmime.NewParser(enmime.DisableCharacterDetection(true))
@@ -137,5 +141,6 @@ func chunkBy[T any](items []T, chunkSize int) (chunks [][]T) {
 	for chunkSize < len(items) {
 		items, chunks = items[chunkSize:], append(chunks, items[0:chunkSize:chunkSize])
 	}
+
 	return append(chunks, items)
 }

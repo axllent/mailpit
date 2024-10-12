@@ -220,6 +220,7 @@ func middleWareFunc(fn http.HandlerFunc) http.HandlerFunc {
 			fn(w, r)
 			return
 		}
+
 		w.Header().Set("Content-Encoding", "gzip")
 		gz := gzip.NewWriter(w)
 		defer gz.Close()

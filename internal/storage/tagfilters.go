@@ -13,9 +13,12 @@ import (
 
 // TagFilter struct
 type TagFilter struct {
+	// Match is the user-defined match
 	Match string
-	SQL   *sqlf.Stmt
-	Tags  []string
+	// SQL represents the SQL equivalent of Match
+	SQL *sqlf.Stmt
+	// Tags to add on match
+	Tags []string
 }
 
 var tagFilters = []TagFilter{}

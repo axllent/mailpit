@@ -39,8 +39,12 @@ var (
 
 // InitDB will initialise the database
 func InitDB() error {
+	var (
+		dsn string
+		err error
+	)
+
 	p := config.Database
-	var dsn string
 
 	if p == "" {
 		// when no path is provided then we create a temporary file
@@ -73,8 +77,6 @@ func InitDB() error {
 			_ = f.Close()
 		}
 	}
-
-	var err error
 
 	db, err = sql.Open(sqlDriver, dsn)
 	if err != nil {

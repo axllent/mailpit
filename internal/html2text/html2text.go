@@ -78,5 +78,6 @@ func clean(text string) string {
 	}, text)
 
 	text = re.ReplaceAllString(text, " ")
+
 	return strings.TrimSpace(text)
 }
