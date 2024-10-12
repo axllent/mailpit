@@ -44,6 +44,6 @@ jobs:
     # validate the swagger file
     - name: Validate OpenAPI definition
       if: startsWith(matrix.os, 'ubuntu') == true
-      uses: char0n/swagger-editor-validate@v1
+      uses: swaggerexpert/swagger-editor-validate@v1
       with:
         definition-file: server/ui/api/v1/swagger.json
