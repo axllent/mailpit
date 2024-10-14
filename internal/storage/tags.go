@@ -108,6 +108,7 @@ func addMessageTag(id, name string) (string, error) {
 			Set("ID", id).
 			Set("TagID", tagID).
 			ExecAndClose(context.TODO(), db)
+
 		return foundName.String, err
 	}
 

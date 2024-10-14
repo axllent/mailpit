@@ -13,6 +13,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/axllent/mailpit/internal/tools"
 )
 
 // ProtoVersion is the protocol version
@@ -81,6 +83,7 @@ func (c *Client) dial() (connection, error) {
 		}
 		return net.DialUnix("unix", nil, unixAddr)
 	}
+
 	panic("Client.net must be either \"tcp\" or \"unix\"")
 }
 
@@ -107,26 +110,25 @@ func (c *Client) report(email []byte) ([]string, error) {
 	}
 
 	bw := bufio.NewWriter(conn)
-	_, err = bw.WriteString("REPORT SPAMC/" + ProtoVersion + "\r\n")
-	if err != nil {
+	if _, err := bw.WriteString("REPORT SPAMC/" + ProtoVersion + "\r\n"); err != nil {
 		return nil, err
 	}
-	_, err = bw.WriteString("Content-length: " + strconv.Itoa(len(email)) + "\r\n\r\n")
-	if err != nil {
+
+	if _, err := bw.WriteString("Content-length: " + strconv.Itoa(len(email)) + "\r\n\r\n"); err != nil {
 		return nil, err
 	}
-	_, err = bw.Write(email)
-	if err != nil {
+
+	if _, err := bw.Write(email); err != nil {
 		return nil, err
 	}
-	err = bw.Flush()
-	if err != nil {
+
+	if err := bw.Flush(); err != nil {
 		return nil, err
 	}
+
 	// Client is supposed to close its writing side of the connection
 	// after sending its request.
-	err = conn.CloseWrite()
-	if err != nil {
+	if err := conn.CloseWrite(); err != nil {
 		return nil, err
 	}
 
@@ -134,6 +136,7 @@ func (c *Client) report(email []byte) ([]string, error) {
 		lines []string
 		br    = bufio.NewReader(conn)
 	)
+
 	for {
 		line, err := br.ReadString('\n')
 		if err == io.EOF {
@@ -171,11 +174,12 @@ func (c *Client) parseOutput(output []string) Result {
 				continue
 			}
 		}
+
 		// summary
 		if spamMainRe.MatchString(row) {
 			res := spamMainRe.FindStringSubmatch(row)
 			if len(res) == 4 {
-				if strings.ToLower(res[1]) == "true" || strings.ToLower(res[1]) == "yes" {
+				if tools.InArray(res[1], []string{"true", "yes"}) {
 					result.Spam = true
 				} else {
 					result.Spam = false
@@ -197,8 +201,8 @@ func (c *Client) parseOutput(output []string) Result {
 			reachedRules = true
 			continue
 		}
+
 		// details
-		// row = strings.Trim(row, " \t\r\n")
 		if reachedRules && spamDetailsRe.MatchString(row) {
 			res := spamDetailsRe.FindStringSubmatch(row)
 			if len(res) == 5 {
@@ -207,6 +211,7 @@ func (c *Client) parseOutput(output []string) Result {
 			}
 		}
 	}
+
 	return result
 }
 
@@ -222,12 +227,11 @@ func (c *Client) Ping() error {
 		return err
 	}
 
-	_, err = io.WriteString(conn, fmt.Sprintf("PING SPAMC/%s\r\n\r\n", ProtoVersion))
-	if err != nil {
+	if _, err := io.WriteString(conn, fmt.Sprintf("PING SPAMC/%s\r\n\r\n", ProtoVersion)); err != nil {
 		return err
 	}
-	err = conn.CloseWrite()
-	if err != nil {
+
+	if err := conn.CloseWrite(); err != nil {
 		return err
 	}
 
@@ -241,5 +245,6 @@ func (c *Client) Ping() error {
 			return err
 		}
 	}
+
 	return nil
 }

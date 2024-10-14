@@ -23,6 +23,7 @@ var (
 	// AllowPrereleases defines whether pre-releases may be included
 	AllowPrereleases = false
 
+	// temporary directory
 	tempDir string
 )
 

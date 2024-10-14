@@ -35,7 +35,6 @@ var (
 	SMTPAddr = "localhost:1025"
 	// FromAddr email address
 	FromAddr string
-
 	// UseB - used to set from `-bs`
 	UseB bool
 	// UseS - used to set from `-bs`

@@ -430,6 +430,21 @@ func GetAttachmentPart(id, partID string) (*enmime.Part, error) {
 	return nil, errors.New("attachment not found")
 }
 
+// AttachmentSummary returns a summary of the attachment without any binary data
+func AttachmentSummary(a *enmime.Part) Attachment {
+	o := Attachment{}
+	o.PartID = a.PartID
+	o.FileName = a.FileName
+	if o.FileName == "" {
+		o.FileName = a.ContentID
+	}
+	o.ContentType = a.ContentType
+	o.ContentID = a.ContentID
+	o.Size = float64(len(a.Content))
+
+	return o
+}
+
 // LatestID returns the latest message ID
 //
 // If a query argument is set in the request the function will return the

@@ -30,14 +30,17 @@ type Conn struct {
 
 // Opt represents the client configuration.
 type Opt struct {
+	// Host name
 	Host string `json:"host"`
-	Port int    `json:"port"`
-
-	// Default is 3 seconds.
+	// Port number
+	Port int `json:"port"`
+	// DialTimeout default is 3 seconds.
 	DialTimeout time.Duration `json:"dial_timeout"`
-	Dialer      Dialer        `json:"-"`
-
-	TLSEnabled    bool `json:"tls_enabled"`
+	// Dialer
+	Dialer Dialer `json:"-"`
+	// TLSEnabled sets whether SLS is enabled
+	TLSEnabled bool `json:"tls_enabled"`
+	// TLSSkipVerify skips TLS verification (ie: self-signed)
 	TLSSkipVerify bool `json:"tls_skip_verify"`
 }
 
@@ -49,16 +52,15 @@ type Dialer interface {
 // MessageID contains the ID and size of an individual message.
 type MessageID struct {
 	// ID is the numerical index (non-unique) of the message.
-	ID   int
+	ID int
+	// Size in bytes
 	Size int
-
 	// UID is only present if the response is to the UIDL command.
 	UID string
 }
 
 var (
-	lineBreak = []byte("\r\n")
-
+	lineBreak   = []byte("\r\n")
 	respOK      = []byte("+OK")   // `+OK` without additional info
 	respOKInfo  = []byte("+OK ")  // `+OK <info>`
 	respErr     = []byte("-ERR")  // `-ERR` without additional info
@@ -126,6 +128,7 @@ func (c *Conn) Send(b string) error {
 	if _, err := c.w.WriteString(b + "\r\n"); err != nil {
 		return err
 	}
+
 	return c.w.Flush()
 }
 
@@ -223,12 +226,14 @@ func (c *Conn) Auth(user, password string) error {
 // User sends the username to the server.
 func (c *Conn) User(s string) error {
 	_, err := c.Cmd("USER", false, s)
+
 	return err
 }
 
 // Pass sends the password to the server.
 func (c *Conn) Pass(s string) error {
 	_, err := c.Cmd("PASS", false, s)
+
 	return err
 }
 

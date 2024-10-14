@@ -3,8 +3,6 @@ package storage
 import (
 	"net/mail"
 	"time"
-
-	"github.com/jhillyerd/enmime"
 )
 
 // Message data excluding physical attachments
@@ -112,21 +110,6 @@ type DBMailSummary struct {
 	Cc      []*mail.Address
 	Bcc     []*mail.Address
 	ReplyTo []*mail.Address
-}
-
-// AttachmentSummary returns a summary of the attachment without any binary data
-func AttachmentSummary(a *enmime.Part) Attachment {
-	o := Attachment{}
-	o.PartID = a.PartID
-	o.FileName = a.FileName
-	if o.FileName == "" {
-		o.FileName = a.ContentID
-	}
-	o.ContentType = a.ContentType
-	o.ContentID = a.ContentID
-	o.Size = float64(len(a.Content))
-
-	return o
 }
 
 // ListUnsubscribe contains a summary of List-Unsubscribe & List-Unsubscribe-Post headers

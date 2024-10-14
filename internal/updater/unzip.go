@@ -71,5 +71,6 @@ func Unzip(src string, dest string) ([]string, error) {
 			return filenames, err
 		}
 	}
+
 	return filenames, nil
 }

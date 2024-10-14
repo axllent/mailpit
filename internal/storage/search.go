@@ -198,6 +198,7 @@ func DeleteSearch(search, timezone string) error {
 		}
 
 		dbLastAction = time.Now()
+
 		addDeletedSize(int64(deleteSize))
 
 		logMessagesDeleted(total)
