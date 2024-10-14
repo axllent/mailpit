@@ -2,6 +2,18 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.20.6]
+
+### Chore
+- Bump Go compile version to 1.23
+- Update node modules
+- Update swagger file tests
+- Code cleanup
+- Update Go dependencies
+- Update minimum Go version (1.22.0)
+- Update node dependencies
+
+
 ## [v1.20.5]
 
 ### Chore
