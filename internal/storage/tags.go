@@ -130,7 +130,7 @@ func addMessageTag(id, name string) (string, error) {
 func deleteMessageTag(id, name string) error {
 	if _, err := sqlf.DeleteFrom(tenant("message_tags")).
 		Where(tenant("message_tags.ID")+" = ?", id).
-		Where(tenant("message_tags.Key")+` IN (SELECT Key FROM `+tenant("message_tags")+` LEFT JOIN tags ON TagID=tags.ID WHERE Name = ?)`, name).
+		Where(tenant("message_tags.Key")+` IN (SELECT Key FROM `+tenant("message_tags")+` LEFT JOIN `+tenant("tags")+` ON TagID=`+tenant("tags.ID")+` WHERE Name = ?)`, name).
 		ExecAndClose(context.TODO(), db); err != nil {
 		return err
 	}
