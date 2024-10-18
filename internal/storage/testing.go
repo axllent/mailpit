@@ -16,10 +16,11 @@ var (
 	testRuns      = 100
 )
 
-func setup() {
+func setup(tenantID string) {
 	logger.NoLogging = true
 	config.MaxMessages = 0
 	config.Database = os.Getenv("MP_DATABASE")
+	config.TenantID = config.DBTenantID(tenantID)
 
 	if err := InitDB(); err != nil {
 		panic(err)
