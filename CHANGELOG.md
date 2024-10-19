@@ -2,6 +2,18 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.20.7]
+
+### Chore
+- Update caniemail database
+
+### Fix
+- SQL error deleting a tag while using tenant-id ([#374](https://github.com/axllent/mailpit/issues/374))
+
+### Testing
+- Add tenantIDs to tests
+
+
 ## [v1.20.6]
 
 ### Chore
