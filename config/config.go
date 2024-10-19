@@ -233,14 +233,9 @@ func VerifyConfig() error {
 		return err
 	}
 
-	TenantID = tools.Normalize(TenantID)
+	TenantID = DBTenantID(TenantID)
 	if TenantID != "" {
 		logger.Log().Infof("[db] using tenant \"%s\"", TenantID)
-		re := regexp.MustCompile(`[^a-zA-Z0-9\_]`)
-		TenantID = re.ReplaceAllString(TenantID, "_")
-		if !strings.HasSuffix(TenantID, "_") {
-			TenantID = TenantID + "_"
-		}
 	}
 
 	re := regexp.MustCompile(`.*:\d+$`)
@@ -631,4 +626,18 @@ func isValidURL(s string) bool {
 	}
 
 	return strings.HasPrefix(u.Scheme, "http")
+}
+
+// DBTenantID converts a tenant ID to a DB-friendly value if set
+func DBTenantID(s string) string {
+	s = tools.Normalize(s)
+	if s != "" {
+		re := regexp.MustCompile(`[^a-zA-Z0-9\_]`)
+		s = re.ReplaceAllString(s, "_")
+		if !strings.HasSuffix(s, "_") {
+			s = s + "_"
+		}
+	}
+
+	return s
 }
