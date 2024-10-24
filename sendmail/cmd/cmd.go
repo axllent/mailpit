@@ -18,15 +18,15 @@ import (
 	"fmt"
 	"io"
 	"net/mail"
-	"net/smtp"
 	"os"
 	"os/user"
+	"path"
 	"regexp"
 	"strings"
 
 	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/internal/logger"
-	"github.com/reiver/go-telnet"
+	"github.com/mneis/go-telnet"
 	flag "github.com/spf13/pflag"
 )
 
@@ -113,14 +113,23 @@ func Run() {
 		os.Exit(1)
 	}
 
+	socketAddr, isSocket := socketAddress(SMTPAddr)
+
 	// handles `sendmail -bs`
+	// telnet directly to SMTP
 	if UseB && UseS {
 		var caller telnet.Caller = telnet.StandardCaller
 
-		// telnet directly to SMTP
-		if err := telnet.DialToAndCall(SMTPAddr, caller); err != nil {
-			fmt.Println(err)
-			os.Exit(1)
+		if isSocket {
+			if err := telnet.DialToAndCallUnix(socketAddr, caller); err != nil {
+				fmt.Println(err)
+				os.Exit(1)
+			}
+		} else {
+			if err := telnet.DialToAndCall(SMTPAddr, caller); err != nil {
+				fmt.Println(err)
+				os.Exit(1)
+			}
 		}
 
 		return
@@ -167,8 +176,7 @@ func Run() {
 		os.Exit(11)
 	}
 
-	err = smtp.SendMail(SMTPAddr, nil, from.Address, addresses, body)
-	if err != nil {
+	if err := Send(SMTPAddr, from.Address, addresses, body); err != nil {
 		fmt.Fprintln(os.Stderr, "error sending mail")
 		logger.Log().Fatal(err)
 	}
@@ -191,4 +199,18 @@ Flags:
   -o          Ignored
   -v          Ignored
 `, config.Version, strings.Join(args, " "), FromAddr)
+}
+
+// SocketAddress returns a path and a FileMode if the address is in
+// the format of unix:<path>
+func socketAddress(address string) (string, bool) {
+	re := regexp.MustCompile(`^unix:(.*)$`)
+
+	if !re.MatchString(address) {
+		return "", false
+	}
+
+	m := re.FindAllStringSubmatch(address, 1)
+
+	return path.Clean(m[0][1]), true
 }

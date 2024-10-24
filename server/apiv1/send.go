@@ -277,5 +277,5 @@ func (d SendRequest) Send(remoteAddr string) (string, error) {
 		return "", fmt.Errorf("error building message: %s", err.Error())
 	}
 
-	return smtpd.Store(ipAddr, d.From.Email, addresses, buff.Bytes())
+	return smtpd.SaveToDatabase(ipAddr, d.From.Email, addresses, buff.Bytes())
 }
