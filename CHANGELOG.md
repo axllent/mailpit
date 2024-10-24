@@ -2,6 +2,15 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.21.0]
+
+### Feature
+- Experimental Unix socket support for HTTPD & SMTPD ([#373](https://github.com/axllent/mailpit/issues/373))
+
+### Fix
+- Allow multiple item selection on macOS with Cmd-click  ([#378](https://github.com/axllent/mailpit/issues/378))
+
+
 ## [v1.20.7]
 
 ### Chore
