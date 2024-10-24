@@ -99,8 +99,8 @@ export default {
 			</ul>
 		</div>
 		<div class="list-group mt-1 mb-2">
-			<RouterLink v-for="tag in mailbox.tags" :to="toTagUrl(tag)" @click="hideNav"
-				v-on:click="pagination.start = 0" v-on:click.ctrl="toggleTag($event, tag)"
+			<RouterLink v-for="tag in mailbox.tags" :to="toTagUrl(tag)" @click.exact="hideNav"
+				@click="pagination.start = 0" @click.meta="toggleTag($event, tag)" @click.ctrl="toggleTag($event, tag)"
 				:style="mailbox.showTagColors ? { borderLeftColor: colorHash(tag), borderLeftWidth: '4px' } : ''"
 				class="list-group-item list-group-item-action small px-2" :class="inSearch(tag) ? 'active' : ''">
 				<i class="bi bi-tag-fill" v-if="inSearch(tag)"></i>

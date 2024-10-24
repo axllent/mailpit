@@ -28,13 +28,14 @@ import (
 var (
 	db           *sql.DB
 	dbFile       string
-	dbIsTemp     bool
 	sqlDriver    string
 	dbLastAction time.Time
 
 	// zstd compression encoder & decoder
 	dbEncoder, _ = zstd.NewWriter(nil)
 	dbDecoder, _ = zstd.NewReader(nil)
+
+	temporaryFiles = []string{}
 )
 
 // InitDB will initialise the database
@@ -50,7 +51,8 @@ func InitDB() error {
 		// when no path is provided then we create a temporary file
 		// which will get deleted on Close(), SIGINT or SIGTERM
 		p = fmt.Sprintf("%s-%d.db", path.Join(os.TempDir(), "mailpit"), time.Now().UnixNano())
-		dbIsTemp = true
+		// delete the Unix socket file on exit
+		AddTempFile(p)
 		sqlDriver = "sqlite"
 		dsn = p
 		logger.Log().Debugf("[db] using temporary database: %s", p)
@@ -156,12 +158,8 @@ func Close() {
 	// allow SQLite to finish closing DB & write WAL logs if local
 	time.Sleep(100 * time.Millisecond)
 
-	if dbIsTemp && isFile(dbFile) {
-		logger.Log().Debugf("[db] deleting temporary file %s", dbFile)
-		if err := os.Remove(dbFile); err != nil {
-			logger.Log().Errorf("[db] %s", err.Error())
-		}
-	}
+	// delete all temporary files
+	deleteTempFiles()
 }
 
 // Ping the database connection and return an error if unsuccessful

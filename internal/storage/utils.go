@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	"github.com/axllent/mailpit/internal/html2text"
+	"github.com/axllent/mailpit/internal/logger"
 	"github.com/jhillyerd/enmime"
 )
 
@@ -17,6 +18,20 @@ var (
 	// StatsDeleted for counting the number of messages deleted
 	StatsDeleted float64
 )
+
+// AddTempFile adds a file to the slice of files to delete on exit
+func AddTempFile(s string) {
+	temporaryFiles = append(temporaryFiles, s)
+}
+
+// DeleteTempFiles will delete files added via AddTempFiles
+func deleteTempFiles() {
+	for _, f := range temporaryFiles {
+		if err := os.Remove(f); err == nil {
+			logger.Log().Debugf("removed temporary file: %s", f)
+		}
+	}
+}
 
 // Return a header field as a []*mail.Address, or "null" is not found/empty
 func addressToSlice(env *enmime.Envelope, key string) []*mail.Address {

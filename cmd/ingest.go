@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"net/mail"
-	"net/smtp"
 	"os"
 	"path/filepath"
 	"strings"
@@ -106,7 +105,7 @@ The --recent flag will only consider files with a modification date within the l
 						}
 					}
 
-					err = smtp.SendMail(sendmail.SMTPAddr, nil, returnPath, recipients, body)
+					err = sendmail.Send(sendmail.SMTPAddr, returnPath, recipients, body)
 					if err != nil {
 						logger.Log().Errorf("error sending mail: %s (%s)", err.Error(), path)
 						return nil

@@ -202,7 +202,7 @@ func extract(filePath string, directory string) error {
 		}
 
 		// set file permissions, timestamps & uid/gid
-		_ = os.Chmod(filename, os.FileMode(header.Mode))
+		_ = os.Chmod(filename, os.FileMode(header.Mode)) // #nosec
 		_ = os.Chtimes(filename, header.AccessTime, header.ModTime)
 		_ = os.Chown(filename, header.Uid, header.Gid)
 	}

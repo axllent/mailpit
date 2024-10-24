@@ -16,8 +16,7 @@ require (
 	github.com/kovidgoyal/imaging v1.6.3
 	github.com/leporo/sqlf v1.4.0
 	github.com/lithammer/shortuuid/v4 v4.0.0
-	github.com/mhale/smtpd v0.8.3
-	github.com/reiver/go-telnet v0.0.0-20180421082511-9ff0b2ab096e
+	github.com/mneis/go-telnet v0.0.0-20221017141824-6f643e477c62
 	github.com/rqlite/gorqlite v0.0.0-20241013203532-4385768ae85d
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.8.1

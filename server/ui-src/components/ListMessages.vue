@@ -125,7 +125,8 @@ export default {
 				:id="message.ID"
 				class="row gx-1 message d-flex small list-group-item list-group-item-action border-start-0 border-end-0"
 				:class="message.Read ? 'read' : '', isSelected(message.ID) ? 'selected' : ''"
-				v-on:click.ctrl="toggleSelected($event, message.ID)" v-on:click.shift="selectRange($event, message.ID)">
+				@click.meta="toggleSelected($event, message.ID)" @click.ctrl="toggleSelected($event, message.ID)"
+				@click.shift="selectRange($event, message.ID)">
 				<div class="col-lg-3">
 					<div class="d-lg-none float-end text-muted text-nowrap small">
 						<i class="bi bi-paperclip h6 me-1" v-if="message.Attachments"></i>
