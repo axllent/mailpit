@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"net"
 	"net/http"
 	"os"
 	"strings"
@@ -20,6 +21,7 @@ import (
 	"github.com/axllent/mailpit/internal/logger"
 	"github.com/axllent/mailpit/internal/stats"
 	"github.com/axllent/mailpit/internal/storage"
+	"github.com/axllent/mailpit/internal/tools"
 	"github.com/axllent/mailpit/server/apiv1"
 	"github.com/axllent/mailpit/server/handlers"
 	"github.com/axllent/mailpit/server/pop3"
@@ -112,11 +114,42 @@ func Listen() {
 		}
 
 	} else {
-		logger.Log().Infof("[http] starting on %s", config.HTTPListen)
-		logger.Log().Infof("[http] accessible via http://%s%s", logger.CleanHTTPIP(config.HTTPListen), config.Webroot)
-		if err := server.ListenAndServe(); err != nil {
-			storage.Close()
-			logger.Log().Fatal(err)
+		socketAddr, perm, isSocket := tools.UnixSocket(config.HTTPListen)
+
+		if isSocket {
+			if err := tools.PrepareSocket(socketAddr); err != nil {
+				storage.Close()
+				logger.Log().Fatal(err)
+			}
+
+			// delete the Unix socket file on exit
+			storage.AddTempFile(socketAddr)
+
+			ln, err := net.Listen("unix", socketAddr)
+			if err != nil {
+				storage.Close()
+				logger.Log().Fatal(err)
+			}
+
+			if err := os.Chmod(socketAddr, perm); err != nil {
+				storage.Close()
+				logger.Log().Fatal(err)
+			}
+
+			logger.Log().Infof("[http] starting on %s", config.HTTPListen)
+
+			if err := server.Serve(ln); err != nil {
+				storage.Close()
+				logger.Log().Fatal(err)
+			}
+
+		} else {
+			logger.Log().Infof("[http] starting on %s", config.HTTPListen)
+			logger.Log().Infof("[http] accessible via http://%s%s", logger.CleanHTTPIP(config.HTTPListen), config.Webroot)
+			if err := server.ListenAndServe(); err != nil {
+				storage.Close()
+				logger.Log().Fatal(err)
+			}
 		}
 	}
 }

@@ -14,9 +14,9 @@ import (
 	"github.com/axllent/mailpit/internal/logger"
 	"github.com/axllent/mailpit/internal/stats"
 	"github.com/axllent/mailpit/internal/storage"
+	"github.com/axllent/mailpit/internal/tools"
 	"github.com/axllent/mailpit/server/websockets"
 	"github.com/lithammer/shortuuid/v4"
-	"github.com/mhale/smtpd"
 )
 
 var (
@@ -29,11 +29,11 @@ var (
 
 // MailHandler handles the incoming message to store in the database
 func mailHandler(origin net.Addr, from string, to []string, data []byte) (string, error) {
-	return Store(origin, from, to, data)
+	return SaveToDatabase(origin, from, to, data)
 }
 
-// Store will attempt to save a message to the database
-func Store(origin net.Addr, from string, to []string, data []byte) (string, error) {
+// SaveToDatabase will attempt to save a message to the database
+func SaveToDatabase(origin net.Addr, from string, to []string, data []byte) (string, error) {
 	if !config.SMTPStrictRFCHeaders {
 		// replace all <CR><CR><LF> (\r\r\n) with <CR><LF> (\r\n)
 		// @see https://github.com/axllent/mailpit/issues/87 & https://github.com/axllent/mailpit/issues/153
@@ -193,24 +193,6 @@ func Listen() error {
 		}
 	}
 
-	smtpType := "no encryption"
-
-	if config.SMTPTLSCert != "" {
-		if config.SMTPRequireSTARTTLS {
-			smtpType = "STARTTLS required"
-		} else if config.SMTPRequireTLS {
-			smtpType = "SSL/TLS required"
-		} else {
-			smtpType = "STARTTLS optional"
-			if !config.SMTPAuthAllowInsecure && auth.SMTPCredentials != nil {
-				smtpType = "STARTTLS required"
-			}
-		}
-
-	}
-
-	logger.Log().Infof("[smtpd] starting on %s (%s)", config.SMTPListen, smtpType)
-
 	return listenAndServe(config.SMTPListen, mailHandler, authHandler)
 }
 
@@ -223,13 +205,16 @@ func verbLogTranslator(verb string) string {
 	return "response"
 }
 
-func listenAndServe(addr string, handler smtpd.MsgIDHandler, authHandler smtpd.AuthHandler) error {
-	smtpd.Debug = true // to enable Mailpit logging
-	srv := &smtpd.Server{
+func listenAndServe(addr string, handler MsgIDHandler, authHandler AuthHandler) error {
+
+	socketAddr, perm, isSocket := tools.UnixSocket(addr)
+
+	Debug = true // to enable Mailpit logging
+	srv := &Server{
 		Addr:              addr,
 		MsgIDHandler:      handler,
 		HandlerRcpt:       handlerRcpt,
-		Appname:           "Mailpit",
+		AppName:           "Mailpit",
 		Hostname:          "",
 		AuthHandler:       nil,
 		AuthRequired:      false,
@@ -252,7 +237,7 @@ func listenAndServe(addr string, handler smtpd.MsgIDHandler, authHandler smtpd.A
 	}
 
 	if config.Label != "" {
-		srv.Appname = fmt.Sprintf("Mailpit (%s)", config.Label)
+		srv.AppName = fmt.Sprintf("Mailpit (%s)", config.Label)
 	}
 
 	if config.SMTPAuthAllowInsecure {
@@ -274,6 +259,39 @@ func listenAndServe(addr string, handler smtpd.MsgIDHandler, authHandler smtpd.A
 		if err := srv.ConfigureTLS(config.SMTPTLSCert, config.SMTPTLSKey); err != nil {
 			return err
 		}
+	}
+
+	if isSocket {
+		srv.Addr = socketAddr
+		srv.Protocol = "unix"
+		srv.SocketPerm = perm
+
+		if err := tools.PrepareSocket(srv.Addr); err != nil {
+			storage.Close()
+			return err
+		}
+
+		// delete the Unix socket file on exit
+		storage.AddTempFile(srv.Addr)
+
+		logger.Log().Infof("[smtpd] starting on %s", config.SMTPListen)
+	} else {
+		smtpType := "no encryption"
+
+		if config.SMTPTLSCert != "" {
+			if config.SMTPRequireSTARTTLS {
+				smtpType = "STARTTLS required"
+			} else if config.SMTPRequireTLS {
+				smtpType = "SSL/TLS required"
+			} else {
+				smtpType = "STARTTLS optional"
+				if !config.SMTPAuthAllowInsecure && auth.SMTPCredentials != nil {
+					smtpType = "STARTTLS required"
+				}
+			}
+		}
+
+		logger.Log().Infof("[smtpd] starting on %s (%s)", config.SMTPListen, smtpType)
 	}
 
 	return srv.ListenAndServe()

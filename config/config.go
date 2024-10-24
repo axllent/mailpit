@@ -239,10 +239,10 @@ func VerifyConfig() error {
 	}
 
 	re := regexp.MustCompile(`.*:\d+$`)
-	if !re.MatchString(SMTPListen) {
+	if _, _, isSocket := tools.UnixSocket(SMTPListen); !isSocket && !re.MatchString(SMTPListen) {
 		return errors.New("[smtp] bind should be in the format of <ip>:<port>")
 	}
-	if !re.MatchString(HTTPListen) {
+	if _, _, isSocket := tools.UnixSocket(HTTPListen); !isSocket && !re.MatchString(HTTPListen) {
 		return errors.New("[ui] HTTP bind should be in the format of <ip>:<port>")
 	}
 

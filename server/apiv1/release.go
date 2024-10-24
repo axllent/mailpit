@@ -161,7 +161,7 @@ func ReleaseMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := smtpd.Send(from, data.To, msg); err != nil {
+	if err := smtpd.Relay(from, data.To, msg); err != nil {
 		logger.Log().Errorf("[smtp] error sending message: %s", err.Error())
 		httpError(w, "SMTP error: "+err.Error())
 		return
