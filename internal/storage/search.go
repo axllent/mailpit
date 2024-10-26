@@ -355,6 +355,12 @@ func searchQueryBuilder(searchString, timezone string) *sqlf.Stmt {
 			} else {
 				q.Where(`m.ID IN (SELECT DISTINCT mt.ID FROM ` + tenant("message_tags") + ` mt JOIN tags t ON mt.TagID = t.ID)`)
 			}
+		} else if lw == "has:inline" || lw == "has:inlines" {
+			if exclude {
+				q.Where("Inline = 0")
+			} else {
+				q.Where("Inline > 0")
+			}
 		} else if lw == "has:attachment" || lw == "has:attachments" {
 			if exclude {
 				q.Where("Attachments = 0")
