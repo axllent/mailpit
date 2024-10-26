@@ -4,7 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -397,6 +399,22 @@ func searchQueryBuilder(searchString, timezone string) *sqlf.Stmt {
 					}
 				}
 			}
+		} else if strings.HasPrefix(lw, "larger:") && sizeToBytes(cleanString(w[7:])) > 0 {
+			w = cleanString(w[7:])
+			size := sizeToBytes(w)
+			if exclude {
+				q.Where("Size < ?", size)
+			} else {
+				q.Where("Size > ?", size)
+			}
+		} else if strings.HasPrefix(lw, "smaller:") && sizeToBytes(cleanString(w[8:])) > 0 {
+			w = cleanString(w[8:])
+			size := sizeToBytes(w)
+			if exclude {
+				q.Where("Size > ?", size)
+			} else {
+				q.Where("Size < ?", size)
+			}
 		} else {
 			// search text
 			if exclude {
@@ -408,4 +426,40 @@ func searchQueryBuilder(searchString, timezone string) *sqlf.Stmt {
 	}
 
 	return q
+}
+
+// Simple function to return a size in bytes, eg 2kb, 4MB or 1.5m.
+//
+// K, k, Kb, KB, kB and kb are treated as Kilobytes.
+// M, m, Mb, MB and mb are treated as Megabytes.
+func sizeToBytes(v string) int64 {
+	v = strings.ToLower(v)
+	re := regexp.MustCompile(`^(\d+)(\.\d+)?\s?([a-z]{1,2})?$`)
+
+	m := re.FindAllStringSubmatch(v, -1)
+	if len(m) == 0 {
+		return 0
+	}
+
+	val := fmt.Sprintf("%s%s", m[0][1], m[0][2])
+	unit := m[0][3]
+
+	i, err := strconv.ParseFloat(strings.TrimSpace(val), 64)
+	if err != nil {
+		return 0
+	}
+
+	if unit == "" {
+		return int64(i)
+	}
+
+	if unit == "k" || unit == "kb" {
+		return int64(i * 1024)
+	}
+
+	if unit == "m" || unit == "mb" {
+		return int64(i * 1024 * 1024)
+	}
+
+	return 0
 }
