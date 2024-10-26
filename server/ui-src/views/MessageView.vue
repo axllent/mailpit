@@ -504,16 +504,41 @@ export default {
 							Text body
 						</button>
 					</li>
-					<template v-if="allAttachments(message).length">
+					<template v-if="message.Attachments && message.Attachments.length">
 						<li>
 							<hr class="dropdown-divider">
 						</li>
 						<li>
 							<h6 class="dropdown-header">
-								Attachment<template v-if="allAttachments(message).length > 1">s</template>
+								Attachments
 							</h6>
 						</li>
-						<li v-for="part in allAttachments(message)">
+						<li v-for="part in message.Attachments">
+							<RouterLink :to="'/api/v1/message/' + message.ID + '/part/' + part.PartID"
+								class="row m-0 dropdown-item d-flex" target="_blank"
+								:title="part.FileName != '' ? part.FileName : '[ unknown ]'" style="min-width: 350px">
+								<div class="col-auto p-0 pe-1">
+									<i class="bi" :class="attachmentIcon(part)"></i>
+								</div>
+								<div class="col text-truncate p-0 pe-1">
+									{{ part.FileName != '' ? part.FileName : '[ unknown ]' }}
+								</div>
+								<div class="col-auto text-muted small p-0">
+									{{ getFileSize(part.Size) }}
+								</div>
+							</RouterLink>
+						</li>
+					</template>
+					<template v-if="message.Inline && message.Inline.length">
+						<li>
+							<hr class="dropdown-divider">
+						</li>
+						<li>
+							<h6 class="dropdown-header">
+								Inline image<span v-if="message.Inline.length > 1">s</span>
+							</h6>
+						</li>
+						<li v-for="part in message.Inline">
 							<RouterLink :to="'/api/v1/message/' + message.ID + '/part/' + part.PartID"
 								class="row m-0 dropdown-item d-flex" target="_blank"
 								:title="part.FileName != '' ? part.FileName : '[ unknown ]'" style="min-width: 350px">

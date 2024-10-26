@@ -457,11 +457,20 @@ export default {
 					</tbody>
 				</table>
 			</div>
-			<div class="col-md-auto d-none d-md-block text-end mt-md-3">
-				<div class="mt-2 mt-md-0" v-if="allAttachments(message)">
-					<span class="badge rounded-pill text-bg-secondary p-2">
-						Attachment<span v-if="allAttachments(message).length > 1">s</span>
-						({{ allAttachments(message).length }})
+			<div class="col-md-auto d-none d-md-block text-end mt-md-3"
+				v-if="message.Attachments && message.Attachments.length || message.Inline && message.Inline.length">
+				<div class="mt-2 mt-md-0">
+					<template v-if="message.Attachments.length">
+						<span class="badge rounded-pill text-bg-secondary p-2 mb-2" title="Attachments in this message">
+							Attachment<span v-if="message.Attachments.length > 1">s</span>
+							({{ message.Attachments.length }})
+						</span>
+						<br>
+					</template>
+					<span class="badge rounded-pill text-bg-secondary p-2" v-if="message.Inline.length"
+						title="Inline images in this message">
+						Inline image<span v-if="message.Inline.length > 1">s</span>
+						({{ message.Inline.length }})
 					</span>
 				</div>
 			</div>
