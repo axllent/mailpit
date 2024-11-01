@@ -2,6 +2,17 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.21.1]
+
+### Feature
+- Add ability to search by size smaller or larger than a value (eg: `larger:1M` / `smaller:2.5M`)
+- Add ability to search for messages containing inline images (`has:inline`)
+
+### Chore
+- Update Go dependencies
+- Separate attachments and inline images in download nav and badges ([#379](https://github.com/axllent/mailpit/issues/379))
+
+
 ## [v1.21.0]
 
 ### Feature
