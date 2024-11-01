@@ -21,7 +21,7 @@ require (
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/pflag v1.0.5
-	github.com/tg123/go-htpasswd v1.2.2
+	github.com/tg123/go-htpasswd v1.2.3
 	github.com/vanng822/go-premailer v1.22.0
 	golang.org/x/net v0.30.0
 	golang.org/x/text v0.19.0
