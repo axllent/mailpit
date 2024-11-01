@@ -201,3 +201,25 @@ func TestEscPercentChar(t *testing.T) {
 		assertEqual(t, res, expected, "no match")
 	}
 }
+
+func TestSizeToBytes(t *testing.T) {
+	tests := map[string]int64{}
+	tests["1m"] = 1048576
+	tests["1mb"] = 1048576
+	tests["1 M"] = 1048576
+	tests["1 MB"] = 1048576
+	tests["1k"] = 1024
+	tests["1kb"] = 1024
+	tests["1 K"] = 1024
+	tests["1 kB"] = 1024
+	tests["1.5M"] = 1572864
+	tests["1234567890"] = 1234567890
+	tests["invalid"] = 0
+	tests["1.2.3"] = 0
+	tests["1.2.3M"] = 0
+
+	for search, expected := range tests {
+		res := sizeToBytes(search)
+		assertEqual(t, res, expected, "size does not match")
+	}
+}
