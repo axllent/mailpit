@@ -82,6 +82,9 @@ func Run() {
 	flag.BoolP("long-i", "i", false, "Ignored")
 	flag.BoolP("long-o", "o", false, "Ignored")
 	flag.BoolP("long-t", "t", false, "Ignored")
+	flag.StringP("from-name", "F", "", "Ignored")
+	flag.StringP("bits", "B", "", "Ignored")
+	flag.StringP("errors", "e", "", "Ignored")
 
 	// set the default help
 	flag.Usage = func() {
