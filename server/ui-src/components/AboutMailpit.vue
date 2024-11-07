@@ -41,10 +41,12 @@ export default {
 
 			// we need to ask the user for permission
 			else if (Notification.permission !== "denied") {
-				Notification.requestPermission().then(function (permission) {
+				Notification.requestPermission().then((permission) => {
 					if (permission === "granted") {
 						mailbox.notificationsEnabled = true
 					}
+
+					this.modal('EnableNotificationsModal').hide()
 				})
 			}
 		},
@@ -239,8 +241,9 @@ export default {
 					</div>
 					<div class="modal-footer">
 						<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-						<button type="button" class="btn btn-success" data-bs-dismiss="modal"
-							v-on:click="requestNotifications">Enable notifications</button>
+						<button type="button" class="btn btn-success" v-on:click="requestNotifications">
+							Enable notifications
+						</button>
 					</div>
 				</div>
 			</div>
