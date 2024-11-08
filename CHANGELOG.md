@@ -2,6 +2,20 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.21.2]
+
+### Feature
+- Add additional ignored flags to sendmail ([#384](https://github.com/axllent/mailpit/issues/384))
+
+### Chore
+- Remove legacy Tags column from message DB table
+- Update Go dependencies
+- Update node dependencies
+
+### Fix
+- Fix browser notification request on Edge ([#89](https://github.com/axllent/mailpit/issues/89))
+
+
 ## [v1.21.1]
 
 ### Feature

@@ -2,20 +2,15 @@ package storage
 
 import (
 	"bytes"
-	"context"
-	"database/sql"
 	"embed"
-	"encoding/json"
 	"log"
 	"path"
 	"sort"
 	"strings"
 	"text/template"
-	"time"
 
 	"github.com/axllent/mailpit/internal/logger"
 	"github.com/axllent/semver"
-	"github.com/leporo/sqlf"
 )
 
 //go:embed schemas/*
@@ -61,13 +56,6 @@ func dbApplySchemas() error {
 				if _, err := db.Exec(`INSERT INTO `+tenant("schemas")+` (Version) VALUES (?)`, v); err != nil {
 					return err
 				}
-			}
-		}
-
-		// delete legacy migration database after 01/10/2024
-		if time.Now().After(time.Date(2024, 10, 1, 0, 0, 0, 0, time.Local)) {
-			if _, err := db.Exec(`DROP TABLE IF EXISTS ` + tenant("darwin_migrations")); err != nil {
-				return err
 			}
 		}
 	}
@@ -160,65 +148,5 @@ func dataMigrations() {
 	// ensure DeletedSize has a value if empty
 	if SettingGet("DeletedSize") == "" {
 		_ = SettingPut("DeletedSize", "0")
-	}
-
-	migrateTagsToManyMany()
-}
-
-// Migrate tags to ManyMany structure
-// Migration task implemented 12/2023
-// TODO: Can be removed end 06/2024 and Tags column & index dropped from mailbox
-func migrateTagsToManyMany() {
-	toConvert := make(map[string][]string)
-	q := sqlf.
-		Select("ID, Tags").
-		From(tenant("mailbox")).
-		Where("Tags != ?", "[]").
-		Where("Tags IS NOT NULL")
-
-	if err := q.QueryAndClose(context.TODO(), db, func(row *sql.Rows) {
-		var id string
-		var jsonTags string
-		if err := row.Scan(&id, &jsonTags); err != nil {
-			logger.Log().Errorf("[migration] %s", err.Error())
-			return
-		}
-
-		tags := []string{}
-
-		if err := json.Unmarshal([]byte(jsonTags), &tags); err != nil {
-			logger.Log().Errorf("[json] %s", err.Error())
-			return
-		}
-
-		toConvert[id] = tags
-	}); err != nil {
-		logger.Log().Errorf("[migration] %s", err.Error())
-	}
-
-	if len(toConvert) > 0 {
-		logger.Log().Infof("[migration] converting %d message tags", len(toConvert))
-		for id, tags := range toConvert {
-			if _, err := SetMessageTags(id, tags); err != nil {
-				logger.Log().Errorf("[migration] %s", err.Error())
-			} else {
-				if _, err := sqlf.Update(tenant("mailbox")).
-					Set("Tags", nil).
-					Where("ID = ?", id).
-					ExecAndClose(context.TODO(), db); err != nil {
-					logger.Log().Errorf("[migration] %s", err.Error())
-				}
-			}
-		}
-
-		logger.Log().Info("[migration] tags conversion complete")
-	}
-
-	// set all legacy `[]` tags to NULL
-	if _, err := sqlf.Update(tenant("mailbox")).
-		Set("Tags", nil).
-		Where("Tags = ?", "[]").
-		ExecAndClose(context.TODO(), db); err != nil {
-		logger.Log().Errorf("[migration] %s", err.Error())
 	}
 }
