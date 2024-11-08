@@ -17,25 +17,48 @@ import (
 	"github.com/lithammer/shortuuid/v4"
 )
 
+// swagger:parameters ReleaseMessageParams
+type releaseMessageParams struct {
+	// Message database ID
+	//
+	// in: path
+	// description: Message database ID
+	// required: true
+	// example: 4oRBnPtCXgAqZniRhzLNmS
+	ID string
+
+	// in: body
+	Body struct {
+		// Array of email addresses to relay the message to
+		//
+		// required: true
+		// example: ["user1@example.com", "user2@example.com"]
+		To []string
+	}
+}
+
 // ReleaseMessage (method: POST) will release a message via a pre-configured external SMTP server.
 func ReleaseMessage(w http.ResponseWriter, r *http.Request) {
-	// swagger:route POST /api/v1/message/{ID}/release message ReleaseMessage
+	// swagger:route POST /api/v1/message/{ID}/release message ReleaseMessageParams
 	//
 	// # Release message
 	//
 	// Release a message via a pre-configured external SMTP server. This is only enabled if message relaying has been configured.
 	//
+	// The ID can be set to `latest` to reference the latest message.
+	//
 	//	Consumes:
-	//	- application/json
+	//	  - application/json
 	//
 	//	Produces:
-	//	- text/plain
+	//	  - text/plain
 	//
 	//	Schemes: http, https
 	//
 	//	Responses:
-	//		200: OKResponse
-	//		default: ErrorResponse
+	//	  200: OKResponse
+	//    400: ErrorResponse
+	//    404: NotFoundResponse
 
 	if config.DemoMode {
 		httpError(w, "this functionality has been disabled for demonstration purposes")
@@ -54,7 +77,9 @@ func ReleaseMessage(w http.ResponseWriter, r *http.Request) {
 
 	decoder := json.NewDecoder(r.Body)
 
-	data := releaseMessageRequestBody{}
+	var data struct {
+		To []string
+	}
 
 	if err := decoder.Decode(&data); err != nil {
 		httpError(w, err.Error())

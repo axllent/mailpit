@@ -40,9 +40,9 @@
         "operationId": "AppInformation",
         "responses": {
           "200": {
-            "$ref": "#/responses/InfoResponse"
+            "$ref": "#/responses/AppInfoResponse"
           },
-          "default": {
+          "400": {
             "$ref": "#/responses/ErrorResponse"
           }
         }
@@ -62,10 +62,11 @@
           "message"
         ],
         "summary": "Get message summary",
-        "operationId": "Message",
+        "operationId": "GetMessageParams",
         "parameters": [
           {
             "type": "string",
+            "example": "4oRBnPtCXgAqZniRhzLNmS",
             "description": "Message database ID or \"latest\"",
             "name": "ID",
             "in": "path",
@@ -79,15 +80,18 @@
               "$ref": "#/definitions/Message"
             }
           },
-          "default": {
+          "400": {
             "$ref": "#/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/responses/NotFoundResponse"
           }
         }
       }
     },
     "/api/v1/message/{ID}/headers": {
       "get": {
-        "description": "Returns the message headers as an array.\n\nThe ID can be set to `latest` to return the latest message headers.",
+        "description": "Returns the message headers as an array. Note that header keys are returned alphabetically.\n\nThe ID can be set to `latest` to return the latest message headers.",
         "produces": [
           "application/json"
         ],
@@ -99,10 +103,11 @@
           "message"
         ],
         "summary": "Get message headers",
-        "operationId": "Headers",
+        "operationId": "GetHeadersParams",
         "parameters": [
           {
             "type": "string",
+            "example": "4oRBnPtCXgAqZniRhzLNmS",
             "description": "Message database ID or \"latest\"",
             "name": "ID",
             "in": "path",
@@ -111,20 +116,23 @@
         ],
         "responses": {
           "200": {
-            "description": "MessageHeaders",
+            "description": "MessageHeadersResponse",
             "schema": {
-              "$ref": "#/definitions/MessageHeaders"
+              "$ref": "#/definitions/MessageHeadersResponse"
             }
           },
-          "default": {
+          "400": {
             "$ref": "#/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/responses/NotFoundResponse"
           }
         }
       }
     },
     "/api/v1/message/{ID}/html-check": {
       "get": {
-        "description": "Returns the summary of the message HTML checker.",
+        "description": "Returns the summary of the message HTML checker.\n\nThe ID can be set to `latest` to return the latest message.",
         "produces": [
           "application/json"
         ],
@@ -136,10 +144,11 @@
           "Other"
         ],
         "summary": "HTML check",
-        "operationId": "HTMLCheck",
+        "operationId": "HTMLCheckParams",
         "parameters": [
           {
             "type": "string",
+            "example": "4oRBnPtCXgAqZniRhzLNmS",
             "description": "Message database ID or \"latest\"",
             "name": "ID",
             "in": "path",
@@ -153,15 +162,18 @@
               "$ref": "#/definitions/HTMLCheckResponse"
             }
           },
-          "default": {
+          "400": {
             "$ref": "#/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/responses/NotFoundResponse"
           }
         }
       }
     },
     "/api/v1/message/{ID}/link-check": {
       "get": {
-        "description": "Returns the summary of the message Link checker.",
+        "description": "Returns the summary of the message Link checker.\n\nThe ID can be set to `latest` to return the latest message.",
         "produces": [
           "application/json"
         ],
@@ -173,10 +185,11 @@
           "Other"
         ],
         "summary": "Link check",
-        "operationId": "LinkCheck",
+        "operationId": "LinkCheckParams",
         "parameters": [
           {
             "type": "string",
+            "example": "4oRBnPtCXgAqZniRhzLNmS",
             "description": "Message database ID or \"latest\"",
             "name": "ID",
             "in": "path",
@@ -185,6 +198,7 @@
           {
             "type": "string",
             "default": "false",
+            "example": "false",
             "x-go-name": "Follow",
             "description": "Follow redirects",
             "name": "follow",
@@ -198,15 +212,18 @@
               "$ref": "#/definitions/LinkCheckResponse"
             }
           },
-          "default": {
+          "400": {
             "$ref": "#/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/responses/NotFoundResponse"
           }
         }
       }
     },
     "/api/v1/message/{ID}/part/{PartID}": {
       "get": {
-        "description": "This will return the attachment part using the appropriate Content-Type.",
+        "description": "This will return the attachment part using the appropriate Content-Type.\n\nThe ID can be set to `latest` to reference the latest message.",
         "produces": [
           "application/*",
           "image/*",
@@ -220,17 +237,19 @@
           "message"
         ],
         "summary": "Get message attachment",
-        "operationId": "Attachment",
+        "operationId": "AttachmentParams",
         "parameters": [
           {
             "type": "string",
-            "description": "Message database ID",
+            "example": "4oRBnPtCXgAqZniRhzLNmS",
+            "description": "Message database ID or \"latest\"",
             "name": "ID",
             "in": "path",
             "required": true
           },
           {
             "type": "string",
+            "example": "2",
             "description": "Attachment part ID",
             "name": "PartID",
             "in": "path",
@@ -241,15 +260,18 @@
           "200": {
             "$ref": "#/responses/BinaryResponse"
           },
-          "default": {
+          "400": {
             "$ref": "#/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/responses/NotFoundResponse"
           }
         }
       }
     },
     "/api/v1/message/{ID}/part/{PartID}/thumb": {
       "get": {
-        "description": "This will return a cropped 180x120 JPEG thumbnail of an image attachment.\nIf the image is smaller than 180x120 then the image is padded. If the attachment is not an image then a blank image is returned.",
+        "description": "This will return a cropped 180x120 JPEG thumbnail of an image attachment.\nIf the image is smaller than 180x120 then the image is padded. If the attachment is not an image then a blank image is returned.\n\nThe ID can be set to `latest` to return the latest message.",
         "produces": [
           "image/jpeg"
         ],
@@ -261,17 +283,19 @@
           "message"
         ],
         "summary": "Get an attachment image thumbnail",
-        "operationId": "Thumbnail",
+        "operationId": "ThumbnailParams",
         "parameters": [
           {
             "type": "string",
-            "description": "Database ID",
+            "example": "4oRBnPtCXgAqZniRhzLNmS",
+            "description": "Message database ID or \"latest\"",
             "name": "ID",
             "in": "path",
             "required": true
           },
           {
             "type": "string",
+            "example": "2",
             "description": "Attachment part ID",
             "name": "PartID",
             "in": "path",
@@ -282,7 +306,7 @@
           "200": {
             "$ref": "#/responses/BinaryResponse"
           },
-          "default": {
+          "400": {
             "$ref": "#/responses/ErrorResponse"
           }
         }
@@ -302,10 +326,11 @@
           "message"
         ],
         "summary": "Get message source",
-        "operationId": "Raw",
+        "operationId": "DownloadRawParams",
         "parameters": [
           {
             "type": "string",
+            "example": "4oRBnPtCXgAqZniRhzLNmS",
             "description": "Message database ID or \"latest\"",
             "name": "ID",
             "in": "path",
@@ -316,15 +341,18 @@
           "200": {
             "$ref": "#/responses/TextResponse"
           },
-          "default": {
+          "400": {
             "$ref": "#/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/responses/NotFoundResponse"
           }
         }
       }
     },
     "/api/v1/message/{ID}/release": {
       "post": {
-        "description": "Release a message via a pre-configured external SMTP server. This is only enabled if message relaying has been configured.",
+        "description": "Release a message via a pre-configured external SMTP server. This is only enabled if message relaying has been configured.\n\nThe ID can be set to `latest` to reference the latest message.",
         "consumes": [
           "application/json"
         ],
@@ -339,10 +367,11 @@
           "message"
         ],
         "summary": "Release message",
-        "operationId": "ReleaseMessage",
+        "operationId": "ReleaseMessageParams",
         "parameters": [
           {
             "type": "string",
+            "example": "4oRBnPtCXgAqZniRhzLNmS",
             "description": "Message database ID",
             "name": "ID",
             "in": "path",
@@ -352,7 +381,23 @@
             "name": "Body",
             "in": "body",
             "schema": {
-              "$ref": "#/definitions/releaseMessageRequestBody"
+              "type": "object",
+              "required": [
+                "To"
+              ],
+              "properties": {
+                "To": {
+                  "description": "Array of email addresses to relay the message to",
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "example": [
+                    "user1@example.com",
+                    "user2@example.com"
+                  ]
+                }
+              }
             }
           }
         ],
@@ -360,15 +405,18 @@
           "200": {
             "$ref": "#/responses/OKResponse"
           },
-          "default": {
+          "400": {
             "$ref": "#/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/responses/NotFoundResponse"
           }
         }
       }
     },
     "/api/v1/message/{ID}/sa-check": {
       "get": {
-        "description": "Returns the SpamAssassin summary (if enabled) of the message.",
+        "description": "Returns the SpamAssassin summary (if enabled) of the message.\n\nThe ID can be set to `latest` to return the latest message.",
         "produces": [
           "application/json"
         ],
@@ -380,10 +428,11 @@
           "Other"
         ],
         "summary": "SpamAssassin check",
-        "operationId": "SpamAssassinCheck",
+        "operationId": "SpamAssassinCheckParams",
         "parameters": [
           {
             "type": "string",
+            "example": "4oRBnPtCXgAqZniRhzLNmS",
             "description": "Message database ID or \"latest\"",
             "name": "ID",
             "in": "path",
@@ -397,8 +446,11 @@
               "$ref": "#/definitions/SpamAssassinResponse"
             }
           },
-          "default": {
+          "400": {
             "$ref": "#/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/responses/NotFoundResponse"
           }
         }
       }
@@ -417,19 +469,25 @@
           "messages"
         ],
         "summary": "List messages",
-        "operationId": "GetMessages",
+        "operationId": "GetMessagesParams",
         "parameters": [
           {
             "type": "integer",
+            "format": "int64",
             "default": 0,
+            "example": 100,
+            "x-go-name": "Start",
             "description": "Pagination offset",
             "name": "start",
             "in": "query"
           },
           {
             "type": "integer",
+            "format": "int64",
             "default": 50,
-            "description": "Limit results",
+            "example": 50,
+            "x-go-name": "Limit",
+            "description": "Limit number of results",
             "name": "limit",
             "in": "query"
           }
@@ -438,7 +496,7 @@
           "200": {
             "$ref": "#/responses/MessagesSummaryResponse"
           },
-          "default": {
+          "400": {
             "$ref": "#/responses/ErrorResponse"
           }
         }
@@ -459,13 +517,32 @@
           "messages"
         ],
         "summary": "Set read status",
-        "operationId": "SetReadStatus",
+        "operationId": "SetReadStatusParams",
         "parameters": [
           {
             "name": "Body",
             "in": "body",
             "schema": {
-              "$ref": "#/definitions/setReadStatusRequestBody"
+              "type": "object",
+              "properties": {
+                "IDs": {
+                  "description": "Array of message database IDs",
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "example": [
+                    "4oRBnPtCXgAqZniRhzLNmS",
+                    "hXayS6wnCgNnt6aFTvmOF6"
+                  ]
+                },
+                "Read": {
+                  "description": "Read status",
+                  "type": "boolean",
+                  "default": false,
+                  "example": true
+                }
+              }
             }
           }
         ],
@@ -473,7 +550,7 @@
           "200": {
             "$ref": "#/responses/OKResponse"
           },
-          "default": {
+          "400": {
             "$ref": "#/responses/ErrorResponse"
           }
         }
@@ -494,13 +571,27 @@
           "messages"
         ],
         "summary": "Delete messages",
-        "operationId": "DeleteMessages",
+        "operationId": "DeleteMessagesParams",
         "parameters": [
           {
+            "description": "Delete request",
             "name": "Body",
             "in": "body",
             "schema": {
-              "$ref": "#/definitions/DeleteRequest"
+              "type": "object",
+              "properties": {
+                "IDs": {
+                  "description": "Array of message database IDs",
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "example": [
+                    "4oRBnPtCXgAqZniRhzLNmS",
+                    "hXayS6wnCgNnt6aFTvmOF6"
+                  ]
+                }
+              }
             }
           }
         ],
@@ -508,7 +599,7 @@
           "200": {
             "$ref": "#/responses/OKResponse"
           },
-          "default": {
+          "400": {
             "$ref": "#/responses/ErrorResponse"
           }
         }
@@ -528,32 +619,37 @@
           "messages"
         ],
         "summary": "Search messages",
-        "operationId": "MessagesSummary",
+        "operationId": "SearchParams",
         "parameters": [
           {
             "type": "string",
+            "example": "search words",
+            "x-go-name": "Query",
             "description": "Search query",
             "name": "query",
             "in": "query",
             "required": true
           },
           {
-            "type": "integer",
-            "default": 0,
+            "type": "string",
+            "example": "100",
+            "x-go-name": "Start",
             "description": "Pagination offset",
             "name": "start",
             "in": "query"
           },
           {
-            "type": "integer",
-            "default": 50,
+            "type": "string",
+            "example": "50",
+            "x-go-name": "Limit",
             "description": "Limit results",
             "name": "limit",
             "in": "query"
           },
           {
             "type": "string",
-            "description": "[Timezone identifier](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) used specifically for `before:` \u0026 `after:` searches (eg: \"Pacific/Auckland\").",
+            "x-go-name": "TZ",
+            "description": "[Timezone identifier](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) used only for `before:` \u0026 `after:` searches (eg: \"Pacific/Auckland\").",
             "name": "tz",
             "in": "query"
           }
@@ -562,7 +658,7 @@
           "200": {
             "$ref": "#/responses/MessagesSummaryResponse"
           },
-          "default": {
+          "400": {
             "$ref": "#/responses/ErrorResponse"
           }
         }
@@ -580,10 +676,12 @@
           "messages"
         ],
         "summary": "Delete messages by search",
-        "operationId": "DeleteSearch",
+        "operationId": "DeleteSearchParams",
         "parameters": [
           {
             "type": "string",
+            "example": "search words",
+            "x-go-name": "Query",
             "description": "Search query",
             "name": "query",
             "in": "query",
@@ -591,7 +689,8 @@
           },
           {
             "type": "string",
-            "description": "[Timezone identifier](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) used specifically for `before:` \u0026 `after:` searches (eg: \"Pacific/Auckland\").",
+            "x-go-name": "TZ",
+            "description": "[Timezone identifier](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) used only for `before:` \u0026 `after:` searches (eg: \"Pacific/Auckland\").",
             "name": "tz",
             "in": "query"
           }
@@ -600,7 +699,7 @@
           "200": {
             "$ref": "#/responses/OKResponse"
           },
-          "default": {
+          "400": {
             "$ref": "#/responses/ErrorResponse"
           }
         }
@@ -623,7 +722,7 @@
           "message"
         ],
         "summary": "Send a message",
-        "operationId": "SendMessage",
+        "operationId": "SendMessageParams",
         "parameters": [
           {
             "name": "Body",
@@ -637,7 +736,7 @@
           "200": {
             "$ref": "#/responses/sendMessageResponse"
           },
-          "default": {
+          "400": {
             "$ref": "#/responses/jsonErrorResponse"
           }
         }
@@ -662,7 +761,7 @@
           "200": {
             "$ref": "#/responses/ArrayResponse"
           },
-          "default": {
+          "400": {
             "$ref": "#/responses/ErrorResponse"
           }
         }
@@ -683,13 +782,41 @@
           "tags"
         ],
         "summary": "Set message tags",
-        "operationId": "SetTags",
+        "operationId": "SetTagsParams",
         "parameters": [
           {
             "name": "Body",
             "in": "body",
             "schema": {
-              "$ref": "#/definitions/setTagsRequestBody"
+              "type": "object",
+              "required": [
+                "Tags",
+                "IDs"
+              ],
+              "properties": {
+                "IDs": {
+                  "description": "Array of message database IDs",
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "example": [
+                    "4oRBnPtCXgAqZniRhzLNmS",
+                    "hXayS6wnCgNnt6aFTvmOF6"
+                  ]
+                },
+                "Tags": {
+                  "description": "Array of tag names to set",
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "example": [
+                    "Tag 1",
+                    "Tag 2"
+                  ]
+                }
+              }
             }
           }
         ],
@@ -697,15 +824,15 @@
           "200": {
             "$ref": "#/responses/OKResponse"
           },
-          "default": {
+          "400": {
             "$ref": "#/responses/ErrorResponse"
           }
         }
       }
     },
-    "/api/v1/tags/{tag}": {
+    "/api/v1/tags/{Tag}": {
       "put": {
-        "description": "Renames a tag.",
+        "description": "Renames an existing tag.",
         "produces": [
           "text/plain"
         ],
@@ -717,34 +844,45 @@
           "tags"
         ],
         "summary": "Rename a tag",
-        "operationId": "RenameTag",
+        "operationId": "RenameTagParams",
         "parameters": [
+          {
+            "type": "string",
+            "example": "Old name",
+            "description": "The url-encoded tag name to rename",
+            "name": "Tag",
+            "in": "path",
+            "required": true
+          },
           {
             "name": "Body",
             "in": "body",
             "schema": {
-              "$ref": "#/definitions/renameTagRequestBody"
+              "type": "object",
+              "required": [
+                "Name"
+              ],
+              "properties": {
+                "Name": {
+                  "description": "New name",
+                  "type": "string",
+                  "example": "New name"
+                }
+              }
             }
-          },
-          {
-            "type": "string",
-            "description": "The url-encoded tag name to rename",
-            "name": "tag",
-            "in": "path",
-            "required": true
           }
         ],
         "responses": {
           "200": {
             "$ref": "#/responses/OKResponse"
           },
-          "default": {
+          "400": {
             "$ref": "#/responses/ErrorResponse"
           }
         }
       },
       "delete": {
-        "description": "Deletes a tag. This will not delete any messages with this tag.",
+        "description": "Deletes a tag. This will not delete any messages with the tag, but will remove the tag from any messages containing the tag.",
         "produces": [
           "text/plain"
         ],
@@ -756,12 +894,13 @@
           "tags"
         ],
         "summary": "Delete a tag",
-        "operationId": "DeleteTag",
+        "operationId": "DeleteTagParams",
         "parameters": [
           {
             "type": "string",
+            "example": "My tag",
             "description": "The url-encoded tag name to delete",
-            "name": "tag",
+            "name": "Tag",
             "in": "path",
             "required": true
           }
@@ -770,7 +909,7 @@
           "200": {
             "$ref": "#/responses/OKResponse"
           },
-          "default": {
+          "400": {
             "$ref": "#/responses/ErrorResponse"
           }
         }
@@ -795,7 +934,7 @@
           "200": {
             "$ref": "#/responses/WebUIConfigurationResponse"
           },
-          "default": {
+          "400": {
             "$ref": "#/responses/ErrorResponse"
           }
         }
@@ -815,11 +954,12 @@
           "testing"
         ],
         "summary": "Render message HTML part",
-        "operationId": "GetMessageHTML",
+        "operationId": "GetMessageHTMLParams",
         "parameters": [
           {
             "type": "string",
-            "description": "Database ID or latest",
+            "example": "4oRBnPtCXgAqZniRhzLNmS",
+            "description": "Message database ID or \"latest\"",
             "name": "ID",
             "in": "path",
             "required": true
@@ -829,8 +969,11 @@
           "200": {
             "$ref": "#/responses/HTMLResponse"
           },
-          "default": {
+          "400": {
             "$ref": "#/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/responses/NotFoundResponse"
           }
         }
       }
@@ -849,11 +992,12 @@
           "testing"
         ],
         "summary": "Render message text part",
-        "operationId": "GetMessageText",
+        "operationId": "GetMessageTextParams",
         "parameters": [
           {
             "type": "string",
-            "description": "Database ID or latest",
+            "example": "4oRBnPtCXgAqZniRhzLNmS",
+            "description": "Message database ID or \"latest\"",
             "name": "ID",
             "in": "path",
             "required": true
@@ -863,8 +1007,11 @@
           "200": {
             "$ref": "#/responses/TextResponse"
           },
-          "default": {
+          "400": {
             "$ref": "#/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/responses/NotFoundResponse"
           }
         }
       }
@@ -995,25 +1142,6 @@
         }
       },
       "x-go-package": "github.com/axllent/mailpit/internal/storage"
-    },
-    "DeleteRequest": {
-      "description": "Delete request",
-      "type": "object",
-      "properties": {
-        "IDs": {
-          "description": "Array of message database IDs",
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "example": [
-            "5dec4247-812e-4b77-9101-e25ad406e9ea",
-            "8ac66bbc-2d9a-4c41-ad99-00aa75fa674e"
-          ]
-        }
-      },
-      "x-go-name": "deleteMessagesRequestBody",
-      "x-go-package": "github.com/axllent/mailpit/server/apiv1"
     },
     "HTMLCheckResponse": {
       "description": "Response represents the HTML check response struct",
@@ -1337,7 +1465,7 @@
       },
       "x-go-package": "github.com/axllent/mailpit/internal/storage"
     },
-    "MessageHeaders": {
+    "MessageHeadersResponse": {
       "description": "Message headers",
       "type": "object",
       "additionalProperties": {
@@ -1503,7 +1631,7 @@
         "ID": {
           "description": "Database ID",
           "type": "string",
-          "example": "iAfZVVe2UQFNSG5BAjgYwa"
+          "example": "iAfZVVe2UQfNSG5BAjgYwa"
         }
       },
       "x-go-package": "github.com/axllent/mailpit/server/apiv1"
@@ -1745,102 +1873,15 @@
       },
       "x-go-name": "webUIConfiguration",
       "x-go-package": "github.com/axllent/mailpit/server/apiv1"
-    },
-    "releaseMessageRequestBody": {
-      "description": "Release request",
-      "type": "object",
-      "required": [
-        "To"
-      ],
-      "properties": {
-        "To": {
-          "description": "Array of email addresses to relay the message to",
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "example": [
-            "user1@example.com",
-            "user2@example.com"
-          ]
-        }
-      },
-      "x-go-package": "github.com/axllent/mailpit/server/apiv1"
-    },
-    "renameTagRequestBody": {
-      "description": "Rename tag request",
-      "type": "object",
-      "required": [
-        "Name"
-      ],
-      "properties": {
-        "Name": {
-          "description": "New name",
-          "type": "string",
-          "example": "New name"
-        }
-      },
-      "x-go-package": "github.com/axllent/mailpit/server/apiv1"
-    },
-    "setReadStatusRequestBody": {
-      "description": "Set read status request",
-      "type": "object",
-      "properties": {
-        "IDs": {
-          "description": "Array of message database IDs",
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "example": [
-            "5dec4247-812e-4b77-9101-e25ad406e9ea",
-            "8ac66bbc-2d9a-4c41-ad99-00aa75fa674e"
-          ]
-        },
-        "Read": {
-          "description": "Read status",
-          "type": "boolean",
-          "default": false,
-          "example": true
-        }
-      },
-      "x-go-package": "github.com/axllent/mailpit/server/apiv1"
-    },
-    "setTagsRequestBody": {
-      "description": "Set tags request",
-      "type": "object",
-      "required": [
-        "Tags",
-        "IDs"
-      ],
-      "properties": {
-        "IDs": {
-          "description": "Array of message database IDs",
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "example": [
-            "5dec4247-812e-4b77-9101-e25ad406e9ea",
-            "8ac66bbc-2d9a-4c41-ad99-00aa75fa674e"
-          ]
-        },
-        "Tags": {
-          "description": "Array of tag names to set",
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "example": [
-            "Tag 1",
-            "Tag 2"
-          ]
-        }
-      },
-      "x-go-package": "github.com/axllent/mailpit/server/apiv1"
     }
   },
   "responses": {
+    "AppInfoResponse": {
+      "description": "Application information",
+      "schema": {
+        "$ref": "#/definitions/AppInformation"
+      }
+    },
     "ArrayResponse": {
       "description": "Plain JSON array response",
       "schema": {
@@ -1851,13 +1892,13 @@
       }
     },
     "BinaryResponse": {
-      "description": "Binary data response inherits the attachment's content type.",
+      "description": "Binary data response which inherits the attachment's content type.",
       "schema": {
         "type": "string"
       }
     },
     "ErrorResponse": {
-      "description": "HTTP error response will return with a \u003e= 400 response code",
+      "description": "Server error will return with a 400 status code\nwith the error message in the body",
       "schema": {
         "type": "string"
       }
@@ -1868,16 +1909,16 @@
         "type": "string"
       }
     },
-    "InfoResponse": {
-      "description": "Application information",
-      "schema": {
-        "$ref": "#/definitions/AppInformation"
-      }
-    },
     "MessagesSummaryResponse": {
-      "description": "Message summary",
+      "description": "Summary of messages",
       "schema": {
         "$ref": "#/definitions/MessagesSummary"
+      }
+    },
+    "NotFoundResponse": {
+      "description": "Not found error will return a 404 status code",
+      "schema": {
+        "type": "string"
       }
     },
     "OKResponse": {
@@ -1893,7 +1934,7 @@
       }
     },
     "WebUIConfigurationResponse": {
-      "description": "Web UI configuration",
+      "description": "Web UI configuration response",
       "schema": {
         "$ref": "#/definitions/WebUIConfiguration"
       }

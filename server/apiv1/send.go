@@ -17,7 +17,7 @@ import (
 	"github.com/jhillyerd/enmime"
 )
 
-// swagger:parameters SendMessage
+// swagger:parameters SendMessageParams
 type sendMessageParams struct {
 	// in: body
 	Body *SendRequest
@@ -108,13 +108,6 @@ type SendRequest struct {
 	Headers map[string]string
 }
 
-// SendMessageConfirmation struct
-type SendMessageConfirmation struct {
-	// Database ID
-	// example: iAfZVVe2UQFNSG5BAjgYwa
-	ID string
-}
-
 // JSONErrorMessage struct
 type JSONErrorMessage struct {
 	// Error message
@@ -122,25 +115,41 @@ type JSONErrorMessage struct {
 	Error string
 }
 
+// Confirmation message for HTTP send API
+// swagger:response sendMessageResponse
+type sendMessageResponse struct {
+	// Response for sending messages via the HTTP API
+	//
+	// in: body
+	Body SendMessageConfirmation
+}
+
+// SendMessageConfirmation struct
+type SendMessageConfirmation struct {
+	// Database ID
+	// example: iAfZVVe2UQfNSG5BAjgYwa
+	ID string
+}
+
 // SendMessageHandler handles HTTP requests to send a new message
 func SendMessageHandler(w http.ResponseWriter, r *http.Request) {
-	// swagger:route POST /api/v1/send message SendMessage
+	// swagger:route POST /api/v1/send message SendMessageParams
 	//
 	// # Send a message
 	//
 	// Send a message via the HTTP API.
 	//
 	//	Consumes:
-	//	- application/json
+	//	  - application/json
 	//
 	//	Produces:
-	//	- application/json
+	//	  - application/json
 	//
 	//	Schemes: http, https
 	//
 	//	Responses:
-	//		200: sendMessageResponse
-	//		default: jsonErrorResponse
+	//	  200: sendMessageResponse
+	//	  400: jsonErrorResponse
 
 	if config.DemoMode {
 		httpJSONError(w, "this functionality has been disabled for demonstration purposes")

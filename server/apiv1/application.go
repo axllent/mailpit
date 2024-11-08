@@ -6,7 +6,40 @@ import (
 	"net/http"
 
 	"github.com/axllent/mailpit/config"
+	"github.com/axllent/mailpit/internal/stats"
 )
+
+// Application information
+// swagger:response AppInfoResponse
+type appInfoResponse struct {
+	// Application information
+	//
+	// in: body
+	Body stats.AppInformation
+}
+
+// AppInfo returns some basic details about the running app, and latest release.
+func AppInfo(w http.ResponseWriter, _ *http.Request) {
+	// swagger:route GET /api/v1/info application AppInformation
+	//
+	// # Get application information
+	//
+	// Returns basic runtime information, message totals and latest release version.
+	//
+	//	Produces:
+	//	- application/json
+	//
+	//	Schemes: http, https
+	//
+	//	Responses:
+	//		200: AppInfoResponse
+	//		400: ErrorResponse
+
+	w.Header().Add("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(stats.Load()); err != nil {
+		httpError(w, err.Error())
+	}
+}
 
 // Response includes global web UI settings
 //
@@ -38,6 +71,15 @@ type webUIConfiguration struct {
 	DuplicatesIgnored bool
 }
 
+// Web UI configuration response
+// swagger:response WebUIConfigurationResponse
+type webUIConfigurationResponse struct {
+	// Web UI configuration settings
+	//
+	// in: body
+	Body webUIConfiguration
+}
+
 // WebUIConfig returns configuration settings for the web UI.
 func WebUIConfig(w http.ResponseWriter, _ *http.Request) {
 	// swagger:route GET /api/v1/webui application WebUIConfiguration
@@ -48,13 +90,14 @@ func WebUIConfig(w http.ResponseWriter, _ *http.Request) {
 	// Intended for web UI only!
 	//
 	//	Produces:
-	//	- application/json
+	//	 - application/json
 	//
 	//	Schemes: http, https
 	//
 	//	Responses:
-	//		200: WebUIConfigurationResponse
-	//		default: ErrorResponse
+	//	  200: WebUIConfigurationResponse
+	//	  400: ErrorResponse
+
 	conf := webUIConfiguration{}
 
 	conf.Label = config.Label

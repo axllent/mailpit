@@ -81,8 +81,8 @@ func Listen() {
 	r.HandleFunc(config.Webroot+"view/latest", middleWareFunc(handlers.RedirectToLatestMessage)).Methods("GET")
 
 	// frontend testing
-	r.HandleFunc(config.Webroot+"view/{id}.html", middleWareFunc(handlers.GetMessageHTML)).Methods("GET")
-	r.HandleFunc(config.Webroot+"view/{id}.txt", middleWareFunc(handlers.GetMessageText)).Methods("GET")
+	r.HandleFunc(config.Webroot+"view/{id}.html", middleWareFunc(apiv1.GetMessageHTML)).Methods("GET")
+	r.HandleFunc(config.Webroot+"view/{id}.txt", middleWareFunc(apiv1.GetMessageText)).Methods("GET")
 
 	// web UI via virtual index.html
 	r.PathPrefix(config.Webroot + "view/").Handler(middleWareFunc(index)).Methods("GET")
