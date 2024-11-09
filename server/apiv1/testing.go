@@ -17,7 +17,6 @@ type getMessageHTMLParams struct {
 	//
 	// in: path
 	// required: true
-	// example: 4oRBnPtCXgAqZniRhzLNmS
 	ID string
 }
 
@@ -80,7 +79,6 @@ type getMessageTextParams struct {
 	//
 	// in: path
 	// required: true
-	// example: 4oRBnPtCXgAqZniRhzLNmS
 	ID string
 }
 

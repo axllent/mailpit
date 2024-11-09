@@ -17,7 +17,6 @@ type getMessagesParams struct {
 	// required: false
 	// default: 0
 	// type: integer
-	// example: 100
 	Start int `json:"start"`
 
 	// Limit number of results
@@ -27,7 +26,6 @@ type getMessagesParams struct {
 	// required: false
 	// default: 50
 	// type: integer
-	// example: 50
 	Limit int `json:"limit"`
 }
 
@@ -261,7 +259,6 @@ type searchParams struct {
 	// in: query
 	// required: true
 	// type: string
-	// example: search words
 	Query string `json:"query"`
 
 	// Pagination offset
@@ -269,7 +266,6 @@ type searchParams struct {
 	// in: query
 	// required: false
 	// type integer
-	// example: 100
 	Start string `json:"start"`
 
 	// Limit results
@@ -277,7 +273,6 @@ type searchParams struct {
 	// in: query
 	// required: false
 	// type integer
-	// example: 50
 	Limit string `json:"limit"`
 
 	// [Timezone identifier](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) used only for `before:` & `after:` searches (eg: "Pacific/Auckland").
@@ -344,7 +339,6 @@ type deleteSearchParams struct {
 	// in: query
 	// required: true
 	// type: string
-	// example: search words
 	Query string `json:"query"`
 
 	// [Timezone identifier](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) used only for `before:` & `after:` searches (eg: "Pacific/Auckland").

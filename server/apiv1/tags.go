@@ -105,7 +105,6 @@ type renameTagParams struct {
 	// in: path
 	// required: true
 	// type: string
-	// example: Old name
 	Tag string
 
 	// in: body
@@ -168,7 +167,6 @@ type deleteTagParams struct {
 	//
 	// in: path
 	// required: true
-	// example: My tag
 	Tag string
 }
 

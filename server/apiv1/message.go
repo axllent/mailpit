@@ -17,7 +17,6 @@ type getMessageParams struct {
 	//
 	// in: path
 	// required: true
-	// example: 4oRBnPtCXgAqZniRhzLNmS
 	ID string
 }
 
@@ -73,7 +72,6 @@ type getHeadersParams struct {
 	//
 	// in: path
 	// required: true
-	// example: 4oRBnPtCXgAqZniRhzLNmS
 	ID string
 }
 
@@ -140,14 +138,12 @@ type attachmentParams struct {
 	//
 	// in: path
 	// required: true
-	// example: 4oRBnPtCXgAqZniRhzLNmS
 	ID string
 
 	// Attachment part ID
 	//
 	// in: path
 	// required: true
-	// example: 2
 	PartID string
 }
 
@@ -199,7 +195,6 @@ type downloadRawParams struct {
 	//
 	// in: path
 	// required: true
-	// example: 4oRBnPtCXgAqZniRhzLNmS
 	ID string
 }
 

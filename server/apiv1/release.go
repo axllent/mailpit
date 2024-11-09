@@ -24,7 +24,6 @@ type releaseMessageParams struct {
 	// in: path
 	// description: Message database ID
 	// required: true
-	// example: 4oRBnPtCXgAqZniRhzLNmS
 	ID string
 
 	// in: body

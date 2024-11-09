@@ -66,7 +66,6 @@
         "parameters": [
           {
             "type": "string",
-            "example": "4oRBnPtCXgAqZniRhzLNmS",
             "description": "Message database ID or \"latest\"",
             "name": "ID",
             "in": "path",
@@ -107,7 +106,6 @@
         "parameters": [
           {
             "type": "string",
-            "example": "4oRBnPtCXgAqZniRhzLNmS",
             "description": "Message database ID or \"latest\"",
             "name": "ID",
             "in": "path",
@@ -148,7 +146,6 @@
         "parameters": [
           {
             "type": "string",
-            "example": "4oRBnPtCXgAqZniRhzLNmS",
             "description": "Message database ID or \"latest\"",
             "name": "ID",
             "in": "path",
@@ -189,7 +186,6 @@
         "parameters": [
           {
             "type": "string",
-            "example": "4oRBnPtCXgAqZniRhzLNmS",
             "description": "Message database ID or \"latest\"",
             "name": "ID",
             "in": "path",
@@ -198,7 +194,6 @@
           {
             "type": "string",
             "default": "false",
-            "example": "false",
             "x-go-name": "Follow",
             "description": "Follow redirects",
             "name": "follow",
@@ -241,7 +236,6 @@
         "parameters": [
           {
             "type": "string",
-            "example": "4oRBnPtCXgAqZniRhzLNmS",
             "description": "Message database ID or \"latest\"",
             "name": "ID",
             "in": "path",
@@ -249,7 +243,6 @@
           },
           {
             "type": "string",
-            "example": "2",
             "description": "Attachment part ID",
             "name": "PartID",
             "in": "path",
@@ -287,7 +280,6 @@
         "parameters": [
           {
             "type": "string",
-            "example": "4oRBnPtCXgAqZniRhzLNmS",
             "description": "Message database ID or \"latest\"",
             "name": "ID",
             "in": "path",
@@ -295,7 +287,6 @@
           },
           {
             "type": "string",
-            "example": "2",
             "description": "Attachment part ID",
             "name": "PartID",
             "in": "path",
@@ -330,7 +321,6 @@
         "parameters": [
           {
             "type": "string",
-            "example": "4oRBnPtCXgAqZniRhzLNmS",
             "description": "Message database ID or \"latest\"",
             "name": "ID",
             "in": "path",
@@ -371,7 +361,6 @@
         "parameters": [
           {
             "type": "string",
-            "example": "4oRBnPtCXgAqZniRhzLNmS",
             "description": "Message database ID",
             "name": "ID",
             "in": "path",
@@ -432,7 +421,6 @@
         "parameters": [
           {
             "type": "string",
-            "example": "4oRBnPtCXgAqZniRhzLNmS",
             "description": "Message database ID or \"latest\"",
             "name": "ID",
             "in": "path",
@@ -475,7 +463,6 @@
             "type": "integer",
             "format": "int64",
             "default": 0,
-            "example": 100,
             "x-go-name": "Start",
             "description": "Pagination offset",
             "name": "start",
@@ -485,7 +472,6 @@
             "type": "integer",
             "format": "int64",
             "default": 50,
-            "example": 50,
             "x-go-name": "Limit",
             "description": "Limit number of results",
             "name": "limit",
@@ -623,7 +609,6 @@
         "parameters": [
           {
             "type": "string",
-            "example": "search words",
             "x-go-name": "Query",
             "description": "Search query",
             "name": "query",
@@ -632,7 +617,6 @@
           },
           {
             "type": "string",
-            "example": "100",
             "x-go-name": "Start",
             "description": "Pagination offset",
             "name": "start",
@@ -640,7 +624,6 @@
           },
           {
             "type": "string",
-            "example": "50",
             "x-go-name": "Limit",
             "description": "Limit results",
             "name": "limit",
@@ -680,7 +663,6 @@
         "parameters": [
           {
             "type": "string",
-            "example": "search words",
             "x-go-name": "Query",
             "description": "Search query",
             "name": "query",
@@ -848,7 +830,6 @@
         "parameters": [
           {
             "type": "string",
-            "example": "Old name",
             "description": "The url-encoded tag name to rename",
             "name": "Tag",
             "in": "path",
@@ -898,7 +879,6 @@
         "parameters": [
           {
             "type": "string",
-            "example": "My tag",
             "description": "The url-encoded tag name to delete",
             "name": "Tag",
             "in": "path",
@@ -958,7 +938,6 @@
         "parameters": [
           {
             "type": "string",
-            "example": "4oRBnPtCXgAqZniRhzLNmS",
             "description": "Message database ID or \"latest\"",
             "name": "ID",
             "in": "path",
@@ -996,7 +975,6 @@
         "parameters": [
           {
             "type": "string",
-            "example": "4oRBnPtCXgAqZniRhzLNmS",
             "description": "Message database ID or \"latest\"",
             "name": "ID",
             "in": "path",

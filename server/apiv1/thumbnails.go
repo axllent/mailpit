@@ -28,14 +28,12 @@ type thumbnailParams struct {
 	//
 	// in: path
 	// required: true
-	// example: 4oRBnPtCXgAqZniRhzLNmS
 	ID string
 
 	// Attachment part ID
 	//
 	// in: path
 	// required: true
-	// example: 2
 	PartID string
 }
 

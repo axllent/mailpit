@@ -22,7 +22,6 @@ type htmlCheckParams struct {
 	// in: path
 	// description: Message database ID or "latest"
 	// required: true
-	// example: 4oRBnPtCXgAqZniRhzLNmS
 	ID string
 }
 
@@ -100,7 +99,6 @@ type linkCheckParams struct {
 	//
 	// in: path
 	// required: true
-	// example: 4oRBnPtCXgAqZniRhzLNmS
 	ID string
 
 	// Follow redirects
@@ -108,7 +106,6 @@ type linkCheckParams struct {
 	// in: query
 	// required: false
 	// default: false
-	// example: false
 	Follow string `json:"follow"`
 }
 
@@ -179,7 +176,6 @@ type spamAssassinCheckParams struct {
 	//
 	// in: path
 	// required: true
-	// example: 4oRBnPtCXgAqZniRhzLNmS
 	ID string
 }
 
