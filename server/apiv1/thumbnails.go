@@ -22,35 +22,41 @@ var (
 	thumbHeight = 120
 )
 
+// swagger:parameters ThumbnailParams
+type thumbnailParams struct {
+	// Message database ID or "latest"
+	//
+	// in: path
+	// required: true
+	ID string
+
+	// Attachment part ID
+	//
+	// in: path
+	// required: true
+	PartID string
+}
+
 // Thumbnail returns a thumbnail image for an attachment (images only)
 func Thumbnail(w http.ResponseWriter, r *http.Request) {
-	// swagger:route GET /api/v1/message/{ID}/part/{PartID}/thumb message Thumbnail
+	// swagger:route GET /api/v1/message/{ID}/part/{PartID}/thumb message ThumbnailParams
 	//
 	// # Get an attachment image thumbnail
 	//
 	// This will return a cropped 180x120 JPEG thumbnail of an image attachment.
 	// If the image is smaller than 180x120 then the image is padded. If the attachment is not an image then a blank image is returned.
 	//
+	// The ID can be set to `latest` to return the latest message.
+	//
 	//	Produces:
-	//	- image/jpeg
+	//	  - image/jpeg
 	//
 	//	Schemes: http, https
 	//
-	//	Parameters:
-	//	  + name: ID
-	//	    in: path
-	//	    description: Database ID
-	//	    required: true
-	//	    type: string
-	//	  + name: PartID
-	//	    in: path
-	//	    description: Attachment part ID
-	//	    required: true
-	//	    type: string
-	//
 	//	Responses:
-	//		200: BinaryResponse
-	//		default: ErrorResponse
+	//	  200: BinaryResponse
+	//    400: ErrorResponse
+
 	vars := mux.Vars(r)
 
 	id := vars["id"]

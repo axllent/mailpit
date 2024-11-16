@@ -18,13 +18,13 @@ func GetAllTags(w http.ResponseWriter, _ *http.Request) {
 	// Returns a JSON array of all unique message tags.
 	//
 	//	Produces:
-	//	- application/json
+	//	  - application/json
 	//
 	//	Schemes: http, https
 	//
 	//	Responses:
-	//		200: ArrayResponse
-	//		default: ErrorResponse
+	//	  200: ArrayResponse
+	//    400: ErrorResponse
 
 	w.Header().Add("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(storage.GetAllTags()); err != nil {
@@ -32,25 +32,43 @@ func GetAllTags(w http.ResponseWriter, _ *http.Request) {
 	}
 }
 
+// swagger:parameters SetTagsParams
+type setTagsParams struct {
+	// in: body
+	Body struct {
+		// Array of tag names to set
+		//
+		// required: true
+		// example: ["Tag 1", "Tag 2"]
+		Tags []string
+
+		// Array of message database IDs
+		//
+		// required: true
+		// example: ["4oRBnPtCXgAqZniRhzLNmS", "hXayS6wnCgNnt6aFTvmOF6"]
+		IDs []string
+	}
+}
+
 // SetMessageTags (method: PUT) will set the tags for all provided IDs
 func SetMessageTags(w http.ResponseWriter, r *http.Request) {
-	// swagger:route PUT /api/v1/tags tags SetTags
+	// swagger:route PUT /api/v1/tags tags SetTagsParams
 	//
 	// # Set message tags
 	//
 	// This will overwrite any existing tags for selected message database IDs. To remove all tags from a message, pass an empty tags array.
 	//
 	//	Consumes:
-	//	- application/json
+	//	  - application/json
 	//
 	//	Produces:
-	//	- text/plain
+	//	  - text/plain
 	//
 	//	Schemes: http, https
 	//
 	//	Responses:
-	//		200: OKResponse
-	//		default: ErrorResponse
+	//	  200: OKResponse
+	//    400: ErrorResponse
 
 	decoder := json.NewDecoder(r.Body)
 
@@ -80,29 +98,41 @@ func SetMessageTags(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write([]byte("ok"))
 }
 
+// swagger:parameters RenameTagParams
+type renameTagParams struct {
+	// The url-encoded tag name to rename
+	//
+	// in: path
+	// required: true
+	// type: string
+	Tag string
+
+	// in: body
+	Body struct {
+		// New name
+		//
+		// required: true
+		// example: New name
+		Name string
+	}
+}
+
 // RenameTag (method: PUT) used to rename a tag
 func RenameTag(w http.ResponseWriter, r *http.Request) {
-	// swagger:route PUT /api/v1/tags/{tag} tags RenameTag
+	// swagger:route PUT /api/v1/tags/{Tag} tags RenameTagParams
 	//
 	// # Rename a tag
 	//
-	// Renames a tag.
+	// Renames an existing tag.
 	//
 	//	Produces:
-	//	- text/plain
+	//	  - text/plain
 	//
 	//	Schemes: http, https
 	//
-	//	Parameters:
-	//	  + name: tag
-	//	    in: path
-	//	    description: The url-encoded tag name to rename
-	//	    required: true
-	//	    type: string
-	//
 	//	Responses:
-	//		200: OKResponse
-	//		default: ErrorResponse
+	//	  200: OKResponse
+	//    400: ErrorResponse
 
 	vars := mux.Vars(r)
 
@@ -131,29 +161,31 @@ func RenameTag(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write([]byte("ok"))
 }
 
+// swagger:parameters DeleteTagParams
+type deleteTagParams struct {
+	// The url-encoded tag name to delete
+	//
+	// in: path
+	// required: true
+	Tag string
+}
+
 // DeleteTag (method: DELETE) used to delete a tag
 func DeleteTag(w http.ResponseWriter, r *http.Request) {
-	// swagger:route DELETE /api/v1/tags/{tag} tags DeleteTag
+	// swagger:route DELETE /api/v1/tags/{Tag} tags DeleteTagParams
 	//
 	// # Delete a tag
 	//
-	// Deletes a tag. This will not delete any messages with this tag.
+	// Deletes a tag. This will not delete any messages with the tag, but will remove the tag from any messages containing the tag.
 	//
 	//	Produces:
-	//	- text/plain
+	//	  - text/plain
 	//
 	//	Schemes: http, https
 	//
-	//	Parameters:
-	//	  + name: tag
-	//	    in: path
-	//	    description: The url-encoded tag name to delete
-	//	    required: true
-	//	    type: string
-	//
 	//	Responses:
-	//		200: OKResponse
-	//		default: ErrorResponse
+	//	  200: OKResponse
+	//    400: ErrorResponse
 
 	vars := mux.Vars(r)
 

@@ -20,7 +20,13 @@ const ctx = await esbuild.context(
             '__VUE_PROD_HYDRATION_MISMATCH_DETAILS__': 'false',
         },
         outdir: "server/ui/dist/",
-        plugins: [pluginVue(), sassPlugin()],
+        plugins: [
+            pluginVue(),
+            sassPlugin({
+                silenceDeprecations: ['import'],
+                quietDeps: true,
+            })
+        ],
         loader: {
             ".svg": "file",
             ".woff": "file",
