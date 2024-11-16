@@ -2,6 +2,17 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.21.3]
+
+### Chore
+- Update Go dependencies
+- Minor UI tweaks
+- Mute Dart Sass deprecation notices
+- Update node dependencies
+- Upgrade Alpine packages on Docker build
+- Add swagger examples & API code restructure
+
+
 ## [v1.21.2]
 
 ### Feature
