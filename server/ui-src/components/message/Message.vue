@@ -476,124 +476,120 @@ export default {
 			</div>
 		</div>
 
-		<nav>
-			<div class="nav nav-tabs my-3" id="nav-tab" role="tablist">
-				<template v-if="message.HTML">
-					<div class="btn-group">
-						<button class="nav-link" id="nav-html-tab" data-bs-toggle="tab" data-bs-target="#nav-html"
-							type="button" role="tab" aria-controls="nav-html" aria-selected="true" ref="navhtml"
-							v-on:click="resizeIFrames()">
-							HTML
+		<nav class="nav nav-tabs my-3 d-print-none" id="nav-tab" role="tablist">
+			<template v-if="message.HTML">
+				<div class="btn-group">
+					<button class="nav-link" id="nav-html-tab" data-bs-toggle="tab" data-bs-target="#nav-html"
+						type="button" role="tab" aria-controls="nav-html" aria-selected="true" ref="navhtml"
+						v-on:click="resizeIFrames()">
+						HTML
+					</button>
+					<button type="button" class="nav-link dropdown-toggle dropdown-toggle-split d-sm-none"
+						data-bs-toggle="dropdown" aria-expanded="false" data-bs-reference="parent">
+						<span class="visually-hidden">Toggle Dropdown</span>
+					</button>
+					<div class="dropdown-menu">
+						<button class="dropdown-item" data-bs-toggle="tab" data-bs-target="#nav-html-source"
+							type="button" role="tab" aria-controls="nav-html-source" aria-selected="false">
+							HTML Source
 						</button>
-						<button type="button" class="nav-link dropdown-toggle dropdown-toggle-split d-sm-none"
-							data-bs-toggle="dropdown" aria-expanded="false" data-bs-reference="parent">
-							<span class="visually-hidden">Toggle Dropdown</span>
-						</button>
-						<div class="dropdown-menu">
-							<button class="dropdown-item" data-bs-toggle="tab" data-bs-target="#nav-html-source"
-								type="button" role="tab" aria-controls="nav-html-source" aria-selected="false">
-								HTML Source
-							</button>
-						</div>
 					</div>
-					<button class="nav-link d-none d-sm-inline" id="nav-html-source-tab" data-bs-toggle="tab"
-						data-bs-target="#nav-html-source" type="button" role="tab" aria-controls="nav-html-source"
-						aria-selected="false">
-						HTML <span class="d-sm-none">Src</span><span class="d-none d-sm-inline">Source</span>
+				</div>
+				<button class="nav-link d-none d-sm-inline" id="nav-html-source-tab" data-bs-toggle="tab"
+					data-bs-target="#nav-html-source" type="button" role="tab" aria-controls="nav-html-source"
+					aria-selected="false">
+					HTML <span class="d-sm-none">Src</span><span class="d-none d-sm-inline">Source</span>
+				</button>
+			</template>
+
+			<button class="nav-link" id="nav-plain-text-tab" data-bs-toggle="tab" data-bs-target="#nav-plain-text"
+				type="button" role="tab" aria-controls="nav-plain-text" aria-selected="false"
+				:class="message.HTML == '' ? 'show' : ''">
+				Text
+			</button>
+			<button class="nav-link" id="nav-headers-tab" data-bs-toggle="tab" data-bs-target="#nav-headers"
+				type="button" role="tab" aria-controls="nav-headers" aria-selected="false">
+				<span class="d-sm-none">Hdrs</span><span class="d-none d-sm-inline">Headers</span>
+			</button>
+			<button class="nav-link" id="nav-raw-tab" data-bs-toggle="tab" data-bs-target="#nav-raw" type="button"
+				role="tab" aria-controls="nav-raw" aria-selected="false">
+				Raw
+			</button>
+			<div class="dropdown d-xl-none" v-show="hasAnyChecksEnabled">
+				<button class="nav-link dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+					Checks
+				</button>
+				<ul class="dropdown-menu checks">
+					<li v-if="mailbox.showHTMLCheck && message.HTML != ''">
+						<button class="dropdown-item" id="nav-html-check-tab" data-bs-toggle="tab"
+							data-bs-target="#nav-html-check" type="button" role="tab" aria-controls="nav-html"
+							aria-selected="false">
+							HTML Check
+							<span class="badge rounded-pill p-1 float-end" :class="htmlScoreColor"
+								v-if="htmlScore !== false">
+								<small>{{ Math.floor(htmlScore) }}%</small>
+							</span>
+						</button>
+					</li>
+					<li v-if="mailbox.showLinkCheck">
+						<button class="dropdown-item" id="nav-link-check-tab" data-bs-toggle="tab"
+							data-bs-target="#nav-link-check" type="button" role="tab" aria-controls="nav-link-check"
+							aria-selected="false">
+							Link Check
+							<span class="badge rounded-pill bg-success float-end" v-if="linkCheckErrors === 0">
+								<small>0</small>
+							</span>
+							<span class="badge rounded-pill bg-danger float-end" v-else-if="linkCheckErrors > 0">
+								<small>{{ formatNumber(linkCheckErrors) }}</small>
+							</span>
+						</button>
+					</li>
+					<li v-if="mailbox.showSpamCheck && mailbox.uiConfig.SpamAssassin">
+						<button class="dropdown-item" id="nav-spam-check-tab" data-bs-toggle="tab"
+							data-bs-target="#nav-spam-check" type="button" role="tab" aria-controls="nav-html"
+							aria-selected="false">
+							Spam Analysis
+							<span class="badge rounded-pill float-end" :class="spamScoreColor"
+								v-if="spamScore !== false">
+								<small>{{ spamScore }}</small>
+							</span>
+						</button>
+					</li>
+				</ul>
+			</div>
+			<button class="d-none d-xl-inline-block nav-link position-relative" id="nav-html-check-tab"
+				data-bs-toggle="tab" data-bs-target="#nav-html-check" type="button" role="tab" aria-controls="nav-html"
+				aria-selected="false" v-if="mailbox.showHTMLCheck && message.HTML != ''">
+				HTML Check
+				<span class="badge rounded-pill p-1" :class="htmlScoreColor" v-if="htmlScore !== false">
+					<small>{{ Math.floor(htmlScore) }}%</small>
+				</span>
+			</button>
+			<button class="d-none d-xl-inline-block nav-link" id="nav-link-check-tab" data-bs-toggle="tab"
+				data-bs-target="#nav-link-check" type="button" role="tab" aria-controls="nav-link-check"
+				aria-selected="false" v-if="mailbox.showLinkCheck">
+				Link Check
+				<i class="bi bi-check-all text-success" v-if="linkCheckErrors === 0"></i>
+				<span class="badge rounded-pill bg-danger" v-else-if="linkCheckErrors > 0">
+					<small>{{ formatNumber(linkCheckErrors) }}</small>
+				</span>
+			</button>
+			<button class="d-none d-xl-inline-block nav-link position-relative" id="nav-spam-check-tab"
+				data-bs-toggle="tab" data-bs-target="#nav-spam-check" type="button" role="tab" aria-controls="nav-html"
+				aria-selected="false" v-if="mailbox.showSpamCheck && mailbox.uiConfig.SpamAssassin">
+				Spam Analysis
+				<span class="badge rounded-pill" :class="spamScoreColor" v-if="spamScore !== false">
+					<small>{{ spamScore }}</small>
+				</span>
+			</button>
+
+			<div class="d-none d-lg-block ms-auto me-3" v-if="showMobileButtons">
+				<template v-for="_, key in responsiveSizes">
+					<button class="btn" :disabled="scaleHTMLPreview == key" :title="'Switch to ' + key + ' view'"
+						v-on:click="scaleHTMLPreview = key">
+						<i class="bi" :class="'bi-' + key"></i>
 					</button>
 				</template>
-
-				<button class="nav-link" id="nav-plain-text-tab" data-bs-toggle="tab" data-bs-target="#nav-plain-text"
-					type="button" role="tab" aria-controls="nav-plain-text" aria-selected="false"
-					:class="message.HTML == '' ? 'show' : ''">
-					Text
-				</button>
-				<button class="nav-link" id="nav-headers-tab" data-bs-toggle="tab" data-bs-target="#nav-headers"
-					type="button" role="tab" aria-controls="nav-headers" aria-selected="false">
-					<span class="d-sm-none">Hdrs</span><span class="d-none d-sm-inline">Headers</span>
-				</button>
-				<button class="nav-link" id="nav-raw-tab" data-bs-toggle="tab" data-bs-target="#nav-raw" type="button"
-					role="tab" aria-controls="nav-raw" aria-selected="false">
-					Raw
-				</button>
-				<div class="dropdown d-xl-none" v-show="hasAnyChecksEnabled">
-					<button class="nav-link dropdown-toggle" type="button" data-bs-toggle="dropdown"
-						aria-expanded="false">
-						Checks
-					</button>
-					<ul class="dropdown-menu checks">
-						<li v-if="mailbox.showHTMLCheck && message.HTML != ''">
-							<button class="dropdown-item" id="nav-html-check-tab" data-bs-toggle="tab"
-								data-bs-target="#nav-html-check" type="button" role="tab" aria-controls="nav-html"
-								aria-selected="false">
-								HTML Check
-								<span class="badge rounded-pill p-1 float-end" :class="htmlScoreColor"
-									v-if="htmlScore !== false">
-									<small>{{ Math.floor(htmlScore) }}%</small>
-								</span>
-							</button>
-						</li>
-						<li v-if="mailbox.showLinkCheck">
-							<button class="dropdown-item" id="nav-link-check-tab" data-bs-toggle="tab"
-								data-bs-target="#nav-link-check" type="button" role="tab" aria-controls="nav-link-check"
-								aria-selected="false">
-								Link Check
-								<span class="badge rounded-pill bg-success float-end" v-if="linkCheckErrors === 0">
-									<small>0</small>
-								</span>
-								<span class="badge rounded-pill bg-danger float-end" v-else-if="linkCheckErrors > 0">
-									<small>{{ formatNumber(linkCheckErrors) }}</small>
-								</span>
-							</button>
-						</li>
-						<li v-if="mailbox.showSpamCheck && mailbox.uiConfig.SpamAssassin">
-							<button class="dropdown-item" id="nav-spam-check-tab" data-bs-toggle="tab"
-								data-bs-target="#nav-spam-check" type="button" role="tab" aria-controls="nav-html"
-								aria-selected="false">
-								Spam Analysis
-								<span class="badge rounded-pill float-end" :class="spamScoreColor"
-									v-if="spamScore !== false">
-									<small>{{ spamScore }}</small>
-								</span>
-							</button>
-						</li>
-					</ul>
-				</div>
-				<button class="d-none d-xl-inline-block nav-link position-relative" id="nav-html-check-tab"
-					data-bs-toggle="tab" data-bs-target="#nav-html-check" type="button" role="tab"
-					aria-controls="nav-html" aria-selected="false" v-if="mailbox.showHTMLCheck && message.HTML != ''">
-					HTML Check
-					<span class="badge rounded-pill p-1" :class="htmlScoreColor" v-if="htmlScore !== false">
-						<small>{{ Math.floor(htmlScore) }}%</small>
-					</span>
-				</button>
-				<button class="d-none d-xl-inline-block nav-link" id="nav-link-check-tab" data-bs-toggle="tab"
-					data-bs-target="#nav-link-check" type="button" role="tab" aria-controls="nav-link-check"
-					aria-selected="false" v-if="mailbox.showLinkCheck">
-					Link Check
-					<i class="bi bi-check-all text-success" v-if="linkCheckErrors === 0"></i>
-					<span class="badge rounded-pill bg-danger" v-else-if="linkCheckErrors > 0">
-						<small>{{ formatNumber(linkCheckErrors) }}</small>
-					</span>
-				</button>
-				<button class="d-none d-xl-inline-block nav-link position-relative" id="nav-spam-check-tab"
-					data-bs-toggle="tab" data-bs-target="#nav-spam-check" type="button" role="tab"
-					aria-controls="nav-html" aria-selected="false"
-					v-if="mailbox.showSpamCheck && mailbox.uiConfig.SpamAssassin">
-					Spam Analysis
-					<span class="badge rounded-pill" :class="spamScoreColor" v-if="spamScore !== false">
-						<small>{{ spamScore }}</small>
-					</span>
-				</button>
-
-				<div class="d-none d-lg-block ms-auto me-3" v-if="showMobileButtons">
-					<template v-for="_, key in responsiveSizes">
-						<button class="btn" :disabled="scaleHTMLPreview == key" :title="'Switch to ' + key + ' view'"
-							v-on:click="scaleHTMLPreview = key">
-							<i class="bi" :class="'bi-' + key"></i>
-						</button>
-					</template>
-				</div>
 			</div>
 		</nav>
 

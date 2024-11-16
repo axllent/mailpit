@@ -450,7 +450,7 @@ export default {
 </script>
 
 <template>
-	<div class="navbar navbar-expand-lg navbar-dark row flex-shrink-0 bg-primary text-white">
+	<div class="navbar navbar-expand-lg navbar-dark row flex-shrink-0 bg-primary text-white d-print-none">
 		<div class="d-none d-xl-block col-xl-3 col-auto pe-0">
 			<RouterLink to="/" class="navbar-brand text-white me-0" @click="pagination.start = 0">
 				<img :src="resolve('/mailpit.svg')" alt="Mailpit">

@@ -57,7 +57,7 @@ export default {
 <template>
 	<template v-if="!modals">
 		<div class="bg-body ms-sm-n1 me-sm-n1 py-2 text-muted small about-mailpit">
-			<button class="text-muted btn btn-sm ps-0" v-on:click="loadInfo()">
+			<button class="text-muted btn btn-sm" v-on:click="loadInfo()">
 				<i class="bi bi-info-circle-fill me-1"></i>
 				About
 			</button>
@@ -149,7 +149,7 @@ export default {
 								</div>
 							</div>
 							<div class="col-xl-6">
-								<div class="card border-secondary">
+								<div class="card border-secondary h-100">
 									<div class="card-header h4">
 										Runtime statistics
 										<button class="btn btn-sm btn-outline-secondary float-end"
