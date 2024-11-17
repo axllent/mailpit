@@ -2,6 +2,12 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.21.4]
+
+### Bugfix
+- Fix external CSS stylesheet loading in HTML preview ([#388](https://github.com/axllent/mailpit/issues/388))
+
+
 ## [v1.21.3]
 
 ### Chore
