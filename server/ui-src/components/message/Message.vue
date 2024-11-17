@@ -78,8 +78,9 @@ export default {
 
 		// remove bad HTML, JavaScript, iframes etc
 		sanitizedHTML() {
+			// set target & rel on all links
 			DOMPurify.addHook('afterSanitizeAttributes', (node) => {
-				if (node.hasAttribute('href') && node.getAttribute('href').substring(0, 1) == '#') {
+				if (node.tagName != 'A' || (node.hasAttribute('href') && node.getAttribute('href').substring(0, 1) == '#')) {
 					return
 				}
 				if ('target' in node) {
@@ -115,7 +116,7 @@ export default {
 						'vertical-align',
 						'vlink',
 						'vspace',
-						'xml:lang'
+						'xml:lang',
 					],
 					FORBID_ATTR: ['script'],
 				}
