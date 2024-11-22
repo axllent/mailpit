@@ -17,7 +17,7 @@ func main() {
 
 	// running directly
 	if normalize(filepath.Base(exec)) == normalize(filepath.Base(os.Args[0])) ||
-	! strings.Contains(filepath.Base(os.Args[0]), "sendmail") {
+		!strings.Contains(filepath.Base(os.Args[0]), "sendmail") {
 		cmd.Execute()
 	} else {
 		// symlinked as "*sendmail*"
