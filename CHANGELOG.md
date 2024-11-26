@@ -2,6 +2,15 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.21.5]
+
+### Chore
+- Update caniemail database
+- Update node dependencies
+- Update Go dependencies
+- Make symlink detection more specific to contain "sendmail" in the name ([#391](https://github.com/axllent/mailpit/issues/391))
+
+
 ## [v1.21.4]
 
 ### Bugfix
