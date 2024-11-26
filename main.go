@@ -16,10 +16,11 @@ func main() {
 	}
 
 	// running directly
-	if normalize(filepath.Base(exec)) == normalize(filepath.Base(os.Args[0])) {
+	if normalize(filepath.Base(exec)) == normalize(filepath.Base(os.Args[0])) ||
+		!strings.Contains(filepath.Base(os.Args[0]), "sendmail") {
 		cmd.Execute()
 	} else {
-		// symlinked
+		// symlinked as "*sendmail*"
 		sendmail.Run()
 	}
 }
