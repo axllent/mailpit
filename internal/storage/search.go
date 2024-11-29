@@ -13,6 +13,7 @@ import (
 	"github.com/araddon/dateparse"
 	"github.com/axllent/mailpit/internal/logger"
 	"github.com/axllent/mailpit/internal/tools"
+	"github.com/axllent/mailpit/server/websockets"
 	"github.com/leporo/sqlf"
 )
 
@@ -186,6 +187,13 @@ func DeleteSearch(search, timezone string) error {
 			_, err = tx.Exec(sqlDelete3, delIDs...)
 			if err != nil {
 				return err
+			}
+
+			for _, id := range ids {
+				d := struct {
+					ID string
+				}{ID: id}
+				websockets.Broadcast("delete", d)
 			}
 		}
 
