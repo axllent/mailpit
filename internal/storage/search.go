@@ -190,15 +190,15 @@ func DeleteSearch(search, timezone string) error {
 			}
 		}
 
-		err = tx.Commit()
+		if err := tx.Commit(); err != nil {
+			return err
+		}
 
 		if err := pruneUnusedTags(); err != nil {
 			return err
 		}
 
-		if err == nil {
-			logger.Log().Debugf("[db] deleted %d messages matching %s", total, search)
-		}
+		logger.Log().Debugf("[db] deleted %d messages matching %s", total, search)
 
 		dbLastAction = time.Now()
 
