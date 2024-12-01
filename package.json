@@ -12,7 +12,7 @@
     "axios": "^1.2.1",
     "bootstrap": "^5.2.0",
     "bootstrap-icons": "^1.9.1",
-    "bootstrap5-tags": "^1.6.1",
+    "bootstrap5-tags": "^1.7.6",
     "color-hash": "^2.0.2",
     "dayjs": "^1.11.10",
     "dompurify": "^3.1.6",
