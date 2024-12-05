@@ -243,6 +243,12 @@ func TestAPIv1Send(t *testing.T) {
 		  {
 			"Content": "VGhpcyBpcyBhIHBsYWluIHRleHQgYXR0YWNobWVudA==",
 			"Filename": "Attached File.txt"
+		  },
+		  {
+			"Content": "iVBORw0KGgoAAAANSUhEUgAAAEEAAAA8CAMAAAAOlSdoAAAACXBIWXMAAAHrAAAB6wGM2bZBAAAAS1BMVEVHcEwRfnUkZ2gAt4UsSF8At4UtSV4At4YsSV4At4YsSV8At4YsSV4At4YsSV4sSV4At4YsSV4At4YtSV4At4YsSV4At4YtSV8At4YsUWYNAAAAGHRSTlMAAwoXGiktRE5dbnd7kpOlr7zJ0d3h8PD8PCSRAAACWUlEQVR42pXT4ZaqIBSG4W9rhqQYocG+/ys9Y0Z0Br+x3j8zaxUPewFh65K+7yrIMeIY4MT3wPfEJCidKXEMnLaVkxDiELiMz4WEOAZSFghxBIypCOlKiAMgXfIqTnBgSm8CIQ6BImxEUxEckClVQiHGj4Ba4AQHikAIClwTE9KtIghAhUJwoLkmLnCiAHJLRKgIMsEtVUKbBUIwoAg2C4QgQBE6l4VCnApBgSKYLLApCnCa0+96AEMW2BQcmC+Pr3nfp7o5Exy49gIADcIqUELGfeA+bp93LmAJp8QJoEcN3C7NY3sbVANixMyI0nku20/n5/ZRf3KI2k6JEDWQtxcbdGuAqu3TAXG+/799Oyyas1B1MnMiA+XyxHp9q0PUKGPiRAau1fZbLRZV09wZcT8/gHk8QQAxXn8VgaDqcUmU6O/r28nbVwXAqca2mRNtPAF5+zoP2MeN9Fy4NgC6RfcbgE7XITBRYTtOE3U3C2DVff7pk+PkUxgAbvtnPXJaD6DxulMLwOhPS/M3MQkgg1ZFrIXnmfaZoOfpKiFgzeZD/WuKqQEGrfJYkyWf6vlG3xUgTuscnkNkQsb599q124kdpMUjCa/XARHs1gZymVtGt3wLkiFv8rUgTxitYCex5EVGec0Y9VmoDTFBSQte2TfXGXlf7hbdaUM9Sk7fisEN9qfBBTK+FZcvM9fQSdkl2vj4W2oX/bRogO3XasiNH7R0eW7fgRM834ImTg+Lg6BEnx4vz81rhr+MYPBBQg1v8GndEOrthxaCTxNAOut8WKLGZQl+MPz88Q9tAO/hVuSeqQAAAABJRU5ErkJggg==",
+			"Filename": "logo.png",
+			"ContentID": "inline-cid",
+			"ContentType": "overridden/type"
 		  }
 		],
 		"ReplyTo": [
@@ -294,6 +300,10 @@ func TestAPIv1Send(t *testing.T) {
 	assertEqual(t, `Tag 1,Tag 2`, strings.Join(msg.Tags, ","), "wrong Tags")
 	assertEqual(t, 1, len(msg.Attachments), "wrong Attachment count")
 	assertEqual(t, `Attached File.txt`, msg.Attachments[0].FileName, "wrong Attachment name")
+	assertEqual(t, `text/plain`, msg.Attachments[0].ContentType, "wrong Content-Type")
+	assertEqual(t, 1, len(msg.Inline), "wrong inline Attachment count")
+	assertEqual(t, `logo.png`, msg.Inline[0].FileName, "wrong Attachment name")
+	assertEqual(t, `overridden/type`, msg.Inline[0].ContentType, "wrong Content-Type")
 
 	attachmentBytes, err := clientGet(ts.URL + "/api/v1/message/" + resp.ID + "/part/" + msg.Attachments[0].PartID)
 	if err != nil {
