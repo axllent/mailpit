@@ -54,6 +54,10 @@ func Send(msg interface{}) {
 			req.Header.Set("User-Agent", "Mailpit/"+config.Version)
 			req.Header.Set("Content-Type", "application/json")
 
+			if config.Label != "" {
+				req.Header.Set("Mailpit-Label", config.Label)
+			}
+
 			client := &http.Client{}
 			resp, err := client.Do(req)
 			if err != nil {
