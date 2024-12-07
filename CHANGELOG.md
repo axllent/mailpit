@@ -2,6 +2,21 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.21.6]
+
+### Feature
+- Include Mailpit label (if set) in webhook HTTP header ([#400](https://github.com/axllent/mailpit/issues/400))
+- Add support for sending inline attachments via HTTP API ([#399](https://github.com/axllent/mailpit/issues/399))
+
+### Chore
+- Update caniemail database
+- Update node dependencies
+- Update Go dependencies
+
+### Fix
+- Message view not updating when deleting messages from search ([#395](https://github.com/axllent/mailpit/issues/395))
+
+
 ## [v1.21.5]
 
 ### Chore
