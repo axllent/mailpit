@@ -13,6 +13,7 @@ import (
 	"github.com/araddon/dateparse"
 	"github.com/axllent/mailpit/internal/logger"
 	"github.com/axllent/mailpit/internal/tools"
+	"github.com/axllent/mailpit/server/websockets"
 	"github.com/leporo/sqlf"
 )
 
@@ -189,17 +190,29 @@ func DeleteSearch(search, timezone string) error {
 			}
 		}
 
-		err = tx.Commit()
+		if err := tx.Commit(); err != nil {
+			return err
+		}
 
 		if err := pruneUnusedTags(); err != nil {
 			return err
 		}
 
-		if err == nil {
-			logger.Log().Debugf("[db] deleted %d messages matching %s", total, search)
-		}
+		logger.Log().Debugf("[db] deleted %d messages matching %s", total, search)
 
 		dbLastAction = time.Now()
+
+		// broadcast changes
+		if len(ids) > 200 {
+			websockets.Broadcast("prune", nil)
+		} else {
+			for _, id := range ids {
+				d := struct {
+					ID string
+				}{ID: id}
+				websockets.Broadcast("delete", d)
+			}
+		}
 
 		addDeletedSize(int64(deleteSize))
 
