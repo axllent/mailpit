@@ -604,6 +604,13 @@ export default {
 							<div class="col-12 overflow-x-hidden">
 								<b>{{ message.Subject != "" ? message.Subject : "[ no subject ]" }}</b>
 							</div>
+							<div class="col12">
+								<div class="text-truncate privacy small">
+									<strong v-if="message.From" :title="'From: ' + message.From.Address">
+										{{ message.From.Name ? message.From.Name : message.From.Address }}
+									</strong>
+								</div>
+							</div>
 							<div class="col overflow-x-hidden">
 								<div class="text-truncate privacy small">
 									To: {{ getPrimaryEmailTo(message) }}
