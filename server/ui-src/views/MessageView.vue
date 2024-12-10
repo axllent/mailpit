@@ -601,10 +601,18 @@ export default {
 							:id="message.ID"
 							class="row gx-1 message d-flex small list-group-item list-group-item-action"
 							:class="message.Read ? 'read' : '', isActive(message.ID) ? 'active' : ''">
-							<div class="col-12 overflow-x-hidden">
-								<b>{{ message.Subject != "" ? message.Subject : "[ no subject ]" }}</b>
-							</div>
 							<div class="col overflow-x-hidden">
+								<div class="text-truncate privacy small">
+									<strong v-if="message.From" :title="'From: ' + message.From.Address">
+										{{ message.From.Name ? message.From.Name : message.From.Address }}
+									</strong>
+								</div>
+							</div>
+							<div class="col-auto small">
+								<i class="bi bi-paperclip h6" v-if="message.Attachments"></i>
+								{{ getRelativeCreated(message) }}
+							</div>
+							<div class="col-12 overflow-x-hidden">
 								<div class="text-truncate privacy small">
 									To: {{ getPrimaryEmailTo(message) }}
 									<span v-if="message.To && message.To.length > 1">
@@ -612,9 +620,10 @@ export default {
 									</span>
 								</div>
 							</div>
-							<div class="col-auto small">
-								<i class="bi bi-paperclip h6" v-if="message.Attachments"></i>
-								{{ getRelativeCreated(message) }}
+							<div class="col-12 overflow-x-hidden mt-1">
+								<div class="text-truncates small">
+									<b>{{ message.Subject != "" ? message.Subject : "[ no subject ]" }}</b>
+								</div>
 							</div>
 							<div v-if="message.Tags.length" class="col-12">
 								<RouterLink class="badge me-1" v-for="t in message.Tags" :to="toTagUrl(t)"
