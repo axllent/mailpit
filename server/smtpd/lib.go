@@ -405,6 +405,14 @@ loop:
 				break
 			}
 
+			errorMailFromRE = regexp.MustCompile(`_mailpit_smtp_reply_code_(\d\d\d)_after_mail_from@example\.com`)
+			match := errorMailFromRE.FindStringSubmatch(args)
+			if match {
+				// match[1] is meant to be the content of the first parentheses in the pattern:
+				s.writef(match[1] . " Answering with the STMP status code you requested in the MAIL FROM address")
+				break
+			}
+
 			match := mailFromRE.FindStringSubmatch(args)
 			if match == nil {
 				s.writef("501 5.5.4 Syntax error in parameters or arguments (invalid FROM parameter)")
