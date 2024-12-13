@@ -148,10 +148,14 @@ func TestCmdMAIL(t *testing.T) {
 	cmdCode(t, conn, "MAIL FROM:<sender@example.com> SIZE=1000", "250")
 
 	// MAIL with bad size parameter should return 501 syntax error
-	cmdCode(t, conn, "MAIL FROM:<sender@example.com> SIZE", "501")
 	cmdCode(t, conn, "MAIL FROM:<sender@example.com> SIZE=", "501")
 	cmdCode(t, conn, "MAIL FROM:<sender@example.com> SIZE= ", "501")
 	cmdCode(t, conn, "MAIL FROM:<sender@example.com> SIZE=foo", "501")
+
+	// MAIL with options should be ignored except for SIZE
+	cmdCode(t, conn, "MAIL FROM:<sender@example.com> BODY=8BITMIME", "250")           // ignored
+	cmdCode(t, conn, "MAIL FROM:<sender@example.com> BODY=8BITMIME,SIZE=1000", "250") // size detected
+	cmdCode(t, conn, "MAIL FROM:<sender@example.com> BODY=8BITMIME,SIZE=foo", "501")  // ignored
 
 	// TODO: MAIL with valid AUTH parameter should return 250 Ok
 
@@ -170,7 +174,6 @@ func TestCmdMAILMaxSize(t *testing.T) {
 	cmdCode(t, conn, "MAIL FROM:<sender@example.com>", "250")
 
 	// MAIL with bad size parameter should return 501 syntax error
-	cmdCode(t, conn, "MAIL FROM:<sender@example.com> SIZE", "501")
 	cmdCode(t, conn, "MAIL FROM:<sender@example.com> SIZE=", "501")
 	cmdCode(t, conn, "MAIL FROM:<sender@example.com> SIZE= ", "501")
 	cmdCode(t, conn, "MAIL FROM:<sender@example.com> SIZE=foo", "501")

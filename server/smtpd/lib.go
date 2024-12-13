@@ -29,7 +29,9 @@ var (
 	Debug      = false
 	rcptToRE   = regexp.MustCompile(`[Tt][Oo]:\s?<(.+)>`)
 	mailFromRE = regexp.MustCompile(`[Ff][Rr][Oo][Mm]:\s?<(.*)>(\s(.*))?`) // Delivery Status Notifications are sent with "MAIL FROM:<>"
-	mailSizeRE = regexp.MustCompile(`[Ss][Ii][Zz][Ee]=(\d+)`)
+
+	// extract mail size from 'MAIL FROM' parameter
+	mailFromSizeRE = regexp.MustCompile(`(?U)(^| |,)[Ss][Ii][Zz][Ee]=(.*)($|,| )`)
 )
 
 // Handler function called upon successful receipt of an email.
@@ -411,12 +413,13 @@ loop:
 			} else {
 				// Validate the SIZE parameter if one was sent.
 				if len(match[2]) > 0 { // A parameter is present
-					sizeMatch := mailSizeRE.FindStringSubmatch(match[3])
+					sizeMatch := mailFromSizeRE.FindStringSubmatch(match[3])
 					if sizeMatch == nil {
-						s.writef("501 5.5.4 Syntax error in parameters or arguments (invalid SIZE parameter)")
+						// ignore other parameter
+						s.writef("250 2.1.0 Ok")
 					} else {
 						// Enforce the maximum message size if one is set.
-						size, err := strconv.Atoi(sizeMatch[1])
+						size, err := strconv.Atoi(sizeMatch[2])
 						if err != nil { // Bad SIZE parameter
 							s.writef("501 5.5.4 Syntax error in parameters or arguments (invalid SIZE parameter)")
 						} else if s.srv.MaxSize > 0 && size > s.srv.MaxSize { // SIZE above maximum size, if set
