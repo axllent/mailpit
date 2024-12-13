@@ -416,6 +416,8 @@ loop:
 					sizeMatch := mailFromSizeRE.FindStringSubmatch(match[3])
 					if sizeMatch == nil {
 						// ignore other parameter
+						from = match[1]
+						gotFrom = true
 						s.writef("250 2.1.0 Ok")
 					} else {
 						// Enforce the maximum message size if one is set.
