@@ -28,7 +28,7 @@ var (
 	// Debug `true` enables verbose logging.
 	Debug      = false
 	rcptToRE   = regexp.MustCompile(`[Tt][Oo]: ?<([^<>\v]+)>( |$)(.*)?`)
-	mailFromRE = regexp.MustCompile(`[Ff][Rr][Oo][Mm]: ?<([^<>\v]+)>( |$)(.*)?`) // Delivery Status Notifications are sent with "MAIL FROM:<>"
+	mailFromRE = regexp.MustCompile(`[Ff][Rr][Oo][Mm]: ?<(|[^<>\v]+)>( |$)(.*)?`) // Delivery Status Notifications are sent with "MAIL FROM:<>"
 
 	// extract mail size from 'MAIL FROM' parameter
 	mailFromSizeRE = regexp.MustCompile(`(?U)(^| |,)[Ss][Ii][Zz][Ee]=(.*)($|,| )`)
