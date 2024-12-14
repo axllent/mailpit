@@ -9,10 +9,10 @@ import (
 	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/internal/auth"
 	"github.com/axllent/mailpit/internal/logger"
+	"github.com/axllent/mailpit/internal/smtpd"
 	"github.com/axllent/mailpit/internal/storage"
 	"github.com/axllent/mailpit/internal/tools"
 	"github.com/axllent/mailpit/server"
-	"github.com/axllent/mailpit/server/smtpd"
 	"github.com/axllent/mailpit/server/webhook"
 	"github.com/spf13/cobra"
 )

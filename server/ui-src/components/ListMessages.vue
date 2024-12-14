@@ -132,21 +132,20 @@ export default {
 						<i class="bi bi-paperclip h6 me-1" v-if="message.Attachments"></i>
 						{{ getRelativeCreated(message) }}
 					</div>
-					<div class="text-truncate d-lg-none privacy">
-						<span v-if="message.From" :title="'From: ' + message.From.Address">
-							{{ message.From.Name ? message.From.Name : message.From.Address }}
-						</span>
+					<div v-if="message.From" class="overflow-x-hidden">
+						<div class="text-truncate privacy">
+							<b :title="'From: ' + message.From.Address">
+								{{ message.From.Name ? message.From.Name : message.From.Address }}
+							</b>
+						</div>
 					</div>
-					<div class="text-truncate d-none d-lg-block privacy">
-						<b v-if="message.From" :title="'From: ' + message.From.Address">
-							{{ message.From.Name ? message.From.Name : message.From.Address }}
-						</b>
-					</div>
-					<div class="d-none d-lg-block text-truncate text-muted small privacy">
-						To: {{ getPrimaryEmailTo(message) }}
-						<span v-if="message.To && message.To.length > 1">
-							[+{{ message.To.length - 1 }}]
-						</span>
+					<div class="overflow-x-hidden">
+						<div class="text-truncate text-muted small privacy">
+							To: {{ getPrimaryEmailTo(message) }}
+							<span v-if="message.To && message.To.length > 1">
+								[+{{ message.To.length - 1 }}]
+							</span>
+						</div>
 					</div>
 				</div>
 				<div class="col-lg-6 col-xxl-7 mt-2 mt-lg-0">
