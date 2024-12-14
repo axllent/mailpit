@@ -12,8 +12,8 @@ import (
 	"strings"
 
 	"github.com/axllent/mailpit/config"
+	"github.com/axllent/mailpit/internal/smtpd"
 	"github.com/axllent/mailpit/internal/tools"
-	"github.com/axllent/mailpit/server/smtpd"
 	"github.com/jhillyerd/enmime"
 )
 
