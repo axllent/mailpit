@@ -2,6 +2,25 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.21.7]
+
+### Chore
+- Update node dependencies
+- Update Go dependencies
+- Bump Go version for automated testing
+- Move smtpd & pop3 modules to internal
+- Stricter SMTP 'MAIL FROM' & 'RCPT TO' handling ([#409](https://github.com/axllent/mailpit/issues/409))
+- Display "To" details in mobile messages list
+- Display "From" details in message sidebar (desktop) ([#403](https://github.com/axllent/mailpit/issues/403))
+
+### Fix
+- Ignore unsupported optional SMTP 'MAIL FROM' parameters ([#407](https://github.com/axllent/mailpit/issues/407))
+- Prevent splitting multi-byte characters in message snippets ([#404](https://github.com/axllent/mailpit/issues/404))
+
+### Testing
+- Add smtpd tests
+
+
 ## [v1.21.6]
 
 ### Feature
