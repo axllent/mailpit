@@ -2,6 +2,16 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.21.8]
+
+### Chore
+- Update node dependencies
+- Update Go dependencies
+
+### Fix
+- **db:** Remove unused FOREIGN KEY REFERENCES in message_tags table ([#374](https://github.com/axllent/mailpit/issues/374))
+
+
 ## [v1.21.7]
 
 ### Chore
