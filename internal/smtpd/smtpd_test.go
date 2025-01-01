@@ -535,7 +535,7 @@ func TestCmdSTARTTLSRequired(t *testing.T) {
 }
 
 func TestMakeHeaders(t *testing.T) {
-	now := time.Now().Format("Mon, _2 Jan 2006 15:04:05 -0700 (MST)")
+	now := time.Now().Format("Mon, 2 Jan 2006 15:04:05 -0700 (MST)")
 	valid := "Received: from clientName (clientHost [clientIP])\r\n" +
 		"        by serverName (smtpd) with SMTP\r\n" +
 		"        for <recipient@example.com>; " +
