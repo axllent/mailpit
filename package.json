@@ -6,7 +6,7 @@
     "build": "MINIFY=true node esbuild.config.mjs",
     "watch": "WATCH=true node esbuild.config.mjs",
     "package": "MINIFY=true node esbuild.config.mjs",
-    "update-caniemail": "wget -O utils/html-check/caniemail-data.json https://www.caniemail.com/api/data.json"
+    "update-caniemail": "wget -O internal/htmlcheck/caniemail-data.json https://www.caniemail.com/api/data.json"
   },
   "dependencies": {
     "axios": "^1.2.1",
