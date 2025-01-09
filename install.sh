@@ -58,6 +58,9 @@ i?86 | x86)
 aarch64 | arm64)
     OS_type='arm64'
     ;;
+s390x)
+    OS_type='s390x'
+    ;;
 *)
     echo 'OS type not supported'
     exit 2

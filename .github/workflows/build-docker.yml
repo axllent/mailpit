@@ -30,7 +30,7 @@ jobs:
         password: ${{ github.token }}
 
     - name: Parse semver
-      id: semver_parser 
+      id: semver_parser
       uses: booxmedialtd/ws-action-parse-semver@v1.4.7
       with:
         input_string: '${{ github.ref_name }}'
@@ -40,7 +40,7 @@ jobs:
       uses: docker/build-push-action@v6
       with:
         context: .
-        platforms: linux/386,linux/amd64,linux/arm64
+        platforms: linux/386,linux/amd64,linux/arm64,linux/s390x
         build-args: |
           "VERSION=${{ github.ref_name }}"
         push: true

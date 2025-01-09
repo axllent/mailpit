@@ -82,7 +82,7 @@ Static binaries can always be found on the [releases](https://github.com/axllent
 
 ### Docker
 
-See [Docker instructions](https://mailpit.axllent.org/docs/install/docker/) for 386, amd64 & arm64 images.
+See [Docker instructions](https://mailpit.axllent.org/docs/install/docker/) for 386, amd64, arm64, and s390x images.
 
 
 ### Compile from source
@@ -104,6 +104,6 @@ Please refer to [the documentation](https://mailpit.axllent.org/docs/install/tes
 
 ### Configuring sendmail
 
-Mailpit's SMTP server (default on port 1025), so you will likely need to configure your sending application to deliver mail via that port. 
-A common MTA (Mail Transfer Agent) that delivers system emails to an SMTP server is `sendmail`, used by many applications, including PHP. 
+Mailpit's SMTP server (default on port 1025), so you will likely need to configure your sending application to deliver mail via that port.
+A common MTA (Mail Transfer Agent) that delivers system emails to an SMTP server is `sendmail`, used by many applications, including PHP.
 Mailpit can also act as substitute for sendmail. For instructions on how to set this up, please refer to the [sendmail documentation](https://mailpit.axllent.org/docs/install/sendmail/).
