@@ -20,6 +20,10 @@ jobs:
             goos: darwin
           - goarch: arm
             goos: windows
+          - goarch: s390x
+            goos: darwin
+          - goarch: s390x
+            goos: windows
     steps:
     - uses: actions/checkout@v4
 
