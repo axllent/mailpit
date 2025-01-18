@@ -426,7 +426,7 @@ loop:
 							s.writef("501 5.5.4 Syntax error in parameters or arguments (invalid SIZE parameter)")
 						} else if s.srv.MaxSize > 0 && size > s.srv.MaxSize { // SIZE above maximum size, if set
 							err = maxSizeExceeded(s.srv.MaxSize)
-							s.writef(err.Error())
+							s.writef("%s", err.Error())
 						} else { // SIZE ok
 							from = match[1]
 							gotFrom = true
@@ -507,7 +507,7 @@ loop:
 					}
 					break loop
 				case maxSizeExceededError:
-					s.writef(err.Error())
+					s.writef("%s", err.Error())
 					continue
 				default:
 					s.writef("451 4.3.0 Requested action aborted: local error in processing")
@@ -526,7 +526,7 @@ loop:
 				if err != nil {
 					checkErrFormat := regexp.MustCompile(`^([2-5][0-9]{2})[\s\-](.+)$`)
 					if checkErrFormat.MatchString(err.Error()) {
-						s.writef(err.Error())
+						s.writef("%s", err.Error())
 					} else {
 						s.writef("451 4.3.5 Unable to process mail")
 					}
@@ -538,7 +538,7 @@ loop:
 				if err != nil {
 					checkErrFormat := regexp.MustCompile(`^([2-5][0-9]{2})[\s\-](.+)$`)
 					if checkErrFormat.MatchString(err.Error()) {
-						s.writef(err.Error())
+						s.writef("%s", err.Error())
 					} else {
 						s.writef("451 4.3.5 Unable to process mail")
 					}
@@ -546,7 +546,7 @@ loop:
 				}
 
 				if msgID != "" {
-					s.writef("250 2.0.0 Ok: queued as " + msgID)
+					s.writef("250 2.0.0 Ok: queued as %s", msgID)
 				} else {
 					s.writef("250 2.0.0 Ok: queued")
 				}
@@ -703,7 +703,7 @@ loop:
 					break loop
 				}
 
-				s.writef(err.Error())
+				s.writef("%s", err.Error())
 				break
 			}
 
@@ -726,7 +726,7 @@ func (s *session) writef(format string, args ...interface{}) {
 	}
 
 	line := fmt.Sprintf(format, args...)
-	fmt.Fprintf(s.bw, line+"\r\n")
+	fmt.Fprintf(s.bw, "%s\r\n", line)
 	_ = s.bw.Flush()
 
 	if Debug {
@@ -869,7 +869,7 @@ func (s *session) handleAuthLogin(arg string) (bool, error) {
 	var err error
 
 	if arg == "" {
-		s.writef("334 " + base64.StdEncoding.EncodeToString([]byte("Username:")))
+		s.writef("334 %s", base64.StdEncoding.EncodeToString([]byte("Username:")))
 		arg, err = s.readLine()
 		if err != nil {
 			return false, err
@@ -881,7 +881,7 @@ func (s *session) handleAuthLogin(arg string) (bool, error) {
 		return false, errors.New("501 5.5.2 Syntax error (unable to decode)")
 	}
 
-	s.writef("334 " + base64.StdEncoding.EncodeToString([]byte("Password:")))
+	s.writef("334 %s", base64.StdEncoding.EncodeToString([]byte("Password:")))
 	line, err := s.readLine()
 	if err != nil {
 		return false, err
@@ -929,7 +929,7 @@ func (s *session) handleAuthPlain(arg string) (bool, error) {
 func (s *session) handleAuthCramMD5() (bool, error) {
 	shared := "<" + strconv.Itoa(os.Getpid()) + "." + strconv.Itoa(time.Now().Nanosecond()) + "@" + s.srv.Hostname + ">"
 
-	s.writef("334 " + base64.StdEncoding.EncodeToString([]byte(shared)))
+	s.writef("334 %s", base64.StdEncoding.EncodeToString([]byte(shared)))
 
 	data, err := s.readLine()
 	if err != nil {
