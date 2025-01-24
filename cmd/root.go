@@ -10,6 +10,7 @@ import (
 	"github.com/axllent/mailpit/internal/auth"
 	"github.com/axllent/mailpit/internal/logger"
 	"github.com/axllent/mailpit/internal/smtpd"
+	"github.com/axllent/mailpit/internal/smtpd/chaos"
 	"github.com/axllent/mailpit/internal/storage"
 	"github.com/axllent/mailpit/internal/tools"
 	"github.com/axllent/mailpit/server"
@@ -121,6 +122,10 @@ func init() {
 	rootCmd.Flags().StringVar(&config.SMTPRelayConfigFile, "smtp-relay-config", config.SMTPRelayConfigFile, "SMTP relay configuration file to allow releasing messages")
 	rootCmd.Flags().BoolVar(&config.SMTPRelayAll, "smtp-relay-all", config.SMTPRelayAll, "Auto-relay all new messages via external SMTP server (caution!)")
 	rootCmd.Flags().StringVar(&config.SMTPRelayMatching, "smtp-relay-matching", config.SMTPRelayMatching, "Auto-relay new messages to only matching recipients (regular expression)")
+
+	// Chaos
+	rootCmd.Flags().BoolVar(&chaos.Enabled, "enable-chaos", chaos.Enabled, "Enable Chaos functionality (API / web UI)")
+	rootCmd.Flags().StringVar(&config.ChaosTriggers, "chaos-triggers", config.ChaosTriggers, "Enable Chaos & set the triggers for SMTP server")
 
 	// POP3 server
 	rootCmd.Flags().StringVar(&config.POP3Listen, "pop3", config.POP3Listen, "POP3 server bind interface and port")
@@ -280,6 +285,10 @@ func initConfigFromEnv() {
 	config.SMTPRelayConfig.ReturnPath = os.Getenv("MP_SMTP_RELAY_RETURN_PATH")
 	config.SMTPRelayConfig.AllowedRecipients = os.Getenv("MP_SMTP_RELAY_ALLOWED_RECIPIENTS")
 	config.SMTPRelayConfig.BlockedRecipients = os.Getenv("MP_SMTP_RELAY_BLOCKED_RECIPIENTS")
+
+	// Chaos
+	chaos.Enabled = getEnabledFromEnv("MP_ENABLE_CHAOS")
+	config.ChaosTriggers = os.Getenv("MP_CHAOS_TRIGGERS")
 
 	// POP3 server
 	if len(os.Getenv("MP_POP3_BIND_ADDR")) > 0 {

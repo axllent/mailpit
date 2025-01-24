@@ -23,6 +23,66 @@
     "version": "v1"
   },
   "paths": {
+    "/api/v1/chaos": {
+      "get": {
+        "description": "Returns the current Chaos triggers configuration.\nThis API route will return an error if Chaos is not enabled at runtime.",
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "testing"
+        ],
+        "summary": "Get Chaos triggers",
+        "operationId": "getChaos",
+        "responses": {
+          "200": {
+            "$ref": "#/responses/ChaosResponse"
+          },
+          "400": {
+            "$ref": "#/responses/ErrorResponse"
+          }
+        }
+      },
+      "put": {
+        "description": "Set the Chaos triggers configuration and return the updated values.\nThis API route will return an error if Chaos is not enabled at runtime.\n\nIf any triggers are omitted from the request, then those are reset to their\ndefault values with a 0% probability (ie: disabled).\nSetting a blank `{}` will reset all triggers to their default values.",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "testing"
+        ],
+        "summary": "Set Chaos triggers",
+        "operationId": "setChaosParams",
+        "parameters": [
+          {
+            "name": "Body",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/Triggers"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/ChaosResponse"
+          },
+          "400": {
+            "$ref": "#/responses/ErrorResponse"
+          }
+        }
+      }
+    },
     "/api/v1/info": {
       "get": {
         "description": "Returns basic runtime information, message totals and latest release version.",
@@ -139,7 +199,7 @@
           "https"
         ],
         "tags": [
-          "Other"
+          "other"
         ],
         "summary": "HTML check",
         "operationId": "HTMLCheckParams",
@@ -179,7 +239,7 @@
           "https"
         ],
         "tags": [
-          "Other"
+          "other"
         ],
         "summary": "Link check",
         "operationId": "LinkCheckParams",
@@ -414,7 +474,7 @@
           "https"
         ],
         "tags": [
-          "Other"
+          "other"
         ],
         "summary": "SpamAssassin check",
         "operationId": "SpamAssassinCheckParams",
@@ -1816,10 +1876,54 @@
       "x-go-name": "Result",
       "x-go-package": "github.com/axllent/mailpit/internal/spamassassin"
     },
+    "Trigger": {
+      "description": "Trigger for Chaos",
+      "type": "object",
+      "required": [
+        "ErrorCode",
+        "Probability"
+      ],
+      "properties": {
+        "ErrorCode": {
+          "description": "SMTP error code to return. The value must range from 400 to 599.",
+          "type": "integer",
+          "format": "int64",
+          "example": 451
+        },
+        "Probability": {
+          "description": "Probability (chance) of triggering the error. The value must range from 0 to 100.",
+          "type": "integer",
+          "format": "int64",
+          "example": 5
+        }
+      },
+      "x-go-package": "github.com/axllent/mailpit/internal/smtpd/chaos"
+    },
+    "Triggers": {
+      "description": "ChaosTriggers is the Chaos configuration",
+      "type": "object",
+      "properties": {
+        "Authentication": {
+          "$ref": "#/definitions/Trigger"
+        },
+        "Recipient": {
+          "$ref": "#/definitions/Trigger"
+        },
+        "Sender": {
+          "$ref": "#/definitions/Trigger"
+        }
+      },
+      "x-go-package": "github.com/axllent/mailpit/internal/smtpd/chaos",
+      "$ref": "#/definitions/Triggers"
+    },
     "WebUIConfiguration": {
       "description": "Response includes global web UI settings",
       "type": "object",
       "properties": {
+        "ChaosEnabled": {
+          "description": "Whether Chaos support is enabled at runtime",
+          "type": "boolean"
+        },
         "DuplicatesIgnored": {
           "description": "Whether messages with duplicate IDs are ignored",
           "type": "boolean"
@@ -1883,6 +1987,12 @@
       "description": "Binary data response which inherits the attachment's content type.",
       "schema": {
         "type": "string"
+      }
+    },
+    "ChaosResponse": {
+      "description": "Response for the Chaos triggers configuration",
+      "schema": {
+        "$ref": "#/definitions/Triggers"
       }
     },
     "ErrorResponse": {

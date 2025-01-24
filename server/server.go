@@ -183,6 +183,10 @@ func apiRoutes() *mux.Router {
 	r.HandleFunc(config.Webroot+"api/v1/webui", middleWareFunc(apiv1.WebUIConfig)).Methods("GET")
 	r.HandleFunc(config.Webroot+"api/v1/swagger.json", middleWareFunc(swaggerBasePath)).Methods("GET")
 
+	// Chaos
+	r.HandleFunc(config.Webroot+"api/v1/chaos", middleWareFunc(apiv1.GetChaos)).Methods("GET")
+	r.HandleFunc(config.Webroot+"api/v1/chaos", middleWareFunc(apiv1.SetChaos)).Methods("PUT")
+
 	// web UI websocket
 	r.HandleFunc(config.Webroot+"api/events", apiWebsocket).Methods("GET")
 

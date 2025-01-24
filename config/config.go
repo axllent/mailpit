@@ -15,6 +15,7 @@ import (
 
 	"github.com/axllent/mailpit/internal/auth"
 	"github.com/axllent/mailpit/internal/logger"
+	"github.com/axllent/mailpit/internal/smtpd/chaos"
 	"github.com/axllent/mailpit/internal/spamassassin"
 	"github.com/axllent/mailpit/internal/tools"
 	"gopkg.in/yaml.v3"
@@ -175,6 +176,9 @@ var (
 
 	// RepoBinaryName on Github for updater
 	RepoBinaryName = "mailpit"
+
+	// ChaosTriggers are parsed and set in the chaos module
+	ChaosTriggers string
 
 	// DisableHTMLCheck DEPRECATED 2024/04/13 - kept here to display console warning only
 	DisableHTMLCheck = false
@@ -342,6 +346,14 @@ func VerifyConfig() error {
 
 	if SMTPTLSCert == "" && (auth.SMTPCredentials != nil || SMTPAuthAcceptAny) && !SMTPAuthAllowInsecure {
 		return errors.New("[smtp] authentication requires STARTTLS or TLS encryption, run with `--smtp-auth-allow-insecure` to allow insecure authentication")
+	}
+
+	if err := parseChaosTriggers(); err != nil {
+		return fmt.Errorf("[chaos] %s", err.Error())
+	}
+
+	if chaos.Enabled {
+		logger.Log().Info("[chaos] is enabled")
 	}
 
 	// POP3 server
@@ -597,6 +609,39 @@ func validateRelayConfig() error {
 
 		SMTPRelayConfig.BlockedRecipientsRegexp = re
 		logger.Log().Infof("[smtp] relay recipient blocklist is active with the following regexp: %s", SMTPRelayConfig.BlockedRecipients)
+	}
+
+	return nil
+}
+
+func parseChaosTriggers() error {
+	if ChaosTriggers == "" {
+		return nil
+	}
+
+	re := regexp.MustCompile(`^([a-zA-Z0-0]+):(\d\d\d):(\d+(\.\d)?)$`)
+
+	parts := strings.Split(ChaosTriggers, ",")
+	for _, p := range parts {
+		p = strings.TrimSpace(p)
+		if !re.MatchString(p) {
+			return fmt.Errorf("invalid argument: %s", p)
+		}
+
+		matches := re.FindAllStringSubmatch(p, 1)
+		key := matches[0][1]
+		errorCode, err := strconv.Atoi(matches[0][2])
+		if err != nil {
+			return err
+		}
+		probability, err := strconv.Atoi(matches[0][3])
+		if err != nil {
+			return err
+		}
+
+		if err := chaos.Set(key, errorCode, probability); err != nil {
+			return err
+		}
 	}
 
 	return nil
