@@ -30,7 +30,7 @@ type HTMLCheckResponse = htmlcheck.Response
 
 // HTMLCheck returns a summary of the HTML client support
 func HTMLCheck(w http.ResponseWriter, r *http.Request) {
-	// swagger:route GET /api/v1/message/{ID}/html-check Other HTMLCheckParams
+	// swagger:route GET /api/v1/message/{ID}/html-check other HTMLCheckParams
 	//
 	// # HTML check
 	//
@@ -114,7 +114,7 @@ type LinkCheckResponse = linkcheck.Response
 
 // LinkCheck returns a summary of links in the email
 func LinkCheck(w http.ResponseWriter, r *http.Request) {
-	// swagger:route GET /api/v1/message/{ID}/link-check Other LinkCheckParams
+	// swagger:route GET /api/v1/message/{ID}/link-check other LinkCheckParams
 	//
 	// # Link check
 	//
@@ -184,7 +184,7 @@ type SpamAssassinResponse = spamassassin.Result
 
 // SpamAssassinCheck returns a summary of SpamAssassin results (if enabled)
 func SpamAssassinCheck(w http.ResponseWriter, r *http.Request) {
-	// swagger:route GET /api/v1/message/{ID}/sa-check Other SpamAssassinCheckParams
+	// swagger:route GET /api/v1/message/{ID}/sa-check other SpamAssassinCheckParams
 	//
 	// # SpamAssassin check
 	//

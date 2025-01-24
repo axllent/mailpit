@@ -1,7 +1,7 @@
 // Package smtpd implements a basic SMTP server.
 //
 // This is a modified version of https://github.com/mhale/smtpd to
-// add optional support for unix sockets.
+// add support for unix sockets and Mailpit Chaos.
 package smtpd
 
 import (
@@ -22,6 +22,8 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/axllent/mailpit/internal/smtpd/chaos"
 )
 
 var (
@@ -390,7 +392,7 @@ loop:
 			buffer.Reset()
 		case "EHLO":
 			s.remoteName = args
-			s.writef(s.makeEHLOResponse())
+			s.writef("%s", s.makeEHLOResponse())
 
 			// RFC 2821 section 4.1.4 specifies that EHLO has the same effect as RSET.
 			from = ""
@@ -411,6 +413,12 @@ loop:
 			if match == nil {
 				s.writef("501 5.5.4 Syntax error in parameters or arguments (invalid FROM parameter)")
 			} else {
+				// Mailpit Chaos
+				if fail, code := chaos.Config.Sender.Trigger(); fail {
+					s.writef("%d Chaos sender error", code)
+					break
+				}
+
 				// Validate the SIZE parameter if one was sent.
 				if len(match[2]) > 0 { // A parameter is present
 					sizeMatch := mailFromSizeRE.FindStringSubmatch(match[3])
@@ -439,6 +447,7 @@ loop:
 					s.writef("250 2.1.0 Ok")
 				}
 			}
+
 			to = nil
 			buffer.Reset()
 		case "RCPT":
@@ -459,10 +468,17 @@ loop:
 			if match == nil {
 				s.writef("501 5.5.4 Syntax error in parameters or arguments (invalid TO parameter)")
 			} else {
+				// Mailpit Chaos
+				if fail, code := chaos.Config.Recipient.Trigger(); fail {
+					s.writef("%d Chaos recipient error", code)
+					break
+				}
+
 				// RFC 5321 specifies support for minimum of 100 recipients is required.
 				if s.srv.MaxRecipients == 0 {
 					s.srv.MaxRecipients = 100
 				}
+
 				if len(to) == s.srv.MaxRecipients {
 					s.writef("452 4.5.3 Too many recipients")
 				} else {
@@ -682,6 +698,12 @@ loop:
 			allowedAuth := s.authMechs()
 			if allowed, found := allowedAuth[authType]; !found || !allowed {
 				s.writef("504 5.5.4 Unrecognized authentication type")
+				break
+			}
+
+			// Mailpit Chaos
+			if fail, code := chaos.Config.Authentication.Trigger(); fail {
+				s.writef("%d Chaos authentication error", code)
 				break
 			}
 
