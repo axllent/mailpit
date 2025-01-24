@@ -390,7 +390,7 @@ loop:
 			buffer.Reset()
 		case "EHLO":
 			s.remoteName = args
-			s.writef(s.makeEHLOResponse())
+			s.writef("%s", s.makeEHLOResponse())
 
 			// RFC 2821 section 4.1.4 specifies that EHLO has the same effect as RSET.
 			from = ""
