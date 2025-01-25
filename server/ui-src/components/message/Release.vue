@@ -86,7 +86,13 @@ export default {
 					<div class="row">
 						<label class="col-sm-2 col-form-label text-body-secondary">From</label>
 						<div class="col-sm-10">
-							<input type="text" aria-label="From address" readonly class="form-control-plaintext"
+							<div v-if="mailbox.uiConfig.MessageRelay.OverrideFrom != ''" class="form-control-plaintext">
+								{{ mailbox.uiConfig.MessageRelay.OverrideFrom }}
+								<span class="text-muted small ms-2">
+									* address overridden by the relay configuration.
+								</span>
+							</div>
+							<input v-else type="text" aria-label="From address" readonly class="form-control-plaintext"
 								:value="message.From ? message.From.Address : ''">
 						</div>
 					</div>
@@ -125,15 +131,17 @@ export default {
 
 						</div>
 					</div>
-					
+
 					<h6>Notes</h6>
 					<ul>
 						<li v-if="mailbox.uiConfig.MessageRelay.AllowedRecipients != ''" class="form-text">
-							A recipient <b>allowlist</b> has been configured. Any mail address not matching the following will be rejected:
+							A recipient <b>allowlist</b> has been configured. Any mail address not matching the
+							following will be rejected:
 							<code>{{ mailbox.uiConfig.MessageRelay.AllowedRecipients }}</code>
 						</li>
 						<li v-if="mailbox.uiConfig.MessageRelay.BlockedRecipients != ''" class="form-text">
-							A recipient <b>blocklist</b> has been configured. Any mail address matching the following will be rejected:
+							A recipient <b>blocklist</b> has been configured. Any mail address matching the following
+							will be rejected:
 							<code>{{ mailbox.uiConfig.MessageRelay.BlockedRecipients }}</code>
 						</li>
 						<li class="form-text">
@@ -142,8 +150,8 @@ export default {
 						<li class="form-text">
 							SMTP delivery failures will bounce back to
 							<code v-if="mailbox.uiConfig.MessageRelay.ReturnPath != ''">
-								{{ mailbox.uiConfig.MessageRelay.ReturnPath }}
-							</code>
+			{{ mailbox.uiConfig.MessageRelay.ReturnPath }}
+		</code>
 							<code v-else>{{ message.ReturnPath }}</code>.
 						</li>
 					</ul>

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"net/mail"
 	"net/url"
 	"os"
 	"path"
@@ -204,6 +205,7 @@ type SMTPRelayConfigStruct struct {
 	Password                string         `yaml:"password"`           // plain
 	Secret                  string         `yaml:"secret"`             // cram-md5
 	ReturnPath              string         `yaml:"return-path"`        // allow overriding the bounce address
+	OverrideFrom            string         `yaml:"override-from"`      // allow overriding of the from address
 	AllowedRecipients       string         `yaml:"allowed-recipients"` // regex, if set needs to match for mails to be relayed
 	AllowedRecipientsRegexp *regexp.Regexp // compiled regexp using AllowedRecipients
 	BlockedRecipients       string         `yaml:"blocked-recipients"` // regex, if set prevents relating to these addresses
@@ -609,6 +611,15 @@ func validateRelayConfig() error {
 
 		SMTPRelayConfig.BlockedRecipientsRegexp = re
 		logger.Log().Infof("[smtp] relay recipient blocklist is active with the following regexp: %s", SMTPRelayConfig.BlockedRecipients)
+	}
+
+	if SMTPRelayConfig.OverrideFrom != "" {
+		m, err := mail.ParseAddress(SMTPRelayConfig.OverrideFrom)
+		if err != nil {
+			return fmt.Errorf("[smtp] relay override-from is not a valid email address: %s", SMTPRelayConfig.OverrideFrom)
+		}
+
+		SMTPRelayConfig.OverrideFrom = m.Address
 	}
 
 	return nil

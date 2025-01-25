@@ -1948,6 +1948,10 @@
               "description": "Whether message relaying (release) is enabled",
               "type": "boolean"
             },
+            "OverrideFrom": {
+              "description": "Overrides the \"From\" address for all relayed messages",
+              "type": "string"
+            },
             "ReturnPath": {
               "description": "Enforced Return-Path (if set) for relay bounces",
               "type": "string"

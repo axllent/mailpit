@@ -9,6 +9,7 @@ import (
 
 	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/internal/logger"
+	"github.com/axllent/mailpit/internal/tools"
 )
 
 func autoRelayMessage(from string, to []string, data *[]byte) {
@@ -84,6 +85,15 @@ func Relay(from string, to []string, msg []byte) error {
 		if err = c.Auth(auth); err != nil {
 			return fmt.Errorf("error response to AUTH command: %s", err.Error())
 		}
+	}
+
+	if config.SMTPRelayConfig.OverrideFrom != "" {
+		msg, err = tools.OverrideFromHeader(msg, config.SMTPRelayConfig.OverrideFrom)
+		if err != nil {
+			return fmt.Errorf("error overriding From header: %s", err.Error())
+		}
+
+		from = config.SMTPRelayConfig.OverrideFrom
 	}
 
 	if err = c.Mail(from); err != nil {
