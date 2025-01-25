@@ -87,6 +87,9 @@ func SaveToDatabase(origin net.Addr, from string, to []string, data []byte) (str
 	// if enabled, this may conditionally relay the email through to the preconfigured smtp server
 	autoRelayMessage(from, to, &data)
 
+	// if enabled, this will forward a copy to preconfigured addresses
+	autoForwardMessage(from, &data)
+
 	// build array of all addresses in the header to compare to the []to array
 	emails, hasBccHeader := scanAddressesInHeader(msg.Header)
 

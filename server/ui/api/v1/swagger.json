@@ -1900,7 +1900,7 @@
       "x-go-package": "github.com/axllent/mailpit/internal/smtpd/chaos"
     },
     "Triggers": {
-      "description": "ChaosTriggers is the Chaos configuration",
+      "description": "Triggers for the Chaos configuration",
       "type": "object",
       "properties": {
         "Authentication": {
@@ -1913,7 +1913,6 @@
           "$ref": "#/definitions/Trigger"
         }
       },
-      "x-go-package": "github.com/axllent/mailpit/internal/smtpd/chaos",
       "$ref": "#/definitions/Triggers"
     },
     "WebUIConfiguration": {

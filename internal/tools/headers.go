@@ -49,7 +49,7 @@ func RemoveMessageHeaders(msg []byte, headers []string) ([]byte, error) {
 			}
 
 			if len(hdr) > 0 {
-				logger.Log().Debugf("[release] removed %s header", hdr)
+				logger.Log().Debugf("[relay] removed %s header", hdr)
 				msg = bytes.Replace(msg, hdr, []byte(""), 1)
 			}
 		}
@@ -91,7 +91,7 @@ func UpdateMessageHeader(msg []byte, header, value string) ([]byte, error) {
 		}
 
 		if len(hdr) > 0 {
-			logger.Log().Debugf("[release] replaced %s header", hdr)
+			logger.Log().Debugf("[relay] replaced %s header", hdr)
 			msg = bytes.Replace(msg, hdr, []byte(header+": "+value+"\r\n"), 1)
 		}
 	}
@@ -148,12 +148,12 @@ func OverrideFromHeader(msg []byte, address string) ([]byte, error) {
 			// insert the original From header as X-Original-From
 			msg = append([]byte("X-Original-From: "+originalFrom+"\r\n"), msg...)
 
-			logger.Log().Debugf("[release] Replaced From email address with %s", address)
+			logger.Log().Debugf("[relay] Replaced From email address with %s", address)
 		}
 	} else {
 		// no From header, so add one
 		msg = append([]byte("From: "+address+"\r\n"), msg...)
-		logger.Log().Debugf("[release] Added From email: %s", address)
+		logger.Log().Debugf("[relay] Added From email: %s", address)
 	}
 
 	return msg, nil

@@ -12,12 +12,13 @@ import (
 	"github.com/axllent/mailpit/internal/tools"
 )
 
+// Wrapper to auto relay messages if configured
 func autoRelayMessage(from string, to []string, data *[]byte) {
 	if config.SMTPRelayConfig.BlockedRecipientsRegexp != nil {
 		filteredTo := []string{}
 		for _, address := range to {
 			if config.SMTPRelayConfig.BlockedRecipientsRegexp.MatchString(address) {
-				logger.Log().Debugf("[smtp] ignoring auto-relay to %s: found in blocklist", address)
+				logger.Log().Debugf("[relay] ignoring auto-relay to %s: found in blocklist", address)
 				continue
 			}
 
@@ -32,9 +33,9 @@ func autoRelayMessage(from string, to []string, data *[]byte) {
 
 	if config.SMTPRelayAll {
 		if err := Relay(from, to, *data); err != nil {
-			logger.Log().Errorf("[smtp] error relaying message: %s", err.Error())
+			logger.Log().Errorf("[relay] error: %s", err.Error())
 		} else {
-			logger.Log().Debugf("[smtp] auto-relay message to %s from %s via %s:%d",
+			logger.Log().Debugf("[relay] sent message to %s from %s via %s:%d",
 				strings.Join(to, ", "), from, config.SMTPRelayConfig.Host, config.SMTPRelayConfig.Port)
 		}
 	} else if config.SMTPRelayMatchingRegexp != nil {
@@ -50,9 +51,9 @@ func autoRelayMessage(from string, to []string, data *[]byte) {
 		}
 
 		if err := Relay(from, filtered, *data); err != nil {
-			logger.Log().Errorf("[smtp] error relaying message: %s", err.Error())
+			logger.Log().Errorf("[relay] error: %s", err.Error())
 		} else {
-			logger.Log().Debugf("[smtp] auto-relay message to %s from %s via %s:%d",
+			logger.Log().Debugf("[relay] auto-relay message to %s from %s via %s:%d",
 				strings.Join(filtered, ", "), from, config.SMTPRelayConfig.Host, config.SMTPRelayConfig.Port)
 		}
 	}
