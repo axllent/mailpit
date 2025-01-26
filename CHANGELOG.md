@@ -2,6 +2,22 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.22.0]
+
+### Feature
+- SMTP auto-forwarding option ([#414](https://github.com/axllent/mailpit/issues/414))
+- Option to override the From email address in SMTP relay configuration ([#414](https://github.com/axllent/mailpit/issues/414))
+- Add Chaos functionality to test integration handling of SMTP error responses ([#402](https://github.com/axllent/mailpit/issues/402), [#110](https://github.com/axllent/mailpit/issues/110), [#144](https://github.com/axllent/mailpit/issues/144) & [#268](https://github.com/axllent/mailpit/issues/268))
+
+### Chore
+- Update node dependencies
+- Update Go dependencies
+
+### Fix
+- Update command `npm run update-caniemail` save path ([#422](https://github.com/axllent/mailpit/issues/422))
+- Correct date formatting in TestMakeHeaders
+
+
 ## [v1.21.8]
 
 ### Chore
