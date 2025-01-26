@@ -1,7 +1,7 @@
 // Package smtpd implements a basic SMTP server.
 //
 // This is a modified version of https://github.com/mhale/smtpd to
-// add optional support for unix sockets.
+// add support for unix sockets and Mailpit Chaos.
 package smtpd
 
 import (
@@ -22,6 +22,8 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/axllent/mailpit/internal/smtpd/chaos"
 )
 
 var (
@@ -390,7 +392,7 @@ loop:
 			buffer.Reset()
 		case "EHLO":
 			s.remoteName = args
-			s.writef(s.makeEHLOResponse())
+			s.writef("%s", s.makeEHLOResponse())
 
 			// RFC 2821 section 4.1.4 specifies that EHLO has the same effect as RSET.
 			from = ""
@@ -411,6 +413,12 @@ loop:
 			if match == nil {
 				s.writef("501 5.5.4 Syntax error in parameters or arguments (invalid FROM parameter)")
 			} else {
+				// Mailpit Chaos
+				if fail, code := chaos.Config.Sender.Trigger(); fail {
+					s.writef("%d Chaos sender error", code)
+					break
+				}
+
 				// Validate the SIZE parameter if one was sent.
 				if len(match[2]) > 0 { // A parameter is present
 					sizeMatch := mailFromSizeRE.FindStringSubmatch(match[3])
@@ -426,7 +434,7 @@ loop:
 							s.writef("501 5.5.4 Syntax error in parameters or arguments (invalid SIZE parameter)")
 						} else if s.srv.MaxSize > 0 && size > s.srv.MaxSize { // SIZE above maximum size, if set
 							err = maxSizeExceeded(s.srv.MaxSize)
-							s.writef(err.Error())
+							s.writef("%s", err.Error())
 						} else { // SIZE ok
 							from = match[1]
 							gotFrom = true
@@ -439,6 +447,7 @@ loop:
 					s.writef("250 2.1.0 Ok")
 				}
 			}
+
 			to = nil
 			buffer.Reset()
 		case "RCPT":
@@ -459,10 +468,17 @@ loop:
 			if match == nil {
 				s.writef("501 5.5.4 Syntax error in parameters or arguments (invalid TO parameter)")
 			} else {
+				// Mailpit Chaos
+				if fail, code := chaos.Config.Recipient.Trigger(); fail {
+					s.writef("%d Chaos recipient error", code)
+					break
+				}
+
 				// RFC 5321 specifies support for minimum of 100 recipients is required.
 				if s.srv.MaxRecipients == 0 {
 					s.srv.MaxRecipients = 100
 				}
+
 				if len(to) == s.srv.MaxRecipients {
 					s.writef("452 4.5.3 Too many recipients")
 				} else {
@@ -507,7 +523,7 @@ loop:
 					}
 					break loop
 				case maxSizeExceededError:
-					s.writef(err.Error())
+					s.writef("%s", err.Error())
 					continue
 				default:
 					s.writef("451 4.3.0 Requested action aborted: local error in processing")
@@ -526,7 +542,7 @@ loop:
 				if err != nil {
 					checkErrFormat := regexp.MustCompile(`^([2-5][0-9]{2})[\s\-](.+)$`)
 					if checkErrFormat.MatchString(err.Error()) {
-						s.writef(err.Error())
+						s.writef("%s", err.Error())
 					} else {
 						s.writef("451 4.3.5 Unable to process mail")
 					}
@@ -538,7 +554,7 @@ loop:
 				if err != nil {
 					checkErrFormat := regexp.MustCompile(`^([2-5][0-9]{2})[\s\-](.+)$`)
 					if checkErrFormat.MatchString(err.Error()) {
-						s.writef(err.Error())
+						s.writef("%s", err.Error())
 					} else {
 						s.writef("451 4.3.5 Unable to process mail")
 					}
@@ -546,7 +562,7 @@ loop:
 				}
 
 				if msgID != "" {
-					s.writef("250 2.0.0 Ok: queued as " + msgID)
+					s.writef("250 2.0.0 Ok: queued as %s", msgID)
 				} else {
 					s.writef("250 2.0.0 Ok: queued")
 				}
@@ -685,6 +701,12 @@ loop:
 				break
 			}
 
+			// Mailpit Chaos
+			if fail, code := chaos.Config.Authentication.Trigger(); fail {
+				s.writef("%d Chaos authentication error", code)
+				break
+			}
+
 			// RFC 4954 also specifies that ESMTP code 5.5.4 ("Invalid command arguments") should be returned
 			// when attempting to use an unsupported authentication type.
 			// Many servers return 5.7.4 ("Security features not supported") instead.
@@ -703,7 +725,7 @@ loop:
 					break loop
 				}
 
-				s.writef(err.Error())
+				s.writef("%s", err.Error())
 				break
 			}
 
@@ -726,7 +748,7 @@ func (s *session) writef(format string, args ...interface{}) {
 	}
 
 	line := fmt.Sprintf(format, args...)
-	fmt.Fprintf(s.bw, line+"\r\n")
+	fmt.Fprintf(s.bw, "%s\r\n", line)
 	_ = s.bw.Flush()
 
 	if Debug {
@@ -869,7 +891,7 @@ func (s *session) handleAuthLogin(arg string) (bool, error) {
 	var err error
 
 	if arg == "" {
-		s.writef("334 " + base64.StdEncoding.EncodeToString([]byte("Username:")))
+		s.writef("334 %s", base64.StdEncoding.EncodeToString([]byte("Username:")))
 		arg, err = s.readLine()
 		if err != nil {
 			return false, err
@@ -881,7 +903,7 @@ func (s *session) handleAuthLogin(arg string) (bool, error) {
 		return false, errors.New("501 5.5.2 Syntax error (unable to decode)")
 	}
 
-	s.writef("334 " + base64.StdEncoding.EncodeToString([]byte("Password:")))
+	s.writef("334 %s", base64.StdEncoding.EncodeToString([]byte("Password:")))
 	line, err := s.readLine()
 	if err != nil {
 		return false, err
@@ -929,7 +951,7 @@ func (s *session) handleAuthPlain(arg string) (bool, error) {
 func (s *session) handleAuthCramMD5() (bool, error) {
 	shared := "<" + strconv.Itoa(os.Getpid()) + "." + strconv.Itoa(time.Now().Nanosecond()) + "@" + s.srv.Hostname + ">"
 
-	s.writef("334 " + base64.StdEncoding.EncodeToString([]byte(shared)))
+	s.writef("334 %s", base64.StdEncoding.EncodeToString([]byte(shared)))
 
 	data, err := s.readLine()
 	if err != nil {

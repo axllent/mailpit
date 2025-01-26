@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/axllent/mailpit/config"
+	"github.com/axllent/mailpit/internal/smtpd/chaos"
 	"github.com/axllent/mailpit/internal/stats"
 )
 
@@ -59,6 +60,8 @@ type webUIConfiguration struct {
 		AllowedRecipients string
 		// Block relaying to these recipients (regex)
 		BlockedRecipients string
+		// Overrides the "From" address for all relayed messages
+		OverrideFrom string
 		// DEPRECATED 2024/03/12
 		// swagger:ignore
 		RecipientAllowlist string
@@ -66,6 +69,9 @@ type webUIConfiguration struct {
 
 	// Whether SpamAssassin is enabled
 	SpamAssassin bool
+
+	// Whether Chaos support is enabled at runtime
+	ChaosEnabled bool
 
 	// Whether messages with duplicate IDs are ignored
 	DuplicatesIgnored bool
@@ -107,11 +113,13 @@ func WebUIConfig(w http.ResponseWriter, _ *http.Request) {
 		conf.MessageRelay.ReturnPath = config.SMTPRelayConfig.ReturnPath
 		conf.MessageRelay.AllowedRecipients = config.SMTPRelayConfig.AllowedRecipients
 		conf.MessageRelay.BlockedRecipients = config.SMTPRelayConfig.BlockedRecipients
+		conf.MessageRelay.OverrideFrom = config.SMTPRelayConfig.OverrideFrom
 		// DEPRECATED 2024/03/12
 		conf.MessageRelay.RecipientAllowlist = config.SMTPRelayConfig.AllowedRecipients
 	}
 
 	conf.SpamAssassin = config.EnableSpamAssassin != ""
+	conf.ChaosEnabled = chaos.Enabled
 	conf.DuplicatesIgnored = config.IgnoreDuplicateIDs
 
 	w.Header().Add("Content-Type", "application/json")

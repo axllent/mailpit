@@ -10,6 +10,7 @@ import (
 	"github.com/axllent/mailpit/internal/auth"
 	"github.com/axllent/mailpit/internal/logger"
 	"github.com/axllent/mailpit/internal/smtpd"
+	"github.com/axllent/mailpit/internal/smtpd/chaos"
 	"github.com/axllent/mailpit/internal/storage"
 	"github.com/axllent/mailpit/internal/tools"
 	"github.com/axllent/mailpit/server"
@@ -122,6 +123,13 @@ func init() {
 	rootCmd.Flags().BoolVar(&config.SMTPRelayAll, "smtp-relay-all", config.SMTPRelayAll, "Auto-relay all new messages via external SMTP server (caution!)")
 	rootCmd.Flags().StringVar(&config.SMTPRelayMatching, "smtp-relay-matching", config.SMTPRelayMatching, "Auto-relay new messages to only matching recipients (regular expression)")
 
+	// SMTP forwarding
+	rootCmd.Flags().StringVar(&config.SMTPForwardConfigFile, "smtp-forward-config", config.SMTPForwardConfigFile, "SMTP forwarding configuration file for all messages")
+
+	// Chaos
+	rootCmd.Flags().BoolVar(&chaos.Enabled, "enable-chaos", chaos.Enabled, "Enable Chaos functionality (API / web UI)")
+	rootCmd.Flags().StringVar(&config.ChaosTriggers, "chaos-triggers", config.ChaosTriggers, "Enable Chaos & set the triggers for SMTP server")
+
 	// POP3 server
 	rootCmd.Flags().StringVar(&config.POP3Listen, "pop3", config.POP3Listen, "POP3 server bind interface and port")
 	rootCmd.Flags().StringVar(&config.POP3AuthFile, "pop3-auth-file", config.POP3AuthFile, "A password file for POP3 server authentication (enables POP3 server)")
@@ -208,7 +216,7 @@ func initConfigFromEnv() {
 	}
 	config.UIAuthFile = os.Getenv("MP_UI_AUTH_FILE")
 	if err := auth.SetUIAuth(os.Getenv("MP_UI_AUTH")); err != nil {
-		logger.Log().Errorf(err.Error())
+		logger.Log().Error(err.Error())
 	}
 	config.UITLSCert = os.Getenv("MP_UI_TLS_CERT")
 	config.UITLSKey = os.Getenv("MP_UI_TLS_KEY")
@@ -231,7 +239,7 @@ func initConfigFromEnv() {
 	}
 	config.SMTPAuthFile = os.Getenv("MP_SMTP_AUTH_FILE")
 	if err := auth.SetSMTPAuth(os.Getenv("MP_SMTP_AUTH")); err != nil {
-		logger.Log().Errorf(err.Error())
+		logger.Log().Error(err.Error())
 	}
 	if getEnabledFromEnv("MP_SMTP_AUTH_ACCEPT_ANY") {
 		config.SMTPAuthAcceptAny = true
@@ -278,8 +286,30 @@ func initConfigFromEnv() {
 	config.SMTPRelayConfig.Password = os.Getenv("MP_SMTP_RELAY_PASSWORD")
 	config.SMTPRelayConfig.Secret = os.Getenv("MP_SMTP_RELAY_SECRET")
 	config.SMTPRelayConfig.ReturnPath = os.Getenv("MP_SMTP_RELAY_RETURN_PATH")
+	config.SMTPRelayConfig.OverrideFrom = os.Getenv("MP_SMTP_RELAY_OVERRIDE_FROM")
 	config.SMTPRelayConfig.AllowedRecipients = os.Getenv("MP_SMTP_RELAY_ALLOWED_RECIPIENTS")
 	config.SMTPRelayConfig.BlockedRecipients = os.Getenv("MP_SMTP_RELAY_BLOCKED_RECIPIENTS")
+
+	// SMTP forwarding
+	config.SMTPForwardConfigFile = os.Getenv("MP_SMTP_FORWARD_CONFIG")
+	config.SMTPForwardConfig = config.SMTPForwardConfigStruct{}
+	config.SMTPForwardConfig.Host = os.Getenv("MP_SMTP_FORWARD_HOST")
+	if len(os.Getenv("MP_SMTP_FORWARD_PORT")) > 0 {
+		config.SMTPForwardConfig.Port, _ = strconv.Atoi(os.Getenv("MP_SMTP_FORWARD_PORT"))
+	}
+	config.SMTPForwardConfig.STARTTLS = getEnabledFromEnv("MP_SMTP_FORWARD_STARTTLS")
+	config.SMTPForwardConfig.AllowInsecure = getEnabledFromEnv("MP_SMTP_FORWARD_ALLOW_INSECURE")
+	config.SMTPForwardConfig.Auth = os.Getenv("MP_SMTP_FORWARD_AUTH")
+	config.SMTPForwardConfig.Username = os.Getenv("MP_SMTP_FORWARD_USERNAME")
+	config.SMTPForwardConfig.Password = os.Getenv("MP_SMTP_FORWARD_PASSWORD")
+	config.SMTPForwardConfig.Secret = os.Getenv("MP_SMTP_FORWARD_SECRET")
+	config.SMTPForwardConfig.ReturnPath = os.Getenv("MP_SMTP_FORWARD_RETURN_PATH")
+	config.SMTPForwardConfig.OverrideFrom = os.Getenv("MP_SMTP_FORWARD_OVERRIDE_FROM")
+	config.SMTPForwardConfig.To = os.Getenv("MP_SMTP_FORWARD_TO")
+
+	// Chaos
+	chaos.Enabled = getEnabledFromEnv("MP_ENABLE_CHAOS")
+	config.ChaosTriggers = os.Getenv("MP_CHAOS_TRIGGERS")
 
 	// POP3 server
 	if len(os.Getenv("MP_POP3_BIND_ADDR")) > 0 {
@@ -287,7 +317,7 @@ func initConfigFromEnv() {
 	}
 	config.POP3AuthFile = os.Getenv("MP_POP3_AUTH_FILE")
 	if err := auth.SetPOP3Auth(os.Getenv("MP_POP3_AUTH")); err != nil {
-		logger.Log().Errorf(err.Error())
+		logger.Log().Error(err.Error())
 	}
 	config.POP3TLSCert = os.Getenv("MP_POP3_TLS_CERT")
 	config.POP3TLSKey = os.Getenv("MP_POP3_TLS_KEY")

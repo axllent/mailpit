@@ -86,7 +86,10 @@ export default {
 					<div class="row">
 						<label class="col-sm-2 col-form-label text-body-secondary">From</label>
 						<div class="col-sm-10">
-							<input type="text" aria-label="From address" readonly class="form-control-plaintext"
+							<input v-if="mailbox.uiConfig.MessageRelay.OverrideFrom != ''" type="text"
+								aria-label="From address" readonly class="form-control-plaintext"
+								:value="mailbox.uiConfig.MessageRelay.OverrideFrom">
+							<input v-else type="text" aria-label="From address" readonly class="form-control-plaintext"
 								:value="message.From ? message.From.Address : ''">
 						</div>
 					</div>
@@ -122,51 +125,39 @@ export default {
 									Delete the message after release
 								</label>
 							</div>
-
 						</div>
 					</div>
-					
+
 					<h6>Notes</h6>
 					<ul>
 						<li v-if="mailbox.uiConfig.MessageRelay.AllowedRecipients != ''" class="form-text">
-							A recipient <b>allowlist</b> has been configured. Any mail address not matching the following will be rejected:
+							A recipient <b>allowlist</b> has been configured. Any mail address not matching the
+							following will be rejected:
 							<code>{{ mailbox.uiConfig.MessageRelay.AllowedRecipients }}</code>
 						</li>
 						<li v-if="mailbox.uiConfig.MessageRelay.BlockedRecipients != ''" class="form-text">
-							A recipient <b>blocklist</b> has been configured. Any mail address matching the following will be rejected:
+							A recipient <b>blocklist</b> has been configured. Any mail address matching the following
+							will be rejected:
 							<code>{{ mailbox.uiConfig.MessageRelay.BlockedRecipients }}</code>
 						</li>
 						<li class="form-text">
 							For testing purposes, a new unique <code>Message-Id</code> will be generated on send.
+						</li>
+						<li v-if="mailbox.uiConfig.MessageRelay.OverrideFrom != ''" class="form-text">
+							The <code>From</code> email address has been overridden by the relay configuration to
+							<code>{{ mailbox.uiConfig.MessageRelay.OverrideFrom }}</code>.
 						</li>
 						<li class="form-text">
 							SMTP delivery failures will bounce back to
 							<code v-if="mailbox.uiConfig.MessageRelay.ReturnPath != ''">
 								{{ mailbox.uiConfig.MessageRelay.ReturnPath }}
 							</code>
+							<code v-else-if="mailbox.uiConfig.MessageRelay.OverrideFrom != ''">
+								{{ mailbox.uiConfig.MessageRelay.OverrideFrom }}
+							</code>
 							<code v-else>{{ message.ReturnPath }}</code>.
 						</li>
 					</ul>
-
-					<!-- <div class="form-text text-center" v-if="mailbox.uiConfig.MessageRelay.AllowedRecipients != ''">
-						Note: A recipient allowlist has been configured. Any mail address not matching it will be
-						rejected.<br class="d-none d-md-inline">
-						Allowed recipients: <b>{{ mailbox.uiConfig.MessageRelay.AllowedRecipients }}</b>
-					</div>
-					<div class="form-text text-center" v-if="mailbox.uiConfig.MessageRelay.BlockedRecipients != ''">
-						Note: A recipient blocklist has been configured. Any mail address matching it will be
-						rejected.<br class="d-none d-md-inline">
-						Blocked recipients: <b>{{ mailbox.uiConfig.MessageRelay.BlockedRecipients }}</b>
-					</div>
-					<div class="form-text text-center">
-						Note: For testing purposes, a unique Message-Id will be generated on send.
-						<br class="d-none d-md-inline">
-						SMTP delivery failures will bounce back to
-						<b v-if="mailbox.uiConfig.MessageRelay.ReturnPath != ''">
-							{{ mailbox.uiConfig.MessageRelay.ReturnPath }}
-						</b>
-						<b v-else>{{ message.ReturnPath }}</b>.
-					</div> -->
 				</div>
 				<div class="modal-footer">
 					<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>

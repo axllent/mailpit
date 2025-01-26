@@ -5,19 +5,17 @@ import (
 	"errors"
 	"fmt"
 	"net"
-	"net/url"
 	"os"
 	"path"
 	"path/filepath"
 	"regexp"
-	"strconv"
 	"strings"
 
 	"github.com/axllent/mailpit/internal/auth"
 	"github.com/axllent/mailpit/internal/logger"
+	"github.com/axllent/mailpit/internal/smtpd/chaos"
 	"github.com/axllent/mailpit/internal/spamassassin"
 	"github.com/axllent/mailpit/internal/tools"
-	"gopkg.in/yaml.v3"
 )
 
 var (
@@ -114,21 +112,11 @@ var (
 	// including x-tags & plus-addresses
 	TagsDisable string
 
-	// SMTPRelayConfigFile to parse a yaml file and store config of relay SMTP server
+	// SMTPRelayConfigFile to parse a yaml file and store config of the relay SMTP server
 	SMTPRelayConfigFile string
 
-	// SMTPRelayConfig to parse a yaml file and store config of relay SMTP server
+	// SMTPRelayConfig to parse a yaml file and store config of the the relay SMTP server
 	SMTPRelayConfig SMTPRelayConfigStruct
-
-	// SMTPStrictRFCHeaders will return an error if the email headers contain <CR><CR><LF> (\r\r\n)
-	// @see https://github.com/axllent/mailpit/issues/87 & https://github.com/axllent/mailpit/issues/153
-	SMTPStrictRFCHeaders bool
-
-	// SMTPAllowedRecipients if set, will only accept recipients matching this regular expression
-	SMTPAllowedRecipients string
-
-	// SMTPAllowedRecipientsRegexp is the compiled version of SMTPAllowedRecipients
-	SMTPAllowedRecipientsRegexp *regexp.Regexp
 
 	// ReleaseEnabled is whether message releases are enabled, requires a valid SMTPRelayConfigFile
 	ReleaseEnabled = false
@@ -142,6 +130,22 @@ var (
 
 	// SMTPRelayMatchingRegexp is the compiled version of SMTPRelayMatching
 	SMTPRelayMatchingRegexp *regexp.Regexp
+
+	// SMTPForwardConfigFile to parse a yaml file and store config of the forwarding SMTP server
+	SMTPForwardConfigFile string
+
+	// SMTPForwardConfig to parse a yaml file and store config of the forwarding SMTP server
+	SMTPForwardConfig SMTPForwardConfigStruct
+
+	// SMTPStrictRFCHeaders will return an error if the email headers contain <CR><CR><LF> (\r\r\n)
+	// @see https://github.com/axllent/mailpit/issues/87 & https://github.com/axllent/mailpit/issues/153
+	SMTPStrictRFCHeaders bool
+
+	// SMTPAllowedRecipients if set, will only accept recipients matching this regular expression
+	SMTPAllowedRecipients string
+
+	// SMTPAllowedRecipientsRegexp is the compiled version of SMTPAllowedRecipients
+	SMTPAllowedRecipientsRegexp *regexp.Regexp
 
 	// POP3Listen address - if set then Mailpit will start the POP3 server and listen on this address
 	POP3Listen = "[::]:1110"
@@ -176,6 +180,9 @@ var (
 	// RepoBinaryName on Github for updater
 	RepoBinaryName = "mailpit"
 
+	// ChaosTriggers are parsed and set in the chaos module
+	ChaosTriggers string
+
 	// DisableHTMLCheck DEPRECATED 2024/04/13 - kept here to display console warning only
 	DisableHTMLCheck = false
 
@@ -200,6 +207,7 @@ type SMTPRelayConfigStruct struct {
 	Password                string         `yaml:"password"`           // plain
 	Secret                  string         `yaml:"secret"`             // cram-md5
 	ReturnPath              string         `yaml:"return-path"`        // allow overriding the bounce address
+	OverrideFrom            string         `yaml:"override-from"`      // allow overriding of the from address
 	AllowedRecipients       string         `yaml:"allowed-recipients"` // regex, if set needs to match for mails to be relayed
 	AllowedRecipientsRegexp *regexp.Regexp // compiled regexp using AllowedRecipients
 	BlockedRecipients       string         `yaml:"blocked-recipients"` // regex, if set prevents relating to these addresses
@@ -207,6 +215,21 @@ type SMTPRelayConfigStruct struct {
 
 	// DEPRECATED 2024/03/12
 	RecipientAllowlist string `yaml:"recipient-allowlist"`
+}
+
+// SMTPForwardConfigStruct struct for parsing yaml & storing variables
+type SMTPForwardConfigStruct struct {
+	To            string `yaml:"to"`             // comma-separated list of email addresses
+	Host          string `yaml:"host"`           // SMTP host
+	Port          int    `yaml:"port"`           // SMTP port
+	STARTTLS      bool   `yaml:"starttls"`       // whether to use STARTTLS
+	AllowInsecure bool   `yaml:"allow-insecure"` // allow insecure authentication
+	Auth          string `yaml:"auth"`           // none, plain, login, cram-md5
+	Username      string `yaml:"username"`       // plain & cram-md5
+	Password      string `yaml:"password"`       // plain
+	Secret        string `yaml:"secret"`         // cram-md5
+	ReturnPath    string `yaml:"return-path"`    // allow overriding the bounce address
+	OverrideFrom  string `yaml:"override-from"`  // allow overriding of the from address
 }
 
 // VerifyConfig wil do some basic checking
@@ -344,6 +367,14 @@ func VerifyConfig() error {
 		return errors.New("[smtp] authentication requires STARTTLS or TLS encryption, run with `--smtp-auth-allow-insecure` to allow insecure authentication")
 	}
 
+	if err := parseChaosTriggers(); err != nil {
+		return fmt.Errorf("[chaos] %s", err.Error())
+	}
+
+	if chaos.Enabled {
+		logger.Log().Info("[chaos] is enabled")
+	}
+
 	// POP3 server
 	if POP3TLSCert != "" {
 		POP3TLSCert = filepath.Clean(POP3TLSCert)
@@ -465,6 +496,15 @@ func VerifyConfig() error {
 		logger.Log().Warnf("[relay] auto-relaying all new messages via %s:%d", SMTPRelayConfig.Host, SMTPRelayConfig.Port)
 	}
 
+	if err := parseForwardConfig(SMTPForwardConfigFile); err != nil {
+		return err
+	}
+
+	// separate forwarding config validation to account for environment variables
+	if err := validateForwardConfig(); err != nil {
+		return err
+	}
+
 	if DemoMode {
 		MaxMessages = 1000
 		// this deserves a warning
@@ -472,172 +512,4 @@ func VerifyConfig() error {
 	}
 
 	return nil
-}
-
-// Parse the --max-age value (if set)
-func parseMaxAge() error {
-	if MaxAge == "" {
-		return nil
-	}
-
-	re := regexp.MustCompile(`^\d+(h|d)$`)
-	if !re.MatchString(MaxAge) {
-		return fmt.Errorf("max-age must be either <int>h for hours or <int>d for days: %s", MaxAge)
-	}
-
-	if strings.HasSuffix(MaxAge, "h") {
-		hours, err := strconv.Atoi(strings.TrimSuffix(MaxAge, "h"))
-		if err != nil {
-			return err
-		}
-
-		MaxAgeInHours = hours
-
-		return nil
-	}
-
-	days, err := strconv.Atoi(strings.TrimSuffix(MaxAge, "d"))
-	if err != nil {
-		return err
-	}
-
-	logger.Log().Debugf("[db] auto-deleting messages older than %s", MaxAge)
-
-	MaxAgeInHours = days * 24
-	return nil
-}
-
-// Parse the SMTPRelayConfigFile (if set)
-func parseRelayConfig(c string) error {
-	if c == "" {
-		return nil
-	}
-
-	c = filepath.Clean(c)
-
-	if !isFile(c) {
-		return fmt.Errorf("[smtp] relay configuration not found or readable: %s", c)
-	}
-
-	data, err := os.ReadFile(c)
-	if err != nil {
-		return err
-	}
-
-	if err := yaml.Unmarshal(data, &SMTPRelayConfig); err != nil {
-		return err
-	}
-
-	if SMTPRelayConfig.Host == "" {
-		return errors.New("[smtp] relay host not set")
-	}
-
-	// DEPRECATED 2024/03/12
-	if SMTPRelayConfig.RecipientAllowlist != "" {
-		logger.Log().Warn("[smtp] relay 'recipient-allowlist' is deprecated, use 'allowed-recipients' instead")
-		if SMTPRelayConfig.AllowedRecipients == "" {
-			SMTPRelayConfig.AllowedRecipients = SMTPRelayConfig.RecipientAllowlist
-		}
-	}
-
-	return nil
-}
-
-// Validate the SMTPRelayConfig (if Host is set)
-func validateRelayConfig() error {
-	if SMTPRelayConfig.Host == "" {
-		return nil
-	}
-
-	if SMTPRelayConfig.Port == 0 {
-		SMTPRelayConfig.Port = 25 // default
-	}
-
-	SMTPRelayConfig.Auth = strings.ToLower(SMTPRelayConfig.Auth)
-
-	if SMTPRelayConfig.Auth == "" || SMTPRelayConfig.Auth == "none" || SMTPRelayConfig.Auth == "false" {
-		SMTPRelayConfig.Auth = "none"
-	} else if SMTPRelayConfig.Auth == "plain" {
-		if SMTPRelayConfig.Username == "" || SMTPRelayConfig.Password == "" {
-			return fmt.Errorf("[smtp] relay host username or password not set for PLAIN authentication")
-		}
-	} else if SMTPRelayConfig.Auth == "login" {
-		SMTPRelayConfig.Auth = "login"
-		if SMTPRelayConfig.Username == "" || SMTPRelayConfig.Password == "" {
-			return fmt.Errorf("[smtp] relay host username or password not set for LOGIN authentication")
-		}
-	} else if strings.HasPrefix(SMTPRelayConfig.Auth, "cram") {
-		SMTPRelayConfig.Auth = "cram-md5"
-		if SMTPRelayConfig.Username == "" || SMTPRelayConfig.Secret == "" {
-			return fmt.Errorf("[smtp] relay host username or secret not set for CRAM-MD5 authentication")
-		}
-	} else {
-		return fmt.Errorf("[smtp] relay authentication method not supported: %s", SMTPRelayConfig.Auth)
-	}
-
-	ReleaseEnabled = true
-
-	logger.Log().Infof("[smtp] enabling message relaying via %s:%d", SMTPRelayConfig.Host, SMTPRelayConfig.Port)
-
-	if SMTPRelayConfig.AllowedRecipients != "" {
-		re, err := regexp.Compile(SMTPRelayConfig.AllowedRecipients)
-		if err != nil {
-			return fmt.Errorf("[smtp] failed to compile relay recipient allowlist regexp: %s", err.Error())
-		}
-
-		SMTPRelayConfig.AllowedRecipientsRegexp = re
-		logger.Log().Infof("[smtp] relay recipient allowlist is active with the following regexp: %s", SMTPRelayConfig.AllowedRecipients)
-	}
-
-	if SMTPRelayConfig.BlockedRecipients != "" {
-		re, err := regexp.Compile(SMTPRelayConfig.BlockedRecipients)
-		if err != nil {
-			return fmt.Errorf("[smtp] failed to compile relay recipient blocklist regexp: %s", err.Error())
-		}
-
-		SMTPRelayConfig.BlockedRecipientsRegexp = re
-		logger.Log().Infof("[smtp] relay recipient blocklist is active with the following regexp: %s", SMTPRelayConfig.BlockedRecipients)
-	}
-
-	return nil
-}
-
-// IsFile returns whether a file exists and is readable
-func isFile(path string) bool {
-	f, err := os.Open(filepath.Clean(path))
-	defer f.Close()
-	return err == nil
-}
-
-// IsDir returns whether a path is a directory
-func isDir(path string) bool {
-	info, err := os.Stat(path)
-	if err != nil || os.IsNotExist(err) || !info.IsDir() {
-		return false
-	}
-
-	return true
-}
-
-func isValidURL(s string) bool {
-	u, err := url.ParseRequestURI(s)
-	if err != nil {
-		return false
-	}
-
-	return strings.HasPrefix(u.Scheme, "http")
-}
-
-// DBTenantID converts a tenant ID to a DB-friendly value if set
-func DBTenantID(s string) string {
-	s = tools.Normalize(s)
-	if s != "" {
-		re := regexp.MustCompile(`[^a-zA-Z0-9\_]`)
-		s = re.ReplaceAllString(s, "_")
-		if !strings.HasSuffix(s, "_") {
-			s = s + "_"
-		}
-	}
-
-	return s
 }
