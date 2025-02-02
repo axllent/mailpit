@@ -68,7 +68,12 @@ export default {
 				</span>
 			</RouterLink>
 			<template v-if="!mailbox.selected.length">
-				<button class="list-group-item list-group-item-action" data-bs-toggle="modal"
+				<button v-if="mailbox.skipConfirmations" class="list-group-item list-group-item-action"
+					@click="deleteAllMessages" :disabled="!mailbox.count">
+					<i class="bi bi-trash-fill me-1 text-danger"></i>
+					Delete all
+				</button>
+				<button v-else class="list-group-item list-group-item-action" data-bs-toggle="modal"
 					data-bs-target="#DeleteAllModal" :disabled="!mailbox.count">
 					<i class="bi bi-trash-fill me-1 text-danger"></i>
 					Delete all

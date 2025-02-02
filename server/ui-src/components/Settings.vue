@@ -32,7 +32,16 @@ export default {
 				this.chaosUpdated = true
 			},
 			deep: true
+		},
+
+		'mailbox.skipConfirmations'(v) {
+			if (v) {
+				localStorage.setItem('skip-confirmations', 'true')
+			} else {
+				localStorage.removeItem('skip-confirmations')
+			}
 		}
+
 	},
 
 	mounted() {
@@ -40,6 +49,8 @@ export default {
 		this.$nextTick(function () {
 			Tags.init('select.tz')
 		})
+
+		mailbox.skipConfirmations = localStorage.getItem('skip-confirmations') ? true : false
 	},
 
 	methods: {
@@ -150,6 +161,16 @@ export default {
 										v-model="mailbox.showSpamCheck">
 									<label class="form-check-label" for="spamCheck">
 										Show spam check message tab
+									</label>
+								</div>
+							</div>
+							<div class="mb-3">
+								<div class="form-check form-switch">
+									<input class="form-check-input" type="checkbox" role="switch"
+										id="skip-confirmations" v-model="mailbox.skipConfirmations">
+									<label class="form-check-label" for="skip-confirmations">
+										Skip <code>Delete all</code> &amp; <code>Mark all read</code> confirmation
+										dialogs
 									</label>
 								</div>
 							</div>
