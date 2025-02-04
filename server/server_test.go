@@ -37,7 +37,7 @@ func TestAPIv1Messages(t *testing.T) {
 
 	m, err := fetchMessages(ts.URL + "/api/v1/messages")
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err.Error())
 	}
 
 	// check count of empty database
@@ -50,7 +50,7 @@ func TestAPIv1Messages(t *testing.T) {
 
 	m, err = fetchMessages(ts.URL + "/api/v1/messages")
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err.Error())
 	}
 
 	// read first 10 messages
@@ -61,17 +61,17 @@ func TestAPIv1Messages(t *testing.T) {
 		}
 
 		if _, err := clientGet(ts.URL + "/api/v1/message/" + msg.ID); err != nil {
-			t.Errorf(err.Error())
+			t.Error(err.Error())
 		}
 
 		// get RAW
 		if _, err := clientGet(ts.URL + "/api/v1/message/" + msg.ID + "/raw"); err != nil {
-			t.Errorf(err.Error())
+			t.Error(err.Error())
 		}
 
 		// get headers
 		if _, err := clientGet(ts.URL + "/api/v1/message/" + msg.ID + "/headers"); err != nil {
-			t.Errorf(err.Error())
+			t.Error(err.Error())
 		}
 	}
 
@@ -98,7 +98,7 @@ func TestAPIv1ToggleReadStatus(t *testing.T) {
 
 	m, err := fetchMessages(ts.URL + "/api/v1/messages")
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err.Error())
 	}
 
 	// check count of empty database
@@ -111,7 +111,7 @@ func TestAPIv1ToggleReadStatus(t *testing.T) {
 
 	m, err = fetchMessages(ts.URL + "/api/v1/messages")
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err.Error())
 	}
 
 	// read first 10 IDs
@@ -134,11 +134,11 @@ func TestAPIv1ToggleReadStatus(t *testing.T) {
 	putData.IDs = putIDS
 	j, err := json.Marshal(putData)
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err.Error())
 	}
 	_, err = clientPut(ts.URL+"/api/v1/messages", string(j))
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err.Error())
 	}
 	assertStatsEqual(t, ts.URL+"/api/v1/messages", 90, 100)
 
@@ -147,11 +147,11 @@ func TestAPIv1ToggleReadStatus(t *testing.T) {
 	putData.Read = false
 	j, err = json.Marshal(putData)
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err.Error())
 	}
 	_, err = clientPut(ts.URL+"/api/v1/messages", string(j))
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err.Error())
 	}
 	assertStatsEqual(t, ts.URL+"/api/v1/messages", 100, 100)
 
@@ -160,13 +160,13 @@ func TestAPIv1ToggleReadStatus(t *testing.T) {
 	putData.IDs = []string{}
 	j, err = json.Marshal(putData)
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err.Error())
 	}
 
 	t.Log("Mark all read")
 	_, err = clientPut(ts.URL+"/api/v1/messages", string(j))
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err.Error())
 	}
 	assertStatsEqual(t, ts.URL+"/api/v1/messages", 0, 100)
 }
@@ -272,14 +272,14 @@ func TestAPIv1Send(t *testing.T) {
 	resp := apiv1.SendMessageConfirmation{}
 
 	if err := json.Unmarshal(b, &resp); err != nil {
-		t.Errorf(err.Error())
+		t.Error(err.Error())
 		return
 	}
 
 	t.Logf("Fetching response for message %s", resp.ID)
 	msg, err := fetchMessage(ts.URL + "/api/v1/message/" + resp.ID)
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err.Error())
 	}
 
 	t.Logf("Testing response for message %s", resp.ID)
@@ -307,7 +307,7 @@ func TestAPIv1Send(t *testing.T) {
 
 	attachmentBytes, err := clientGet(ts.URL + "/api/v1/message/" + resp.ID + "/part/" + msg.Attachments[0].PartID)
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err.Error())
 	}
 	assertEqual(t, `This is a plain text attachment`, string(attachmentBytes), "wrong Attachment content")
 }
@@ -331,12 +331,12 @@ func assertStatsEqual(t *testing.T, uri string, unread, total int) {
 
 	data, err := clientGet(uri)
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err.Error())
 		return
 	}
 
 	if err := json.Unmarshal(data, &m); err != nil {
-		t.Errorf(err.Error())
+		t.Error(err.Error())
 		return
 	}
 
@@ -352,12 +352,12 @@ func assertSearchEqual(t *testing.T, uri, query string, count int) {
 
 	data, err := clientGet(uri + "?query=" + url.QueryEscape(query) + "&limit=" + limit)
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err.Error())
 		return
 	}
 
 	if err := json.Unmarshal(data, &m); err != nil {
-		t.Errorf(err.Error())
+		t.Error(err.Error())
 		return
 	}
 
