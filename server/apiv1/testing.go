@@ -1,14 +1,19 @@
 package apiv1
 
 import (
+	"bytes"
 	"fmt"
 	"net/http"
 	"regexp"
 	"strings"
 
 	"github.com/axllent/mailpit/config"
+	"github.com/axllent/mailpit/internal/logger"
 	"github.com/axllent/mailpit/internal/storage"
+	"github.com/axllent/mailpit/internal/tools"
 	"github.com/gorilla/mux"
+	"golang.org/x/net/html"
+	"golang.org/x/net/html/atom"
 )
 
 // swagger:parameters GetMessageHTMLParams
@@ -17,7 +22,19 @@ type getMessageHTMLParams struct {
 	//
 	// in: path
 	// required: true
+	// example: B79PgsotENzGwk4CCbAcAq
 	ID string
+
+	// If this is route is to be embedded in an iframe, set embed to `1` in the URL to add `target="_blank"` and `rel="noreferrer noopener"` to all links.
+	//
+	// In addition, a small script will be added to the end of the document to post (postMessage()) the height of the document back to the parent window for optional iframe height resizing.
+	//
+	// Note that this will also *transform* the message into a full HTML document (if it isn't already), so this option is useful for viewing but not programmatic testing.
+	//
+	// in: query
+	// required: false
+	// type: string
+	Embed string `json:"embed"`
 }
 
 // GetMessageHTML (method: GET) returns a rendered version of a message's HTML part
@@ -68,9 +85,43 @@ func GetMessageHTML(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	html := linkInlineImages(msg)
+	htmlStr := linkInlineImages(msg)
+
+	// If embed=1 is set, then we will add target="_blank" and rel="noreferrer noopener" to all links
+	if r.URL.Query().Get("embed") == "1" {
+		doc, err := html.Parse(strings.NewReader(htmlStr))
+		if err != nil {
+			logger.Log().Error(err.Error())
+		} else {
+			// Walk the entire HTML tree.
+			tools.WalkHTML(doc, func(n *html.Node) {
+				if n.Type == html.ElementNode && n.DataAtom == atom.A {
+					// Set attributes on all anchors with external links.
+					tools.SetHTMLAttributeVal(n, "target", "_blank")
+					tools.SetHTMLAttributeVal(n, "rel", "noreferrer noopener")
+				}
+
+				b := bytes.Buffer{}
+				html.Render(&b, doc)
+				htmlStr = b.String()
+			})
+
+			nonce := r.Header.Get("mp-nonce")
+
+			js := `<script nonce="` + nonce + `">
+				if (typeof window.parent == "object") {
+					window.addEventListener('load', function () {
+						window.parent.postMessage({ messageHeight: document.body.scrollHeight}, "*")
+					})
+				}
+			</script>`
+
+			htmlStr = strings.ReplaceAll(htmlStr, "</body>", js+"</body>")
+		}
+	}
+
 	w.Header().Add("Content-Type", "text/html; charset=utf-8")
-	_, _ = w.Write([]byte(html))
+	_, _ = w.Write([]byte(htmlStr))
 }
 
 // swagger:parameters GetMessageTextParams

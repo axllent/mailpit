@@ -998,10 +998,18 @@
         "parameters": [
           {
             "type": "string",
+            "example": "B79PgsotENzGwk4CCbAcAq",
             "description": "Message database ID or \"latest\"",
             "name": "ID",
             "in": "path",
             "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "Embed",
+            "description": "If this is route is to be embedded in an iframe, set embed to `1` in the URL to add `target=\"_blank\"` and `rel=\"noreferrer noopener\"` to all links.\n\nIn addition, a small script will be added to the end of the document to post (postMessage()) the height of the document back to the parent window for optional iframe height resizing.\n\nNote that this will also *transform* the message into a full HTML document (if it isn't already), so this option is useful for viewing but not programmatic testing.",
+            "name": "embed",
+            "in": "query"
           }
         ],
         "responses": {
