@@ -998,7 +998,6 @@
         "parameters": [
           {
             "type": "string",
-            "example": "B79PgsotENzGwk4CCbAcAq",
             "description": "Message database ID or \"latest\"",
             "name": "ID",
             "in": "path",

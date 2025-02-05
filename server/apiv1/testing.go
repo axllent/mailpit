@@ -22,7 +22,6 @@ type getMessageHTMLParams struct {
 	//
 	// in: path
 	// required: true
-	// example: B79PgsotENzGwk4CCbAcAq
 	ID string
 
 	// If this is route is to be embedded in an iframe, set embed to `1` in the URL to add `target="_blank"` and `rel="noreferrer noopener"` to all links.
