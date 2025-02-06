@@ -2,6 +2,19 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.22.1]
+
+### Feature
+- Add optional query parameter for HTML message iframe embedding ([#434](https://github.com/axllent/mailpit/issues/434))
+- Add optional UI setting to skip "Delete all" & "Mark all read" confirmation dialogs([#428](https://github.com/axllent/mailpit/issues/428))
+
+### Chore
+- Update node dependencies
+- Update Go dependencies
+- Add API CORS policy to HTML preview routes ([#434](https://github.com/axllent/mailpit/issues/434))
+- Bump actions/stale from 9.0.0 to 9.1.0 ([#432](https://github.com/axllent/mailpit/issues/432))
+
+
 ## [v1.22.0]
 
 ### Feature
