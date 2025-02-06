@@ -11,6 +11,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"regexp"
 	"strings"
 	"sync/atomic"
 	"text/template"
@@ -33,8 +34,13 @@ import (
 //go:embed ui
 var embeddedFS embed.FS
 
-// AccessControlAllowOrigin CORS policy
-var AccessControlAllowOrigin string
+var (
+	// AccessControlAllowOrigin CORS policy
+	AccessControlAllowOrigin string
+
+	// htmlPreviewRouteRe is a regexp to match the HTML preview route
+	htmlPreviewRouteRe *regexp.Regexp
+)
 
 // Listen will start the httpd
 func Listen() {
@@ -233,7 +239,12 @@ func middleWareFunc(fn http.HandlerFunc) http.HandlerFunc {
 
 		w.Header().Set("Content-Security-Policy", cspHeader)
 
-		if AccessControlAllowOrigin != "" && strings.HasPrefix(r.RequestURI, config.Webroot+"api/") {
+		if htmlPreviewRouteRe == nil {
+			htmlPreviewRouteRe = regexp.MustCompile(`^` + regexp.QuoteMeta(config.Webroot) + `view/[a-zA-Z0-9]+\.html$`)
+		}
+
+		if AccessControlAllowOrigin != "" &&
+			(strings.HasPrefix(r.RequestURI, config.Webroot+"api/") || htmlPreviewRouteRe.MatchString(r.RequestURI)) {
 			w.Header().Set("Access-Control-Allow-Origin", AccessControlAllowOrigin)
 			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT, OPTIONS")
 			w.Header().Set("Access-Control-Allow-Headers", "*")

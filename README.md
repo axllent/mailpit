@@ -49,7 +49,7 @@ including image thumbnails), including optional [HTTPS](https://mailpit.axllent.
 - [SMTP forwarding](https://mailpit.axllent.org/docs/configuration/smtp-forward/) - automatically forward messages via a different SMTP server to predefined email addresses
 - Fast message [storing & processing](https://mailpit.axllent.org/docs/configuration/email-storage/) - ingesting 100-200 emails per second over SMTP depending on CPU, network speed & email size,
 easily handling tens of thousands of emails, with automatic email pruning (by default keeping the most recent 500 emails)
-- [Chaos](ttps://mailpit.axllent.org/docs/integration/chaos/) feature to enable configurable SMTP errors to test application resilience
+- [Chaos](https://mailpit.axllent.org/docs/integration/chaos/) feature to enable configurable SMTP errors to test application resilience
 - `List-Unsubscribe` syntax validation
 - Optional [webhook](https://mailpit.axllent.org/docs/integration/webhook/) for received messages
 

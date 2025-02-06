@@ -83,13 +83,23 @@ export default {
 			</button>
 
 			<template v-if="!mailbox.selected.length">
-				<button class="list-group-item list-group-item-action" data-bs-toggle="modal"
+				<button v-if="mailbox.skipConfirmations" class="list-group-item list-group-item-action"
+					:disabled="!mailbox.unread" @click="markAllRead">
+					<i class="bi bi-eye-fill me-1"></i>
+					Mark all read
+				</button>
+				<button v-else class="list-group-item list-group-item-action" data-bs-toggle="modal"
 					data-bs-target="#MarkAllReadModal" :disabled="!mailbox.unread">
 					<i class="bi bi-eye-fill me-1"></i>
 					Mark all read
 				</button>
 
-				<button class="list-group-item list-group-item-action" data-bs-toggle="modal"
+				<button v-if="mailbox.skipConfirmations" class="list-group-item list-group-item-action"
+					:disabled="!mailbox.total" @click="deleteAllMessages">
+					<i class="bi bi-trash-fill me-1 text-danger"></i>
+					Delete all
+				</button>
+				<button v-else class="list-group-item list-group-item-action" data-bs-toggle="modal"
 					data-bs-target="#DeleteAllModal" :disabled="!mailbox.total">
 					<i class="bi bi-trash-fill me-1 text-danger"></i>
 					Delete all

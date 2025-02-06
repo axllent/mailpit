@@ -14,8 +14,9 @@ export const mailbox = reactive({
 	searching: false,				// current search, false for none
 	refresh: false, 				// to listen from MessagesMixin
 	autoPaginating: true, 			// allows temporary bypass of loadMessages() via auto-pagination
-	notificationsSupported: false,
-	notificationsEnabled: false,
+	notificationsSupported: false,	// browser supports notifications
+	notificationsEnabled: false,	// user has enabled notifications
+	skipConfirmations: false, 		// skip modal confirmations for "Delete all" & "mark all read"
 	appInfo: {},					// application information
 	uiConfig: {},					// configuration for UI
 	lastMessage: false,				// return scrolling
