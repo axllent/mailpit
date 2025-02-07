@@ -174,6 +174,16 @@ func DownloadAttachment(w http.ResponseWriter, r *http.Request) {
 	id := vars["id"]
 	partID := vars["partID"]
 
+	if id == "latest" {
+		var err error
+		id, err = storage.LatestID(r)
+		if err != nil {
+			w.WriteHeader(404)
+			fmt.Fprint(w, err.Error())
+			return
+		}
+	}
+
 	a, err := storage.GetAttachmentPart(id, partID)
 	if err != nil {
 		fourOFour(w)
