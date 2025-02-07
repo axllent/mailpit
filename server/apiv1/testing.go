@@ -99,11 +99,11 @@ func GetMessageHTML(w http.ResponseWriter, r *http.Request) {
 					tools.SetHTMLAttributeVal(n, "target", "_blank")
 					tools.SetHTMLAttributeVal(n, "rel", "noreferrer noopener")
 				}
-
-				b := bytes.Buffer{}
-				html.Render(&b, doc)
-				htmlStr = b.String()
 			})
+
+			b := bytes.Buffer{}
+			html.Render(&b, doc)
+			htmlStr = b.String()
 
 			nonce := r.Header.Get("mp-nonce")
 
