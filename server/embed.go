@@ -41,6 +41,11 @@ func embedController(w http.ResponseWriter, r *http.Request) {
 		b = []byte(strings.ReplaceAll(string(b), "%%NONCE%%", nonce))
 	}
 
+	// allow browser cache except for ?dev queries and HTML files
+	if r.URL.RawQuery != "dev" && !strings.HasSuffix(p, ".html") {
+		w.Header().Set("Cache-Control", "max-age=31536000, public, immutable")
+	}
+
 	w.Header().Set("Content-Type", contentType(p))
 	_, _ = w.Write(b)
 }
