@@ -102,7 +102,7 @@ func GetMessageHTML(w http.ResponseWriter, r *http.Request) {
 			})
 
 			b := bytes.Buffer{}
-			html.Render(&b, doc)
+			_ = html.Render(&b, doc)
 			htmlStr = b.String()
 
 			nonce := r.Header.Get("mp-nonce")
