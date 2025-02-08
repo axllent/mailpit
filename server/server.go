@@ -4,10 +4,8 @@ package server
 import (
 	"bytes"
 	"compress/gzip"
-	"embed"
 	"fmt"
 	"io"
-	"io/fs"
 	"net"
 	"net/http"
 	"os"
@@ -31,9 +29,6 @@ import (
 	"github.com/lithammer/shortuuid/v4"
 )
 
-//go:embed ui
-var embeddedFS embed.FS
-
 var (
 	// AccessControlAllowOrigin CORS policy
 	AccessControlAllowOrigin string
@@ -47,12 +42,6 @@ func Listen() {
 	isReady := &atomic.Value{}
 	isReady.Store(false)
 	stats.Track()
-
-	serverRoot, err := fs.Sub(embeddedFS, "ui")
-	if err != nil {
-		logger.Log().Errorf("[http] %s", err.Error())
-		os.Exit(1)
-	}
 
 	websockets.MessageHub = websockets.NewHub()
 
@@ -70,12 +59,12 @@ func Listen() {
 	r.HandleFunc(config.Webroot+"proxy", middleWareFunc(handlers.ProxyHandler)).Methods("GET")
 
 	// virtual filesystem for /dist/ & some individual files
-	r.PathPrefix(config.Webroot + "dist/").Handler(middlewareHandler(http.StripPrefix(config.Webroot, http.FileServer(http.FS(serverRoot)))))
-	r.PathPrefix(config.Webroot + "api/").Handler(middlewareHandler(http.StripPrefix(config.Webroot, http.FileServer(http.FS(serverRoot)))))
-	r.Path(config.Webroot + "favicon.ico").Handler(middlewareHandler(http.StripPrefix(config.Webroot, http.FileServer(http.FS(serverRoot)))))
-	r.Path(config.Webroot + "favicon.svg").Handler(middlewareHandler(http.StripPrefix(config.Webroot, http.FileServer(http.FS(serverRoot)))))
-	r.Path(config.Webroot + "mailpit.svg").Handler(middlewareHandler(http.StripPrefix(config.Webroot, http.FileServer(http.FS(serverRoot)))))
-	r.Path(config.Webroot + "notification.png").Handler(middlewareHandler(http.StripPrefix(config.Webroot, http.FileServer(http.FS(serverRoot)))))
+	r.PathPrefix(config.Webroot + "dist/").Handler(middleWareFunc(embedController))
+	r.PathPrefix(config.Webroot + "api/").Handler(middleWareFunc(embedController))
+	r.Path(config.Webroot + "favicon.ico").Handler(middleWareFunc(embedController))
+	r.Path(config.Webroot + "favicon.svg").Handler(middleWareFunc(embedController))
+	r.Path(config.Webroot + "mailpit.svg").Handler(middleWareFunc(embedController))
+	r.Path(config.Webroot + "notification.png").Handler(middleWareFunc(embedController))
 
 	// redirect to webroot if no trailing slash
 	if config.Webroot != "/" {
@@ -277,44 +266,6 @@ func middleWareFunc(fn http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-// MiddlewareHandler http middleware adds optional basic authentication
-// and gzip compression
-func middlewareHandler(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Referrer-Policy", "no-referrer")
-		w.Header().Set("Content-Security-Policy", config.ContentSecurityPolicy)
-
-		if AccessControlAllowOrigin != "" && strings.HasPrefix(r.RequestURI, config.Webroot+"api/") {
-			w.Header().Set("Access-Control-Allow-Origin", AccessControlAllowOrigin)
-			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT, OPTIONS")
-			w.Header().Set("Access-Control-Allow-Headers", "*")
-		}
-
-		if auth.UICredentials != nil {
-			user, pass, ok := r.BasicAuth()
-
-			if !ok {
-				basicAuthResponse(w)
-				return
-			}
-
-			if !auth.UICredentials.Match(user, pass) {
-				basicAuthResponse(w)
-				return
-			}
-		}
-
-		if !strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") {
-			h.ServeHTTP(w, r)
-			return
-		}
-		w.Header().Set("Content-Encoding", "gzip")
-		gz := gzip.NewWriter(w)
-		defer gz.Close()
-		h.ServeHTTP(gzipResponseWriter{Writer: gz, ResponseWriter: w}, r)
-	})
-}
-
 // Redirect to webroot
 func addSlashToWebroot(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, config.Webroot, http.StatusFound)
@@ -328,7 +279,7 @@ func apiWebsocket(w http.ResponseWriter, r *http.Request) {
 
 // Wrapper to artificially inject a basePath to the swagger.json if a webroot has been specified
 func swaggerBasePath(w http.ResponseWriter, _ *http.Request) {
-	f, err := embeddedFS.ReadFile("ui/api/v1/swagger.json")
+	f, err := distFS.ReadFile("ui/api/v1/swagger.json")
 	if err != nil {
 		panic(err)
 	}
@@ -363,7 +314,7 @@ func index(w http.ResponseWriter, r *http.Request) {
 <body class="h-100">
 	<div class="container-fluid h-100 d-flex flex-column" id="app" data-webroot="{{ .Webroot }}" data-version="{{ .Version }}">
 		<noscript class="alert alert-warning position-absolute top-50 start-50 translate-middle">
-			You need a browser with JavaScript support to use Mailpit
+			You need a browser with JavaScript enabled to use Mailpit
 		</noscript>
 	</div>
 
@@ -394,6 +345,6 @@ func index(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
-	w.Header().Add("Content-Type", "text/html")
+	w.Header().Add("Content-Type", "text/html; charset=utf-8")
 	_, _ = w.Write(buff.Bytes())
 }
