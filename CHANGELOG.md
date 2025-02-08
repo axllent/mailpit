@@ -2,6 +2,19 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.22.2]
+
+### Chore
+- Update node dependencies / esbuild
+- Update Go dependencies
+- Enable browser cache for embedded web UI assets
+- Replace http.FileServer with custom controller to correctly encode gzipped error responses for embed.FS
+
+### Fix
+- Add missing "latest" route to message attachment API endpoint ([#437](https://github.com/axllent/mailpit/issues/437))
+- Remove recursive HTML regeneration in embedded HTML view ([#434](https://github.com/axllent/mailpit/issues/434))
+
+
 ## [v1.22.1]
 
 ### Feature
