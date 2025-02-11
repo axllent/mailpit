@@ -25,6 +25,6 @@ RUN apk upgrade --no-cache && apk add --no-cache tzdata
 
 EXPOSE 1025/tcp 1110/tcp 8025/tcp
 
-HEALTHCHECK --interval=15s CMD /mailpit readyz
+HEALTHCHECK --interval=15s --start-period=10s --start-interval=1s CMD /mailpit readyz
 
 ENTRYPOINT ["/mailpit"]
