@@ -71,6 +71,8 @@ func contentType(p string) string {
 		return "image/jpeg"
 	case strings.HasSuffix(p, ".gif"):
 		return "image/gif"
+	case strings.HasSuffix(p, ".woff"):
+		return "font/woff"
 	case strings.HasSuffix(p, ".woff2"):
 		return "font/woff2"
 	default:
