@@ -25,8 +25,6 @@ var (
 )
 
 // Triggers for the Chaos configuration
-//
-// swagger:model Triggers
 type Triggers struct {
 	// Sender trigger to fail on From, Sender
 	Sender Trigger
