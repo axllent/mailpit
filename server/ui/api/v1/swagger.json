@@ -69,7 +69,7 @@
             "name": "Body",
             "in": "body",
             "schema": {
-              "$ref": "#/definitions/Triggers"
+              "$ref": "#/definitions/ChaosTriggers"
             }
           }
         ],
@@ -1188,6 +1188,10 @@
       },
       "x-go-package": "github.com/axllent/mailpit/internal/storage"
     },
+    "ChaosTriggers": {
+      "description": "ChaosTriggers are the Chaos triggers",
+      "$ref": "#/definitions/Triggers"
+    },
     "HTMLCheckResponse": {
       "description": "Response represents the HTML check response struct",
       "type": "object",
@@ -1920,7 +1924,7 @@
           "$ref": "#/definitions/Trigger"
         }
       },
-      "$ref": "#/definitions/Triggers"
+      "x-go-package": "github.com/axllent/mailpit/internal/smtpd/chaos"
     },
     "WebUIConfiguration": {
       "description": "Response includes global web UI settings",
@@ -2002,7 +2006,7 @@
     "ChaosResponse": {
       "description": "Response for the Chaos triggers configuration",
       "schema": {
-        "$ref": "#/definitions/Triggers"
+        "$ref": "#/definitions/ChaosTriggers"
       }
     },
     "ErrorResponse": {

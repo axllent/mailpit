@@ -25,6 +25,7 @@ var (
 )
 
 // Triggers for the Chaos configuration
+// swagger:model Triggers
 type Triggers struct {
 	// Sender trigger to fail on From, Sender
 	Sender Trigger
@@ -35,6 +36,7 @@ type Triggers struct {
 }
 
 // Trigger for Chaos
+// swagger:model Trigger
 type Trigger struct {
 	// SMTP error code to return. The value must range from 400 to 599.
 	// required: true

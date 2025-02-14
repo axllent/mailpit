@@ -7,9 +7,7 @@ import (
 	"github.com/axllent/mailpit/internal/smtpd/chaos"
 )
 
-// ChaosTriggers is the Chaos configuration
-//
-// swagger:model Triggers
+// ChaosTriggers are the Chaos triggers
 type ChaosTriggers chaos.Triggers
 
 // Response for the Chaos triggers configuration
