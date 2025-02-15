@@ -242,6 +242,23 @@ func TestCmdRCPT(t *testing.T) {
 	conn.Close()
 }
 
+func TestCmdMaxRecipients(t *testing.T) {
+	conn := newConn(t, &Server{MaxRecipients: 3})
+
+	cmdCode(t, conn, "EHLO host.example.com", "250")
+
+	cmdCode(t, conn, "MAIL FROM:<sender@example.com>", "250")
+
+	cmdCode(t, conn, "RCPT TO: <recipient1@example.com>", "250")
+	cmdCode(t, conn, "RCPT TO: <recipient2@example.com>", "250")
+	cmdCode(t, conn, "RCPT TO: <recipient3@example.com>", "250")
+	cmdCode(t, conn, "RCPT TO: <recipient4@example.com>", "452")
+	cmdCode(t, conn, "RCPT TO: <recipient5@example.com>", "452")
+
+	cmdCode(t, conn, "QUIT", "221")
+	conn.Close()
+}
+
 func TestCmdDATA(t *testing.T) {
 	conn := newConn(t, &Server{})
 	cmdCode(t, conn, "EHLO host.example.com", "250")

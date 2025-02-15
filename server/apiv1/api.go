@@ -57,7 +57,7 @@ func getStartLimit(req *http.Request) (start int, beforeTS int64, limit int) {
 	}
 
 	l := req.URL.Query().Get("limit")
-	if n, err := strconv.Atoi(l); err == nil && n > 0 {
+	if n, err := strconv.Atoi(l); err == nil && n > -1 {
 		limit = n
 	}
 

@@ -26,8 +26,8 @@ func embedController(w http.ResponseWriter, r *http.Request) {
 		p = p + "index.html"
 	}
 
-	p = strings.TrimLeft(p, config.Webroot) // server webroot config
-	p = path.Join("ui", p)                  // add go:embed path to path prefix
+	p = strings.TrimPrefix(p, config.Webroot) // server webroot config
+	p = path.Join("ui", p)                    // add go:embed path to path prefix
 
 	b, err := distFS.ReadFile(p)
 	if err != nil {
@@ -71,6 +71,8 @@ func contentType(p string) string {
 		return "image/jpeg"
 	case strings.HasSuffix(p, ".gif"):
 		return "image/gif"
+	case strings.HasSuffix(p, ".woff"):
+		return "font/woff"
 	case strings.HasSuffix(p, ".woff2"):
 		return "font/woff2"
 	default:
