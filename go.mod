@@ -1,11 +1,11 @@
 module github.com/axllent/mailpit
 
-go 1.23
+go 1.23.0
 
 toolchain go1.23.2
 
 require (
-	github.com/PuerkitoBio/goquery v1.10.1
+	github.com/PuerkitoBio/goquery v1.10.2
 	github.com/araddon/dateparse v0.0.0-20210429162001-6b43995a97de
 	github.com/axllent/semver v0.0.1
 	github.com/gomarkdown/markdown v0.0.0-20250207164621-7a1f277a159e
@@ -13,21 +13,21 @@ require (
 	github.com/gorilla/websocket v1.5.3
 	github.com/jhillyerd/enmime v1.3.0
 	github.com/klauspost/compress v1.17.11
-	github.com/kovidgoyal/imaging v1.6.3
+	github.com/kovidgoyal/imaging v1.6.4
 	github.com/leporo/sqlf v1.4.0
 	github.com/lithammer/shortuuid/v4 v4.2.0
 	github.com/mneis/go-telnet v0.0.0-20221017141824-6f643e477c62
 	github.com/rqlite/gorqlite v0.0.0-20250128004930-114c7828b55a
 	github.com/sirupsen/logrus v1.9.3
-	github.com/spf13/cobra v1.8.1
+	github.com/spf13/cobra v1.9.0
 	github.com/spf13/pflag v1.0.6
 	github.com/tg123/go-htpasswd v1.2.3
 	github.com/vanng822/go-premailer v1.23.0
-	golang.org/x/net v0.34.0
+	golang.org/x/net v0.35.0
 	golang.org/x/text v0.22.0
 	golang.org/x/time v0.10.0
 	gopkg.in/yaml.v3 v3.0.1
-	modernc.org/sqlite v1.34.5
+	modernc.org/sqlite v1.35.0
 )
 
 require (
@@ -53,11 +53,11 @@ require (
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/vanng822/css v1.0.1 // indirect
 	golang.org/x/crypto v0.33.0 // indirect
-	golang.org/x/exp v0.0.0-20250207012021-f9890c6ad9f3 // indirect
+	golang.org/x/exp v0.0.0-20250215185904-eff6e970281f // indirect
 	golang.org/x/image v0.24.0 // indirect
 	golang.org/x/sys v0.30.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
-	modernc.org/libc v1.61.12 // indirect
+	modernc.org/libc v1.61.13 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.8.2 // indirect
 )
