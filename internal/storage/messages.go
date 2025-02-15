@@ -175,9 +175,11 @@ func List(start int, beforeTS int64, limit int) ([]MessageSummary, error) {
 
 	q := sqlf.From(tenant("mailbox") + " m").
 		Select(`m.Created, m.ID, m.MessageID, m.Subject, m.Metadata, m.Size, m.Attachments, m.Read, m.Snippet`).
-		OrderBy("m.Created DESC").
-		Limit(limit).
-		Offset(start)
+		OrderBy("m.Created DESC")
+
+	if limit > 0 {
+		q = q.Limit(limit).Offset(start)
+	}
 
 	if beforeTS > 0 {
 		q = q.Where("Created < ?", beforeTS)
