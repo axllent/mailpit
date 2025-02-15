@@ -362,6 +362,11 @@ func (s *session) serve() {
 	var to []string
 	var buffer bytes.Buffer
 
+	// RFC 5321 specifies support for minimum of 100 recipients is required.
+	if s.srv.MaxRecipients == 0 {
+		s.srv.MaxRecipients = 100
+	}
+
 	// Send banner.
 	s.writef("220 %s %s ESMTP Service ready", s.srv.Hostname, s.srv.AppName)
 
@@ -474,12 +479,7 @@ loop:
 					break
 				}
 
-				// RFC 5321 specifies support for minimum of 100 recipients is required.
-				if s.srv.MaxRecipients == 0 {
-					s.srv.MaxRecipients = 100
-				}
-
-				if len(to) == s.srv.MaxRecipients {
+				if len(to) >= s.srv.MaxRecipients {
 					s.writef("452 4.5.3 Too many recipients")
 				} else {
 					accept := true
