@@ -2,6 +2,23 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.22.3]
+
+### Feature
+- Add dump feature to export all raw messages to a local directory ([#443](https://github.com/axllent/mailpit/issues/443))
+
+### Chore
+- Update node dependencies
+- Update Go dependencies
+- Specify Docker health check start period and interval ([#439](https://github.com/axllent/mailpit/issues/439))
+
+### Fix
+- Correctly detect maximum SMTP recipient limits, add test
+- Update Swagger JSON to prevent overflow ([#442](https://github.com/axllent/mailpit/issues/442))
+- Include font/woff content type to embedded controller
+- Replace TrimLeft with TrimPrefix for webroot path handling ([#441](https://github.com/axllent/mailpit/issues/441))
+
+
 ## [v1.22.2]
 
 ### Chore
