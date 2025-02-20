@@ -282,10 +282,10 @@ func listenAndServe(addr string, handler MsgIDHandler, authHandler AuthHandler) 
 		smtpType := "no encryption"
 
 		if config.SMTPTLSCert != "" {
-			if config.SMTPRequireSTARTTLS {
-				smtpType = "STARTTLS required"
-			} else if config.SMTPRequireTLS {
+			if config.SMTPRequireTLS {
 				smtpType = "SSL/TLS required"
+			} else if config.SMTPRequireSTARTTLS {
+				smtpType = "STARTTLS required"
 			} else {
 				smtpType = "STARTTLS optional"
 				if !config.SMTPAuthAllowInsecure && auth.SMTPCredentials != nil {
