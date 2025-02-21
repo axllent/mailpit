@@ -32,7 +32,7 @@ var (
 	dbLastAction time.Time
 
 	// zstd compression encoder & decoder
-	dbEncoder, _ = zstd.NewWriter(nil)
+	dbEncoder, _ = zstd.NewWriter(nil, zstd.WithEncoderLevel(zstd.SpeedFastest))
 	dbDecoder, _ = zstd.NewReader(nil)
 
 	temporaryFiles = []string{}
