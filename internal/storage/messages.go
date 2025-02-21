@@ -104,8 +104,15 @@ func Store(body *[]byte) (string, error) {
 
 	// insert compressed raw message
 	encoded := dbEncoder.EncodeAll(*body, make([]byte, 0, int(size)))
-	hexStr := hex.EncodeToString(encoded)
-	_, err = tx.Exec(fmt.Sprintf(`INSERT INTO %s (ID, Email) VALUES(?, x'%s')`, tenant("mailbox_data"), hexStr), id) // #nosec
+
+	if sqlDriver == "rqlite" {
+		// rqlite does not support binary data in query, so we need to encode the compressed message into hexadecimal
+		// string and then generate the SQL query, which is more memory intensive especially with large messages
+		hexStr := hex.EncodeToString(encoded)
+		_, err = tx.Exec(fmt.Sprintf(`INSERT INTO %s (ID, Email) VALUES(?, x'%s')`, tenant("mailbox_data"), hexStr), id) // #nosec
+	} else {
+		_, err = tx.Exec(fmt.Sprintf(`INSERT INTO %s (ID, Email) VALUES(?, ?)`, tenant("mailbox_data")), id, encoded) // #nosec
+	}
 	if err != nil {
 		return "", err
 	}
@@ -113,6 +120,8 @@ func Store(body *[]byte) (string, error) {
 	if err := tx.Commit(); err != nil {
 		return "", err
 	}
+
+	encoded = nil
 
 	// extract tags using pre-set tag filters, empty slice if not set
 	tags := findTagsInRawMessage(body)
