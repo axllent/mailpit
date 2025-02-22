@@ -58,8 +58,10 @@ func RemoveMessageHeaders(msg []byte, headers []string) ([]byte, error) {
 	return msg, nil
 }
 
-// UpdateMessageHeader scans a message for a header and updates its value if found.
-func UpdateMessageHeader(msg []byte, header, value string) ([]byte, error) {
+// SetMessageHeader scans a message for a header and updates its value if found.
+// It does not consider multiple instances of the same header.
+// If not found it will add the header to the beginning of the message.
+func SetMessageHeader(msg []byte, header, value string) ([]byte, error) {
 	reader := bytes.NewReader(msg)
 	m, err := mail.ReadMessage(reader)
 	if err != nil {
@@ -90,13 +92,11 @@ func UpdateMessageHeader(msg []byte, header, value string) ([]byte, error) {
 			}
 		}
 
-		if len(hdr) > 0 {
-			logger.Log().Debugf("[relay] replaced %s header", hdr)
-			msg = bytes.Replace(msg, hdr, []byte(header+": "+value+"\r\n"), 1)
-		}
+		return bytes.Replace(msg, hdr, []byte(header+": "+value+"\r\n"), 1), nil
 	}
 
-	return msg, nil
+	// no header, so add one to beginning
+	return append([]byte(header+": "+value+"\r\n"), msg...), nil
 }
 
 // OverrideFromHeader scans a message for the From header and replaces it with a different email address.
