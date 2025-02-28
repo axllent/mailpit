@@ -83,6 +83,7 @@ func init() {
 	initConfigFromEnv()
 
 	rootCmd.Flags().StringVarP(&config.Database, "database", "d", config.Database, "Database to store persistent data")
+	rootCmd.Flags().IntVar(&config.Compression, "compression", config.Compression, "Compression level to store raw messages (0-3)")
 	rootCmd.Flags().StringVar(&config.Label, "label", config.Label, "Optional label identify this Mailpit instance")
 	rootCmd.Flags().StringVar(&config.TenantID, "tenant-id", config.TenantID, "Database tenant ID to isolate data")
 	rootCmd.Flags().IntVarP(&config.MaxMessages, "max", "m", config.MaxMessages, "Max number of messages to store")
@@ -179,6 +180,10 @@ func initConfigFromEnv() {
 	// General
 	if len(os.Getenv("MP_DATABASE")) > 0 {
 		config.Database = os.Getenv("MP_DATABASE")
+	}
+
+	if len(os.Getenv("MP_COMPRESSION")) > 0 {
+		config.Compression, _ = strconv.Atoi(os.Getenv("MP_COMPRESSION"))
 	}
 
 	config.TenantID = os.Getenv("MP_TENANT_ID")
