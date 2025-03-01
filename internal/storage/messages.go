@@ -102,17 +102,25 @@ func Store(body *[]byte) (string, error) {
 		return "", err
 	}
 
-	// insert compressed raw message
-	encoded := dbEncoder.EncodeAll(*body, make([]byte, 0, int(size)))
+	if config.Compression > 0 {
+		// insert compressed raw message
+		compressed := dbEncoder.EncodeAll(*body, make([]byte, 0, int(size)))
 
-	if sqlDriver == "rqlite" {
-		// rqlite does not support binary data in query, so we need to encode the compressed message into hexadecimal
-		// string and then generate the SQL query, which is more memory intensive especially with large messages
-		hexStr := hex.EncodeToString(encoded)
-		_, err = tx.Exec(fmt.Sprintf(`INSERT INTO %s (ID, Email) VALUES(?, x'%s')`, tenant("mailbox_data"), hexStr), id) // #nosec
+		if sqlDriver == "rqlite" {
+			// rqlite does not support binary data in query, so we need to encode the compressed message into hexadecimal
+			// string and then generate the SQL query, which is more memory intensive, especially with large messages
+			hexStr := hex.EncodeToString(compressed)
+			_, err = tx.Exec(fmt.Sprintf(`INSERT INTO %s (ID, Email, Compressed) VALUES(?, x'%s', 1)`, tenant("mailbox_data"), hexStr), id) // #nosec
+		} else {
+			_, err = tx.Exec(fmt.Sprintf(`INSERT INTO %s (ID, Email, Compressed) VALUES(?, ?, 1)`, tenant("mailbox_data")), id, compressed) // #nosec
+		}
+
+		compressed = nil
 	} else {
-		_, err = tx.Exec(fmt.Sprintf(`INSERT INTO %s (ID, Email) VALUES(?, ?)`, tenant("mailbox_data")), id, encoded) // #nosec
+		// insert uncompressed raw message
+		_, err = tx.Exec(fmt.Sprintf(`INSERT INTO %s (ID, Email, Compressed) VALUES(?, ?, 0)`, tenant("mailbox_data")), id, string(*body)) // #nosec
 	}
+
 	if err != nil {
 		return "", err
 	}
@@ -120,8 +128,6 @@ func Store(body *[]byte) (string, error) {
 	if err := tx.Commit(); err != nil {
 		return "", err
 	}
-
-	encoded = nil
 
 	// extract tags using pre-set tag filters, empty slice if not set
 	tags := findTagsInRawMessage(body)
@@ -367,11 +373,12 @@ func GetMessage(id string) (*Message, error) {
 
 // GetMessageRaw returns an []byte of the full message
 func GetMessageRaw(id string) ([]byte, error) {
-	var i string
-	var msg string
+	var i, msg string
+	var compressed int
 	q := sqlf.From(tenant("mailbox_data")).
 		Select(`ID`).To(&i).
 		Select(`Email`).To(&msg).
+		Select(`Compressed`).To(&compressed).
 		Where(`ID = ?`, id)
 	err := q.QueryRowAndClose(context.Background(), db)
 	if err != nil {
@@ -383,7 +390,7 @@ func GetMessageRaw(id string) ([]byte, error) {
 	}
 
 	var data []byte
-	if sqlDriver == "rqlite" {
+	if sqlDriver == "rqlite" && compressed == 1 {
 		data, err = base64.StdEncoding.DecodeString(msg)
 		if err != nil {
 			return nil, fmt.Errorf("error decoding base64 message: %w", err)
@@ -392,14 +399,18 @@ func GetMessageRaw(id string) ([]byte, error) {
 		data = []byte(msg)
 	}
 
-	raw, err := dbDecoder.DecodeAll(data, nil)
-	if err != nil {
-		return nil, fmt.Errorf("error decompressing message: %s", err.Error())
-	}
-
 	dbLastAction = time.Now()
 
-	return raw, err
+	if compressed == 1 {
+		raw, err := dbDecoder.DecodeAll(data, nil)
+		if err != nil {
+			return nil, fmt.Errorf("error decompressing message: %s", err.Error())
+		}
+
+		return raw, err
+	}
+
+	return data, nil
 }
 
 // GetAttachmentPart returns an *enmime.Part (attachment or inline) from a message
