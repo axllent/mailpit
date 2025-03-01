@@ -28,6 +28,14 @@ var (
 	// Database for mail (optional)
 	Database string
 
+	// DisableWAL will disable Write-Ahead Logging in SQLite
+	// @see https://sqlite.org/wal.html
+	DisableWAL bool
+
+	// Compression is the compression level used to store raw messages in the database:
+	// 0 = off, 1 = fastest (default), 2 = standard, 3 = best compression
+	Compression = 1
+
 	// TenantID is an optional prefix to be applied to all database tables,
 	// allowing multiple isolated instances of Mailpit to share a database.
 	TenantID string
@@ -60,6 +68,9 @@ var (
 
 	// Webroot to define the base path for the UI and API
 	Webroot = "/"
+
+	// DisableHTTPCompression will explicitly disable HTTP compression in the web UI and API
+	DisableHTTPCompression bool
 
 	// SMTPTLSCert file
 	SMTPTLSCert string
@@ -248,6 +259,10 @@ func VerifyConfig() error {
 
 	if Database != "" && isDir(Database) {
 		Database = filepath.Join(Database, "mailpit.db")
+	}
+
+	if Compression < 0 || Compression > 3 {
+		return errors.New("[db] compression level must be between 0 and 3")
 	}
 
 	Label = tools.Normalize(Label)

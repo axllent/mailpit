@@ -2,6 +2,28 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.23.0]
+
+### Feature
+- Add configuration to disable SQLite WAL mode for NFS compatibility
+- Add configuration to explicitly disable HTTP compression in web UI/API ([#448](https://github.com/axllent/mailpit/issues/448))
+- Add configuration to set message compression level in db (0-3) ([#447](https://github.com/axllent/mailpit/issues/447) & [#448](https://github.com/axllent/mailpit/issues/448))
+
+### Chore
+- Update node dependencies
+- Update Go dependencies
+- Minor speed & memory improvements when storing messages
+- Optimize ZSTD encoder for fastest compression of messages ([#447](https://github.com/axllent/mailpit/issues/447))
+- Handle BLOB storage for default database differently to rqlite to reduce memory overhead ([#447](https://github.com/axllent/mailpit/issues/447))
+- Avoid shell in Docker health check ([#444](https://github.com/axllent/mailpit/issues/444))
+
+### Fix
+- Display the correct STARTTLS or TLS runtime option on startup ([#446](https://github.com/axllent/mailpit/issues/446))
+
+### Testing
+- Add tests for message compression levels
+
+
 ## [v1.22.3]
 
 ### Feature

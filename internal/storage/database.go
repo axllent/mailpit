@@ -32,7 +32,7 @@ var (
 	dbLastAction time.Time
 
 	// zstd compression encoder & decoder
-	dbEncoder, _ = zstd.NewWriter(nil)
+	dbEncoder    *zstd.Encoder
 	dbDecoder, _ = zstd.NewReader(nil)
 
 	temporaryFiles = []string{}
@@ -40,10 +40,30 @@ var (
 
 // InitDB will initialise the database
 func InitDB() error {
+	// dbEncoder
 	var (
 		dsn string
 		err error
 	)
+
+	if config.Compression > 0 {
+		var compression zstd.EncoderLevel
+		switch config.Compression {
+		case 1:
+			compression = zstd.SpeedFastest
+		case 2:
+			compression = zstd.SpeedDefault
+		case 3:
+			compression = zstd.SpeedBestCompression
+		}
+		dbEncoder, err = zstd.NewWriter(nil, zstd.WithEncoderLevel(compression))
+		if err != nil {
+			return err
+		}
+		logger.Log().Debugf("[db] storing messages with compression: %s", compression.String())
+	} else {
+		logger.Log().Debug("[db] storing messages with no compression")
+	}
 
 	p := config.Database
 
@@ -100,8 +120,13 @@ func InitDB() error {
 	db.SetMaxOpenConns(1)
 
 	if sqlDriver == "sqlite" {
-		// SQLite performance tuning (https://phiresky.github.io/blog/2020/sqlite-performance-tuning/)
-		_, err = db.Exec("PRAGMA journal_mode = WAL; PRAGMA synchronous = normal;")
+		if config.DisableWAL {
+			// disable WAL mode for SQLite, allows NFS mounted DBs
+			_, err = db.Exec("PRAGMA journal_mode=DELETE; PRAGMA synchronous=NORMAL;")
+		} else {
+			// SQLite performance tuning (https://phiresky.github.io/blog/2020/sqlite-performance-tuning/)
+			_, err = db.Exec("PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL;")
+		}
 		if err != nil {
 			return err
 		}

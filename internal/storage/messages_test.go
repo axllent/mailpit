@@ -79,56 +79,64 @@ func TestMimeEmailInserts(t *testing.T) {
 }
 
 func TestRetrieveMimeEmail(t *testing.T) {
-	for _, tenantID := range []string{"", "MyServer 3", "host.example.com"} {
-		tenantID = config.DBTenantID(tenantID)
+	compressionLevels := []int{0, 1, 2, 3}
 
-		setup(tenantID)
+	for _, compressionLevel := range compressionLevels {
+		t.Logf("Testing compression level: %d", compressionLevel)
+		for _, tenantID := range []string{"", "MyServer 3", "host.example.com"} {
+			tenantID = config.DBTenantID(tenantID)
+			config.Compression = compressionLevel
+			setup(tenantID)
 
-		if tenantID == "" {
-			t.Log("Testing mime email retrieval")
-		} else {
-			t.Logf("Testing mime email retrieval (tenant %s)", tenantID)
+			if tenantID == "" {
+				t.Log("Testing mime email retrieval")
+			} else {
+				t.Logf("Testing mime email retrieval (tenant %s)", tenantID)
+			}
+
+			id, err := Store(&testMimeEmail)
+			if err != nil {
+				t.Log("error ", err)
+				t.Fail()
+			}
+
+			msg, err := GetMessage(id)
+			if err != nil {
+				t.Log("error ", err)
+				t.Fail()
+			}
+
+			assertEqual(t, msg.From.Name, "Sender Smith", "\"From\" name does not match")
+			assertEqual(t, msg.From.Address, "sender2@example.com", "\"From\" address does not match")
+			assertEqual(t, msg.Subject, "inline + attachment", "subject does not match")
+			assertEqual(t, len(msg.To), 1, "incorrect number of recipients")
+			assertEqual(t, msg.To[0].Name, "Recipient Ross", "\"To\" name does not match")
+			assertEqual(t, msg.To[0].Address, "recipient2@example.com", "\"To\" address does not match")
+			assertEqual(t, len(msg.Attachments), 1, "incorrect number of attachments")
+			assertEqual(t, msg.Attachments[0].FileName, "Sample PDF.pdf", "attachment filename does not match")
+			assertEqual(t, len(msg.Inline), 1, "incorrect number of inline attachments")
+			assertEqual(t, msg.Inline[0].FileName, "inline-image.jpg", "inline attachment filename does not match")
+
+			attachmentData, err := GetAttachmentPart(id, msg.Attachments[0].PartID)
+			if err != nil {
+				t.Log("error ", err)
+				t.Fail()
+			}
+			assertEqual(t, float64(len(attachmentData.Content)), msg.Attachments[0].Size, "attachment size does not match")
+
+			inlineData, err := GetAttachmentPart(id, msg.Inline[0].PartID)
+			if err != nil {
+				t.Log("error ", err)
+				t.Fail()
+			}
+			assertEqual(t, float64(len(inlineData.Content)), msg.Inline[0].Size, "inline attachment size does not match")
+
+			Close()
 		}
-
-		id, err := Store(&testMimeEmail)
-		if err != nil {
-			t.Log("error ", err)
-			t.Fail()
-		}
-
-		msg, err := GetMessage(id)
-		if err != nil {
-			t.Log("error ", err)
-			t.Fail()
-		}
-
-		assertEqual(t, msg.From.Name, "Sender Smith", "\"From\" name does not match")
-		assertEqual(t, msg.From.Address, "sender2@example.com", "\"From\" address does not match")
-		assertEqual(t, msg.Subject, "inline + attachment", "subject does not match")
-		assertEqual(t, len(msg.To), 1, "incorrect number of recipients")
-		assertEqual(t, msg.To[0].Name, "Recipient Ross", "\"To\" name does not match")
-		assertEqual(t, msg.To[0].Address, "recipient2@example.com", "\"To\" address does not match")
-		assertEqual(t, len(msg.Attachments), 1, "incorrect number of attachments")
-		assertEqual(t, msg.Attachments[0].FileName, "Sample PDF.pdf", "attachment filename does not match")
-		assertEqual(t, len(msg.Inline), 1, "incorrect number of inline attachments")
-		assertEqual(t, msg.Inline[0].FileName, "inline-image.jpg", "inline attachment filename does not match")
-
-		attachmentData, err := GetAttachmentPart(id, msg.Attachments[0].PartID)
-		if err != nil {
-			t.Log("error ", err)
-			t.Fail()
-		}
-		assertEqual(t, float64(len(attachmentData.Content)), msg.Attachments[0].Size, "attachment size does not match")
-
-		inlineData, err := GetAttachmentPart(id, msg.Inline[0].PartID)
-		if err != nil {
-			t.Log("error ", err)
-			t.Fail()
-		}
-		assertEqual(t, float64(len(inlineData.Content)), msg.Inline[0].Size, "inline attachment size does not match")
-
-		Close()
 	}
+
+	// reset compression
+	config.Compression = 1
 }
 
 func TestMessageSummary(t *testing.T) {

@@ -34,7 +34,7 @@ func mailHandler(origin net.Addr, from string, to []string, data []byte) (string
 
 // SaveToDatabase will attempt to save a message to the database
 func SaveToDatabase(origin net.Addr, from string, to []string, data []byte) (string, error) {
-	if !config.SMTPStrictRFCHeaders {
+	if !config.SMTPStrictRFCHeaders && bytes.Contains(data, []byte("\r\r\n")) {
 		// replace all <CR><CR><LF> (\r\r\n) with <CR><LF> (\r\n)
 		// @see https://github.com/axllent/mailpit/issues/87 & https://github.com/axllent/mailpit/issues/153
 		data = bytes.ReplaceAll(data, []byte("\r\r\n"), []byte("\r\n"))
@@ -50,21 +50,9 @@ func SaveToDatabase(origin net.Addr, from string, to []string, data []byte) (str
 	// check / set the Return-Path based on SMTP from
 	returnPath := strings.Trim(msg.Header.Get("Return-Path"), "<>")
 	if returnPath != from {
-		if returnPath != "" {
-			// replace Return-Path
-			re := regexp.MustCompile(`(?i)(^|\n)(Return\-Path: .*\n)`)
-			replaced := false
-			data = re.ReplaceAllFunc(data, func(r []byte) []byte {
-				if replaced {
-					return r
-				}
-				replaced = true // only replace first occurrence
-
-				return re.ReplaceAll(r, []byte("${1}Return-Path: <"+from+">\r\n"))
-			})
-		} else {
-			// add Return-Path
-			data = append([]byte("Return-Path: <"+from+">\r\n"), data...)
+		data, err = tools.SetMessageHeader(data, "Return-Path", "<"+from+">")
+		if err != nil {
+			return "", err
 		}
 	}
 
@@ -108,23 +96,15 @@ func SaveToDatabase(origin net.Addr, from string, to []string, data []byte) (str
 
 	// add missing email addresses to Bcc (eg: Laravel doesn't include these in the headers)
 	if len(missingAddresses) > 0 {
+		bccVal := strings.Join(missingAddresses, ", ")
 		if hasBccHeader {
-			// email already has Bcc header, add to existing addresses
-			re := regexp.MustCompile(`(?i)(^|\n)(Bcc: )`)
-			replaced := false
-			data = re.ReplaceAllFunc(data, func(r []byte) []byte {
-				if replaced {
-					return r
-				}
-				replaced = true // only replace first occurrence
+			b := msg.Header.Get("Bcc")
+			bccVal = ", " + b
+		}
 
-				return re.ReplaceAll(r, []byte("${1}Bcc: "+strings.Join(missingAddresses, ", ")+", "))
-			})
-
-		} else {
-			// prepend new Bcc header
-			bcc := []byte(fmt.Sprintf("Bcc: %s\r\n", strings.Join(missingAddresses, ", ")))
-			data = append(bcc, data...)
+		data, err = tools.SetMessageHeader(data, "Bcc", bccVal)
+		if err != nil {
+			return "", err
 		}
 
 		logger.Log().Debugf("[smtpd] added missing addresses to Bcc header: %s", strings.Join(missingAddresses, ", "))
@@ -282,10 +262,10 @@ func listenAndServe(addr string, handler MsgIDHandler, authHandler AuthHandler) 
 		smtpType := "no encryption"
 
 		if config.SMTPTLSCert != "" {
-			if config.SMTPRequireSTARTTLS {
-				smtpType = "STARTTLS required"
-			} else if config.SMTPRequireTLS {
+			if config.SMTPRequireTLS {
 				smtpType = "SSL/TLS required"
+			} else if config.SMTPRequireSTARTTLS {
+				smtpType = "STARTTLS required"
 			} else {
 				smtpType = "STARTTLS optional"
 				if !config.SMTPAuthAllowInsecure && auth.SMTPCredentials != nil {

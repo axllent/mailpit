@@ -83,6 +83,8 @@ func init() {
 	initConfigFromEnv()
 
 	rootCmd.Flags().StringVarP(&config.Database, "database", "d", config.Database, "Database to store persistent data")
+	rootCmd.Flags().BoolVar(&config.DisableWAL, "disable-wal", config.DisableWAL, "Disable WAL for local database (allows NFS mounted DBs)")
+	rootCmd.Flags().IntVar(&config.Compression, "compression", config.Compression, "Compression level to store raw messages (0-3)")
 	rootCmd.Flags().StringVar(&config.Label, "label", config.Label, "Optional label identify this Mailpit instance")
 	rootCmd.Flags().StringVar(&config.TenantID, "tenant-id", config.TenantID, "Database tenant ID to isolate data")
 	rootCmd.Flags().IntVarP(&config.MaxMessages, "max", "m", config.MaxMessages, "Max number of messages to store")
@@ -103,6 +105,7 @@ func init() {
 	rootCmd.Flags().BoolVar(&config.BlockRemoteCSSAndFonts, "block-remote-css-and-fonts", config.BlockRemoteCSSAndFonts, "Block access to remote CSS & fonts")
 	rootCmd.Flags().StringVar(&config.EnableSpamAssassin, "enable-spamassassin", config.EnableSpamAssassin, "Enable integration with SpamAssassin")
 	rootCmd.Flags().BoolVar(&config.AllowUntrustedTLS, "allow-untrusted-tls", config.AllowUntrustedTLS, "Do not verify HTTPS certificates (link checker & screenshots)")
+	rootCmd.Flags().BoolVar(&config.DisableHTTPCompression, "disable-http-compression", config.DisableHTTPCompression, "Disable HTTP compression support (web UI & API)")
 
 	// SMTP server
 	rootCmd.Flags().StringVarP(&config.SMTPListen, "smtp", "s", config.SMTPListen, "SMTP bind interface and port")
@@ -181,6 +184,12 @@ func initConfigFromEnv() {
 		config.Database = os.Getenv("MP_DATABASE")
 	}
 
+	config.DisableWAL = getEnabledFromEnv("MP_DISABLE_WAL")
+
+	if len(os.Getenv("MP_COMPRESSION")) > 0 {
+		config.Compression, _ = strconv.Atoi(os.Getenv("MP_COMPRESSION"))
+	}
+
 	config.TenantID = os.Getenv("MP_TENANT_ID")
 
 	config.Label = os.Getenv("MP_LABEL")
@@ -231,6 +240,9 @@ func initConfigFromEnv() {
 	}
 	if getEnabledFromEnv("MP_ALLOW_UNTRUSTED_TLS") {
 		config.AllowUntrustedTLS = true
+	}
+	if getEnabledFromEnv("MP_DISABLE_HTTP_COMPRESSION") {
+		config.DisableHTTPCompression = true
 	}
 
 	// SMTP server
