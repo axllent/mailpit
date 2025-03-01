@@ -43,8 +43,8 @@ github.com/jaytaylor/html2text v0.0.0-20230321000545-74c2419ad056 h1:iCHtR9CQykt
 github.com/jaytaylor/html2text v0.0.0-20230321000545-74c2419ad056/go.mod h1:CVKlgaMiht+LXvHG173ujK6JUhZXKb2u/BQtjPDIvyk=
 github.com/jhillyerd/enmime v1.3.0 h1:LV5kzfLidiOr8qRGIpYYmUZCnhrPbcFAnAFUnWn99rw=
 github.com/jhillyerd/enmime v1.3.0/go.mod h1:6c6jg5HdRRV2FtvVL69LjiX1M8oE0xDX9VEhV3oy4gs=
-github.com/klauspost/compress v1.17.11 h1:In6xLpyWOi1+C7tXUUWv2ot1QvBjxevKAaI6IXrJmUc=
-github.com/klauspost/compress v1.17.11/go.mod h1:pMDklpSncoRMuLFrf1W9Ss9KT+0rH90U12bZKk7uwG0=
+github.com/klauspost/compress v1.18.0 h1:c/Cqfb0r+Yi+JtIEq73FWXVkRonBlf0CRNYc8Zttxdo=
+github.com/klauspost/compress v1.18.0/go.mod h1:2Pp+KzxcywXVXMr50+X0Q/Lsb43OQHYWRCY2AiWywWQ=
 github.com/kovidgoyal/imaging v1.6.4 h1:K0idhRPXnRrJBKnBYcTfI1HTWSNDeAn7hYDvf9I0dCk=
 github.com/kovidgoyal/imaging v1.6.4/go.mod h1:bEIgsaZmXlvFfkv/CUxr9rJook6AQkJnpB5EPosRfRY=
 github.com/kr/pretty v0.1.0/go.mod h1:dAy3ld7l9f0ibDNOQOHHMYYIIbhfbHSm3C4ZsoJORNo=
