@@ -65,6 +65,9 @@ var (
 	// Webroot to define the base path for the UI and API
 	Webroot = "/"
 
+	// DisableHTTPCompression will explicitly disable HTTP compression in the web UI and API
+	DisableHTTPCompression bool
+
 	// SMTPTLSCert file
 	SMTPTLSCert string
 

@@ -253,7 +253,7 @@ func middleWareFunc(fn http.HandlerFunc) http.HandlerFunc {
 			}
 		}
 
-		if !strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") {
+		if config.DisableHTTPCompression || !strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") {
 			fn(w, r)
 			return
 		}
