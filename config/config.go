@@ -28,6 +28,10 @@ var (
 	// Database for mail (optional)
 	Database string
 
+	// DisableWAL will disable Write-Ahead Logging in SQLite
+	// @see https://sqlite.org/wal.html
+	DisableWAL bool
+
 	// Compression is the compression level used to store raw messages in the database:
 	// 0 = off, 1 = fastest (default), 2 = standard, 3 = best compression
 	Compression = 1

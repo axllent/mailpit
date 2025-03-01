@@ -120,8 +120,13 @@ func InitDB() error {
 	db.SetMaxOpenConns(1)
 
 	if sqlDriver == "sqlite" {
-		// SQLite performance tuning (https://phiresky.github.io/blog/2020/sqlite-performance-tuning/)
-		_, err = db.Exec("PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL;")
+		if config.DisableWAL {
+			// disable WAL mode for SQLite, allows NFS mounted DBs
+			_, err = db.Exec("PRAGMA journal_mode=DELETE; PRAGMA synchronous=NORMAL;")
+		} else {
+			// SQLite performance tuning (https://phiresky.github.io/blog/2020/sqlite-performance-tuning/)
+			_, err = db.Exec("PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL;")
+		}
 		if err != nil {
 			return err
 		}

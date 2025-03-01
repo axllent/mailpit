@@ -83,6 +83,7 @@ func init() {
 	initConfigFromEnv()
 
 	rootCmd.Flags().StringVarP(&config.Database, "database", "d", config.Database, "Database to store persistent data")
+	rootCmd.Flags().BoolVar(&config.DisableWAL, "disable-wal", config.DisableWAL, "Disable WAL for local database (allows NFS mounted DBs)")
 	rootCmd.Flags().IntVar(&config.Compression, "compression", config.Compression, "Compression level to store raw messages (0-3)")
 	rootCmd.Flags().StringVar(&config.Label, "label", config.Label, "Optional label identify this Mailpit instance")
 	rootCmd.Flags().StringVar(&config.TenantID, "tenant-id", config.TenantID, "Database tenant ID to isolate data")
@@ -182,6 +183,8 @@ func initConfigFromEnv() {
 	if len(os.Getenv("MP_DATABASE")) > 0 {
 		config.Database = os.Getenv("MP_DATABASE")
 	}
+
+	config.DisableWAL = getEnabledFromEnv("MP_DISABLE_WAL")
 
 	if len(os.Getenv("MP_COMPRESSION")) > 0 {
 		config.Compression, _ = strconv.Atoi(os.Getenv("MP_COMPRESSION"))
