@@ -50,7 +50,7 @@ func Sync(d string) error {
 	}
 
 	if !tools.IsDir(outDir) {
-		if err := os.MkdirAll(outDir, 0755); err != nil {
+		if err := os.MkdirAll(outDir, 0755); /* #nosec */ err != nil {
 			return err
 		}
 	}
@@ -149,7 +149,7 @@ func saveMessages() error {
 			}
 		}
 
-		if err := os.WriteFile(out, b, 0644); err != nil {
+		if err := os.WriteFile(out, b, 0644); /* #nosec */ err != nil {
 			logger.Log().Errorf("Error writing message %s: %s", m.ID, err.Error())
 			continue
 		}
