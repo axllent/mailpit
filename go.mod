@@ -19,7 +19,7 @@ require (
 	github.com/mneis/go-telnet v0.0.0-20221017141824-6f643e477c62
 	github.com/rqlite/gorqlite v0.0.0-20250128004930-114c7828b55a
 	github.com/sirupsen/logrus v1.9.3
-	github.com/spf13/cobra v1.9.0
+	github.com/spf13/cobra v1.9.1
 	github.com/spf13/pflag v1.0.6
 	github.com/tg123/go-htpasswd v1.2.3
 	github.com/vanng822/go-premailer v1.23.0
