@@ -4,12 +4,15 @@ import Headers from './Headers.vue'
 import HTMLCheck from './HTMLCheck.vue'
 import LinkCheck from './LinkCheck.vue'
 import SpamAssassin from './SpamAssassin.vue'
-import Prism from 'prismjs'
 import Tags from 'bootstrap5-tags'
 import { Tooltip } from 'bootstrap'
 import commonMixins from '../../mixins/CommonMixins'
 import { mailbox } from '../../stores/mailbox'
 import DOMPurify from 'dompurify'
+import hljs from 'highlight.js/lib/core'
+import xml from 'highlight.js/lib/languages/xml'
+
+hljs.registerLanguage('html', xml)
 
 export default {
 	props: {
@@ -203,10 +206,8 @@ export default {
 				}
 			}, 500)
 
-			// html highlighting
-			window.Prism = window.Prism || {}
-			window.Prism.manual = true
-			Prism.highlightAll()
+			// HTML highlighting
+			hljs.highlightAll()
 		},
 
 		resizeIframe(el) {
@@ -608,7 +609,7 @@ export default {
 			</div>
 			<div class="tab-pane fade" id="nav-html-source" role="tabpanel" aria-labelledby="nav-html-source-tab"
 				tabindex="0" v-if="message.HTML">
-				<pre><code class="language-html">{{ message.HTML }}</code></pre>
+				<pre class="language-html"><code class="language-html">{{ message.HTML }}</code></pre>
 			</div>
 			<div class="tab-pane fade" id="nav-plain-text" role="tabpanel" aria-labelledby="nav-plain-text-tab"
 				tabindex="0" :class="message.HTML == '' ? 'show' : ''">

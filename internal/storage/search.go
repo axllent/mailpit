@@ -265,8 +265,8 @@ func searchQueryBuilder(searchString, timezone string) *sqlf.Stmt {
 			lw = lw[1:]
 		}
 
-		re := regexp.MustCompile(`[a-zA-Z0-9]+`)
-		if !re.MatchString(w) {
+		// ignore blank searches
+		if len(w) == 0 {
 			continue
 		}
 

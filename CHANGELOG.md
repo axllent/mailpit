@@ -2,6 +2,18 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.23.1]
+
+### Chore
+- Update node dependencies
+- Update Go dependencies
+- Replace PrismJS with highlight.js for HTML syntax highlighting
+
+### Fix
+- Prevent cropping bottom of label characters in web UI ([#457](https://github.com/axllent/mailpit/issues/457))
+- Allow searching messages using only Cyrillic characters ([#450](https://github.com/axllent/mailpit/issues/450))
+
+
 ## [v1.23.0]
 
 ### Feature

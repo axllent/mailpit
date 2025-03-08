@@ -53,7 +53,7 @@ export default {
 <template>
 	<template v-if="!modals">
 		<div class="text-center badge text-bg-primary py-2 my-2 w-100" v-if="mailbox.uiConfig.Label">
-			<div class="text-truncate fw-normal">
+			<div class="text-truncate fw-normal" style="line-height: 1rem">
 				{{ mailbox.uiConfig.Label }}
 			</div>
 		</div>

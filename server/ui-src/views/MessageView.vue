@@ -570,7 +570,7 @@ export default {
 	<div class="row flex-fill" style="min-height:0">
 		<div class="d-none d-xl-flex col-xl-3 h-100 flex-column">
 			<div class="text-center badge text-bg-primary py-2 my-2 w-100" v-if="mailbox.uiConfig.Label">
-				<div class="text-truncate fw-normal">
+				<div class="text-truncate fw-normal" style="line-height: 1rem">
 					{{ mailbox.uiConfig.Label }}
 				</div>
 			</div>
