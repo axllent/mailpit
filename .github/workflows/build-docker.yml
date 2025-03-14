@@ -48,6 +48,6 @@ jobs:
           axllent/mailpit:latest
           axllent/mailpit:${{ github.ref_name }}
           axllent/mailpit:v${{ steps.semver_parser.outputs.major }}.${{ steps.semver_parser.outputs.minor }}
-          ghcr.io/${{ github.repository }}:latest
           ghcr.io/${{ github.repository }}:${{ github.ref_name }}
           ghcr.io/${{ github.repository }}:v${{ steps.semver_parser.outputs.major }}.${{ steps.semver_parser.outputs.minor }}
+          ghcr.io/${{ github.repository }}:latest
