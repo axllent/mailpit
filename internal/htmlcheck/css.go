@@ -42,17 +42,15 @@ func runCSSTests(html string) ([]Warning, int, error) {
 		return results, totalTests, err
 	}
 
-	for key, test := range cssInlineTests {
-		totalTests++
-		found := len(doc.Find(test).Nodes)
-		if found > 0 {
-			result, err := cie.getTest(key)
-			if err != nil {
-				return results, totalTests, err
-			}
-			result.Score.Found = found
+	inlineStyleResults := testInlineStyles(doc)
+	totalTests = totalTests + len(cssInlineRegexTests) + len(styleInlineAttributes)
+	for key, count := range inlineStyleResults {
+		result, err := cie.getTest(key)
+		if err == nil {
+			result.Score.Found = count
 			results = append(results, result)
 		}
+
 	}
 
 	// get a list of all generated styles from all nodes
@@ -214,4 +212,40 @@ func downloadToBytes(url string) ([]byte, error) {
 func isURL(str string) bool {
 	u, err := url.Parse(str)
 	return err == nil && (u.Scheme == "http" || u.Scheme == "https") && u.Host != ""
+}
+
+// Test the HTML for inline CSS styles and styling attributes
+func testInlineStyles(doc *goquery.Document) map[string]int {
+	matches := make(map[string]int)
+
+	// find all elements containing a style attribute
+	styles := doc.Find("[style]").Nodes
+	for _, s := range styles {
+		style, err := tools.GetHTMLAttributeVal(s, "style")
+		if err != nil {
+			continue
+		}
+
+		for id, test := range cssInlineRegexTests {
+			if test.MatchString(style) {
+				if _, ok := matches[id]; !ok {
+					matches[id] = 0
+				}
+				matches[id]++
+			}
+		}
+	}
+
+	// find all elements containing styleInlineAttributes
+	for id, test := range styleInlineAttributes {
+		a := doc.Find(test).Nodes
+		if len(a) > 0 {
+			if _, ok := matches[id]; !ok {
+				matches[id] = 0
+			}
+			matches[id]++
+		}
+	}
+
+	return matches
 }
