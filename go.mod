@@ -8,7 +8,7 @@ require (
 	github.com/PuerkitoBio/goquery v1.10.2
 	github.com/araddon/dateparse v0.0.0-20210429162001-6b43995a97de
 	github.com/axllent/semver v0.0.1
-	github.com/gomarkdown/markdown v0.0.0-20250207164621-7a1f277a159e
+	github.com/gomarkdown/markdown v0.0.0-20250311123330-531bef5e742b
 	github.com/gorilla/mux v1.8.1
 	github.com/gorilla/websocket v1.5.3
 	github.com/jhillyerd/enmime v1.3.0
@@ -27,7 +27,7 @@ require (
 	golang.org/x/text v0.23.0
 	golang.org/x/time v0.11.0
 	gopkg.in/yaml.v3 v3.0.1
-	modernc.org/sqlite v1.36.0
+	modernc.org/sqlite v1.36.1
 )
 
 require (
