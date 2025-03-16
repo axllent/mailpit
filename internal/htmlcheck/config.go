@@ -38,167 +38,178 @@ var htmlTests = map[string]string{
 
 // Image tests using regex to match against img[src]
 var imageRegexpTests = map[string]*regexp.Regexp{
-	"image-apng":   regexp.MustCompile(`(?i)\.apng$`),       // 78.723404
-	"image-avif":   regexp.MustCompile(`(?i)\.avif$`),       // 14.864864
-	"image-base64": regexp.MustCompile(`^(?i)data:image\/`), // 61.702126
-	"image-bmp":    regexp.MustCompile(`(?i)\.bmp$`),        // 89.3617
-	"image-gif":    regexp.MustCompile(`(?i)\.gif$`),        // 89.3617
-	"image-hdr":    regexp.MustCompile(`(?i)\.hdr$`),        // 12.5
-	"image-heif":   regexp.MustCompile(`(?i)\.heif$`),       // 0
-	"image-ico":    regexp.MustCompile(`(?i)\.ico$`),        // 87.23404
-	"image-mp4":    regexp.MustCompile(`(?i)\.mp4$`),        // 26.53061
-	"image-ppm":    regexp.MustCompile(`(?i)\.ppm$`),        // 2.0833282
-	"image-svg":    regexp.MustCompile(`(?i)\.svg$`),        // 64.91228
-	"image-tiff":   regexp.MustCompile(`(?i)\.tiff?$`),      // 38.29787
-	"image-webp":   regexp.MustCompile(`(?i)\.webp$`),       // 59.649124
+	"image-apng":   regexp.MustCompile(`(?i)\.apng$`),
+	"image-avif":   regexp.MustCompile(`(?i)\.avif$`),
+	"image-base64": regexp.MustCompile(`^(?i)data:image\/`),
+	"image-bmp":    regexp.MustCompile(`(?i)\.bmp$`),
+	"image-gif":    regexp.MustCompile(`(?i)\.gif$`),
+	"image-hdr":    regexp.MustCompile(`(?i)\.hdr$`),
+	"image-heif":   regexp.MustCompile(`(?i)\.heif$`),
+	"image-ico":    regexp.MustCompile(`(?i)\.ico$`),
+	"image-mp4":    regexp.MustCompile(`(?i)\.mp4$`),
+	"image-ppm":    regexp.MustCompile(`(?i)\.ppm$`),
+	"image-svg":    regexp.MustCompile(`(?i)\.svg$`),
+	"image-tiff":   regexp.MustCompile(`(?i)\.tiff?$`),
+	"image-webp":   regexp.MustCompile(`(?i)\.webp$`),
 }
 
-var cssInlineTests = map[string]string{
-	"css-accent-color":                   "[style*=\"accent-color:\"]",                                           // 6.6666718
-	"css-align-items":                    "[style*=\"align-items:\"]",                                            // 60.784313
-	"css-aspect-ratio":                   "[style*=\"aspect-ratio:\"]",                                           // 30
-	"css-background-blend-mode":          "[style*=\"background-blend-mode:\"]",                                  // 61.70213
-	"css-background-clip":                "[style*=\"background-clip:\"]",                                        // 61.70213
-	"css-background-color":               "[style*=\"background-color:\"], [bgcolor]",                            // 90
-	"css-background-image":               "[style*=\"background-image:\"]",                                       // 57.62712
-	"css-background-origin":              "[style*=\"background-origin:\"]",                                      // 61.70213
-	"css-background-position":            "[style*=\"background-position:\"]",                                    // 61.224487
-	"css-background-repeat":              "[style*=\"background-repeat:\"]",                                      // 67.34694
-	"css-background-size":                "[style*=\"background-size:\"]",                                        // 61.702126
-	"css-background":                     "[style*=\"background:\"], [background]",                               // 57.407406
-	"css-block-inline-size":              "[style*=\"block-inline-size:\"]",                                      // 46.93877
-	"css-border-image":                   "[style*=\"border-image:\"]",                                           // 52.173912
-	"css-border-inline-block-individual": "[style*=\"border-inline:\"]",                                          // 18.518517
-	"css-border-radius":                  "[style*=\"border-radius:\"]",                                          // 67.34694
-	"css-border":                         "[style*=\"border:\"], [border]",                                       // 86.95652
-	"css-box-shadow":                     "[style*=\"box-shadow:\"]",                                             // 43.103447
-	"css-box-sizing":                     "[style*=\"box-sizing:\"]",                                             // 71.739136
-	"css-caption-side":                   "[style*=\"caption-side:\"]",                                           // 84
-	"css-clip-path":                      "[style*=\"clip-path:\"]",                                              // 43.396225
-	"css-column-count":                   "[style*=\"column-count:\"]",                                           // 67.391304
-	"css-column-layout-properties":       "[style*=\"column-layout-properties:\"]",                               // 47.368423
-	"css-conic-gradient":                 "[style*=\"conic-gradient:\"]",                                         // 38.461536
-	"css-direction":                      "[style*=\"direction:\"]",                                              // 97.77778
-	"css-display-flex":                   "[style*=\"display:flex\"]",                                            // 53.448277
-	"css-display-grid":                   "[style*=\"display:grid\"]",                                            // 54.347824
-	"css-display-none":                   "[style*=\"display:none\"]",                                            // 84.78261
-	"css-display":                        "[style*=\"display:\"]",                                                // 55.555553
-	"css-filter":                         "[style*=\"filter:\"]",                                                 // 50
-	"css-flex-direction":                 "[style*=\"flex-direction:\"]",                                         // 50
-	"css-flex-wrap":                      "[style*=\"flex-wrap:\"]",                                              // 49.09091
-	"css-float":                          "[style*=\"float:\"]",                                                  // 85.10638
-	"css-font-kerning":                   "[style*=\"font-kerning:\"]",                                           // 66.666664
-	"css-font-weight":                    "[style*=\"font-weight:\"]",                                            // 76.666664
-	"css-font":                           "[style*=\"font:\"]",                                                   // 95.833336
-	"css-gap":                            "[style*=\"gap:\"]",                                                    // 40
-	"css-grid-template":                  "[style*=\"grid-template:\"]",                                          // 34.042553
-	"css-height":                         "[style*=\"height:\"], [height]",                                       // 77.08333
-	"css-hyphens":                        "[style*=\"hyphens:\"]",                                                // 31.111107
-	"css-important":                      "[style*=\"!important\"]",                                              // 43.478264
-	"css-inline-size":                    "[style*=\"inline-size:\"]",                                            // 43.478264
-	"css-intrinsic-size":                 "[style*=\"intrinsic-size:\"]",                                         // 40.54054
-	"css-justify-content":                "[style*=\"justify-content:\"]",                                        // 59.25926
-	"css-letter-spacing":                 "[style*=\"letter-spacing:\"]",                                         // 87.23404
-	"css-line-height":                    "[style*=\"line-height:\"]",                                            // 82.608696
-	"css-list-style-image":               "[style*=\"list-style-image:\"]",                                       // 54.16667
-	"css-list-style-position":            "[style*=\"list-style-position:\"]",                                    // 87.5
-	"css-list-style":                     "[style*=\"list-style:\"]",                                             // 62.500004
-	"css-margin-block-start-end":         "[style*=\"margin-block-start:\"], [style*=\"margin-block-end:\"]",     // 32.07547
-	"css-margin-inline-block":            "[style*=\"margin-inline-block:\"]",                                    // 16.981125
-	"css-margin-inline-start-end":        "[style*=\"margin-inline-start:\"], [style*=\"margin-inline-end:\"]",   // 32.07547
-	"css-margin-inline":                  "[style*=\"margin-inline:\"]",                                          // 43.39623
-	"css-margin":                         "[style*=\"margin:\"]",                                                 // 71.42857
-	"css-max-block-size":                 "[style*=\"max-block-size:\"]",                                         // 35.714287
-	"css-max-height":                     "[style*=\"max-height:\"]",                                             // 86.95652
-	"css-max-width":                      "[style*=\"max-width:\"]",                                              // 76.47058
-	"css-min-height":                     "[style*=\"min-height:\"]",                                             // 82.608696
-	"css-min-inline-size":                "[style*=\"min-inline-size:\"]",                                        // 33.33333
-	"css-min-width":                      "[style*=\"min-width:\"]",                                              // 86.95652
-	"css-mix-blend-mode":                 "[style*=\"mix-blend-mode:\"]",                                         // 62.745094
-	"css-modern-color":                   "[style*=\"modern-color:\"]",                                           // 10.81081
-	"css-object-fit":                     "[style*=\"object-fit:\"]",                                             // 57.142857
-	"css-object-position":                "[style*=\"object-position:\"]",                                        // 55.10204
-	"css-opacity":                        "[style*=\"opacity:\"]",                                                // 63.04348
-	"css-outline-offset":                 "[style*=\"outline-offset:\"]",                                         // 42.5
-	"css-outline":                        "[style*=\"outline:\"]",                                                // 80.85106
-	"css-overflow-wrap":                  "[style*=\"overflow-wrap:\"]",                                          // 6.6666603
-	"css-overflow":                       "[style*=\"overflow:\"]",                                               // 78.26087
-	"css-padding-block-start-end":        "[style*=\"padding-block-start:\"], [style*=\"padding-block-end:\"]",   // 32.07547
-	"css-padding-inline-block":           "[style*=\"padding-inline-block:\"]",                                   // 16.981125
-	"css-padding-inline-start-end":       "[style*=\"padding-inline-start:\"], [style*=\"padding-inline-end:\"]", // 32.07547
-	"css-padding":                        "[style*=\"padding:\"], [padding]",                                     // 87.755104
-	"css-position":                       "[style*=\"position:\"]",                                               // 19.56522
-	"css-radial-gradient":                "[style*=\"radial-gradient:\"]",                                        // 64.583336
-	"css-rgb":                            "[style*=\"rgb(\"]",                                                    // 53.846153
-	"css-rgba":                           "[style*=\"rgba(\"]",                                                   // 56
-	"css-scroll-snap":                    "[style*=\"roll-snap:\"]",                                              // 38.88889
-	"css-tab-size":                       "[style*=\"tab-size:\"]",                                               // 32.075474
-	"css-table-layout":                   "[style*=\"table-layout:\"]",                                           // 53.33333
-	"css-text-align-last":                "[style*=\"text-align-last:\"]",                                        // 42.307693
-	"css-text-align":                     "[style*=\"text-align:\"]",                                             // 60.416664
-	"css-text-decoration-color":          "[style*=\"text-decoration-color:\"]",                                  // 67.34695
-	"css-text-decoration-thickness":      "[style*=\"text-decoration-thickness:\"]",                              // 38.333336
-	"css-text-decoration":                "[style*=\"text-decoration:\"]",                                        // 67.391304
-	"css-text-emphasis-position":         "[style*=\"text-emphasis-position:\"]",                                 // 28.571434
-	"css-text-emphasis":                  "[style*=\"text-emphasis:\"]",                                          // 36.734695
-	"css-text-indent":                    "[style*=\"text-indent:\"]",                                            // 78.43137
-	"css-text-overflow":                  "[style*=\"text-overflow:\"]",                                          // 58.695656
-	"css-text-shadow":                    "[style*=\"text-shadow:\"]",                                            // 69.565216
-	"css-text-transform":                 "[style*=\"text-transform:\"]",                                         // 86.666664
-	"css-text-underline-offset":          "[style*=\"text-underline-offset:\"]",                                  // 39.285713
-	"css-transform":                      "[style*=\"transform:\"]",                                              // 50
-	"css-unit-calc":                      "[style*=\"calc(:\"]",                                                  // 56.25
-	"css-variables":                      "[style*=\"variables:\"]",                                              // 46.551727
-	"css-visibility":                     "[style*=\"visibility:\"]",                                             // 52.173916
-	"css-white-space":                    "[style*=\"white-space:\"]",                                            // 58.69565
-	"css-width":                          "[style*=\"width:\"], [width]",                                         // 87.5
-	"css-word-break":                     "[style*=\"word-break:\"]",                                             // 28.888887
-	"css-writing-mode":                   "[style*=\"writing-mode:\"]",                                           // 56.25
-	"css-z-index":                        "[style*=\"z-index:\"]",                                                // 76.08696
+// inline attribute <match>=""
+var styleInlineAttributes = map[string]string{
+	"css-background-color": "[bgcolor]",
+	"css-background":       "[background]",
+	"css-border":           "[border]",
+	"css-height":           "[height]",
+	"css-padding":          "[padding]",
+	"css-width":            "[width]",
+}
+
+// inline style="<match>"
+var cssInlineRegexTests = map[string]*regexp.Regexp{
+	"css-accent-color":                   regexp.MustCompile(`(?i)(^|\s|;)accent-color(\s+)?:`),
+	"css-align-items":                    regexp.MustCompile(`(?i)(^|\s|;)align-items(\s+)?:`),
+	"css-aspect-ratio":                   regexp.MustCompile(`(?i)(^|\s|;)aspect-ratio(\s+)?:`),
+	"css-background-blend-mode":          regexp.MustCompile(`(?i)(^|\s|;)background-blend-mode(\s+)?:`),
+	"css-background-clip":                regexp.MustCompile(`(?i)(^|\s|;)background-clip(\s+)?:`),
+	"css-background-color":               regexp.MustCompile(`(?i)(^|\s|;)background-color(\s+)?:`),
+	"css-background-image":               regexp.MustCompile(`(?i)(^|\s|;)background-image(\s+)?:`),
+	"css-background-origin":              regexp.MustCompile(`(?i)(^|\s|;)background-origin(\s+)?:`),
+	"css-background-position":            regexp.MustCompile(`(?i)(^|\s|;)background-position(\s+)?:`),
+	"css-background-repeat":              regexp.MustCompile(`(?i)(^|\s|;)background-repeat(\s+)?:`),
+	"css-background-size":                regexp.MustCompile(`(?i)(^|\s|;)background-size(\s+)?:`),
+	"css-background":                     regexp.MustCompile(`(?i)(^|\s|;)background(\s+)?:`),
+	"css-block-inline-size":              regexp.MustCompile(`(?i)(^|\s|;)block-inline-size(\s+)?:`),
+	"css-border-image":                   regexp.MustCompile(`(?i)(^|\s|;)border-image(\s+)?:`),
+	"css-border-inline-block-individual": regexp.MustCompile(`(?i)(^|\s|;)border-inline(\s+)?:`),
+	"css-border-radius":                  regexp.MustCompile(`(?i)(^|\s|;)border-radius(\s+)?:`),
+	"css-border":                         regexp.MustCompile(`(?i)(^|\s|;)border(\s+)?:`),
+	"css-box-shadow":                     regexp.MustCompile(`(?i)(^|\s|;)box-shadow(\s+)?:`),
+	"css-box-sizing":                     regexp.MustCompile(`(?i)(^|\s|;)box-sizing(\s+)?:`),
+	"css-caption-side":                   regexp.MustCompile(`(?i)(^|\s|;)caption-side(\s+)?:`),
+	"css-clip-path":                      regexp.MustCompile(`(?i)(^|\s|;)clip-path(\s+)?:`),
+	"css-column-count":                   regexp.MustCompile(`(?i)(^|\s|;)column-count(\s+)?:`),
+	"css-column-layout-properties":       regexp.MustCompile(`(?i)(^|\s|;)column-layout-properties(\s+)?:`),
+	"css-conic-gradient":                 regexp.MustCompile(`(?i)(^|\s|;)conic-gradient(\s+)?:`),
+	"css-direction":                      regexp.MustCompile(`(?i)(^|\s|;)direction(\s+)?:`),
+	"css-display-flex":                   regexp.MustCompile(`(?i)(^|\s|;)display(\s+)?:(\s+)?flex($|\s|;)`),
+	"css-display-grid":                   regexp.MustCompile(`(?i)(^|\s|;)display:grid`),
+	"css-display-none":                   regexp.MustCompile(`(?i)(^|\s|;)display:none`),
+	"css-display":                        regexp.MustCompile(`(?i)(^|\s|;)display(\s+)?:`),
+	"css-filter":                         regexp.MustCompile(`(?i)(^|\s|;)filter(\s+)?:`),
+	"css-flex-direction":                 regexp.MustCompile(`(?i)(^|\s|;)flex-direction(\s+)?:`),
+	"css-flex-wrap":                      regexp.MustCompile(`(?i)(^|\s|;)flex-wrap(\s+)?:`),
+	"css-float":                          regexp.MustCompile(`(?i)(^|\s|;)float(\s+)?:`),
+	"css-font-kerning":                   regexp.MustCompile(`(?i)(^|\s|;)font-kerning(\s+)?:`),
+	"css-font-weight":                    regexp.MustCompile(`(?i)(^|\s|;)font-weight(\s+)?:`),
+	"css-font":                           regexp.MustCompile(`(?i)(^|\s|;)font(\s+)?:`),
+	"css-gap":                            regexp.MustCompile(`(?i)(^|\s|;)gap(\s+)?:`),
+	"css-grid-template":                  regexp.MustCompile(`(?i)(^|\s|;)grid-template(\s+)?:`),
+	"css-height":                         regexp.MustCompile(`(?i)(^|\s|;)height(\s+)?:`),
+	"css-hyphens":                        regexp.MustCompile(`(?i)(^|\s|;)hyphens(\s+)?:`),
+	"css-important":                      regexp.MustCompile(`(?i)!important($|\s|;)`),
+	"css-inline-size":                    regexp.MustCompile(`(?i)(^|\s|;)inline-size(\s+)?:`),
+	"css-intrinsic-size":                 regexp.MustCompile(`(?i)(^|\s|;)intrinsic-size(\s+)?:`),
+	"css-justify-content":                regexp.MustCompile(`(?i)(^|\s|;)justify-content(\s+)?:`),
+	"css-letter-spacing":                 regexp.MustCompile(`(?i)(^|\s|;)letter-spacing(\s+)?:`),
+	"css-line-height":                    regexp.MustCompile(`(?i)(^|\s|;)line-height(\s+)?:`),
+	"css-list-style-image":               regexp.MustCompile(`(?i)(^|\s|;)list-style-image(\s+)?:`),
+	"css-list-style-position":            regexp.MustCompile(`(?i)(^|\s|;)list-style-position(\s+)?:`),
+	"css-list-style":                     regexp.MustCompile(`(?i)(^|\s|;)list-style(\s+)?:`),
+	"css-margin-block-start-end":         regexp.MustCompile(`(?i)(^|\s|;)margin-block-(start|end)(\s+)?:`),
+	"css-margin-inline-block":            regexp.MustCompile(`(?i)(^|\s|;)margin-inline-block(\s+)?:`),
+	"css-margin-inline-start-end":        regexp.MustCompile(`(?i)(^|\s|;)margin-inline-(start|end)(\s+)?:`),
+	"css-margin-inline":                  regexp.MustCompile(`(?i)(^|\s|;)margin-inline(\s+)?:`),
+	"css-margin":                         regexp.MustCompile(`(?i)(^|\s|;)margin(\s+)?:`),
+	"css-max-block-size":                 regexp.MustCompile(`(?i)(^|\s|;)max-block-size(\s+)?:`),
+	"css-max-height":                     regexp.MustCompile(`(?i)(^|\s|;)max-height(\s+)?:`),
+	"css-max-width":                      regexp.MustCompile(`(?i)(^|\s|;)max-width(\s+)?:`),
+	"css-min-height":                     regexp.MustCompile(`(?i)(^|\s|;)min-height(\s+)?:`),
+	"css-min-inline-size":                regexp.MustCompile(`(?i)(^|\s|;)min-inline-size(\s+)?:`),
+	"css-min-width":                      regexp.MustCompile(`(?i)(^|\s|;)min-width(\s+)?:`),
+	"css-mix-blend-mode":                 regexp.MustCompile(`(?i)(^|\s|;)mix-blend-mode(\s+)?:`),
+	"css-modern-color":                   regexp.MustCompile(`(?i)(^|\s|;)modern-color(\s+)?:`),
+	"css-object-fit":                     regexp.MustCompile(`(?i)(^|\s|;)object-fit(\s+)?:`),
+	"css-object-position":                regexp.MustCompile(`(?i)(^|\s|;)object-position(\s+)?:`),
+	"css-opacity":                        regexp.MustCompile(`(?i)(^|\s|;)opacity(\s+)?:`),
+	"css-outline-offset":                 regexp.MustCompile(`(?i)(^|\s|;)outline-offset(\s+)?:`),
+	"css-outline":                        regexp.MustCompile(`(?i)(^|\s|;)outline(\s+)?:`),
+	"css-overflow-wrap":                  regexp.MustCompile(`(?i)(^|\s|;)overflow-wrap(\s+)?:`),
+	"css-overflow":                       regexp.MustCompile(`(?i)(^|\s|;)overflow(\s+)?:`),
+	"css-padding-block-start-end":        regexp.MustCompile(`(?i)(^|\s|;)padding-block-(start|end)(\s+)?:`),
+	"css-padding-inline-block":           regexp.MustCompile(`(?i)(^|\s|;)padding-inline-block(\s+)?:`),
+	"css-padding-inline-start-end":       regexp.MustCompile(`(?i)(^|\s|;)padding-inline-(start|end)(\s+)?:`),
+	"css-padding":                        regexp.MustCompile(`(?i)(^|\s|;)padding(\s+)?:`),
+	"css-position":                       regexp.MustCompile(`(?i)(^|\s|;)position(\s+)?:`),
+	"css-radial-gradient":                regexp.MustCompile(`(?i)(^|\s|;)radial-gradient(\s+)?:`),
+	"css-rgb":                            regexp.MustCompile(`(?i)(\s|:)rgb\(`),
+	"css-rgba":                           regexp.MustCompile(`(?i)(\s|:)rgba\(`),
+	"css-scroll-snap":                    regexp.MustCompile(`(?i)(^|\s|;)roll-snap(\s+)?:`),
+	"css-tab-size":                       regexp.MustCompile(`(?i)(^|\s|;)tab-size(\s+)?:`),
+	"css-table-layout":                   regexp.MustCompile(`(?i)(^|\s|;)table-layout(\s+)?:`),
+	"css-text-align-last":                regexp.MustCompile(`(?i)(^|\s|;)text-align-last(\s+)?:`),
+	"css-text-align":                     regexp.MustCompile(`(?i)(^|\s|;)text-align(\s+)?:`),
+	"css-text-decoration-color":          regexp.MustCompile(`(?i)(^|\s|;)text-decoration-color(\s+)?:`),
+	"css-text-decoration-thickness":      regexp.MustCompile(`(?i)(^|\s|;)text-decoration-thickness(\s+)?:`),
+	"css-text-decoration":                regexp.MustCompile(`(?i)(^|\s|;)text-decoration(\s+)?:`),
+	"css-text-emphasis-position":         regexp.MustCompile(`(?i)(^|\s|;)text-emphasis-position(\s+)?:`),
+	"css-text-emphasis":                  regexp.MustCompile(`(?i)(^|\s|;)text-emphasis(\s+)?:`),
+	"css-text-indent":                    regexp.MustCompile(`(?i)(^|\s|;)text-indent(\s+)?:`),
+	"css-text-overflow":                  regexp.MustCompile(`(?i)(^|\s|;)text-overflow(\s+)?:`),
+	"css-text-shadow":                    regexp.MustCompile(`(?i)(^|\s|;)text-shadow(\s+)?:`),
+	"css-text-transform":                 regexp.MustCompile(`(?i)(^|\s|;)text-transform(\s+)?:`),
+	"css-text-underline-offset":          regexp.MustCompile(`(?i)(^|\s|;)text-underline-offset(\s+)?:`),
+	"css-transform":                      regexp.MustCompile(`(?i)(^|\s|;)transform(\s+)?:`),
+	"css-unit-calc":                      regexp.MustCompile(`(?i)(\s|:)calc\(`),
+	"css-variables":                      regexp.MustCompile(`(?i)(^|\s|;)variables(\s+)?:`),
+	"css-visibility":                     regexp.MustCompile(`(?i)(^|\s|;)visibility(\s+)?:`),
+	"css-white-space":                    regexp.MustCompile(`(?i)(^|\s|;)white-space(\s+)?:`),
+	"css-width":                          regexp.MustCompile(`(?i)(^|\s|;)width(\s+)?:`),
+	"css-word-break":                     regexp.MustCompile(`(?i)(^|\s|;)word-break(\s+)?:`),
+	"css-writing-mode":                   regexp.MustCompile(`(?i)(^|\s|;)writing-mode(\s+)?:`),
+	"css-z-index":                        regexp.MustCompile(`(?i)(^|\s|;)z-index(\s+)?:`),
 }
 
 // some CSS tests using regex for things that can't be merged inline
 var cssRegexpTests = map[string]*regexp.Regexp{
-	"css-at-font-face":                  regexp.MustCompile(`(?mi)@font\-face\s+?{`),        // 26.923073
-	"css-at-import":                     regexp.MustCompile(`(?mi)@import\s`),               // 36.170216
-	"css-at-keyframes":                  regexp.MustCompile(`(?mi)@keyframes\s`),            // 31.914898
-	"css-at-media":                      regexp.MustCompile(`(?mi)@media\s?\(`),             // 47.05882
-	"css-at-supports":                   regexp.MustCompile(`(?mi)@supports\s?\(`),          // 40.81633
-	"css-pseudo-class-active":           regexp.MustCompile(`:active`),                      // 52.173912
-	"css-pseudo-class-checked":          regexp.MustCompile(`:checked`),                     // 31.91489
-	"css-pseudo-class-first-child":      regexp.MustCompile(`:first\-child`),                // 66.666664
-	"css-pseudo-class-first-of-type":    regexp.MustCompile(`:first\-of\-type`),             // 62.5
-	"css-pseudo-class-focus":            regexp.MustCompile(`:focus`),                       // 47.826088
-	"css-pseudo-class-has":              regexp.MustCompile(`:has`),                         // 25.531914
-	"css-pseudo-class-hover":            regexp.MustCompile(`:hover`),                       // 60.41667
-	"css-pseudo-class-lang":             regexp.MustCompile(`:lang\s?\(`),                   // 18.918922
-	"css-pseudo-class-last-child":       regexp.MustCompile(`:last\-child`),                 // 64.58333
-	"css-pseudo-class-last-of-type":     regexp.MustCompile(`:last\-of\-type`),              // 60.416664
-	"css-pseudo-class-link":             regexp.MustCompile(`:link`),                        // 81.63265
-	"css-pseudo-class-not":              regexp.MustCompile(`:not(\s+)?\(`),                 // 44.89796
-	"css-pseudo-class-nth-child":        regexp.MustCompile(`:nth\-child(\s+)?\(`),          // 44.89796
-	"css-pseudo-class-nth-last-child":   regexp.MustCompile(`:nth\-last\-child(\s+)?\(`),    // 44.89796
-	"css-pseudo-class-nth-last-of-type": regexp.MustCompile(`:nth\-last\-of\-type(\s+)?\(`), // 42.857143
-	"css-pseudo-class-nth-of-type":      regexp.MustCompile(`:nth\-of\-type(\s+)?\(`),       // 42.857143
-	"css-pseudo-class-only-child":       regexp.MustCompile(`:only\-child(\s+)?\(`),         // 64.58333
-	"css-pseudo-class-only-of-type":     regexp.MustCompile(`:only\-of\-type(\s+)?\(`),      // 64.58333
-	"css-pseudo-class-target":           regexp.MustCompile(`:target`),                      // 39.13044
-	"css-pseudo-class-visited":          regexp.MustCompile(`:visited`),                     // 39.13044
-	"css-pseudo-element-after":          regexp.MustCompile(`:after`),                       // 40
-	"css-pseudo-element-before":         regexp.MustCompile(`:before`),                      // 40
-	"css-pseudo-element-first-letter":   regexp.MustCompile(`::first\-letter`),              // 60
-	"css-pseudo-element-first-line":     regexp.MustCompile(`::first\-line`),                // 60
-	"css-pseudo-element-marker":         regexp.MustCompile(`::marker`),                     // 50
-	"css-pseudo-element-placeholder":    regexp.MustCompile(`::placeholder`),                // 32
+	"css-at-font-face":                  regexp.MustCompile(`(?mi)@font\-face\s+?{`),
+	"css-at-import":                     regexp.MustCompile(`(?mi)@import\s`),
+	"css-at-keyframes":                  regexp.MustCompile(`(?mi)@keyframes\s`),
+	"css-at-media":                      regexp.MustCompile(`(?mi)@media\s?\(`),
+	"css-at-supports":                   regexp.MustCompile(`(?mi)@supports\s?\(`),
+	"css-pseudo-class-active":           regexp.MustCompile(`:active`),
+	"css-pseudo-class-checked":          regexp.MustCompile(`:checked`),
+	"css-pseudo-class-first-child":      regexp.MustCompile(`:first\-child`),
+	"css-pseudo-class-first-of-type":    regexp.MustCompile(`:first\-of\-type`),
+	"css-pseudo-class-focus":            regexp.MustCompile(`:focus`),
+	"css-pseudo-class-has":              regexp.MustCompile(`:has`),
+	"css-pseudo-class-hover":            regexp.MustCompile(`:hover`),
+	"css-pseudo-class-lang":             regexp.MustCompile(`:lang\s?\(`),
+	"css-pseudo-class-last-child":       regexp.MustCompile(`:last\-child`),
+	"css-pseudo-class-last-of-type":     regexp.MustCompile(`:last\-of\-type`),
+	"css-pseudo-class-link":             regexp.MustCompile(`:link`),
+	"css-pseudo-class-not":              regexp.MustCompile(`:not(\s+)?\(`),
+	"css-pseudo-class-nth-child":        regexp.MustCompile(`:nth\-child(\s+)?\(`),
+	"css-pseudo-class-nth-last-child":   regexp.MustCompile(`:nth\-last\-child(\s+)?\(`),
+	"css-pseudo-class-nth-last-of-type": regexp.MustCompile(`:nth\-last\-of\-type(\s+)?\(`),
+	"css-pseudo-class-nth-of-type":      regexp.MustCompile(`:nth\-of\-type(\s+)?\(`),
+	"css-pseudo-class-only-child":       regexp.MustCompile(`:only\-child(\s+)?\(`),
+	"css-pseudo-class-only-of-type":     regexp.MustCompile(`:only\-of\-type(\s+)?\(`),
+	"css-pseudo-class-target":           regexp.MustCompile(`:target`),
+	"css-pseudo-class-visited":          regexp.MustCompile(`:visited`),
+	"css-pseudo-element-after":          regexp.MustCompile(`:after`),
+	"css-pseudo-element-before":         regexp.MustCompile(`:before`),
+	"css-pseudo-element-first-letter":   regexp.MustCompile(`::first\-letter`),
+	"css-pseudo-element-first-line":     regexp.MustCompile(`::first\-line`),
+	"css-pseudo-element-marker":         regexp.MustCompile(`::marker`),
+	"css-pseudo-element-placeholder":    regexp.MustCompile(`::placeholder`),
 }
 
 // some CSS tests using regex for units
 var cssRegexpUnitTests = map[string]*regexp.Regexp{
-	"css-unit-ch":      regexp.MustCompile(`\b\d+ch\b`),     // 66.666664
-	"css-unit-initial": regexp.MustCompile(`:\s?initial\b`), // 58.33333
-	"css-unit-rem":     regexp.MustCompile(`\b\d+rem\b`),    // 66.666664
-	"css-unit-vh":      regexp.MustCompile(`\b\d+vh\b`),     // 68.75
-	"css-unit-vmax":    regexp.MustCompile(`\b\d+vmax\b`),   // 60.416664
-	"css-unit-vmin":    regexp.MustCompile(`\b\d+vmin\b`),   // 58.333336
-	"css-unit-vw":      regexp.MustCompile(`\b\d+vw\b`),     // 77.08333
+	"css-unit-ch":      regexp.MustCompile(`\b\d+ch\b`),
+	"css-unit-initial": regexp.MustCompile(`:\s?initial\b`),
+	"css-unit-rem":     regexp.MustCompile(`\b\d+rem\b`),
+	"css-unit-vh":      regexp.MustCompile(`\b\d+vh\b`),
+	"css-unit-vmax":    regexp.MustCompile(`\b\d+vmax\b`),
+	"css-unit-vmin":    regexp.MustCompile(`\b\d+vmin\b`),
+	"css-unit-vw":      regexp.MustCompile(`\b\d+vw\b`),
 }

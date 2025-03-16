@@ -178,8 +178,8 @@ func ReleaseMessage(w http.ResponseWriter, r *http.Request) {
 
 	// generate unique ID
 	uid := shortuuid.New() + "@mailpit"
-	// update Message-Id with unique ID
-	msg, err = tools.SetMessageHeader(msg, "Message-Id", "<"+uid+">")
+	// update Message-ID with unique ID
+	msg, err = tools.SetMessageHeader(msg, "Message-ID", "<"+uid+">")
 	if err != nil {
 		httpError(w, err.Error())
 		return

@@ -56,14 +56,14 @@ func SaveToDatabase(origin net.Addr, from string, to []string, data []byte) (str
 		}
 	}
 
-	messageID := strings.Trim(msg.Header.Get("Message-Id"), "<>")
+	messageID := strings.Trim(msg.Header.Get("Message-ID"), "<>")
 
 	// add a message ID if not set
 	if messageID == "" {
 		// generate unique ID
 		messageID = shortuuid.New() + "@mailpit"
 		// add unique ID
-		data = append([]byte("Message-Id: <"+messageID+">\r\n"), data...)
+		data = append([]byte("Message-ID: <"+messageID+">\r\n"), data...)
 	} else if config.IgnoreDuplicateIDs {
 		if storage.MessageIDExists(messageID) {
 			logger.Log().Debugf("[smtpd] duplicate message found, ignoring %s", messageID)
