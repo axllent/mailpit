@@ -2,6 +2,18 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.23.2]
+
+### Chore
+- Update Go dependencies
+- Improve inline HTML Check style detection ([#467](https://github.com/axllent/mailpit/issues/467))
+- Use `Message-ID` header instead of `Message-Id` when generating new IDs (RFC 5322)
+- Update node dependencies
+
+### Testing
+- Add tests for inline HTML Checks
+
+
 ## [v1.23.1]
 
 ### Chore
