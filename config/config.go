@@ -212,6 +212,7 @@ type SMTPRelayConfigStruct struct {
 	Host                    string         `yaml:"host"`
 	Port                    int            `yaml:"port"`
 	STARTTLS                bool           `yaml:"starttls"`
+	TLS                     bool           `yaml:"tls"`
 	AllowInsecure           bool           `yaml:"allow-insecure"`
 	Auth                    string         `yaml:"auth"`               // none, plain, login, cram-md5
 	Username                string         `yaml:"username"`           // plain & cram-md5
