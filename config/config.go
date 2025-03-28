@@ -319,7 +319,7 @@ func VerifyConfig() error {
 	}
 
 	if SMTPTLSCert != "" && SMTPTLSKey == "" || SMTPTLSCert == "" && SMTPTLSKey != "" {
-		return errors.New("[smtp] You must provide both an SMTP TLS certificate and a key")
+		return errors.New("[smtp] you must provide both an SMTP TLS certificate and a key")
 	}
 
 	if SMTPTLSCert != "" {
@@ -404,7 +404,7 @@ func VerifyConfig() error {
 		}
 	}
 	if POP3TLSCert != "" && POP3TLSKey == "" || POP3TLSCert == "" && POP3TLSKey != "" {
-		return errors.New("[pop3] You must provide both a POP3 TLS certificate and a key")
+		return errors.New("[pop3] you must provide both a POP3 TLS certificate and a key")
 	}
 	if POP3Listen != "" {
 		_, err := net.ResolveTCPAddr("tcp", POP3Listen)
