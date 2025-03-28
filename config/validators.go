@@ -94,6 +94,10 @@ func validateRelayConfig() error {
 		SMTPRelayConfig.Port = 25 // default
 	}
 
+	if SMTPRelayConfig.STARTTLS && SMTPRelayConfig.TLS {
+		return fmt.Errorf("[relay] TLS & STARTTLS cannot be required together")
+	}
+
 	SMTPRelayConfig.Auth = strings.ToLower(SMTPRelayConfig.Auth)
 
 	if SMTPRelayConfig.Auth == "" || SMTPRelayConfig.Auth == "none" || SMTPRelayConfig.Auth == "false" {
