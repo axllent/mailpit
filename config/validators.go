@@ -145,6 +145,10 @@ func validateRelayConfig() error {
 		SMTPRelayConfig.OverrideFrom = m.Address
 	}
 
+	if SMTPRelayConfig.STARTTLS && SMTPRelayConfig.TLS {
+		return fmt.Errorf("[relay] TLS & STARTTLS cannot be required together")
+	}
+
 	ReleaseEnabled = true
 
 	logger.Log().Infof("[relay] enabling message relaying via %s:%d", SMTPRelayConfig.Host, SMTPRelayConfig.Port)
@@ -241,6 +245,10 @@ func validateForwardConfig() error {
 		}
 
 		SMTPForwardConfig.OverrideFrom = m.Address
+	}
+
+	if SMTPForwardConfig.STARTTLS && SMTPForwardConfig.TLS {
+		return fmt.Errorf("[forward] TLS & STARTTLS cannot be required together")
 	}
 
 	logger.Log().Infof("[forward] enabling message forwarding to %s via %s:%d", SMTPForwardConfig.To, SMTPForwardConfig.Host, SMTPForwardConfig.Port)

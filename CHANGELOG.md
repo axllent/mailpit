@@ -2,6 +2,19 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.24.0]
+
+### Feature
+- Add TLS forwarding support and refactor forwarding function
+- Add TLS relay support and refactor relay function ([#471](https://github.com/axllent/mailpit/issues/471))
+
+### Chore
+- Update node dependencies
+- Update Go dependencies
+- Standardize error message casing
+- Update Go dependencies
+
+
 ## [v1.23.2]
 
 ### Chore
@@ -1750,6 +1763,3 @@ This release includes a major backend storage change (SQLite) that will render a
 
 ### Feature
 - Unread statistics
-
-
-

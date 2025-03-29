@@ -130,27 +130,27 @@ func saveMessages() error {
 			res, err := http.Get(base + "api/v1/message/" + m.ID + "/raw")
 
 			if err != nil {
-				logger.Log().Errorf("Error fetching message %s: %s", m.ID, err.Error())
+				logger.Log().Errorf("error fetching message %s: %s", m.ID, err.Error())
 				continue
 			}
 
 			b, err = io.ReadAll(res.Body)
 
 			if err != nil {
-				logger.Log().Errorf("Error fetching message %s: %s", m.ID, err.Error())
+				logger.Log().Errorf("error fetching message %s: %s", m.ID, err.Error())
 				continue
 			}
 		} else {
 			var err error
 			b, err = storage.GetMessageRaw(m.ID)
 			if err != nil {
-				logger.Log().Errorf("Error fetching message %s: %s", m.ID, err.Error())
+				logger.Log().Errorf("error fetching message %s: %s", m.ID, err.Error())
 				continue
 			}
 		}
 
 		if err := os.WriteFile(out, b, 0644); /* #nosec */ err != nil {
-			logger.Log().Errorf("Error writing message %s: %s", m.ID, err.Error())
+			logger.Log().Errorf("error writing message %s: %s", m.ID, err.Error())
 			continue
 		}
 

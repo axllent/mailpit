@@ -292,6 +292,7 @@ func initConfigFromEnv() {
 		config.SMTPRelayConfig.Port, _ = strconv.Atoi(os.Getenv("MP_SMTP_RELAY_PORT"))
 	}
 	config.SMTPRelayConfig.STARTTLS = getEnabledFromEnv("MP_SMTP_RELAY_STARTTLS")
+	config.SMTPRelayConfig.TLS = getEnabledFromEnv("MP_SMTP_RELAY_TLS")
 	config.SMTPRelayConfig.AllowInsecure = getEnabledFromEnv("MP_SMTP_RELAY_ALLOW_INSECURE")
 	config.SMTPRelayConfig.Auth = os.Getenv("MP_SMTP_RELAY_AUTH")
 	config.SMTPRelayConfig.Username = os.Getenv("MP_SMTP_RELAY_USERNAME")
@@ -310,6 +311,7 @@ func initConfigFromEnv() {
 		config.SMTPForwardConfig.Port, _ = strconv.Atoi(os.Getenv("MP_SMTP_FORWARD_PORT"))
 	}
 	config.SMTPForwardConfig.STARTTLS = getEnabledFromEnv("MP_SMTP_FORWARD_STARTTLS")
+	config.SMTPForwardConfig.TLS = getEnabledFromEnv("MP_SMTP_FORWARD_TLS")
 	config.SMTPForwardConfig.AllowInsecure = getEnabledFromEnv("MP_SMTP_FORWARD_ALLOW_INSECURE")
 	config.SMTPForwardConfig.Auth = os.Getenv("MP_SMTP_FORWARD_AUTH")
 	config.SMTPForwardConfig.Username = os.Getenv("MP_SMTP_FORWARD_USERNAME")

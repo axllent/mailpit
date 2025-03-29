@@ -25,26 +25,54 @@ func autoForwardMessage(from string, data *[]byte) {
 	}
 }
 
+func createForwardingSMTPClient(config config.SMTPForwardConfigStruct, addr string) (*smtp.Client, error) {
+	if config.TLS {
+		tlsConf := &tls.Config{ServerName: config.Host} // #nosec
+		tlsConf.InsecureSkipVerify = config.AllowInsecure
+
+		conn, err := tls.Dial("tcp", addr, tlsConf)
+		if err != nil {
+			return nil, fmt.Errorf("TLS dial error: %v", err)
+		}
+
+		client, err := smtp.NewClient(conn, tlsConf.ServerName)
+		if err != nil {
+			conn.Close()
+			return nil, fmt.Errorf("SMTP client error: %v", err)
+		}
+
+		// Note: The caller is responsible for closing the client
+		return client, nil
+	}
+
+	client, err := smtp.Dial(addr)
+	if err != nil {
+		return nil, fmt.Errorf("error connecting to %s: %v", addr, err)
+	}
+
+	if config.STARTTLS {
+		tlsConf := &tls.Config{ServerName: config.Host} // #nosec
+		tlsConf.InsecureSkipVerify = config.AllowInsecure
+
+		if err = client.StartTLS(tlsConf); err != nil {
+			client.Close()
+			return nil, fmt.Errorf("error creating StartTLS config: %v", err)
+		}
+	}
+
+	// Note: The caller is responsible for closing the client
+	return client, nil
+}
+
 // Forward will connect to a pre-configured SMTP server and send a message to one or more recipients.
 func forward(from string, msg []byte) error {
 	addr := fmt.Sprintf("%s:%d", config.SMTPForwardConfig.Host, config.SMTPForwardConfig.Port)
 
-	c, err := smtp.Dial(addr)
+	c, err := createForwardingSMTPClient(config.SMTPForwardConfig, addr)
 	if err != nil {
-		return fmt.Errorf("error connecting to %s: %s", addr, err.Error())
+		return err
 	}
-
 	defer c.Close()
-
-	if config.SMTPForwardConfig.STARTTLS {
-		conf := &tls.Config{ServerName: config.SMTPForwardConfig.Host} // #nosec
-
-		conf.InsecureSkipVerify = config.SMTPForwardConfig.AllowInsecure
-
-		if err = c.StartTLS(conf); err != nil {
-			return fmt.Errorf("error creating StartTLS config: %s", err.Error())
-		}
-	}
 
 	auth := forwardAuthFromConfig()
 
