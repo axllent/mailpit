@@ -32,7 +32,7 @@ func createForwardingSMTPClient(config config.SMTPForwardConfigStruct, addr stri
 
 		conn, err := tls.Dial("tcp", addr, tlsConf)
 		if err != nil {
-			return nil, fmt.Errorf("TLS Dial error: %v", err)
+			return nil, fmt.Errorf("TLS dial error: %v", err)
 		}
 
 		client, err := smtp.NewClient(conn, tlsConf.ServerName)
