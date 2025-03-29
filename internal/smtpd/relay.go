@@ -59,7 +59,7 @@ func autoRelayMessage(from string, to []string, data *[]byte) {
 	}
 }
 
-func createSMTPClient(config config.SMTPRelayConfigStruct, addr string) (*smtp.Client, error) {
+func createRelaySMTPClient(config config.SMTPRelayConfigStruct, addr string) (*smtp.Client, error) {
 	if config.TLS {
 		tlsConf := &tls.Config{ServerName: config.Host} // #nosec
 		tlsConf.InsecureSkipVerify = config.AllowInsecure
@@ -102,7 +102,7 @@ func createSMTPClient(config config.SMTPRelayConfigStruct, addr string) (*smtp.C
 func Relay(from string, to []string, msg []byte) error {
 	addr := fmt.Sprintf("%s:%d", config.SMTPRelayConfig.Host, config.SMTPRelayConfig.Port)
 
-	c, err := createSMTPClient(config.SMTPRelayConfig, addr)
+	c, err := createRelaySMTPClient(config.SMTPRelayConfig, addr)
 	if err != nil {
 		return err
 	}

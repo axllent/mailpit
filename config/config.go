@@ -209,11 +209,11 @@ type autoTag struct {
 
 // SMTPRelayConfigStruct struct for parsing yaml & storing variables
 type SMTPRelayConfigStruct struct {
-	Host                    string         `yaml:"host"`
-	Port                    int            `yaml:"port"`
-	STARTTLS                bool           `yaml:"starttls"`
-	TLS                     bool           `yaml:"tls"`
-	AllowInsecure           bool           `yaml:"allow-insecure"`
+	Host                    string         `yaml:"host"`               // SMTP host
+	Port                    int            `yaml:"port"`               // SMTP port
+	STARTTLS                bool           `yaml:"starttls"`           // whether to use STARTTLS
+	TLS                     bool           `yaml:"tls"`                // whether to use TLS
+	AllowInsecure           bool           `yaml:"allow-insecure"`     // allow insecure authentication, ignore TLS validation
 	Auth                    string         `yaml:"auth"`               // none, plain, login, cram-md5
 	Username                string         `yaml:"username"`           // plain & cram-md5
 	Password                string         `yaml:"password"`           // plain
@@ -235,7 +235,8 @@ type SMTPForwardConfigStruct struct {
 	Host          string `yaml:"host"`           // SMTP host
 	Port          int    `yaml:"port"`           // SMTP port
 	STARTTLS      bool   `yaml:"starttls"`       // whether to use STARTTLS
-	AllowInsecure bool   `yaml:"allow-insecure"` // allow insecure authentication
+	TLS           bool   `yaml:"tls"`            // whether to use TLS
+	AllowInsecure bool   `yaml:"allow-insecure"` // allow insecure authentication, ignore TLS validation
 	Auth          string `yaml:"auth"`           // none, plain, login, cram-md5
 	Username      string `yaml:"username"`       // plain & cram-md5
 	Password      string `yaml:"password"`       // plain
