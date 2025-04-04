@@ -34,7 +34,7 @@ jobs:
       if: startsWith(matrix.os, 'ubuntu') == true
       uses: actions/setup-node@v4
       with:
-        node-version: 18
+        node-version: 22
         cache: 'npm'
     - if: startsWith(matrix.os, 'ubuntu') == true
       run: npm install
