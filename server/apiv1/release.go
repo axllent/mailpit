@@ -133,7 +133,7 @@ func ReleaseMessage(w http.ResponseWriter, r *http.Request) {
 
 	fromAddresses, err := m.Header.AddressList("From")
 	if err != nil {
-		httpError(w, err.Error())
+		httpError(w, "Failed: unable to parse From header: "+err.Error())
 		return
 	}
 
