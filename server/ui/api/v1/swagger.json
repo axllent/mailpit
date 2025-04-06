@@ -682,7 +682,6 @@
         "parameters": [
           {
             "type": "string",
-            "example": "tag:backups",
             "x-go-name": "Query",
             "description": "Search query",
             "name": "query",

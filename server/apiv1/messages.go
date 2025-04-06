@@ -285,7 +285,6 @@ type searchParams struct {
 	//
 	// in: query
 	// required: true
-	// example: tag:backups
 	// type: string
 	Query string `json:"query"`
 
