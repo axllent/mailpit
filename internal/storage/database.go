@@ -258,19 +258,6 @@ func DbSize() float64 {
 	return total.Float64
 }
 
-// IsUnread returns whether a message is unread or not.
-func IsUnread(id string) bool {
-	var unread int
-
-	_ = sqlf.From(tenant("mailbox")).
-		Select("COUNT(*)").To(&unread).
-		Where("Read = ?", 0).
-		Where("ID = ?", id).
-		QueryRowAndClose(context.TODO(), db)
-
-	return unread == 1
-}
-
 // MessageIDExists checks whether a Message-ID exists in the DB
 func MessageIDExists(id string) bool {
 	var total int

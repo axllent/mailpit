@@ -41,11 +41,32 @@ export default {
 				return
 			}
 
-			const uri = this.resolve(`/api/v1/search`) + '?query=' + encodeURIComponent(s)
-			this.delete(uri, false, (response) => {
+			let uri = this.resolve(`/api/v1/search`) + '?query=' + encodeURIComponent(s)
+			if (mailbox.timeZone != '' && (s.indexOf('after:') != -1 || s.indexOf('before:') != -1)) {
+				uri += '&tz=' + encodeURIComponent(mailbox.timeZone)
+			}
+
+			this.delete(uri, false, () => {
 				this.$router.push('/')
 			})
-		}
+		},
+
+		markAllRead() {
+			const s = this.getSearch()
+			if (!s) {
+				return
+			}
+
+			let uri = this.resolve(`/api/v1/messages`)
+			if (mailbox.timeZone != '' && (s.indexOf('after:') != -1 || s.indexOf('before:') != -1)) {
+				uri += '?tz=' + encodeURIComponent(mailbox.timeZone)
+			}
+
+			this.put(uri, { 'read': true, "search": s }, () => {
+				window.scrollInPlace = true
+				this.loadMessages()
+			})
+		},
 	}
 }
 </script>
@@ -69,6 +90,16 @@ export default {
 			</RouterLink>
 			<template v-if="!mailbox.selected.length">
 				<button v-if="mailbox.skipConfirmations" class="list-group-item list-group-item-action"
+					:disabled="!mailbox.messages_unread" @click="markAllRead">
+					<i class="bi bi-eye-fill me-1"></i>
+					Mark all read
+				</button>
+				<button v-else class="list-group-item list-group-item-action" data-bs-toggle="modal"
+					data-bs-target="#MarkAllReadModal" :disabled="!mailbox.messages_unread">
+					<i class="bi bi-eye-fill me-1"></i>
+					Mark all read
+				</button>
+				<button v-if="mailbox.skipConfirmations" class="list-group-item list-group-item-action"
 					@click="deleteAllMessages" :disabled="!mailbox.count">
 					<i class="bi bi-trash-fill me-1 text-danger"></i>
 					Delete all
@@ -86,6 +117,29 @@ export default {
 
 	<template v-else>
 		<!-- Modals -->
+		<div class="modal fade" id="MarkAllReadModal" tabindex="-1" aria-labelledby="MarkAllReadModalLabel"
+			aria-hidden="true">
+			<div class="modal-dialog">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h5 class="modal-title" id="MarkAllReadModalLabel">Mark all search results as read?</h5>
+						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+					</div>
+					<div class="modal-body">
+						This will mark {{ formatNumber(mailbox.messages_unread) }}
+						message<span v-if="mailbox.messages_unread > 1">s</span>
+						matching <code>{{ getSearch() }}</code>
+						as read.
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+						<button type="button" class="btn btn-success" data-bs-dismiss="modal"
+							v-on:click="markAllRead">Confirm</button>
+					</div>
+				</div>
+			</div>
+		</div>
+
 		<div class="modal fade" id="DeleteAllModal" tabindex="-1" aria-labelledby="DeleteAllModalLabel"
 			aria-hidden="true">
 			<div class="modal-dialog">

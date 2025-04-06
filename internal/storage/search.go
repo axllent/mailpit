@@ -100,6 +100,39 @@ func Search(search, timezone string, start int, beforeTS int64, limit int) ([]Me
 	return results, nrResults, err
 }
 
+// SearchUnreadCount returns the number of unread messages matching a search.
+// This is run one at a time to allow connected browsers to be updated.
+func SearchUnreadCount(search, timezone string, beforeTS int64) (int64, error) {
+	tsStart := time.Now()
+
+	q := searchQueryBuilder(search, timezone)
+
+	if beforeTS > 0 {
+		q = q.Where(`Created < ?`, beforeTS)
+	}
+
+	var unread int64
+
+	q = q.Where("Read = 0").Select(`COUNT(*)`)
+
+	err := q.QueryAndClose(context.TODO(), db, func(row *sql.Rows) {
+		var ignore sql.NullString
+		if err := row.Scan(&ignore, &ignore, &ignore, &ignore, &ignore, &ignore, &ignore, &ignore, &ignore, &ignore, &ignore, &ignore, &ignore, &ignore, &unread); err != nil {
+			logger.Log().Errorf("[db] %s", err.Error())
+			return
+		}
+
+	})
+
+	dbLastAction = time.Now()
+
+	elapsed := time.Since(tsStart)
+
+	logger.Log().Debugf("[db] counted %d unread for \"%s\" in %s", unread, search, elapsed)
+
+	return unread, err
+}
+
 // DeleteSearch will delete all messages for search terms.
 // The search is broken up by segments (exact phrases can be quoted), and interprets specific terms such as:
 // is:read, is:unread, has:attachment, to:<term>, from:<term> & subject:<term>
@@ -219,6 +252,47 @@ func DeleteSearch(search, timezone string) error {
 		logMessagesDeleted(total)
 
 		BroadcastMailboxStats()
+	}
+
+	return nil
+}
+
+// SetSearchReadStatus marks all messages matching the search as read or unread
+func SetSearchReadStatus(search, timezone string, read bool) error {
+	q := searchQueryBuilder(search, timezone).Where("Read = ?", !read)
+
+	ids := []string{}
+
+	if err := q.QueryAndClose(context.TODO(), db, func(row *sql.Rows) {
+		var created float64
+		var id string
+		var messageID string
+		var subject string
+		var metadata string
+		var size float64
+		var attachments int
+		var read int
+		var snippet string
+		var ignore string
+
+		if err := row.Scan(&created, &id, &messageID, &subject, &metadata, &size, &attachments, &read, &snippet, &ignore, &ignore, &ignore, &ignore, &ignore); err != nil {
+			logger.Log().Errorf("[db] %s", err.Error())
+			return
+		}
+
+		ids = append(ids, id)
+	}); err != nil {
+		return err
+	}
+
+	if read {
+		if err := MarkRead(ids); err != nil {
+			return err
+		}
+	} else {
+		if err := MarkUnread(ids); err != nil {
+			return err
+		}
 	}
 
 	return nil
