@@ -23,6 +23,8 @@ COPY --from=builder /mailpit /mailpit
 
 RUN apk upgrade --no-cache && apk add --no-cache tzdata
 
+RUN apk add --no-cache busybox=1.37.0-r12 busybox-binsh=1.37.0-r12 ssl_client=1.37.0-r12
+
 EXPOSE 1025/tcp 1110/tcp 8025/tcp
 
 HEALTHCHECK --interval=15s --start-period=10s --start-interval=1s CMD ["/mailpit", "readyz"]
