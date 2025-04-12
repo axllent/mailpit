@@ -84,12 +84,12 @@ export default {
 
 			<template v-if="!mailbox.selected.length">
 				<button v-if="mailbox.skipConfirmations" class="list-group-item list-group-item-action"
-					:disabled="!mailbox.unread" @click="markAllRead">
+					:disabled="!mailbox.messages_unread" @click="markAllRead">
 					<i class="bi bi-eye-fill me-1"></i>
 					Mark all read
 				</button>
 				<button v-else class="list-group-item list-group-item-action" data-bs-toggle="modal"
-					data-bs-target="#MarkAllReadModal" :disabled="!mailbox.unread">
+					data-bs-target="#MarkAllReadModal" :disabled="!mailbox.messages_unread">
 					<i class="bi bi-eye-fill me-1"></i>
 					Mark all read
 				</button>

@@ -362,7 +362,7 @@ func GetMessage(id string) (*Message, error) {
 	}
 
 	// mark message as read
-	if err := MarkRead(id); err != nil {
+	if err := MarkRead([]string{id}); err != nil {
 		return &obj, err
 	}
 
@@ -495,30 +495,28 @@ func LatestID(r *http.Request) (string, error) {
 }
 
 // MarkRead will mark a message as read
-func MarkRead(id string) error {
-	if !IsUnread(id) {
-		return nil
-	}
+func MarkRead(ids []string) error {
+	for _, id := range ids {
+		_, err := sqlf.Update(tenant("mailbox")).
+			Set("Read", 1).
+			Where("ID = ?", id).
+			ExecAndClose(context.Background(), db)
 
-	_, err := sqlf.Update(tenant("mailbox")).
-		Set("Read", 1).
-		Where("ID = ?", id).
-		ExecAndClose(context.Background(), db)
+		if err == nil {
+			logger.Log().Debugf("[db] marked message %s as read", id)
+		}
 
-	if err == nil {
-		logger.Log().Debugf("[db] marked message %s as read", id)
+		d := struct {
+			ID   string
+			Read bool
+		}{ID: id, Read: true}
+
+		websockets.Broadcast("update", d)
 	}
 
 	BroadcastMailboxStats()
 
-	d := struct {
-		ID   string
-		Read bool
-	}{ID: id, Read: true}
-
-	websockets.Broadcast("update", d)
-
-	return err
+	return nil
 }
 
 // MarkAllRead will mark all messages as read
@@ -572,32 +570,30 @@ func MarkAllUnread() error {
 }
 
 // MarkUnread will mark a message as unread
-func MarkUnread(id string) error {
-	if IsUnread(id) {
-		return nil
+func MarkUnread(ids []string) error {
+	for _, id := range ids {
+		_, err := sqlf.Update(tenant("mailbox")).
+			Set("Read", 0).
+			Where("ID = ?", id).
+			ExecAndClose(context.Background(), db)
+
+		if err == nil {
+			logger.Log().Debugf("[db] marked message %s as unread", id)
+		}
+
+		dbLastAction = time.Now()
+
+		d := struct {
+			ID   string
+			Read bool
+		}{ID: id, Read: false}
+
+		websockets.Broadcast("update", d)
 	}
-
-	_, err := sqlf.Update(tenant("mailbox")).
-		Set("Read", 0).
-		Where("ID = ?", id).
-		ExecAndClose(context.Background(), db)
-
-	if err == nil {
-		logger.Log().Debugf("[db] marked message %s as unread", id)
-	}
-
-	dbLastAction = time.Now()
 
 	BroadcastMailboxStats()
 
-	d := struct {
-		ID   string
-		Read bool
-	}{ID: id, Read: false}
-
-	websockets.Broadcast("update", d)
-
-	return err
+	return nil
 }
 
 // DeleteMessages deletes one or more messages in bulk

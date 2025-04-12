@@ -57,6 +57,7 @@ export default {
 				mailbox.tags = response.data.tags // all tags
 				mailbox.messages = response.data.messages // current messages
 				mailbox.count = response.data.messages_count // total results for this mailbox/search
+				mailbox.messages_unread = response.data.messages_unread // total unread results for this mailbox/search
 				// ensure the pagination remains consistent
 				pagination.start = response.data.start
 

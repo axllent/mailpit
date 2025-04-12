@@ -2,6 +2,18 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.24.1]
+
+### Feature
+- Add ability to mark all search results as read ([#476](https://github.com/axllent/mailpit/issues/476))
+
+### Chore
+- Update node dependencies
+- Update Go dependencies
+- Improve error message for From header parsing failure ([#477](https://github.com/axllent/mailpit/issues/477))
+- Bump node version to 22 for binary releases
+
+
 ## [v1.24.0]
 
 ### Feature

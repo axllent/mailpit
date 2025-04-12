@@ -53,6 +53,9 @@ type MessagesSummary struct {
 	// Total number of messages matching current query
 	MessagesCount float64 `json:"messages_count"`
 
+	// Total number of unread messages matching current query
+	MessagesUnreadCount float64 `json:"messages_unread"`
+
 	// Pagination offset
 	Start int `json:"start"`
 
@@ -100,6 +103,7 @@ func GetMessages(w http.ResponseWriter, r *http.Request) {
 	res.Unread = stats.Unread
 	res.Tags = stats.Tags
 	res.MessagesCount = stats.Total
+	res.MessagesUnreadCount = stats.Unread
 
 	w.Header().Add("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(res); err != nil {
@@ -118,22 +122,36 @@ type setReadStatusParams struct {
 		// example: true
 		Read bool
 
-		// Array of message database IDs
+		// Optional array of message database IDs
 		//
 		// required: false
+		// default: []
 		// example: ["4oRBnPtCXgAqZniRhzLNmS", "hXayS6wnCgNnt6aFTvmOF6"]
 		IDs []string
+
+		// Optional messages matching a search
+		//
+		// required: false
+		// example: tag:backups
+		Search string
 	}
+
+	// Optional [timezone identifier](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) used only for `before:` & `after:` searches (eg: "Pacific/Auckland").
+	//
+	// in: query
+	// required: false
+	// type string
+	TZ string `json:"tz"`
 }
 
-// SetReadStatus (method: PUT) will update the status to Read/Unread for all provided IDs
-// If no IDs are provided then all messages are updated.
+// SetReadStatus (method: PUT) will update the status to Read/Unread for all provided IDs.
 func SetReadStatus(w http.ResponseWriter, r *http.Request) {
 	// swagger:route PUT /api/v1/messages messages SetReadStatusParams
 	//
 	// # Set read status
 	//
-	// If no IDs are provided then all messages are updated.
+	// You can optionally provide an array of IDs or a search string.
+	// If neither IDs nor search is provided then all mailbox messages are updated.
 	//
 	//	Consumes:
 	//	  - application/json
@@ -150,8 +168,9 @@ func SetReadStatus(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 
 	var data struct {
-		Read bool
-		IDs  []string
+		Read   bool
+		IDs    []string
+		Search string
 	}
 
 	err := decoder.Decode(&data)
@@ -161,8 +180,20 @@ func SetReadStatus(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ids := data.IDs
+	search := data.Search
 
-	if len(ids) == 0 {
+	if len(ids) > 0 && search != "" {
+		httpError(w, "You may specify either IDs or a search query, not both")
+		return
+	}
+
+	if search != "" {
+		err := storage.SetSearchReadStatus(search, r.URL.Query().Get("tz"), data.Read)
+		if err != nil {
+			httpError(w, err.Error())
+			return
+		}
+	} else if len(ids) == 0 {
 		if data.Read {
 			err := storage.MarkAllRead()
 			if err != nil {
@@ -178,18 +209,14 @@ func SetReadStatus(w http.ResponseWriter, r *http.Request) {
 		}
 	} else {
 		if data.Read {
-			for _, id := range ids {
-				if err := storage.MarkRead(id); err != nil {
-					httpError(w, err.Error())
-					return
-				}
+			if err := storage.MarkRead(ids); err != nil {
+				httpError(w, err.Error())
+				return
 			}
 		} else {
-			for _, id := range ids {
-				if err := storage.MarkUnread(id); err != nil {
-					httpError(w, err.Error())
-					return
-				}
+			if err := storage.MarkUnread(ids); err != nil {
+				httpError(w, err.Error())
+				return
 			}
 		}
 	}
@@ -265,6 +292,7 @@ type searchParams struct {
 	//
 	// in: query
 	// required: false
+	// default: 0
 	// type integer
 	Start string `json:"start"`
 
@@ -272,10 +300,11 @@ type searchParams struct {
 	//
 	// in: query
 	// required: false
+	// default: 50
 	// type integer
 	Limit string `json:"limit"`
 
-	// [Timezone identifier](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) used only for `before:` & `after:` searches (eg: "Pacific/Auckland").
+	// Optional [timezone identifier](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) used only for `before:` & `after:` searches (eg: "Pacific/Auckland").
 	//
 	// in: query
 	// required: false
@@ -325,6 +354,14 @@ func Search(w http.ResponseWriter, r *http.Request) {
 	res.MessagesCount = float64(results)
 	res.Unread = stats.Unread
 	res.Tags = stats.Tags
+
+	unread, err := storage.SearchUnreadCount(search, r.URL.Query().Get("tz"), beforeTS)
+	if err != nil {
+		httpError(w, err.Error())
+		return
+	}
+
+	res.MessagesUnreadCount = float64(unread)
 
 	w.Header().Add("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(res); err != nil {

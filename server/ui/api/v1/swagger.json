@@ -548,7 +548,7 @@
         }
       },
       "put": {
-        "description": "If no IDs are provided then all messages are updated.",
+        "description": "You can optionally provide an array of IDs or a search string.\nIf neither IDs nor search is provided then all mailbox messages are updated.",
         "consumes": [
           "application/json"
         ],
@@ -572,8 +572,9 @@
               "type": "object",
               "properties": {
                 "IDs": {
-                  "description": "Array of message database IDs",
+                  "description": "Optional array of message database IDs",
                   "type": "array",
+                  "default": [],
                   "items": {
                     "type": "string"
                   },
@@ -587,9 +588,21 @@
                   "type": "boolean",
                   "default": false,
                   "example": true
+                },
+                "Search": {
+                  "description": "Optional messages matching a search",
+                  "type": "string",
+                  "example": "tag:backups"
                 }
               }
             }
+          },
+          {
+            "type": "string",
+            "x-go-name": "TZ",
+            "description": "Optional [timezone identifier](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) used only for `before:` \u0026 `after:` searches (eg: \"Pacific/Auckland\").",
+            "name": "tz",
+            "in": "query"
           }
         ],
         "responses": {
@@ -677,6 +690,7 @@
           },
           {
             "type": "string",
+            "default": "0",
             "x-go-name": "Start",
             "description": "Pagination offset",
             "name": "start",
@@ -684,6 +698,7 @@
           },
           {
             "type": "string",
+            "default": "50",
             "x-go-name": "Limit",
             "description": "Limit results",
             "name": "limit",
@@ -692,7 +707,7 @@
           {
             "type": "string",
             "x-go-name": "TZ",
-            "description": "[Timezone identifier](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) used only for `before:` \u0026 `after:` searches (eg: \"Pacific/Auckland\").",
+            "description": "Optional [timezone identifier](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) used only for `before:` \u0026 `after:` searches (eg: \"Pacific/Auckland\").",
             "name": "tz",
             "in": "query"
           }
@@ -1623,6 +1638,12 @@
           "type": "number",
           "format": "double",
           "x-go-name": "MessagesCount"
+        },
+        "messages_unread": {
+          "description": "Total number of unread messages matching current query",
+          "type": "number",
+          "format": "double",
+          "x-go-name": "MessagesUnreadCount"
         },
         "start": {
           "description": "Pagination offset",
