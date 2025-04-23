@@ -2,10 +2,11 @@
 
 GH_REPO="axllent/mailpit"
 TIMEOUT=90
+INSTALL_PATH="${INSTALL_PATH:-/usr/local/bin}"
 
 set -e
 
-VERSION=$(curl --silent --location --max-time "${TIMEOUT}" "https://api.github.com/repos/${GH_REPO}/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+VERSION=$(curl --silent --fail --location --max-time "${TIMEOUT}" "https://api.github.com/repos/${GH_REPO}/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
 if [ $? -ne 0 ]; then
     echo -ne "\nThere was an error trying to check what is the latest version of Mailpit.\nPlease try again later.\n"
     exit 1
@@ -73,20 +74,29 @@ cd "$tmp_dir"
 echo "Downloading Mailpit $VERSION"
 LINK="https://github.com/${GH_REPO}/releases/download/${VERSION}/${GH_REPO_BIN}"
 
-curl --silent --location --max-time "${TIMEOUT}" "${LINK}" | tar zxf - || {
-    echo "Error downloading"
+curl --silent --fail --location --max-time "${TIMEOUT}" "${LINK}" -o "${GH_REPO_BIN}" || {
+    echo "Error downloading latest release"
     exit 2
 }
 
-mkdir -p /usr/local/bin || exit 2
-cp mailpit /usr/local/bin/ || exit 2
-chmod 755 /usr/local/bin/mailpit || exit 2
+tar zxf "$GH_REPO_BIN" || {
+    echo "Error extracting ${GH_REPO_BIN}"
+    exit 2
+}
+
+mkdir -p "${INSTALL_PATH}" || exit 2
+cp mailpit "${INSTALL_PATH}" || exit 2
+chmod 755 "${INSTALL_PATH}/mailpit" || exit 2
 case "$OS" in
 'linux')
-    chown root:root /usr/local/bin/mailpit || exit 2
+    if [ "$(id -u)" -eq "0" ]; then
+        chown root:root "${INSTALL_PATH}/mailpit" || exit 2
+    fi
     ;;
 'freebsd' | 'openbsd' | 'netbsd' | 'darwin')
-    chown root:wheel /usr/local/bin/mailpit || exit 2
+    if [ "$(id -u)" -eq "0" ]; then
+        chown root:wheel "${INSTALL_PATH}/mailpit" || exit 2
+    fi
     ;;
 *)
     echo 'OS not supported'
@@ -95,4 +105,4 @@ case "$OS" in
 esac
 
 rm -rf "$tmp_dir"
-echo "Installed successfully to /usr/local/bin/mailpit"
+echo "Installed successfully to ${INSTALL_PATH}/mailpit"
