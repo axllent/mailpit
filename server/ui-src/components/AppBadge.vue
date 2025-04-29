@@ -2,6 +2,14 @@
 import { mailbox } from '../stores/mailbox.js'
 
 export default {
+    data() {
+        return {
+            updating: false,
+            needsUpdate: false,
+            timeout: 500,
+        }
+    },
+
     computed: {
         mailboxUnread() {
             return mailbox.unread
@@ -10,23 +18,41 @@ export default {
 
     watch: {
         mailboxUnread: {
-            handler(newUnread) {
-                this.updateAppBadge(newUnread)
+            handler() {
+                if (this.updating) {
+                    this.needsUpdate = true
+                    return
+                }
+
+                this.scheduleUpdate()
             },
             immediate: true
         }
     },
 
     methods: {
-        updateAppBadge(unreadCount) {
+        scheduleUpdate() {
+            this.updating = true
+            this.needsUpdate = false
+
+            window.setTimeout(() => {
+                this.updateAppBadge()
+                this.updating = false
+
+                if (this.needsUpdate) {
+                    this.scheduleUpdate()
+                }
+            }, this.timeout)
+        },
+
+        updateAppBadge() {
             if (!('setAppBadge' in navigator)) {
                 return
             }
 
-            navigator.setAppBadge(unreadCount)
+            navigator.setAppBadge(this.mailboxUnread)
         }
     }
-
 }
 </script>
 
