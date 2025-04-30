@@ -1,6 +1,7 @@
 <script>
 import CommonMixins from './mixins/CommonMixins'
 import Favicon from './components/Favicon.vue'
+import AppBadge from './components/AppBadge.vue'
 import Notifications from './components/Notifications.vue'
 import EditTags from './components/EditTags.vue'
 import { mailbox } from "./stores/mailbox"
@@ -10,6 +11,7 @@ export default {
 
 	components: {
 		Favicon,
+		AppBadge,
 		Notifications,
 		EditTags
 	},
@@ -40,6 +42,7 @@ export default {
 <template>
 	<RouterView />
 	<Favicon />
+	<AppBadge />
 	<Notifications />
 	<EditTags />
 </template>
