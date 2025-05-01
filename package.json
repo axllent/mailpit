@@ -31,7 +31,7 @@
     "@types/bootstrap": "^5.2.7",
     "@types/tinycon": "^0.6.3",
     "@vue/compiler-sfc": "^3.2.37",
-    "esbuild": "^0.25.0",
+    "esbuild": "^0.25.3",
     "esbuild-plugin-vue-next": "^0.1.4",
     "esbuild-sass-plugin": "^3.0.0"
   }
