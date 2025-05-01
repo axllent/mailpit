@@ -1,8 +1,8 @@
 #!/bin/sh
 
-# This script will install the latest version of Mailpit.
+# This script will install the latest release of Mailpit.
 
-# Check dependencias is installed
+# Check dependencies is installed
 for cmd in curl tar; do
     if ! command -v "$cmd" >/dev/null 2>&1; then
         echo "Then $cmd command is required but not installed."
@@ -83,7 +83,7 @@ if [ -n "$GITHUB_API_TOKEN" ] && [ "${#GITHUB_API_TOKEN}" -gt 36 ]; then
     CURL_OUTPUT="$(curl -sfL -m $TIMEOUT -H "Authorization: Bearer $GITHUB_API_TOKEN" https://api.github.com/repos/${GH_REPO}/releases/latest)"
     EXIT_CODE=$?
 else
-    CURL_OUTPUT="$(curl --sfL -m $TIMEOUT https://api.github.com/repos/${GH_REPO}/releases/latest)"
+    CURL_OUTPUT="$(curl -sfL -m $TIMEOUT https://api.github.com/repos/${GH_REPO}/releases/latest)"
     EXIT_CODE=$?
 fi
 
@@ -207,7 +207,6 @@ rm -rf "$TEMP_DIR"
 # Check the EXIT_CODE variable, and print the success or error message.
 if [ $EXIT_CODE -ne 0 ]; then
     echo "There was an error installing Mailpit."
-    echo "Please try again later."
     exit $EXIT_CODE
 fi
 
