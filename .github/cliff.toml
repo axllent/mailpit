@@ -1,0 +1,48 @@
+## https://git-cliff.org/
+[changelog]
+body = """
+{% if version %}\
+  \n## [{{ version }}]
+{% else %}\
+  \n## Unreleased
+{% endif %}\
+{% for group, commits in commits | group_by(attribute="group") %}
+  ### {{ group | striptags | trim | upper_first }}\
+  {% for commit in commits %}
+    - {{ commit.message | upper_first }}\
+  {% endfor %}
+{% endfor %}\n
+"""
+footer = ""
+header = "# Changelog\n\nNotable changes to Mailpit will be documented in this file."
+postprocessors = [
+  {pattern = "reponse", replace = "response"},
+  {pattern = "messsage", replace = "message"},
+  {pattern = '(?i) go modules', replace = " Go dependencies"},
+  {pattern = '(?i) node modules', replace = " node dependencies"},
+  {pattern = '#([0-9]+)', replace = "[#$1](https://github.com/axllent/mailpit/issues/$1)"},
+]
+trim = true
+
+[git]
+# HTML comments added for grouping order, stripped on generation
+commit_parsers = [
+  {body = ".*security", group = "<!-- 1 -->Security"},
+  {message = "(?i)^feat", group = "<!-- 2 -->Feature"},
+  {message = "(?i)^chore", group = "<!-- 3 -->Chore"},
+  {message = "(?i)^libs", group = "<!-- 3 -->Chore"},
+  {message = "(?i)^ui", group = "<!-- 3 -->Chore"},
+  {message = "(?i)^api", group = "<!-- 4 -->API"},
+  {message = "(?i)^fix", group = "<!-- 5 -->Fix"},
+  {message = "(?i)^doc", group = "<!-- 6 -->Documentation", default_scope = "unscoped"},
+  {message = "(?i)^swagger", group = "<!-- 6 -->Documentation", default_scope = "unscoped"},
+  {message = "(?i)^test", group = "<!-- 7 -->Test"},
+]
+
+# Exclude commits that are not matched by any commit parser.
+# filter_commits = true
+# Order releases topologically instead of chronologically.
+# topo_order = true
+# Order of commits in each group/release within the changelog.
+# Allowed values: newest, oldest
+sort_commits = "oldest"
