@@ -68,12 +68,18 @@ Mailpit runs as a single binary and can be installed in different ways:
 - **FreeBSD**: `pkg install mailpit`
 
 
-### Install via bash script (Linux & Mac)
+### Install via script (Linux & Mac)
 
 Linux & Mac users can install it directly to `/usr/local/bin/mailpit` with:
 
-```bash
-sudo bash < <(curl -sL https://raw.githubusercontent.com/axllent/mailpit/develop/install.sh)
+```shell
+sudo sh < <(curl -sL https://raw.githubusercontent.com/axllent/mailpit/develop/install.sh)
+```
+
+You can also change the install path to something else by setting the `INSTALL_PATH` environment, for example:
+
+```shell
+INSTALL_PATH=/usr/bin sudo sh < <(curl -sL https://raw.githubusercontent.com/axllent/mailpit/develop/install.sh)
 ```
 
 
