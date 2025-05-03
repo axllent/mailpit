@@ -2,6 +2,18 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.24.2]
+
+### Feature
+- Display unread count in app badge ([#485](https://github.com/axllent/mailpit/issues/485))
+
+### Chore
+- Update caniemail database
+- Update node dependencies
+- Update Go dependencies
+- Install script improvements & better error handling ([#482](https://github.com/axllent/mailpit/issues/482))
+
+
 ## [v1.24.1]
 
 ### Feature
