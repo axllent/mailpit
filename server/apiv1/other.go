@@ -12,7 +12,7 @@ import (
 	"github.com/axllent/mailpit/internal/spamassassin"
 	"github.com/axllent/mailpit/internal/storage"
 	"github.com/gorilla/mux"
-	"github.com/jhillyerd/enmime"
+	"github.com/jhillyerd/enmime/v2"
 )
 
 // swagger:parameters HTMLCheckParams

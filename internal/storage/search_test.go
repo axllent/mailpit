@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/axllent/mailpit/config"
-	"github.com/jhillyerd/enmime"
+	"github.com/jhillyerd/enmime/v2"
 )
 
 func TestSearch(t *testing.T) {
