@@ -99,16 +99,19 @@ export default {
 					<i class="bi bi-eye-fill me-1"></i>
 					Mark all read
 				</button>
-				<button v-if="mailbox.skipConfirmations" class="list-group-item list-group-item-action"
-					@click="deleteAllMessages" :disabled="!mailbox.count">
-					<i class="bi bi-trash-fill me-1 text-danger"></i>
-					Delete all
-				</button>
-				<button v-else class="list-group-item list-group-item-action" data-bs-toggle="modal"
-					data-bs-target="#DeleteAllModal" :disabled="!mailbox.count">
-					<i class="bi bi-trash-fill me-1 text-danger"></i>
-					Delete all
-				</button>
+				<!-- checking if MessageRelay is defined prevents UI flicker while loading -->
+				<template v-if="mailbox.uiConfig.MessageRelay && !mailbox.uiConfig.HideDeleteAllButton">
+					<button v-if="mailbox.skipConfirmations" class="list-group-item list-group-item-action"
+						@click="deleteAllMessages" :disabled="!mailbox.count">
+						<i class="bi bi-trash-fill me-1 text-danger"></i>
+						Delete all
+					</button>
+					<button v-else class="list-group-item list-group-item-action" data-bs-toggle="modal"
+						data-bs-target="#DeleteAllModal" :disabled="!mailbox.count">
+						<i class="bi bi-trash-fill me-1 text-danger"></i>
+						Delete all
+					</button>
+				</template>
 			</template>
 
 			<NavSelected @loadMessages="loadMessages" />

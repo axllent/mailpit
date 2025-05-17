@@ -106,6 +106,7 @@ func init() {
 	rootCmd.Flags().StringVar(&config.EnableSpamAssassin, "enable-spamassassin", config.EnableSpamAssassin, "Enable integration with SpamAssassin")
 	rootCmd.Flags().BoolVar(&config.AllowUntrustedTLS, "allow-untrusted-tls", config.AllowUntrustedTLS, "Do not verify HTTPS certificates (link checker & screenshots)")
 	rootCmd.Flags().BoolVar(&config.DisableHTTPCompression, "disable-http-compression", config.DisableHTTPCompression, "Disable HTTP compression support (web UI & API)")
+	rootCmd.Flags().BoolVar(&config.HideDeleteAllButton, "hide-delete-all-button", config.HideDeleteAllButton, "Hide the \"Delete all\" button in the web UI")
 
 	// SMTP server
 	rootCmd.Flags().StringVarP(&config.SMTPListen, "smtp", "s", config.SMTPListen, "SMTP bind interface and port")
@@ -243,6 +244,9 @@ func initConfigFromEnv() {
 	}
 	if getEnabledFromEnv("MP_DISABLE_HTTP_COMPRESSION") {
 		config.DisableHTTPCompression = true
+	}
+	if getEnabledFromEnv("MP_HIDE_DELETE_ALL_BUTTON") {
+		config.HideDeleteAllButton = true
 	}
 
 	// SMTP server

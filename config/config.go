@@ -173,6 +173,9 @@ var (
 	// EnableSpamAssassin must be either <host>:<port> or "postmark"
 	EnableSpamAssassin string
 
+	// HideDeleteAllButton hides the delete all button in the web UI
+	HideDeleteAllButton bool
+
 	// WebhookURL for calling
 	WebhookURL string
 

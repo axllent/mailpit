@@ -75,6 +75,9 @@ type webUIConfiguration struct {
 
 	// Whether messages with duplicate IDs are ignored
 	DuplicatesIgnored bool
+
+	// Whether the delete button should be hidden
+	HideDeleteAllButton bool
 }
 
 // Web UI configuration response
@@ -121,6 +124,7 @@ func WebUIConfig(w http.ResponseWriter, _ *http.Request) {
 	conf.SpamAssassin = config.EnableSpamAssassin != ""
 	conf.ChaosEnabled = chaos.Enabled
 	conf.DuplicatesIgnored = config.IgnoreDuplicateIDs
+	conf.HideDeleteAllButton = config.HideDeleteAllButton
 
 	w.Header().Add("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(conf); err != nil {
