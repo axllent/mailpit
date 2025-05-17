@@ -130,7 +130,7 @@ export default {
 									<div class="col-6">
 										<div class="card border-secondary text-center">
 											<div class="card-header">Database size</div>
-											<div class="card-body text-secondary">
+											<div class="card-body text-muted">
 												<h5 class="card-title">{{ getFileSize(mailbox.appInfo.DatabaseSize) }}
 												</h5>
 											</div>
@@ -139,7 +139,7 @@ export default {
 									<div class="col-6">
 										<div class="card border-secondary text-center">
 											<div class="card-header">RAM usage</div>
-											<div class="card-body text-secondary">
+											<div class="card-body text-muted">
 												<h5 class="card-title">
 													{{ getFileSize(mailbox.appInfo.RuntimeStats.Memory) }}
 												</h5>
@@ -157,7 +157,7 @@ export default {
 											Refresh
 										</button>
 									</div>
-									<div class="card-body text-secondary">
+									<div class="card-body text-muted">
 										<table class="table table-sm table-borderless mb-0">
 											<tbody>
 												<tr>
@@ -182,7 +182,7 @@ export default {
 													</td>
 													<td>
 														{{ formatNumber(mailbox.appInfo.RuntimeStats.SMTPAccepted) }}
-														<small class="text-secondary">
+														<small class="text-muted">
 															({{
 																getFileSize(mailbox.appInfo.RuntimeStats.SMTPAcceptedSize)
 															}})

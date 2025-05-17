@@ -13,7 +13,7 @@ import (
 	"github.com/axllent/mailpit/internal/logger"
 	"github.com/axllent/mailpit/internal/storage"
 	"github.com/gorilla/mux"
-	"github.com/jhillyerd/enmime"
+	"github.com/jhillyerd/enmime/v2"
 	"github.com/kovidgoyal/imaging"
 )
 

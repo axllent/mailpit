@@ -1436,6 +1436,32 @@
       "x-go-name": "Response",
       "x-go-package": "github.com/axllent/mailpit/internal/linkcheck"
     },
+    "ListUnsubscribe": {
+      "description": "ListUnsubscribe contains a summary of List-Unsubscribe \u0026 List-Unsubscribe-Post headers\nincluding validation of the link structure",
+      "type": "object",
+      "properties": {
+        "Errors": {
+          "description": "Validation errors (if any)",
+          "type": "string"
+        },
+        "Header": {
+          "description": "List-Unsubscribe header value",
+          "type": "string"
+        },
+        "HeaderPost": {
+          "description": "List-Unsubscribe-Post value (if set)",
+          "type": "string"
+        },
+        "Links": {
+          "description": "Detected links, maximum one email and one HTTP(S) link",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "x-go-package": "github.com/axllent/mailpit/internal/storage"
+    },
     "Message": {
       "description": "Message data excluding physical attachments",
       "type": "object",
@@ -1483,6 +1509,9 @@
           "items": {
             "$ref": "#/definitions/Attachment"
           }
+        },
+        "ListUnsubscribe": {
+          "$ref": "#/definitions/ListUnsubscribe"
         },
         "MessageID": {
           "description": "Message ID",

@@ -12,7 +12,7 @@ import (
 
 	"github.com/axllent/mailpit/internal/logger"
 	"github.com/axllent/mailpit/internal/smtpd/chaos"
-	"gopkg.in/yaml.v3"
+	"github.com/goccy/go-yaml"
 )
 
 // Parse the --max-age value (if set)

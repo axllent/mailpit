@@ -16,7 +16,7 @@ import (
 	"github.com/axllent/mailpit/internal/logger"
 	"github.com/axllent/mailpit/internal/storage"
 	"github.com/axllent/mailpit/server/apiv1"
-	"github.com/jhillyerd/enmime"
+	"github.com/jhillyerd/enmime/v2"
 )
 
 var (

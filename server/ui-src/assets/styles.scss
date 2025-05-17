@@ -228,26 +228,23 @@
 	}
 }
 
-#message-page {
+#message-page,
+#MessageList {
 	.list-group-item.message:first-child {
 		border-top: 0;
 	}
 
-	.message {
-		.subject {
-			color: $text-muted;
-
-			b {
-				color: $list-group-color;
-			}
-
-			small {
-				opacity: 0.5;
-			}
+	.message:not(.active) {
+		b {
+			color: $list-group-color;
 		}
 
 		&.read {
 			color: $text-muted;
+
+			> div {
+				opacity: 0.5;
+			}
 
 			b {
 				color: $list-group-color;

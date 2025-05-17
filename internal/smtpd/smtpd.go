@@ -883,7 +883,8 @@ func (s *session) makeEHLOResponse() (response string) {
 		}
 	}
 
-	response += "250 ENHANCEDSTATUSCODES"
+	response += "250-ENHANCEDSTATUSCODES\r\n"
+	response += "250 SMTPUTF8" // last entry must use a space instead of a dash
 	return
 }
 

@@ -169,8 +169,11 @@ export default {
 									<input class="form-check-input" type="checkbox" role="switch"
 										id="skip-confirmations" v-model="mailbox.skipConfirmations">
 									<label class="form-check-label" for="skip-confirmations">
-										Skip <code>Delete all</code> &amp; <code>Mark all read</code> confirmation
-										dialogs
+										Skip
+										<template v-if="!mailbox.uiConfig.HideDeleteAllButton">
+											<code>Delete all</code> &amp;
+										</template>
+										<code>Mark all read</code> confirmation dialogs
 									</label>
 								</div>
 							</div>

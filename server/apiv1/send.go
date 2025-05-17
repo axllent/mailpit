@@ -14,7 +14,7 @@ import (
 	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/internal/smtpd"
 	"github.com/axllent/mailpit/internal/tools"
-	"github.com/jhillyerd/enmime"
+	"github.com/jhillyerd/enmime/v2"
 )
 
 // swagger:parameters SendMessageParams

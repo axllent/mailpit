@@ -323,7 +323,7 @@ export default {
 									{{ round2dm(summary.Total.Unsupported) }}% not supported
 								</span>
 							</p>
-							<p class="small text-secondary">
+							<p class="small text-muted">
 								calculated from {{ formatNumber(check.Total.Tests) }} tests
 							</p>
 						</template>
@@ -343,7 +343,7 @@ export default {
 						<input class="form-check-input" type="checkbox" role="switch" :value="k" v-model="platforms"
 							:aria-label="p" :id="'Check_' + k">
 						<label class="form-check-label" :for="'Check_' + k"
-							:class="platforms.indexOf(k) !== -1 ? '' : 'text-secondary'" :title="families(k).join(', ')"
+							:class="platforms.indexOf(k) !== -1 ? '' : 'text-muted'" :title="families(k).join(', ')"
 							data-bs-toggle="tooltip" :data-bs-title="families(k).join(', ')">
 							{{ p }}
 						</label>
@@ -451,7 +451,7 @@ export default {
 				</div>
 			</div>
 
-			<p class="text-center text-secondary small mt-4">
+			<p class="text-center text-muted small mt-4">
 				Scores based on <b>{{ check.Total.Tests }}</b> tests of HTML and CSS properties using
 				compatibility data from <a href="https://www.caniemail.com/" target="_blank">caniemail.com</a>.
 			</p>

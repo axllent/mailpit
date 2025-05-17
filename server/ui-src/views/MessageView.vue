@@ -599,7 +599,7 @@ export default {
 					<div class="list-group">
 						<RouterLink v-for="message in messagesList" :to="'/view/' + message.ID" :key="message.ID"
 							:id="message.ID"
-							class="row gx-1 message d-flex small list-group-item list-group-item-action"
+							class="row gx-1 message d-flex small list-group-item list-group-item-action message"
 							:class="message.Read ? 'read' : '', isActive(message.ID) ? 'active' : ''">
 							<div class="col overflow-x-hidden">
 								<div class="text-truncate privacy small">

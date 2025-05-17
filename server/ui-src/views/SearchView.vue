@@ -154,7 +154,7 @@ export default {
 		</div>
 		<div class="offcanvas-body pb-0">
 			<div class="d-flex flex-column h-100">
-				<div class="flex-grow-1 overflow-y-auto">
+				<div class="flex-grow-1 overflow-y-auto me-n3 pe-3">
 					<NavSearch @loadMessages="loadMessages" />
 					<NavTags />
 				</div>
@@ -165,7 +165,7 @@ export default {
 
 	<div class="row flex-fill" style="min-height:0">
 		<div class="d-none d-md-flex h-100 col-xl-2 col-md-3 flex-column">
-			<div class="flex-grow-1 overflow-y-auto">
+			<div class="flex-grow-1 overflow-y-auto me-n3 pe-3">
 				<NavSearch @loadMessages="loadMessages" />
 				<NavTags />
 			</div>
