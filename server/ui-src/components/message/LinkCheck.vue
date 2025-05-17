@@ -194,7 +194,7 @@ export default {
 		</div>
 
 		<div v-if="!check">
-			<p class="text-secondary">
+			<p class="text-muted">
 				Link check scans your email text &amp; HTML for unique links, testing the response status codes.
 				This includes links to images and remote CSS stylesheets.
 			</p>
@@ -219,7 +219,7 @@ export default {
 			<div class="card mb-3">
 				<div class="card-header h4" :class="s.Class">
 					Status {{ s.StatusCode }}
-					<small v-if="s.Status != ''" class="ms-2 small text-secondary">({{ s.Status }})</small>
+					<small v-if="s.Status != ''" class="ms-2 small text-muted">({{ s.Status }})</small>
 				</div>
 				<ul class="list-group list-group-flush">
 					<li v-for="u in s.URLS" class="list-group-item">

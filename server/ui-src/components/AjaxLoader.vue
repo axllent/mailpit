@@ -9,7 +9,7 @@ export default {
 <template>
 	<div class="loader" v-if="loading > 0">
 		<div class="d-flex justify-content-center align-items-center h-100">
-			<div class="spinner-border text-secondary" role="status">
+			<div class="spinner-border text-muted" role="status">
 				<span class="visually-hidden">Loading...</span>
 			</div>
 		</div>

@@ -438,7 +438,7 @@ export default {
 							:class="showUnsubscribe ? '' : 'd-none'">
 							<th>Unsubscribe</th>
 							<td>
-								<span v-if="message.ListUnsubscribe.Links.length" class="text-secondary small me-2">
+								<span v-if="message.ListUnsubscribe.Links.length" class="text-muted small me-2">
 									<template v-for="(u, i) in message.ListUnsubscribe.Links">
 										<template v-if="i > 0">, </template>
 										&lt;{{ u }}&gt;
