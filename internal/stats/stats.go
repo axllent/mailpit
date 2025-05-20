@@ -88,7 +88,7 @@ func Load() AppInformation {
 
 			// clear latest version cache after 5 minutes
 			go func() {
-				time.Sleep(5 * time.Minute)
+				time.Sleep(15 * time.Minute)
 				latestVersionCache = ""
 			}()
 		}
