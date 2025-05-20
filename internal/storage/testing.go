@@ -59,11 +59,11 @@ func assertEqual(t *testing.T, a interface{}, b interface{}, message string) {
 
 func assertEqualStats(t *testing.T, total int, unread int) {
 	s := StatsGet()
-	if float64(total) != s.Total {
+	if uint64(total) != s.Total {
 		t.Fatalf("Incorrect total mailbox stats: \"%v\" != \"%v\"", total, s.Total)
 	}
 
-	if float64(unread) != s.Unread {
+	if uint64(unread) != s.Unread {
 		t.Fatalf("Incorrect unread mailbox stats: \"%v\" != \"%v\"", unread, s.Unread)
 	}
 }

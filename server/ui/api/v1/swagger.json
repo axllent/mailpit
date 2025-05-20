@@ -1102,8 +1102,8 @@
         },
         "DatabaseSize": {
           "description": "Database size in bytes",
-          "type": "number",
-          "format": "double"
+          "type": "integer",
+          "format": "uint64"
         },
         "LatestVersion": {
           "description": "Latest Mailpit version",
@@ -1111,8 +1111,8 @@
         },
         "Messages": {
           "description": "Total number of messages in the database",
-          "type": "number",
-          "format": "double"
+          "type": "integer",
+          "format": "uint64"
         },
         "RuntimeStats": {
           "description": "Runtime statistics",
@@ -1125,33 +1125,33 @@
             },
             "MessagesDeleted": {
               "description": "Database runtime messages deleted",
-              "type": "number",
-              "format": "double"
+              "type": "integer",
+              "format": "uint64"
             },
             "SMTPAccepted": {
               "description": "Accepted runtime SMTP messages",
-              "type": "number",
-              "format": "double"
+              "type": "integer",
+              "format": "uint64"
             },
             "SMTPAcceptedSize": {
               "description": "Total runtime accepted messages size in bytes",
-              "type": "number",
-              "format": "double"
+              "type": "integer",
+              "format": "uint64"
             },
             "SMTPIgnored": {
               "description": "Ignored runtime SMTP messages (when using --ignore-duplicate-ids)",
-              "type": "number",
-              "format": "double"
+              "type": "integer",
+              "format": "uint64"
             },
             "SMTPRejected": {
               "description": "Rejected runtime SMTP messages",
-              "type": "number",
-              "format": "double"
+              "type": "integer",
+              "format": "uint64"
             },
             "Uptime": {
               "description": "Mailpit server uptime in seconds",
-              "type": "number",
-              "format": "double"
+              "type": "integer",
+              "format": "uint64"
             }
           }
         },
@@ -1165,8 +1165,8 @@
         },
         "Unread": {
           "description": "Total number of messages in the database",
-          "type": "number",
-          "format": "double"
+          "type": "integer",
+          "format": "uint64"
         },
         "Version": {
           "description": "Current Mailpit version",
@@ -1197,8 +1197,8 @@
         },
         "Size": {
           "description": "Size in bytes",
-          "type": "number",
-          "format": "double"
+          "type": "integer",
+          "format": "uint64"
         }
       },
       "x-go-package": "github.com/axllent/mailpit/internal/storage"
@@ -1530,8 +1530,8 @@
         },
         "Size": {
           "description": "Message size in bytes",
-          "type": "number",
-          "format": "double"
+          "type": "integer",
+          "format": "uint64"
         },
         "Subject": {
           "description": "Message subject",
@@ -1622,8 +1622,8 @@
         },
         "Size": {
           "description": "Message size in bytes (total)",
-          "type": "number",
-          "format": "double"
+          "type": "integer",
+          "format": "uint64"
         },
         "Snippet": {
           "description": "Message snippet includes up to 250 characters",
@@ -1664,14 +1664,14 @@
         },
         "messages_count": {
           "description": "Total number of messages matching current query",
-          "type": "number",
-          "format": "double",
+          "type": "integer",
+          "format": "uint64",
           "x-go-name": "MessagesCount"
         },
         "messages_unread": {
           "description": "Total number of unread messages matching current query",
-          "type": "number",
-          "format": "double",
+          "type": "integer",
+          "format": "uint64",
           "x-go-name": "MessagesUnreadCount"
         },
         "start": {
@@ -1690,14 +1690,14 @@
         },
         "total": {
           "description": "Total number of messages in mailbox",
-          "type": "number",
-          "format": "double",
+          "type": "integer",
+          "format": "uint64",
           "x-go-name": "Total"
         },
         "unread": {
           "description": "Total number of unread messages in mailbox",
-          "type": "number",
-          "format": "double",
+          "type": "integer",
+          "format": "uint64",
           "x-go-name": "Unread"
         }
       },
@@ -1986,6 +1986,10 @@
         },
         "DuplicatesIgnored": {
           "description": "Whether messages with duplicate IDs are ignored",
+          "type": "boolean"
+        },
+        "HideDeleteAllButton": {
+          "description": "Whether the delete button should be hidden",
           "type": "boolean"
         },
         "Label": {

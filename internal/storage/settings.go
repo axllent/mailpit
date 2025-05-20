@@ -35,8 +35,8 @@ func SettingPut(k, v string) error {
 }
 
 // The total deleted message size as an int64 value
-func getDeletedSize() float64 {
-	var result sql.NullFloat64
+func getDeletedSize() uint64 {
+	var result sql.NullInt64
 	err := sqlf.From(tenant("settings")).
 		Select("Value").To(&result).
 		Where("Key = ?", "DeletedSize").
@@ -47,12 +47,12 @@ func getDeletedSize() float64 {
 		return 0
 	}
 
-	return result.Float64
+	return uint64(result.Int64)
 }
 
 // The total raw non-compressed messages size in bytes of all messages in the database
-func totalMessagesSize() float64 {
-	var result sql.NullFloat64
+func totalMessagesSize() uint64 {
+	var result sql.NullInt64
 	err := sqlf.From(tenant("mailbox")).
 		Select("SUM(Size)").To(&result).
 		QueryAndClose(context.TODO(), db, func(row *sql.Rows) {})
@@ -61,11 +61,11 @@ func totalMessagesSize() float64 {
 		return 0
 	}
 
-	return result.Float64
+	return uint64(result.Int64)
 }
 
 // AddDeletedSize will add the value to the DeletedSize setting
-func addDeletedSize(v int64) {
+func addDeletedSize(v uint64) {
 	if _, err := db.Exec(`INSERT OR IGNORE INTO `+tenant("settings")+` (Key, Value) VALUES(?, ?)`, "DeletedSize", 0); err != nil {
 		logger.Log().Errorf("[db] %s", err.Error())
 	}

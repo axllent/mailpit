@@ -22,7 +22,7 @@ func TestTextEmailInserts(t *testing.T) {
 		}
 	}
 
-	assertEqual(t, CountTotal(), float64(testRuns), "Incorrect number of text emails stored")
+	assertEqual(t, CountTotal(), uint64(testRuns), "Incorrect number of text emails stored")
 
 	t.Logf("Inserted %d text emails in %s", testRuns, time.Since(start))
 
@@ -32,7 +32,7 @@ func TestTextEmailInserts(t *testing.T) {
 		t.Fail()
 	}
 
-	assertEqual(t, CountTotal(), float64(0), "incorrect number of text emails deleted")
+	assertEqual(t, CountTotal(), uint64(0), "incorrect number of text emails deleted")
 
 	t.Logf("deleted %d text emails in %s", testRuns, time.Since(delStart))
 
@@ -60,7 +60,7 @@ func TestMimeEmailInserts(t *testing.T) {
 			}
 		}
 
-		assertEqual(t, CountTotal(), float64(testRuns), "Incorrect number of mime emails stored")
+		assertEqual(t, CountTotal(), uint64(testRuns), "Incorrect number of mime emails stored")
 
 		t.Logf("Inserted %d text emails in %s", testRuns, time.Since(start))
 
@@ -70,7 +70,7 @@ func TestMimeEmailInserts(t *testing.T) {
 			t.Fail()
 		}
 
-		assertEqual(t, CountTotal(), float64(0), "incorrect number of mime emails deleted")
+		assertEqual(t, CountTotal(), uint64(0), "incorrect number of mime emails deleted")
 
 		t.Logf("Deleted %d mime emails in %s", testRuns, time.Since(delStart))
 
@@ -122,14 +122,14 @@ func TestRetrieveMimeEmail(t *testing.T) {
 				t.Log("error ", err)
 				t.Fail()
 			}
-			assertEqual(t, float64(len(attachmentData.Content)), msg.Attachments[0].Size, "attachment size does not match")
+			assertEqual(t, uint64(len(attachmentData.Content)), msg.Attachments[0].Size, "attachment size does not match")
 
 			inlineData, err := GetAttachmentPart(id, msg.Inline[0].PartID)
 			if err != nil {
 				t.Log("error ", err)
 				t.Fail()
 			}
-			assertEqual(t, float64(len(inlineData.Content)), msg.Inline[0].Size, "inline attachment size does not match")
+			assertEqual(t, uint64(len(inlineData.Content)), msg.Inline[0].Size, "inline attachment size does not match")
 
 			Close()
 		}

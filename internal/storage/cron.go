@@ -32,7 +32,7 @@ func dbCron() {
 				if total == 0 {
 					deletedPercent = 100
 				} else {
-					deletedPercent = deletedSize * 100 / total
+					deletedPercent = float64(deletedSize * 100 / total)
 				}
 				// only vacuum the DB if at least 1% of mail storage size has been deleted
 				if deletedPercent >= 1 {
@@ -56,13 +56,13 @@ func pruneMessages() {
 	start := time.Now()
 
 	ids := []string{}
-	var prunedSize int64
-	var size float64
+	var prunedSize uint64
+	var size uint64
 
 	// prune using `--max` if set
 	if config.MaxMessages > 0 {
 		total := CountTotal()
-		if total > float64(config.MaxAgeInHours) {
+		if total > uint64(config.MaxAgeInHours) {
 			offset := config.MaxMessages
 			if config.DemoMode {
 				offset = 500
@@ -81,7 +81,7 @@ func pruneMessages() {
 					return
 				}
 				ids = append(ids, id)
-				prunedSize = prunedSize + int64(size)
+				prunedSize = prunedSize + size
 
 			}); err != nil {
 				logger.Log().Errorf("[db] %s", err.Error())
@@ -110,7 +110,7 @@ func pruneMessages() {
 
 			if !tools.InArray(id, ids) {
 				ids = append(ids, id)
-				prunedSize = prunedSize + int64(size)
+				prunedSize = prunedSize + size
 			}
 
 		}); err != nil {

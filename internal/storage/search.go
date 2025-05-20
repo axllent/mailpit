@@ -39,12 +39,12 @@ func Search(search, timezone string, start int, beforeTS int64, limit int) ([]Me
 	var err error
 
 	if err := q.QueryAndClose(context.TODO(), db, func(row *sql.Rows) {
-		var created float64
+		var created uint64
 		var id string
 		var messageID string
 		var subject string
 		var metadata string
-		var size float64
+		var size uint64
 		var attachments int
 		var snippet string
 		var read int
@@ -141,15 +141,15 @@ func DeleteSearch(search, timezone string) error {
 	q := searchQueryBuilder(search, timezone)
 
 	ids := []string{}
-	deleteSize := float64(0)
+	deleteSize := uint64(0)
 
 	if err := q.QueryAndClose(context.TODO(), db, func(row *sql.Rows) {
-		var created float64
+		var created uint64
 		var id string
 		var messageID string
 		var subject string
 		var metadata string
-		var size float64
+		var size uint64
 		var attachments int
 		var read int
 		var snippet string
@@ -247,7 +247,7 @@ func DeleteSearch(search, timezone string) error {
 			}
 		}
 
-		addDeletedSize(int64(deleteSize))
+		addDeletedSize(deleteSize)
 
 		logMessagesDeleted(total)
 
@@ -264,12 +264,12 @@ func SetSearchReadStatus(search, timezone string, read bool) error {
 	ids := []string{}
 
 	if err := q.QueryAndClose(context.TODO(), db, func(row *sql.Rows) {
-		var created float64
+		var created uint64
 		var id string
 		var messageID string
 		var subject string
 		var metadata string
-		var size float64
+		var size uint64
 		var attachments int
 		var read int
 		var snippet string
@@ -519,7 +519,7 @@ func searchQueryBuilder(searchString, timezone string) *sqlf.Stmt {
 //
 // K, k, Kb, KB, kB and kb are treated as Kilobytes.
 // M, m, Mb, MB and mb are treated as Megabytes.
-func sizeToBytes(v string) int64 {
+func sizeToBytes(v string) uint64 {
 	v = strings.ToLower(v)
 	re := regexp.MustCompile(`^(\d+)(\.\d+)?\s?([a-z]{1,2})?$`)
 
@@ -537,15 +537,15 @@ func sizeToBytes(v string) int64 {
 	}
 
 	if unit == "" {
-		return int64(i)
+		return uint64(i)
 	}
 
 	if unit == "k" || unit == "kb" {
-		return int64(i * 1024)
+		return uint64(i * 1024)
 	}
 
 	if unit == "m" || unit == "mb" {
-		return int64(i * 1024 * 1024)
+		return uint64(i * 1024 * 1024)
 	}
 
 	return 0

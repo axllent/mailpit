@@ -20,10 +20,10 @@ var (
 
 	mu sync.RWMutex
 
-	smtpAccepted     float64
-	smtpAcceptedSize float64
-	smtpRejected     float64
-	smtpIgnored      float64
+	smtpAccepted     uint64
+	smtpAcceptedSize uint64
+	smtpRejected     uint64
+	smtpIgnored      uint64
 )
 
 // AppInformation struct
@@ -36,29 +36,29 @@ type AppInformation struct {
 	// Database path
 	Database string
 	// Database size in bytes
-	DatabaseSize float64
+	DatabaseSize uint64
 	// Total number of messages in the database
-	Messages float64
+	Messages uint64
 	// Total number of messages in the database
-	Unread float64
+	Unread uint64
 	// Tags and message totals per tag
 	Tags map[string]int64
 	// Runtime statistics
 	RuntimeStats struct {
 		// Mailpit server uptime in seconds
-		Uptime float64
+		Uptime uint64
 		// Current memory usage in bytes
 		Memory uint64
 		// Database runtime messages deleted
-		MessagesDeleted float64
+		MessagesDeleted uint64
 		// Accepted runtime SMTP messages
-		SMTPAccepted float64
+		SMTPAccepted uint64
 		// Total runtime accepted messages size in bytes
-		SMTPAcceptedSize float64
+		SMTPAcceptedSize uint64
 		// Rejected runtime SMTP messages
-		SMTPRejected float64
+		SMTPRejected uint64
 		// Ignored runtime SMTP messages (when using --ignore-duplicate-ids)
-		SMTPIgnored float64
+		SMTPIgnored uint64
 	}
 }
 
@@ -71,7 +71,7 @@ func Load() AppInformation {
 	runtime.ReadMemStats(&m)
 
 	info.RuntimeStats.Memory = m.Sys - m.HeapReleased
-	info.RuntimeStats.Uptime = time.Since(startedAt).Seconds()
+	info.RuntimeStats.Uptime = uint64(time.Since(startedAt).Seconds())
 	info.RuntimeStats.MessagesDeleted = storage.StatsDeleted
 	info.RuntimeStats.SMTPAccepted = smtpAccepted
 	info.RuntimeStats.SMTPAcceptedSize = smtpAcceptedSize
@@ -112,7 +112,7 @@ func Track() {
 func LogSMTPAccepted(size int) {
 	mu.Lock()
 	smtpAccepted = smtpAccepted + 1
-	smtpAcceptedSize = smtpAcceptedSize + float64(size)
+	smtpAcceptedSize = smtpAcceptedSize + uint64(size)
 	mu.Unlock()
 }
 

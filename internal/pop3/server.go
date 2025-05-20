@@ -80,7 +80,7 @@ func Run() {
 
 type message struct {
 	ID   string
-	Size float64
+	Size uint64
 }
 
 func handleClient(conn net.Conn) {
@@ -211,13 +211,13 @@ func handleClient(conn net.Conn) {
 func handleTransactionCommand(conn net.Conn, cmd string, args []string, messages []message, toDelete *[]string) {
 	switch cmd {
 	case "STAT":
-		totalSize := float64(0)
+		totalSize := uint64(0)
 		for _, m := range messages {
 			totalSize += m.Size
 		}
 		sendResponse(conn, fmt.Sprintf("+OK %d %d", len(messages), int64(totalSize)))
 	case "LIST":
-		totalSize := float64(0)
+		totalSize := uint64(0)
 		for _, m := range messages {
 			totalSize += m.Size
 		}

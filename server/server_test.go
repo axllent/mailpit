@@ -340,8 +340,8 @@ func assertStatsEqual(t *testing.T, uri string, unread, total int) {
 		return
 	}
 
-	assertEqual(t, float64(unread), m.Unread, "wrong unread count")
-	assertEqual(t, float64(total), m.Total, "wrong total count")
+	assertEqual(t, uint64(unread), m.Unread, "wrong unread count")
+	assertEqual(t, uint64(total), m.Total, "wrong total count")
 }
 
 func assertSearchEqual(t *testing.T, uri, query string, count int) {
@@ -361,7 +361,7 @@ func assertSearchEqual(t *testing.T, uri, query string, count int) {
 		return
 	}
 
-	assertEqual(t, float64(count), m.MessagesCount, "wrong search results count")
+	assertEqual(t, uint64(count), m.MessagesCount, "wrong search results count")
 }
 
 func insertEmailData(t *testing.T) {
