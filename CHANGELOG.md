@@ -2,6 +2,20 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.25.1]
+
+### Chore
+- Switch from unnecessary float64 to uint64 API values for App Information, message & attachment sizes
+- Extend latest version cache expiration from 5 to 15 minutes
+- Lighten outline-secondary buttons in dark mode
+- Add note to swagger docs about API date formats
+- Update Go dependencies
+- Update node dependencies
+
+### Fix
+- Update bootstrap5-tags to fix text pasting in message release modal ([#498](https://github.com/axllent/mailpit/issues/498))
+
+
 ## [v1.25.0]
 
 ### Feature
