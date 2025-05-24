@@ -85,7 +85,7 @@ func Store(body *[]byte) (string, error) {
 	defer tx.Rollback()
 
 	subject := env.GetHeader("Subject")
-	size := float64(len(*body))
+	size := uint64(len(*body))
 	inline := len(env.Inlines)
 	attachments := len(env.Attachments)
 	snippet := tools.CreateSnippet(env.Text, env.HTML)
@@ -201,12 +201,12 @@ func List(start int, beforeTS int64, limit int) ([]MessageSummary, error) {
 	}
 
 	if err := q.QueryAndClose(context.TODO(), db, func(row *sql.Rows) {
-		var created float64
+		var created uint64
 		var id string
 		var messageID string
 		var subject string
 		var metadata string
-		var size float64
+		var size uint64
 		var attachments int
 		var read int
 		var snippet string
@@ -294,7 +294,7 @@ func GetMessage(id string) (*Message, error) {
 			Where(`ID = ?`, id)
 
 		if err := q.QueryAndClose(context.TODO(), db, func(row *sql.Rows) {
-			var created float64
+			var created uint64
 
 			if err := row.Scan(&created); err != nil {
 				logger.Log().Errorf("[db] %s", err.Error())
@@ -321,7 +321,7 @@ func GetMessage(id string) (*Message, error) {
 		ReturnPath: returnPath,
 		Subject:    env.GetHeader("Subject"),
 		Tags:       getMessageTags(id),
-		Size:       float64(len(raw)),
+		Size:       uint64(len(raw)),
 		Text:       env.Text,
 	}
 
@@ -462,7 +462,7 @@ func AttachmentSummary(a *enmime.Part) Attachment {
 	}
 	o.ContentType = a.ContentType
 	o.ContentID = a.ContentID
-	o.Size = float64(len(a.Content))
+	o.Size = uint64(len(a.Content))
 
 	return o
 }
@@ -617,11 +617,11 @@ func DeleteMessages(ids []string) error {
 	defer rows.Close()
 
 	toDelete := []string{}
-	var totalSize float64
+	var totalSize uint64
 
 	for rows.Next() {
 		var id string
-		var size float64
+		var size uint64
 		if err := rows.Scan(&id, &size); err != nil {
 			return err
 		}
@@ -663,7 +663,7 @@ func DeleteMessages(ids []string) error {
 	}
 
 	dbLastAction = time.Now()
-	addDeletedSize(int64(totalSize))
+	addDeletedSize(totalSize)
 
 	logMessagesDeleted(len(toDelete))
 

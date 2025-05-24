@@ -210,8 +210,8 @@ func StatsGet() MailboxStats {
 }
 
 // CountTotal returns the number of emails in the database
-func CountTotal() float64 {
-	var total float64
+func CountTotal() uint64 {
+	var total uint64
 
 	_ = sqlf.From(tenant("mailbox")).
 		Select("COUNT(*)").To(&total).
@@ -221,8 +221,8 @@ func CountTotal() float64 {
 }
 
 // CountUnread returns the number of emails in the database that are unread.
-func CountUnread() float64 {
-	var total float64
+func CountUnread() uint64 {
+	var total uint64
 
 	_ = sqlf.From(tenant("mailbox")).
 		Select("COUNT(*)").To(&total).
@@ -233,8 +233,8 @@ func CountUnread() float64 {
 }
 
 // CountRead returns the number of emails in the database that are read.
-func CountRead() float64 {
-	var total float64
+func CountRead() uint64 {
+	var total uint64
 
 	_ = sqlf.From(tenant("mailbox")).
 		Select("COUNT(*)").To(&total).
@@ -245,17 +245,17 @@ func CountRead() float64 {
 }
 
 // DbSize returns the size of the SQLite database.
-func DbSize() float64 {
-	var total sql.NullFloat64
+func DbSize() uint64 {
+	var total sql.NullInt64
 
 	err := db.QueryRow("SELECT page_count * page_size AS size FROM pragma_page_count(), pragma_page_size()").Scan(&total)
 
 	if err != nil {
 		logger.Log().Errorf("[db] %s", err.Error())
-		return total.Float64
+		return uint64(total.Int64)
 	}
 
-	return total.Float64
+	return uint64(total.Int64)
 }
 
 // MessageIDExists checks whether a Message-ID exists in the DB

@@ -203,7 +203,7 @@ func TestEscPercentChar(t *testing.T) {
 }
 
 func TestSizeToBytes(t *testing.T) {
-	tests := map[string]int64{}
+	tests := map[string]uint64{}
 	tests["1m"] = 1048576
 	tests["1mb"] = 1048576
 	tests["1 M"] = 1048576

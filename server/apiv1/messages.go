@@ -40,21 +40,21 @@ type messagesSummaryResponse struct {
 // MessagesSummary is a summary of a list of messages
 type MessagesSummary struct {
 	// Total number of messages in mailbox
-	Total float64 `json:"total"`
+	Total uint64 `json:"total"`
 
 	// Total number of unread messages in mailbox
-	Unread float64 `json:"unread"`
+	Unread uint64 `json:"unread"`
 
 	// Legacy - now undocumented in API specs but left for backwards compatibility.
 	// Removed from API documentation 2023-07-12
 	// swagger:ignore
-	Count float64 `json:"count"`
+	Count uint64 `json:"count"`
 
 	// Total number of messages matching current query
-	MessagesCount float64 `json:"messages_count"`
+	MessagesCount uint64 `json:"messages_count"`
 
 	// Total number of unread messages matching current query
-	MessagesUnreadCount float64 `json:"messages_unread"`
+	MessagesUnreadCount uint64 `json:"messages_unread"`
 
 	// Pagination offset
 	Start int `json:"start"`
@@ -98,7 +98,7 @@ func GetMessages(w http.ResponseWriter, r *http.Request) {
 
 	res.Start = start
 	res.Messages = messages
-	res.Count = float64(len(messages)) // legacy - now undocumented in API specs
+	res.Count = uint64(len(messages)) // legacy - now undocumented in API specs
 	res.Total = stats.Total
 	res.Unread = stats.Unread
 	res.Tags = stats.Tags
@@ -349,9 +349,9 @@ func Search(w http.ResponseWriter, r *http.Request) {
 
 	res.Start = start
 	res.Messages = messages
-	res.Count = float64(len(messages)) // legacy - now undocumented in API specs
-	res.Total = stats.Total            // total messages in mailbox
-	res.MessagesCount = float64(results)
+	res.Count = uint64(len(messages)) // legacy - now undocumented in API specs
+	res.Total = stats.Total           // total messages in mailbox
+	res.MessagesCount = uint64(results)
 	res.Unread = stats.Unread
 	res.Tags = stats.Tags
 
@@ -361,7 +361,7 @@ func Search(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res.MessagesUnreadCount = float64(unread)
+	res.MessagesUnreadCount = uint64(unread)
 
 	w.Header().Add("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(res); err != nil {

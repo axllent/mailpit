@@ -89,6 +89,14 @@
 	.token.property {
 		color: #ee6969;
 	}
+
+	.btn-outline-secondary {
+		color: #9c9c9c;
+
+		&:hover {
+			color: $body-color-dark;
+		}
+	}
 }
 
 .text-spaces-nowrap {
