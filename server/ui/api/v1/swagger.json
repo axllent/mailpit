@@ -1488,7 +1488,7 @@
           }
         },
         "Date": {
-          "description": "Message date if set, else date received",
+          "description": "Message RFC3339Nano date \u0026 time (if set), else date \u0026 time received\n([extended RFC3339](https://tools.ietf.org/html/rfc3339#section-5.6) format with optional nano seconds)",
           "type": "string",
           "format": "date-time"
         },
@@ -1594,7 +1594,7 @@
           }
         },
         "Created": {
-          "description": "Created time",
+          "description": "Received RFC3339Nano date \u0026 time ([extended RFC3339](https://tools.ietf.org/html/rfc3339#section-5.6) format with optional nano seconds)",
           "type": "string",
           "format": "date-time"
         },
