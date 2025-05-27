@@ -147,6 +147,9 @@ export default {
 							The <code>From</code> email address has been overridden by the relay configuration to
 							<code>{{ mailbox.uiConfig.MessageRelay.OverrideFrom }}</code>.
 						</li>
+                        <li v-if="mailbox.uiConfig.MessageRelay.OverrideSendTo != ''" class="form-text">
+                            The <code>To</code> email address(es) will be replaced with current <code>Send to</code>
+                        </li>
 						<li class="form-text">
 							SMTP delivery failures will bounce back to
 							<code v-if="mailbox.uiConfig.MessageRelay.ReturnPath != ''">

@@ -223,6 +223,7 @@ type SMTPRelayConfigStruct struct {
 	Secret                  string         `yaml:"secret"`             // cram-md5
 	ReturnPath              string         `yaml:"return-path"`        // allow overriding the bounce address
 	OverrideFrom            string         `yaml:"override-from"`      // allow overriding of the from address
+	OverrideSendTo          bool           `yaml:"override-send-to"`   // allow overriding of the from address
 	AllowedRecipients       string         `yaml:"allowed-recipients"` // regex, if set needs to match for mails to be relayed
 	AllowedRecipientsRegexp *regexp.Regexp // compiled regexp using AllowedRecipients
 	BlockedRecipients       string         `yaml:"blocked-recipients"` // regex, if set prevents relating to these addresses

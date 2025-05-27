@@ -158,3 +158,57 @@ func OverrideFromHeader(msg []byte, address string) ([]byte, error) {
 
 	return msg, nil
 }
+
+// OverrideToHeader scans a message for the To header and replaces it with a different email address.
+func OverrideToHeader(msg []byte, address []string) ([]byte, error) {
+	reader := bytes.NewReader(msg)
+	m, err := mail.ReadMessage(reader)
+	if err != nil {
+		return nil, err
+	}
+
+	if m.Header.Get("To") != "" {
+		reBlank := regexp.MustCompile(`^\s+`)
+		// Simplified regex to match the To: header (case insensitive)
+		reHdr := regexp.MustCompile(`(?i)^To:`)
+
+		scanner := bufio.NewScanner(bytes.NewReader(msg))
+		found := false
+		hdr := []byte("")
+		for scanner.Scan() {
+			line := scanner.Bytes()
+			if !found && reHdr.Match(line) {
+				// add the first line starting with To:
+				hdr = append(hdr, line...)
+				hdr = append(hdr, []byte("\r\n")...)
+				found = true
+			} else if found && reBlank.Match(line) {
+				// add any following lines starting with a whitespace (tab or space)
+				hdr = append(hdr, line...)
+				hdr = append(hdr, []byte("\r\n")...)
+			} else if found {
+				// stop scanning, we have the full header
+				break
+			}
+		}
+
+		if len(hdr) > 0 {
+			// Extract original To addresses
+			originalTo := strings.TrimRight(string(hdr[3:]), "\r\n")
+
+			// Replace the To header with the new addresses
+			msg = bytes.Replace(msg, hdr, []byte("To: "+strings.Join(address, ", ")+"\r\n"), 1)
+
+			// Insert the original To header as X-Original-To
+			msg = append([]byte("X-Original-To: "+originalTo+"\r\n"), msg...)
+
+			logger.Log().Debugf("[relay] Replaced To email address with %s", strings.Join(address, ", "))
+		}
+	} else {
+		// no To header, so add one
+		msg = append([]byte("To: "+strings.Join(address, ", ")+"\r\n"), msg...)
+		logger.Log().Debugf("[relay] Added To email: %s", strings.Join(address, ", "))
+	}
+
+	return msg, nil
+}

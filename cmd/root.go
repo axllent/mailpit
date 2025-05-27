@@ -304,6 +304,7 @@ func initConfigFromEnv() {
 	config.SMTPRelayConfig.Secret = os.Getenv("MP_SMTP_RELAY_SECRET")
 	config.SMTPRelayConfig.ReturnPath = os.Getenv("MP_SMTP_RELAY_RETURN_PATH")
 	config.SMTPRelayConfig.OverrideFrom = os.Getenv("MP_SMTP_RELAY_OVERRIDE_FROM")
+	config.SMTPRelayConfig.OverrideSendTo = getEnabledFromEnv("MP_SMTP_RELAY_OVERRIDE_SEND_TO")
 	config.SMTPRelayConfig.AllowedRecipients = os.Getenv("MP_SMTP_RELAY_ALLOWED_RECIPIENTS")
 	config.SMTPRelayConfig.BlockedRecipients = os.Getenv("MP_SMTP_RELAY_BLOCKED_RECIPIENTS")
 

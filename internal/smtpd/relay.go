@@ -125,6 +125,13 @@ func Relay(from string, to []string, msg []byte) error {
 		from = config.SMTPRelayConfig.OverrideFrom
 	}
 
+    if config.SMTPRelayConfig.OverrideSendTo {
+		msg, err = tools.OverrideToHeader(msg, to)
+		if err != nil {
+			return fmt.Errorf("error overriding To header: %s", err.Error())
+		}
+	}
+
 	if err = c.Mail(from); err != nil {
 		return fmt.Errorf("error response to MAIL command: %s", err.Error())
 	}
