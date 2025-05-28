@@ -112,6 +112,8 @@ func init() {
 	rootCmd.Flags().StringVarP(&config.SMTPListen, "smtp", "s", config.SMTPListen, "SMTP bind interface and port")
 	rootCmd.Flags().StringVar(&config.SMTPAuthFile, "smtp-auth-file", config.SMTPAuthFile, "A password file for SMTP authentication")
 	rootCmd.Flags().BoolVar(&config.SMTPAuthAcceptAny, "smtp-auth-accept-any", config.SMTPAuthAcceptAny, "Accept any SMTP username and password, including none")
+	rootCmd.Flags().StringVar(&config.SendAPIAuthFile, "send-api-auth-file", config.SendAPIAuthFile, "A password file for Send API authentication")
+	rootCmd.Flags().BoolVar(&config.SendAPIAuthAcceptAny, "send-api-auth-accept-any", config.SendAPIAuthAcceptAny, "Accept any username and password for the Send API endpoint, including none")
 	rootCmd.Flags().StringVar(&config.SMTPTLSCert, "smtp-tls-cert", config.SMTPTLSCert, "TLS certificate for SMTP (STARTTLS) - requires smtp-tls-key")
 	rootCmd.Flags().StringVar(&config.SMTPTLSKey, "smtp-tls-key", config.SMTPTLSKey, "TLS key for SMTP (STARTTLS) - requires smtp-tls-cert")
 	rootCmd.Flags().BoolVar(&config.SMTPRequireSTARTTLS, "smtp-require-starttls", config.SMTPRequireSTARTTLS, "Require SMTP client use STARTTLS")
@@ -259,6 +261,13 @@ func initConfigFromEnv() {
 	}
 	if getEnabledFromEnv("MP_SMTP_AUTH_ACCEPT_ANY") {
 		config.SMTPAuthAcceptAny = true
+	}
+	config.SendAPIAuthFile = os.Getenv("MP_SEND_API_AUTH_FILE")
+	if err := auth.SetSendAPIAuth(os.Getenv("MP_SEND_API_AUTH")); err != nil {
+		logger.Log().Error(err.Error())
+	}
+	if getEnabledFromEnv("MP_SEND_API_AUTH_ACCEPT_ANY") {
+		config.SendAPIAuthAcceptAny = true
 	}
 	config.SMTPTLSCert = os.Getenv("MP_SMTP_TLS_CERT")
 	config.SMTPTLSKey = os.Getenv("MP_SMTP_TLS_KEY")

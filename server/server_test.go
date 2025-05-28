@@ -13,16 +13,30 @@ import (
 	"testing"
 
 	"github.com/axllent/mailpit/config"
+	"github.com/axllent/mailpit/internal/auth"
 	"github.com/axllent/mailpit/internal/logger"
 	"github.com/axllent/mailpit/internal/storage"
 	"github.com/axllent/mailpit/server/apiv1"
 	"github.com/jhillyerd/enmime/v2"
+	"golang.org/x/crypto/bcrypt"
 )
 
 var (
 	putDataStruct struct {
 		Read bool
 		IDs  []string
+	}
+
+	// Shared test message structure for consistency
+	testSendMessage = map[string]interface{}{
+		"From": map[string]string{
+			"Email": "test@example.com",
+		},
+		"To": []map[string]string{
+			{"Email": "recipient@example.com"},
+		},
+		"Subject": "Test",
+		"Text":    "Test message",
 	}
 )
 
@@ -312,6 +326,157 @@ func TestAPIv1Send(t *testing.T) {
 	assertEqual(t, `This is a plain text attachment`, string(attachmentBytes), "wrong Attachment content")
 }
 
+func TestSendAPIAuthMiddleware(t *testing.T) {
+	setup()
+	defer storage.Close()
+
+	// Test 1: Send API with accept-any enabled (should bypass all auth)
+	t.Run("SendAPIAuthAcceptAny", func(t *testing.T) {
+		// Set up UI auth and enable accept-any for send API
+		originalSendAPIAuthAcceptAny := config.SendAPIAuthAcceptAny
+		originalUICredentials := auth.UICredentials
+		defer func() {
+			config.SendAPIAuthAcceptAny = originalSendAPIAuthAcceptAny
+			auth.UICredentials = originalUICredentials
+		}()
+
+		// Enable accept-any for send API
+		config.SendAPIAuthAcceptAny = true
+
+		// Set up UI auth that would normally block requests
+		testHash, _ := bcrypt.GenerateFromPassword([]byte("testpass"), bcrypt.DefaultCost)
+		auth.SetUIAuth("testuser:" + string(testHash))
+
+		r := apiRoutes()
+		ts := httptest.NewServer(r)
+		defer ts.Close()
+
+		// Should succeed without any auth headers
+		jsonData, _ := json.Marshal(testSendMessage)
+		_, err := clientPost(ts.URL+"/api/v1/send", string(jsonData))
+		if err != nil {
+			t.Errorf("Expected send to succeed with accept-any, got error: %s", err.Error())
+		}
+	})
+
+	// Test 2: Send API with dedicated credentials
+	t.Run("SendAPIWithDedicatedCredentials", func(t *testing.T) {
+		originalSendAPIAuthAcceptAny := config.SendAPIAuthAcceptAny
+		originalUICredentials := auth.UICredentials
+		originalSendAPICredentials := auth.SendAPICredentials
+		defer func() {
+			config.SendAPIAuthAcceptAny = originalSendAPIAuthAcceptAny
+			auth.UICredentials = originalUICredentials
+			auth.SendAPICredentials = originalSendAPICredentials
+		}()
+
+		config.SendAPIAuthAcceptAny = false
+
+		// Set up UI auth
+		uiHash, _ := bcrypt.GenerateFromPassword([]byte("uipass"), bcrypt.DefaultCost)
+		auth.SetUIAuth("uiuser:" + string(uiHash))
+
+		// Set up dedicated Send API auth
+		sendHash, _ := bcrypt.GenerateFromPassword([]byte("sendpass"), bcrypt.DefaultCost)
+		auth.SetSendAPIAuth("senduser:" + string(sendHash))
+
+		r := apiRoutes()
+		ts := httptest.NewServer(r)
+		defer ts.Close()
+
+		jsonData, _ := json.Marshal(testSendMessage)
+
+		// Should succeed with correct Send API credentials
+		_, err := clientPostWithAuth(ts.URL+"/api/v1/send", string(jsonData), "senduser", "sendpass")
+		if err != nil {
+			t.Errorf("Expected send to succeed with correct Send API credentials, got error: %s", err.Error())
+		}
+
+		// Should fail with wrong Send API credentials
+		_, err = clientPostWithAuth(ts.URL+"/api/v1/send", string(jsonData), "senduser", "wrongpass")
+		if err == nil {
+			t.Error("Expected send to fail with wrong Send API credentials")
+		}
+
+		// Should fail with UI credentials when Send API credentials are set
+		_, err = clientPostWithAuth(ts.URL+"/api/v1/send", string(jsonData), "uiuser", "uipass")
+		if err == nil {
+			t.Error("Expected send to fail with UI credentials when Send API credentials are required")
+		}
+	})
+
+	// Test 3: Send API fallback to UI auth when no Send API auth is configured
+	t.Run("SendAPIFallbackToUIAuth", func(t *testing.T) {
+		originalSendAPIAuthAcceptAny := config.SendAPIAuthAcceptAny
+		originalUICredentials := auth.UICredentials
+		originalSendAPICredentials := auth.SendAPICredentials
+		defer func() {
+			config.SendAPIAuthAcceptAny = originalSendAPIAuthAcceptAny
+			auth.UICredentials = originalUICredentials
+			auth.SendAPICredentials = originalSendAPICredentials
+		}()
+
+		config.SendAPIAuthAcceptAny = false
+		auth.SendAPICredentials = nil
+
+		// Set up only UI auth
+		uiHash, _ := bcrypt.GenerateFromPassword([]byte("uipass"), bcrypt.DefaultCost)
+		auth.SetUIAuth("uiuser:" + string(uiHash))
+
+		r := apiRoutes()
+		ts := httptest.NewServer(r)
+		defer ts.Close()
+
+		jsonData, _ := json.Marshal(testSendMessage)
+
+		// Should succeed with UI credentials when no Send API auth is configured
+		_, err := clientPostWithAuth(ts.URL+"/api/v1/send", string(jsonData), "uiuser", "uipass")
+		if err != nil {
+			t.Errorf("Expected send to succeed with UI credentials when no Send API auth configured, got error: %s", err.Error())
+		}
+
+		// Should fail without any credentials
+		_, err = clientPost(ts.URL+"/api/v1/send", string(jsonData))
+		if err == nil {
+			t.Error("Expected send to fail without credentials when UI auth is required")
+		}
+	})
+
+	// Test 4: Regular API endpoints should not be affected by Send API auth settings
+	t.Run("RegularAPINotAffectedBySendAPIAuth", func(t *testing.T) {
+		originalSendAPIAuthAcceptAny := config.SendAPIAuthAcceptAny
+		originalUICredentials := auth.UICredentials
+		originalSendAPICredentials := auth.SendAPICredentials
+		defer func() {
+			config.SendAPIAuthAcceptAny = originalSendAPIAuthAcceptAny
+			auth.UICredentials = originalUICredentials
+			auth.SendAPICredentials = originalSendAPICredentials
+		}()
+
+		// Set up UI auth and Send API auth
+		uiHash, _ := bcrypt.GenerateFromPassword([]byte("uipass"), bcrypt.DefaultCost)
+		auth.SetUIAuth("uiuser:" + string(uiHash))
+		sendHash, _ := bcrypt.GenerateFromPassword([]byte("sendpass"), bcrypt.DefaultCost)
+		auth.SetSendAPIAuth("senduser:" + string(sendHash))
+
+		r := apiRoutes()
+		ts := httptest.NewServer(r)
+		defer ts.Close()
+
+		// Regular API endpoint should require UI credentials, not Send API credentials
+		_, err := clientGetWithAuth(ts.URL+"/api/v1/messages", "uiuser", "uipass")
+		if err != nil {
+			t.Errorf("Expected regular API to work with UI credentials, got error: %s", err.Error())
+		}
+
+		// Regular API endpoint should fail with Send API credentials
+		_, err = clientGetWithAuth(ts.URL+"/api/v1/messages", "senduser", "sendpass")
+		if err == nil {
+			t.Error("Expected regular API to fail with Send API credentials")
+		}
+	})
+}
+
 func setup() {
 	logger.NoLogging = true
 	config.MaxMessages = 0
@@ -504,6 +669,59 @@ func clientPost(url, body string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("%s returned status %d", url, resp.StatusCode)
+	}
+
+	data, err := io.ReadAll(resp.Body)
+
+	return data, err
+}
+
+func clientPostWithAuth(url, body, username, password string) ([]byte, error) {
+	client := new(http.Client)
+
+	b := strings.NewReader(body)
+	req, err := http.NewRequest("POST", url, b)
+	if err != nil {
+		return nil, err
+	}
+
+	req.SetBasicAuth(username, password)
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("%s returned status %d", url, resp.StatusCode)
+	}
+
+	data, err := io.ReadAll(resp.Body)
+
+	return data, err
+}
+
+func clientGetWithAuth(url, username, password string) ([]byte, error) {
+	client := new(http.Client)
+
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	req.SetBasicAuth(username, password)
 
 	resp, err := client.Do(req)
 	if err != nil {
