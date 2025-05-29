@@ -239,7 +239,9 @@ func middleWareFunc(fn http.HandlerFunc) http.HandlerFunc {
 			w.Header().Set("Access-Control-Allow-Headers", "*")
 		}
 
-		if auth.UICredentials != nil {
+		// Check basic authentication headers if configured.
+		// OPTIONS requests are skipped if CORS is enabled, since browsers omit credentials for preflight.
+		if !(AccessControlAllowOrigin != "" && r.Method == http.MethodOptions) && auth.UICredentials != nil {
 			user, pass, ok := r.BasicAuth()
 
 			if !ok {
