@@ -375,9 +375,9 @@ func initConfigFromEnv() {
 func initDeprecatedConfigFromEnv() {
 	// deprecated 2024/04/12 - but will not be removed to maintain backwards compatibility
 	if len(os.Getenv("MP_DATA_FILE")) > 0 {
+		logger.Log().Warn("ENV MP_DATA_FILE has been deprecated, use MP_DATABASE")
 		config.Database = os.Getenv("MP_DATA_FILE")
 	}
-
 	// deprecated 2023/03/12
 	if len(os.Getenv("MP_UI_SSL_CERT")) > 0 {
 		logger.Log().Warn("ENV MP_UI_SSL_CERT has been deprecated, use MP_UI_TLS_CERT")
