@@ -72,6 +72,12 @@ var (
 	// DisableHTTPCompression will explicitly disable HTTP compression in the web UI and API
 	DisableHTTPCompression bool
 
+	// SendAPIAuthFile for Send API authentication
+	SendAPIAuthFile string
+
+	// SendAPIAuthAcceptAny accepts any username/password for the send API endpoint, including none
+	SendAPIAuthAcceptAny bool
+
 	// SMTPTLSCert file
 	SMTPTLSCert string
 
@@ -95,12 +101,6 @@ var (
 
 	// SMTPAuthAcceptAny accepts any username/password including none
 	SMTPAuthAcceptAny bool
-
-	// SendAPIAuthFile for Send API authentication
-	SendAPIAuthFile string
-
-	// SendAPIAuthAcceptAny accepts any username/password for the send API endpoint, including none
-	SendAPIAuthAcceptAny bool
 
 	// SMTPMaxRecipients is the maximum number of recipients a message may have.
 	// The SMTP RFC states that an server must handle a minimum of 100 recipients
@@ -295,6 +295,7 @@ func VerifyConfig() error {
 		return errors.New("[ui] HTTP bind should be in the format of <ip>:<port>")
 	}
 
+	// Web UI & API
 	if UIAuthFile != "" {
 		UIAuthFile = filepath.Clean(UIAuthFile)
 
@@ -329,6 +330,35 @@ func VerifyConfig() error {
 		}
 	}
 
+	// Send API
+	if SendAPIAuthFile != "" {
+		SendAPIAuthFile = filepath.Clean(SendAPIAuthFile)
+
+		if !isFile(SendAPIAuthFile) {
+			return fmt.Errorf("[send-api] password file not found or readable: %s", SendAPIAuthFile)
+		}
+
+		b, err := os.ReadFile(SendAPIAuthFile)
+		if err != nil {
+			return err
+		}
+
+		if err := auth.SetSendAPIAuth(string(b)); err != nil {
+			return err
+		}
+
+		logger.Log().Info("[send-api] enabling basic authentication")
+	}
+
+	if auth.SendAPICredentials != nil && SendAPIAuthAcceptAny {
+		return errors.New("[send-api] authentication cannot use both credentials and --send-api-auth-accept-any")
+	}
+
+	if SendAPIAuthAcceptAny && auth.UICredentials != nil {
+		logger.Log().Info("[send-api] disabling authentication")
+	}
+
+	// SMTP server
 	if SMTPTLSCert != "" && SMTPTLSKey == "" || SMTPTLSCert == "" && SMTPTLSKey != "" {
 		return errors.New("[smtp] you must provide both an SMTP TLS certificate and a key")
 	}
@@ -387,29 +417,6 @@ func VerifyConfig() error {
 
 	if auth.SMTPCredentials != nil && SMTPAuthAcceptAny {
 		return errors.New("[smtp] authentication cannot use both credentials and --smtp-auth-accept-any")
-	}
-
-	if SendAPIAuthFile != "" {
-		SendAPIAuthFile = filepath.Clean(SendAPIAuthFile)
-
-		if !isFile(SendAPIAuthFile) {
-			return fmt.Errorf("[send-api] password file not found or readable: %s", SendAPIAuthFile)
-		}
-
-		b, err := os.ReadFile(SendAPIAuthFile)
-		if err != nil {
-			return err
-		}
-
-		if err := auth.SetSendAPIAuth(string(b)); err != nil {
-			return err
-		}
-
-		logger.Log().Info("[send-api] enabling basic authentication")
-	}
-
-	if auth.SendAPICredentials != nil && SendAPIAuthAcceptAny {
-		return errors.New("[send-api] authentication cannot use both credentials and --send-api-auth-accept-any")
 	}
 
 	if SMTPTLSCert == "" && (auth.SMTPCredentials != nil || SMTPAuthAcceptAny) && !SMTPAuthAllowInsecure {

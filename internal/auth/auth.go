@@ -11,12 +11,12 @@ import (
 var (
 	// UICredentials passwords
 	UICredentials *htpasswd.File
+	// SendAPICredentials passwords
+	SendAPICredentials *htpasswd.File
 	// SMTPCredentials passwords
 	SMTPCredentials *htpasswd.File
 	// POP3Credentials passwords
 	POP3Credentials *htpasswd.File
-	// SendAPICredentials passwords
-	SendAPICredentials *htpasswd.File
 )
 
 // SetUIAuth will set Basic Auth credentials required for the UI & API
@@ -31,6 +31,25 @@ func SetUIAuth(s string) error {
 	r := strings.NewReader(strings.Join(credentials, "\n"))
 
 	UICredentials, err = htpasswd.NewFromReader(r, htpasswd.DefaultSystems, nil)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// SetSendAPIAuth will set Send API credentials
+func SetSendAPIAuth(s string) error {
+	var err error
+
+	credentials := credentialsFromString(s)
+	if len(credentials) == 0 {
+		return nil
+	}
+
+	r := strings.NewReader(strings.Join(credentials, "\n"))
+
+	SendAPICredentials, err = htpasswd.NewFromReader(r, htpasswd.DefaultSystems, nil)
 	if err != nil {
 		return err
 	}
@@ -69,25 +88,6 @@ func SetPOP3Auth(s string) error {
 	r := strings.NewReader(strings.Join(credentials, "\n"))
 
 	POP3Credentials, err = htpasswd.NewFromReader(r, htpasswd.DefaultSystems, nil)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// SetSendAPIAuth will set Send API credentials
-func SetSendAPIAuth(s string) error {
-	var err error
-
-	credentials := credentialsFromString(s)
-	if len(credentials) == 0 {
-		return nil
-	}
-
-	r := strings.NewReader(strings.Join(credentials, "\n"))
-
-	SendAPICredentials, err = htpasswd.NewFromReader(r, htpasswd.DefaultSystems, nil)
 	if err != nil {
 		return err
 	}
