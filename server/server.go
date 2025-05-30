@@ -19,6 +19,7 @@ import (
 	"github.com/axllent/mailpit/internal/auth"
 	"github.com/axllent/mailpit/internal/logger"
 	"github.com/axllent/mailpit/internal/pop3"
+	"github.com/axllent/mailpit/internal/prometheus"
 	"github.com/axllent/mailpit/internal/stats"
 	"github.com/axllent/mailpit/internal/storage"
 	"github.com/axllent/mailpit/internal/tools"
@@ -181,6 +182,13 @@ func apiRoutes() *mux.Router {
 	// Chaos
 	r.HandleFunc(config.Webroot+"api/v1/chaos", middleWareFunc(apiv1.GetChaos)).Methods("GET")
 	r.HandleFunc(config.Webroot+"api/v1/chaos", middleWareFunc(apiv1.SetChaos)).Methods("PUT")
+
+	// Prometheus metrics (if enabled and using existing server)
+	if prometheus.GetMode() == "integrated" {
+		r.HandleFunc(config.Webroot+"metrics", middleWareFunc(func(w http.ResponseWriter, r *http.Request) {
+			prometheus.GetHandler().ServeHTTP(w, r)
+		})).Methods("GET")
+	}
 
 	// web UI websocket
 	r.HandleFunc(config.Webroot+"api/events", apiWebsocket).Methods("GET")

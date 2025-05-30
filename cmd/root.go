@@ -9,6 +9,7 @@ import (
 	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/internal/auth"
 	"github.com/axllent/mailpit/internal/logger"
+	"github.com/axllent/mailpit/internal/prometheus"
 	"github.com/axllent/mailpit/internal/smtpd"
 	"github.com/axllent/mailpit/internal/smtpd/chaos"
 	"github.com/axllent/mailpit/internal/storage"
@@ -37,6 +38,14 @@ Documentation:
 		if err := storage.InitDB(); err != nil {
 			logger.Log().Fatal(err.Error())
 			os.Exit(1)
+		}
+
+		// Start Prometheus metrics if enabled
+		switch prometheus.GetMode() {
+		case "integrated":
+			prometheus.StartUpdater()
+		case "separate":
+			go prometheus.StartSeparateServer()
 		}
 
 		go server.Listen()
@@ -111,6 +120,9 @@ func init() {
 	// Send API
 	rootCmd.Flags().StringVar(&config.SendAPIAuthFile, "send-api-auth-file", config.SendAPIAuthFile, "A password file for Send API authentication")
 	rootCmd.Flags().BoolVar(&config.SendAPIAuthAcceptAny, "send-api-auth-accept-any", config.SendAPIAuthAcceptAny, "Accept any username and password for the Send API endpoint, including none")
+
+	// Prometheus Metrics
+	rootCmd.Flags().StringVar(&config.PrometheusListen, "enable-prometheus", config.PrometheusListen, "Enable Prometheus metrics: false=disabled, 'true'=use web port, address=separate server (':9090')")
 
 	// SMTP server
 	rootCmd.Flags().StringVarP(&config.SMTPListen, "smtp", "s", config.SMTPListen, "SMTP bind interface and port")
@@ -260,6 +272,11 @@ func initConfigFromEnv() {
 	}
 	if getEnabledFromEnv("MP_SEND_API_AUTH_ACCEPT_ANY") {
 		config.SendAPIAuthAcceptAny = true
+	}
+
+	// Prometheus Metrics
+	if len(os.Getenv("MP_ENABLE_PROMETHEUS")) > 0 {
+		config.PrometheusListen = os.Getenv("MP_ENABLE_PROMETHEUS")
 	}
 
 	// SMTP server
