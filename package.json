@@ -30,7 +30,7 @@
     "@popperjs/core": "^2.11.5",
     "@types/bootstrap": "^5.2.7",
     "@types/tinycon": "^0.6.3",
-    "@vue/compiler-sfc": "^3.2.37",
+    "@vue/compiler-sfc": "^3.5.16",
     "esbuild": "^0.25.0",
     "esbuild-plugin-vue-next": "^0.1.4",
     "esbuild-sass-plugin": "^3.0.0"
