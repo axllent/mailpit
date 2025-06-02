@@ -108,6 +108,10 @@ func init() {
 	rootCmd.Flags().BoolVar(&config.DisableHTTPCompression, "disable-http-compression", config.DisableHTTPCompression, "Disable HTTP compression support (web UI & API)")
 	rootCmd.Flags().BoolVar(&config.HideDeleteAllButton, "hide-delete-all-button", config.HideDeleteAllButton, "Hide the \"Delete all\" button in the web UI")
 
+	// Send API
+	rootCmd.Flags().StringVar(&config.SendAPIAuthFile, "send-api-auth-file", config.SendAPIAuthFile, "A password file for Send API authentication")
+	rootCmd.Flags().BoolVar(&config.SendAPIAuthAcceptAny, "send-api-auth-accept-any", config.SendAPIAuthAcceptAny, "Accept any username and password for the Send API endpoint, including none")
+
 	// SMTP server
 	rootCmd.Flags().StringVarP(&config.SMTPListen, "smtp", "s", config.SMTPListen, "SMTP bind interface and port")
 	rootCmd.Flags().StringVar(&config.SMTPAuthFile, "smtp-auth-file", config.SMTPAuthFile, "A password file for SMTP authentication")
@@ -249,6 +253,15 @@ func initConfigFromEnv() {
 		config.HideDeleteAllButton = true
 	}
 
+	// Send API
+	config.SendAPIAuthFile = os.Getenv("MP_SEND_API_AUTH_FILE")
+	if err := auth.SetSendAPIAuth(os.Getenv("MP_SEND_API_AUTH")); err != nil {
+		logger.Log().Error(err.Error())
+	}
+	if getEnabledFromEnv("MP_SEND_API_AUTH_ACCEPT_ANY") {
+		config.SendAPIAuthAcceptAny = true
+	}
+
 	// SMTP server
 	if len(os.Getenv("MP_SMTP_BIND_ADDR")) > 0 {
 		config.SMTPListen = os.Getenv("MP_SMTP_BIND_ADDR")
@@ -362,9 +375,9 @@ func initConfigFromEnv() {
 func initDeprecatedConfigFromEnv() {
 	// deprecated 2024/04/12 - but will not be removed to maintain backwards compatibility
 	if len(os.Getenv("MP_DATA_FILE")) > 0 {
+		logger.Log().Warn("ENV MP_DATA_FILE has been deprecated, use MP_DATABASE")
 		config.Database = os.Getenv("MP_DATA_FILE")
 	}
-
 	// deprecated 2023/03/12
 	if len(os.Getenv("MP_UI_SSL_CERT")) > 0 {
 		logger.Log().Warn("ENV MP_UI_SSL_CERT has been deprecated, use MP_UI_TLS_CERT")
