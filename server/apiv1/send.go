@@ -23,57 +23,112 @@ type sendMessageParams struct {
 	Body *SendRequest
 }
 
-// SendRequest to send a message via HTTP
+
+// EmailOrObject represents either a full name/email object or a simple email string.
+//
+// It supports being passed as:
+// - a simple string: `"user@example.com"`
+// - or an object: `{"name":"John Doe", "email":"john@example.com"}`
+//
+// swagger:model EmailOrObject
+type EmailOrObject struct {
+	// Optional name
+	// example: John Doe
+	Name string
+	// Email address
+	// example: john@example.com
+	// required: true
+	Email string
+}
+
+
+func (e *EmailOrObject) UnmarshalJSON(data []byte) error {
+	// Try first as a simple string
+    var s string
+    if err := json.Unmarshal(data, &s); err == nil {
+        e.Name = ""
+        e.Email = s
+        return nil
+    }
+    // Else, try as a structured object
+    type alias EmailOrObject
+    var aux alias
+    if err := json.Unmarshal(data, &aux); err != nil {
+        return err
+    }
+    *e = EmailOrObject(aux)
+    return nil
+}
+
+
+// EmailOrObjectList allows either a single EmailOrObject or an array of EmailOrObject
+//
+// swagger:model EmailOrObjectList
+type EmailOrObjectList []EmailOrObject
+
+
+func (e *EmailOrObjectList) UnmarshalJSON(data []byte) error {
+    // Try first as an array of EmailOrObject
+    var list []EmailOrObject
+    if err := json.Unmarshal(data, &list); err == nil {
+        *e = list
+        return nil
+    }
+
+    // Else, try as a single EmailOrObject
+    var single EmailOrObject
+    if err := json.Unmarshal(data, &single); err != nil {
+        return err
+    }
+
+    *e = []EmailOrObject{single}
+    return nil
+}
+
+
+// SendRequest to send a message via HTTP ?
 // swagger:model SendRequest
 type SendRequest struct {
-	// "From" recipient
+	// "From" sender
+	//
+	// Accepts either a string email ("john@example.com")
+	// or an object {"name":"John Doe", "email":"john@example.com"}
+	//
 	// required: true
-	From struct {
-		// Optional name
-		// example: John Doe
-		Name string
-		// Email address
-		// example: john@example.com
-		// required: true
-		Email string
-	}
+	From EmailOrObject   `json:"from"`
 
 	// "To" recipients
-	To []struct {
-		// Optional name
-		// example: Jane Doe
-		Name string
-		// Email address
-		// example: jane@example.com
-		// required: true
-		Email string
-	}
+	//
+	// Accepts either a single object or array:
+	//   {"name":"Alice","email":"alice@example.com"}
+	//   or
+	//   [{"name":"Alice","email":"alice@example.com"}, "bob@example.com"]
+	//
+	// required: true
+	// example: [{"name":"Alice","email":"alice@example.com"}, "bob@example.com"]
+	To EmailOrObjectList `json:"to"`
 
 	// Cc recipients
-	Cc []struct {
-		// Optional name
-		// example: Manager
-		Name string
-		// Email address
-		// example: manager@example.com
-		// required: true
-		Email string
-	}
+	//
+	// Accepts either a single object or array:
+	//   {"name":"Alice","email":"alice@example.com"}
+	//   or
+	//   [{"name":"Alice","email":"alice@example.com"}, "bob@example.com"]
+	//
+	Cc EmailOrObjectList `json:"cc"`
 
 	// Bcc recipients email addresses only
 	// example: ["jack@example.com"]
 	Bcc []string
 
 	// Optional Reply-To recipients
-	ReplyTo []struct {
-		// Optional name
-		// example: Secretary
-		Name string
-		// Email address
-		// example: secretary@example.com
-		// required: true
-		Email string
-	}
+	//
+	// Accepts either a single object or array:
+	//   {"name":"Alice","email":"alice@example.com"}
+	//   or
+	//   [{"name":"Alice","email":"alice@example.com"}, "bob@example.com"]
+	//	
+	ReplyTo EmailOrObjectList `json:"reply_to"`
 
 	// Subject
 	// example: Mailpit message via the HTTP API
