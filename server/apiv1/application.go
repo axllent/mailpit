@@ -62,6 +62,9 @@ type webUIConfiguration struct {
 		BlockedRecipients string
 		// Overrides the "From" address for all relayed messages
 		OverrideFrom string
+		// Preserve the original Message-IDs when relaying messages
+		PreserveMessageIDs bool
+
 		// DEPRECATED 2024/03/12
 		// swagger:ignore
 		RecipientAllowlist string
@@ -117,6 +120,8 @@ func WebUIConfig(w http.ResponseWriter, _ *http.Request) {
 		conf.MessageRelay.AllowedRecipients = config.SMTPRelayConfig.AllowedRecipients
 		conf.MessageRelay.BlockedRecipients = config.SMTPRelayConfig.BlockedRecipients
 		conf.MessageRelay.OverrideFrom = config.SMTPRelayConfig.OverrideFrom
+		conf.MessageRelay.PreserveMessageIDs = config.SMTPRelayConfig.PreserveMessageIDs
+
 		// DEPRECATED 2024/03/12
 		conf.MessageRelay.RecipientAllowlist = config.SMTPRelayConfig.AllowedRecipients
 	}
