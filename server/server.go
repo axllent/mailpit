@@ -19,6 +19,7 @@ import (
 	"github.com/axllent/mailpit/internal/auth"
 	"github.com/axllent/mailpit/internal/logger"
 	"github.com/axllent/mailpit/internal/pop3"
+	"github.com/axllent/mailpit/internal/prometheus"
 	"github.com/axllent/mailpit/internal/stats"
 	"github.com/axllent/mailpit/internal/storage"
 	"github.com/axllent/mailpit/internal/tools"
@@ -158,7 +159,7 @@ func apiRoutes() *mux.Router {
 	r.HandleFunc(config.Webroot+"api/v1/messages", middleWareFunc(apiv1.DeleteMessages)).Methods("DELETE")
 	r.HandleFunc(config.Webroot+"api/v1/search", middleWareFunc(apiv1.Search)).Methods("GET")
 	r.HandleFunc(config.Webroot+"api/v1/search", middleWareFunc(apiv1.DeleteSearch)).Methods("DELETE")
-	r.HandleFunc(config.Webroot+"api/v1/send", middleWareFunc(apiv1.SendMessageHandler)).Methods("POST")
+	r.HandleFunc(config.Webroot+"api/v1/send", sendAPIAuthMiddleware(apiv1.SendMessageHandler)).Methods("POST")
 	r.HandleFunc(config.Webroot+"api/v1/tags", middleWareFunc(apiv1.GetAllTags)).Methods("GET")
 	r.HandleFunc(config.Webroot+"api/v1/tags", middleWareFunc(apiv1.SetMessageTags)).Methods("PUT")
 	r.HandleFunc(config.Webroot+"api/v1/tags/{tag}", middleWareFunc(apiv1.RenameTag)).Methods("PUT")
@@ -182,6 +183,13 @@ func apiRoutes() *mux.Router {
 	r.HandleFunc(config.Webroot+"api/v1/chaos", middleWareFunc(apiv1.GetChaos)).Methods("GET")
 	r.HandleFunc(config.Webroot+"api/v1/chaos", middleWareFunc(apiv1.SetChaos)).Methods("PUT")
 
+	// Prometheus metrics (if enabled and using existing server)
+	if prometheus.GetMode() == "integrated" {
+		r.HandleFunc(config.Webroot+"metrics", middleWareFunc(func(w http.ResponseWriter, r *http.Request) {
+			prometheus.GetHandler().ServeHTTP(w, r)
+		})).Methods("GET")
+	}
+
 	// web UI websocket
 	r.HandleFunc(config.Webroot+"api/events", apiWebsocket).Methods("GET")
 
@@ -196,6 +204,48 @@ func basicAuthResponse(w http.ResponseWriter) {
 	w.Header().Set("WWW-Authenticate", `Basic realm="Login"`)
 	w.WriteHeader(http.StatusUnauthorized)
 	_, _ = w.Write([]byte("Unauthorised.\n"))
+}
+
+// sendAPIAuthMiddleware handles authentication specifically for the send API endpoint
+// It can use dedicated send API authentication or accept any credentials based on configuration
+func sendAPIAuthMiddleware(fn http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// If send API auth accept any is enabled, bypass all authentication
+		if config.SendAPIAuthAcceptAny {
+			// Temporarily disable UI auth for this request
+			originalCredentials := auth.UICredentials
+			auth.UICredentials = nil
+			defer func() { auth.UICredentials = originalCredentials }()
+			// Call the standard middleware
+			middleWareFunc(fn)(w, r)
+			return
+		}
+
+		// If Send API credentials are configured, only accept those credentials
+		if auth.SendAPICredentials != nil {
+			user, pass, ok := r.BasicAuth()
+
+			if !ok {
+				basicAuthResponse(w)
+				return
+			}
+
+			if !auth.SendAPICredentials.Match(user, pass) {
+				basicAuthResponse(w)
+				return
+			}
+
+			// Valid Send API credentials - bypass UI auth and call function directly
+			originalCredentials := auth.UICredentials
+			auth.UICredentials = nil
+			defer func() { auth.UICredentials = originalCredentials }()
+			middleWareFunc(fn)(w, r)
+			return
+		}
+
+		// No Send API credentials configured - fall back to UI auth
+		middleWareFunc(fn)(w, r)
+	}
 }
 
 type gzipResponseWriter struct {
@@ -239,7 +289,9 @@ func middleWareFunc(fn http.HandlerFunc) http.HandlerFunc {
 			w.Header().Set("Access-Control-Allow-Headers", "*")
 		}
 
-		if auth.UICredentials != nil {
+		// Check basic authentication headers if configured.
+		// OPTIONS requests are skipped if CORS is enabled, since browsers omit credentials for preflight.
+		if !(AccessControlAllowOrigin != "" && r.Method == http.MethodOptions) && auth.UICredentials != nil {
 			user, pass, ok := r.BasicAuth()
 
 			if !ok {

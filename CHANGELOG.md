@@ -2,6 +2,22 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.26.0]
+
+### Feature
+- Send API allow separate auth ([#504](https://github.com/axllent/mailpit/issues/504))
+- Add Prometheus exporter ([#505](https://github.com/axllent/mailpit/issues/505))
+
+### Chore
+- Add MP_DATA_FILE deprecation warning
+- Update Go dependencies
+- Update node dependencies
+
+### Fix
+- Ignore basic auth for OPTIONS requests to API when CORS is set
+- Fix sendmail symlink detection for macOS ([#514](https://github.com/axllent/mailpit/issues/514))
+
+
 ## [v1.25.1]
 
 ### Chore

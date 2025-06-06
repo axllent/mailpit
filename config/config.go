@@ -72,6 +72,12 @@ var (
 	// DisableHTTPCompression will explicitly disable HTTP compression in the web UI and API
 	DisableHTTPCompression bool
 
+	// SendAPIAuthFile for Send API authentication
+	SendAPIAuthFile string
+
+	// SendAPIAuthAcceptAny accepts any username/password for the send API endpoint, including none
+	SendAPIAuthAcceptAny bool
+
 	// SMTPTLSCert file
 	SMTPTLSCert string
 
@@ -185,6 +191,10 @@ var (
 	// AllowUntrustedTLS allows untrusted HTTPS connections link checking & screenshot generation
 	AllowUntrustedTLS bool
 
+	// PrometheusListen address for Prometheus metrics server
+	// Empty = disabled, true= use existing web server, address = separate server
+	PrometheusListen string
+
 	// Version is the default application version, updated on release
 	Version = "dev"
 
@@ -289,6 +299,7 @@ func VerifyConfig() error {
 		return errors.New("[ui] HTTP bind should be in the format of <ip>:<port>")
 	}
 
+	// Web UI & API
 	if UIAuthFile != "" {
 		UIAuthFile = filepath.Clean(UIAuthFile)
 
@@ -323,6 +334,49 @@ func VerifyConfig() error {
 		}
 	}
 
+	// Send API
+	if SendAPIAuthFile != "" {
+		SendAPIAuthFile = filepath.Clean(SendAPIAuthFile)
+
+		if !isFile(SendAPIAuthFile) {
+			return fmt.Errorf("[send-api] password file not found or readable: %s", SendAPIAuthFile)
+		}
+
+		b, err := os.ReadFile(SendAPIAuthFile)
+		if err != nil {
+			return err
+		}
+
+		if err := auth.SetSendAPIAuth(string(b)); err != nil {
+			return err
+		}
+
+		logger.Log().Info("[send-api] enabling basic authentication")
+	}
+
+	if auth.SendAPICredentials != nil && SendAPIAuthAcceptAny {
+		return errors.New("[send-api] authentication cannot use both credentials and --send-api-auth-accept-any")
+	}
+
+	if SendAPIAuthAcceptAny && auth.UICredentials != nil {
+		logger.Log().Info("[send-api] disabling authentication")
+	}
+
+	// Prometheus configuration validation
+	if PrometheusListen != "" {
+		mode := strings.ToLower(strings.TrimSpace(PrometheusListen))
+		if mode != "true" && mode != "false" {
+			// Validate as address for separate server mode
+			_, err := net.ResolveTCPAddr("tcp", PrometheusListen)
+			if err != nil {
+				return fmt.Errorf("[prometheus] %s", err.Error())
+			}
+		} else if mode == "true" {
+			logger.Log().Info("[prometheus] enabling metrics")
+		}
+	}
+
+	// SMTP server
 	if SMTPTLSCert != "" && SMTPTLSKey == "" || SMTPTLSCert == "" && SMTPTLSKey != "" {
 		return errors.New("[smtp] you must provide both an SMTP TLS certificate and a key")
 	}

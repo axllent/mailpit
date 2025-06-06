@@ -9,6 +9,7 @@ import (
 	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/internal/auth"
 	"github.com/axllent/mailpit/internal/logger"
+	"github.com/axllent/mailpit/internal/prometheus"
 	"github.com/axllent/mailpit/internal/smtpd"
 	"github.com/axllent/mailpit/internal/smtpd/chaos"
 	"github.com/axllent/mailpit/internal/storage"
@@ -37,6 +38,14 @@ Documentation:
 		if err := storage.InitDB(); err != nil {
 			logger.Log().Fatal(err.Error())
 			os.Exit(1)
+		}
+
+		// Start Prometheus metrics if enabled
+		switch prometheus.GetMode() {
+		case "integrated":
+			prometheus.StartUpdater()
+		case "separate":
+			go prometheus.StartSeparateServer()
 		}
 
 		go server.Listen()
@@ -108,6 +117,10 @@ func init() {
 	rootCmd.Flags().BoolVar(&config.DisableHTTPCompression, "disable-http-compression", config.DisableHTTPCompression, "Disable HTTP compression support (web UI & API)")
 	rootCmd.Flags().BoolVar(&config.HideDeleteAllButton, "hide-delete-all-button", config.HideDeleteAllButton, "Hide the \"Delete all\" button in the web UI")
 
+	// Send API
+	rootCmd.Flags().StringVar(&config.SendAPIAuthFile, "send-api-auth-file", config.SendAPIAuthFile, "A password file for Send API authentication")
+	rootCmd.Flags().BoolVar(&config.SendAPIAuthAcceptAny, "send-api-auth-accept-any", config.SendAPIAuthAcceptAny, "Accept any username and password for the Send API endpoint, including none")
+
 	// SMTP server
 	rootCmd.Flags().StringVarP(&config.SMTPListen, "smtp", "s", config.SMTPListen, "SMTP bind interface and port")
 	rootCmd.Flags().StringVar(&config.SMTPAuthFile, "smtp-auth-file", config.SMTPAuthFile, "A password file for SMTP authentication")
@@ -145,6 +158,9 @@ func init() {
 	rootCmd.Flags().StringVar(&config.TagsConfig, "tags-config", config.TagsConfig, "Load tags filters from yaml configuration file")
 	rootCmd.Flags().BoolVar(&tools.TagsTitleCase, "tags-title-case", tools.TagsTitleCase, "TitleCase new tags generated from plus-addresses and X-Tags")
 	rootCmd.Flags().StringVar(&config.TagsDisable, "tags-disable", config.TagsDisable, "Disable auto-tagging, comma separated (eg: plus-addresses,x-tags)")
+
+	// Prometheus metrics
+	rootCmd.Flags().StringVar(&config.PrometheusListen, "enable-prometheus", config.PrometheusListen, "Enable Prometheus metrics: true|false|<ip:port> (eg:'0.0.0.0:9090')")
 
 	// Webhook
 	rootCmd.Flags().StringVar(&config.WebhookURL, "webhook-url", config.WebhookURL, "Send a webhook request for new messages")
@@ -249,6 +265,15 @@ func initConfigFromEnv() {
 		config.HideDeleteAllButton = true
 	}
 
+	// Send API
+	config.SendAPIAuthFile = os.Getenv("MP_SEND_API_AUTH_FILE")
+	if err := auth.SetSendAPIAuth(os.Getenv("MP_SEND_API_AUTH")); err != nil {
+		logger.Log().Error(err.Error())
+	}
+	if getEnabledFromEnv("MP_SEND_API_AUTH_ACCEPT_ANY") {
+		config.SendAPIAuthAcceptAny = true
+	}
+
 	// SMTP server
 	if len(os.Getenv("MP_SMTP_BIND_ADDR")) > 0 {
 		config.SMTPListen = os.Getenv("MP_SMTP_BIND_ADDR")
@@ -346,6 +371,11 @@ func initConfigFromEnv() {
 	tools.TagsTitleCase = getEnabledFromEnv("MP_TAGS_TITLE_CASE")
 	config.TagsDisable = os.Getenv("MP_TAGS_DISABLE")
 
+	// Prometheus metrics
+	if len(os.Getenv("MP_ENABLE_PROMETHEUS")) > 0 {
+		config.PrometheusListen = os.Getenv("MP_ENABLE_PROMETHEUS")
+	}
+
 	// Webhook
 	if len(os.Getenv("MP_WEBHOOK_URL")) > 0 {
 		config.WebhookURL = os.Getenv("MP_WEBHOOK_URL")
@@ -362,9 +392,9 @@ func initConfigFromEnv() {
 func initDeprecatedConfigFromEnv() {
 	// deprecated 2024/04/12 - but will not be removed to maintain backwards compatibility
 	if len(os.Getenv("MP_DATA_FILE")) > 0 {
+		logger.Log().Warn("ENV MP_DATA_FILE has been deprecated, use MP_DATABASE")
 		config.Database = os.Getenv("MP_DATA_FILE")
 	}
-
 	// deprecated 2023/03/12
 	if len(os.Getenv("MP_UI_SSL_CERT")) > 0 {
 		logger.Log().Warn("ENV MP_UI_SSL_CERT has been deprecated, use MP_UI_TLS_CERT")
