@@ -121,9 +121,6 @@ func init() {
 	rootCmd.Flags().StringVar(&config.SendAPIAuthFile, "send-api-auth-file", config.SendAPIAuthFile, "A password file for Send API authentication")
 	rootCmd.Flags().BoolVar(&config.SendAPIAuthAcceptAny, "send-api-auth-accept-any", config.SendAPIAuthAcceptAny, "Accept any username and password for the Send API endpoint, including none")
 
-	// Prometheus metrics
-	rootCmd.Flags().StringVar(&config.PrometheusListen, "enable-prometheus", config.PrometheusListen, "Enable Prometheus metrics: true|false|<bind interface & port> (eg:':9090')")
-
 	// SMTP server
 	rootCmd.Flags().StringVarP(&config.SMTPListen, "smtp", "s", config.SMTPListen, "SMTP bind interface and port")
 	rootCmd.Flags().StringVar(&config.SMTPAuthFile, "smtp-auth-file", config.SMTPAuthFile, "A password file for SMTP authentication")
@@ -161,6 +158,9 @@ func init() {
 	rootCmd.Flags().StringVar(&config.TagsConfig, "tags-config", config.TagsConfig, "Load tags filters from yaml configuration file")
 	rootCmd.Flags().BoolVar(&tools.TagsTitleCase, "tags-title-case", tools.TagsTitleCase, "TitleCase new tags generated from plus-addresses and X-Tags")
 	rootCmd.Flags().StringVar(&config.TagsDisable, "tags-disable", config.TagsDisable, "Disable auto-tagging, comma separated (eg: plus-addresses,x-tags)")
+
+	// Prometheus metrics
+	rootCmd.Flags().StringVar(&config.PrometheusListen, "enable-prometheus", config.PrometheusListen, "Enable Prometheus metrics: true|false|<ip:port> (eg:'0.0.0.0:9090')")
 
 	// Webhook
 	rootCmd.Flags().StringVar(&config.WebhookURL, "webhook-url", config.WebhookURL, "Send a webhook request for new messages")
@@ -274,11 +274,6 @@ func initConfigFromEnv() {
 		config.SendAPIAuthAcceptAny = true
 	}
 
-	// Prometheus Metrics
-	if len(os.Getenv("MP_ENABLE_PROMETHEUS")) > 0 {
-		config.PrometheusListen = os.Getenv("MP_ENABLE_PROMETHEUS")
-	}
-
 	// SMTP server
 	if len(os.Getenv("MP_SMTP_BIND_ADDR")) > 0 {
 		config.SMTPListen = os.Getenv("MP_SMTP_BIND_ADDR")
@@ -375,6 +370,11 @@ func initConfigFromEnv() {
 	config.TagsConfig = os.Getenv("MP_TAGS_CONFIG")
 	tools.TagsTitleCase = getEnabledFromEnv("MP_TAGS_TITLE_CASE")
 	config.TagsDisable = os.Getenv("MP_TAGS_DISABLE")
+
+	// Prometheus metrics
+	if len(os.Getenv("MP_ENABLE_PROMETHEUS")) > 0 {
+		config.PrometheusListen = os.Getenv("MP_ENABLE_PROMETHEUS")
+	}
 
 	// Webhook
 	if len(os.Getenv("MP_WEBHOOK_URL")) > 0 {
