@@ -11,7 +11,7 @@ require (
 	github.com/PuerkitoBio/goquery v1.10.3
 	github.com/araddon/dateparse v0.0.0-20210429162001-6b43995a97de
 	github.com/axllent/semver v0.0.1
-	github.com/goccy/go-yaml v1.17.1
+	github.com/goccy/go-yaml v1.18.0
 	github.com/gomarkdown/markdown v0.0.0-20250311123330-531bef5e742b
 	github.com/gorilla/mux v1.8.1
 	github.com/gorilla/websocket v1.5.3
@@ -28,9 +28,10 @@ require (
 	github.com/spf13/pflag v1.0.6
 	github.com/tg123/go-htpasswd v1.2.4
 	github.com/vanng822/go-premailer v1.24.0
-	golang.org/x/net v0.40.0
-	golang.org/x/text v0.25.0
-	golang.org/x/time v0.11.0
+	golang.org/x/crypto v0.39.0
+	golang.org/x/net v0.41.0
+	golang.org/x/text v0.26.0
+	golang.org/x/time v0.12.0
 	modernc.org/sqlite v1.37.1
 )
 
@@ -50,23 +51,22 @@ require (
 	github.com/mattn/go-runewidth v0.0.16 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/ncruces/go-strftime v0.1.9 // indirect
-	github.com/olekukonko/tablewriter v1.0.6 // indirect
+	github.com/olekukonko/tablewriter v1.0.7 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
-	github.com/prometheus/client_model v0.6.1 // indirect
-	github.com/prometheus/common v0.62.0 // indirect
-	github.com/prometheus/procfs v0.15.1 // indirect
+	github.com/prometheus/client_model v0.6.2 // indirect
+	github.com/prometheus/common v0.64.0 // indirect
+	github.com/prometheus/procfs v0.16.1 // indirect
 	github.com/reiver/go-oi v1.0.0 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/ssor/bom v0.0.0-20170718123548-6386211fdfcf // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/vanng822/css v1.0.1 // indirect
-	golang.org/x/crypto v0.38.0 // indirect
-	golang.org/x/exp v0.0.0-20250506013437-ce4c2cf36ca6 // indirect
-	golang.org/x/image v0.27.0 // indirect
+	golang.org/x/exp v0.0.0-20250606033433-dcc06ee1d476 // indirect
+	golang.org/x/image v0.28.0 // indirect
 	golang.org/x/sys v0.33.0 // indirect
-	google.golang.org/protobuf v1.36.5 // indirect
-	modernc.org/libc v1.65.8 // indirect
+	google.golang.org/protobuf v1.36.6 // indirect
+	modernc.org/libc v1.65.10 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.11.0 // indirect
 )
