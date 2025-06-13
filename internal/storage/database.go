@@ -211,51 +211,50 @@ func StatsGet() MailboxStats {
 
 // CountTotal returns the number of emails in the database
 func CountTotal() uint64 {
-	var total uint64
+	var total float64 // use float64 for rqlite compatibility
 
 	_ = sqlf.From(tenant("mailbox")).
 		Select("COUNT(*)").To(&total).
 		QueryRowAndClose(context.TODO(), db)
 
-	return total
+	return uint64(total)
 }
 
 // CountUnread returns the number of emails in the database that are unread.
 func CountUnread() uint64 {
-	var total uint64
+	var total float64 // use float64 for rqlite compatibility
 
 	_ = sqlf.From(tenant("mailbox")).
 		Select("COUNT(*)").To(&total).
 		Where("Read = ?", 0).
 		QueryRowAndClose(context.TODO(), db)
 
-	return total
+	return uint64(total)
 }
 
 // CountRead returns the number of emails in the database that are read.
 func CountRead() uint64 {
-	var total uint64
+	var total float64 // use float64 for rqlite compatibility
 
 	_ = sqlf.From(tenant("mailbox")).
 		Select("COUNT(*)").To(&total).
 		Where("Read = ?", 1).
 		QueryRowAndClose(context.TODO(), db)
 
-	return total
+	return uint64(total)
 }
 
 // DbSize returns the size of the SQLite database.
 func DbSize() uint64 {
-	var total sql.NullInt64
+	var total sql.NullFloat64 // use float64 for rqlite compatibility
 
 	err := db.QueryRow("SELECT page_count * page_size AS size FROM pragma_page_count(), pragma_page_size()").Scan(&total)
 
 	if err != nil {
 		logger.Log().Errorf("[db] %s", err.Error())
-		return uint64(total.Int64)
 	}
 
-	return uint64(total.Int64)
+	return uint64(total.Float64)
 }
 
 // MessageIDExists checks whether a Message-ID exists in the DB
