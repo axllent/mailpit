@@ -100,6 +100,9 @@ func TestPOP3(t *testing.T) {
 		return
 	}
 
+	// allow for background delete when using rqlite driver
+	time.Sleep(time.Millisecond * 200)
+
 	c, err = connectAuth()
 	if err != nil {
 		t.Errorf(err.Error())
