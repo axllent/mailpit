@@ -39,12 +39,12 @@ func Search(search, timezone string, start int, beforeTS int64, limit int) ([]Me
 	var err error
 
 	if err := q.QueryAndClose(context.TODO(), db, func(row *sql.Rows) {
-		var created uint64
+		var created float64 // use float64 for rqlite compatibility
 		var id string
 		var messageID string
 		var subject string
 		var metadata string
-		var size uint64
+		var size float64 // use float64 for rqlite compatibility
 		var attachments int
 		var snippet string
 		var read int
@@ -65,7 +65,7 @@ func Search(search, timezone string, start int, beforeTS int64, limit int) ([]Me
 		em.ID = id
 		em.MessageID = messageID
 		em.Subject = subject
-		em.Size = size
+		em.Size = uint64(size)
 		em.Attachments = attachments
 		em.Read = read == 1
 		em.Snippet = snippet
@@ -111,7 +111,7 @@ func SearchUnreadCount(search, timezone string, beforeTS int64) (int64, error) {
 		q = q.Where(`Created < ?`, beforeTS)
 	}
 
-	var unread int64
+	var unread float64 // use float64 for rqlite compatibility
 
 	q = q.Where("Read = 0").Select(`COUNT(*)`)
 
@@ -128,9 +128,9 @@ func SearchUnreadCount(search, timezone string, beforeTS int64) (int64, error) {
 
 	elapsed := time.Since(tsStart)
 
-	logger.Log().Debugf("[db] counted %d unread for \"%s\" in %s", unread, search, elapsed)
+	logger.Log().Debugf("[db] counted %d unread for \"%s\" in %s", int64(unread), search, elapsed)
 
-	return unread, err
+	return int64(unread), err
 }
 
 // DeleteSearch will delete all messages for search terms.
@@ -144,12 +144,12 @@ func DeleteSearch(search, timezone string) error {
 	deleteSize := uint64(0)
 
 	if err := q.QueryAndClose(context.TODO(), db, func(row *sql.Rows) {
-		var created uint64
+		var created float64 // use float64 for rqlite compatibility
 		var id string
 		var messageID string
 		var subject string
 		var metadata string
-		var size uint64
+		var size float64 // use float64 for rqlite compatibility
 		var attachments int
 		var read int
 		var snippet string
@@ -161,7 +161,7 @@ func DeleteSearch(search, timezone string) error {
 		}
 
 		ids = append(ids, id)
-		deleteSize = deleteSize + size
+		deleteSize = deleteSize + uint64(size)
 	}); err != nil {
 		return err
 	}
@@ -264,12 +264,12 @@ func SetSearchReadStatus(search, timezone string, read bool) error {
 	ids := []string{}
 
 	if err := q.QueryAndClose(context.TODO(), db, func(row *sql.Rows) {
-		var created uint64
+		var created float64 // use float64 for rqlite compatibility
 		var id string
 		var messageID string
 		var subject string
 		var metadata string
-		var size uint64
+		var size float64 // use float64 for rqlite compatibility
 		var attachments int
 		var read int
 		var snippet string

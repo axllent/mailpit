@@ -36,7 +36,7 @@ func SettingPut(k, v string) error {
 
 // The total deleted message size as an int64 value
 func getDeletedSize() uint64 {
-	var result sql.NullInt64
+	var result sql.NullFloat64 // use float64 for rqlite compatibility
 	err := sqlf.From(tenant("settings")).
 		Select("Value").To(&result).
 		Where("Key = ?", "DeletedSize").
@@ -47,12 +47,12 @@ func getDeletedSize() uint64 {
 		return 0
 	}
 
-	return uint64(result.Int64)
+	return uint64(result.Float64)
 }
 
 // The total raw non-compressed messages size in bytes of all messages in the database
 func totalMessagesSize() uint64 {
-	var result sql.NullInt64
+	var result sql.NullFloat64
 	err := sqlf.From(tenant("mailbox")).
 		Select("SUM(Size)").To(&result).
 		QueryAndClose(context.TODO(), db, func(row *sql.Rows) {})
@@ -61,7 +61,7 @@ func totalMessagesSize() uint64 {
 		return 0
 	}
 
-	return uint64(result.Int64)
+	return uint64(result.Float64)
 }
 
 // AddDeletedSize will add the value to the DeletedSize setting

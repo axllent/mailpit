@@ -57,7 +57,7 @@ func pruneMessages() {
 
 	ids := []string{}
 	var prunedSize uint64
-	var size uint64
+	var size float64 // use float64 for rqlite compatibility
 
 	// prune using `--max` if set
 	if config.MaxMessages > 0 {
@@ -81,7 +81,7 @@ func pruneMessages() {
 					return
 				}
 				ids = append(ids, id)
-				prunedSize = prunedSize + size
+				prunedSize = prunedSize + uint64(size)
 
 			}); err != nil {
 				logger.Log().Errorf("[db] %s", err.Error())
@@ -110,7 +110,7 @@ func pruneMessages() {
 
 			if !tools.InArray(id, ids) {
 				ids = append(ids, id)
-				prunedSize = prunedSize + size
+				prunedSize = prunedSize + uint64(size)
 			}
 
 		}); err != nil {
