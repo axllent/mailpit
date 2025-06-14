@@ -171,7 +171,7 @@ func GetAllTags() []string {
 func GetAllTagsCount() map[string]int64 {
 	var tags = make(map[string]int64)
 	var name string
-	var total int64
+	var total float64 // use float64 for rqlite compatibility
 
 	if err := sqlf.
 		Select(`Name`).To(&name).
@@ -181,7 +181,7 @@ func GetAllTagsCount() map[string]int64 {
 		GroupBy(tenant("message_tags.TagID")).
 		OrderBy("Name").
 		QueryAndClose(context.TODO(), db, func(row *sql.Rows) {
-			tags[name] = total
+			tags[name] = int64(total)
 		}); err != nil {
 		logger.Log().Errorf("[db] %s", err.Error())
 	}

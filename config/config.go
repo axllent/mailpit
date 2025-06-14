@@ -237,6 +237,7 @@ type SMTPRelayConfigStruct struct {
 	AllowedRecipientsRegexp *regexp.Regexp // compiled regexp using AllowedRecipients
 	BlockedRecipients       string         `yaml:"blocked-recipients"` // regex, if set prevents relating to these addresses
 	BlockedRecipientsRegexp *regexp.Regexp // compiled regexp using BlockedRecipients
+	PreserveMessageIDs      bool           `yaml:"preserve-message-ids"` // preserve the original Message-ID when relaying
 
 	// DEPRECATED 2024/03/12
 	RecipientAllowlist string `yaml:"recipient-allowlist"`

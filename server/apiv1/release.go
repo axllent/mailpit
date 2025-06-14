@@ -176,13 +176,14 @@ func ReleaseMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// generate unique ID
-	uid := shortuuid.New() + "@mailpit"
-	// update Message-ID with unique ID
-	msg, err = tools.SetMessageHeader(msg, "Message-ID", "<"+uid+">")
-	if err != nil {
-		httpError(w, err.Error())
-		return
+	if !config.SMTPRelayConfig.PreserveMessageIDs {
+		// replace the Message-ID header with unique ID
+		uid := shortuuid.New() + "@mailpit"
+		msg, err = tools.SetMessageHeader(msg, "Message-ID", "<"+uid+">")
+		if err != nil {
+			httpError(w, err.Error())
+			return
+		}
 	}
 
 	if err := smtpd.Relay(from, data.To, msg); err != nil {

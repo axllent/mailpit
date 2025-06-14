@@ -2,6 +2,25 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.26.1]
+
+### Feature
+- Add relay config to preserve (keep) original Message-IDs when relaying messages ([#515](https://github.com/axllent/mailpit/issues/515))
+
+### Chore
+- Update Go dependencies
+- Update node dependencies
+- Update caniemail testing database
+
+### Fix
+- Add optional message_num argument in POP3 LIST command ([#518](https://github.com/axllent/mailpit/issues/518))
+- Use float64 for returned SQL value types for rqlite compatibility ([#520](https://github.com/axllent/mailpit/issues/520))
+
+### Test
+- Add small delay in POP3 test after disconnection to allow for background deletion in rqlite
+- Add automated tests using the rqlite database
+
+
 ## [v1.26.0]
 
 ### Feature

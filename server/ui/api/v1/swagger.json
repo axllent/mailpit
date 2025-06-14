@@ -2016,6 +2016,10 @@
               "description": "Overrides the \"From\" address for all relayed messages",
               "type": "string"
             },
+            "PreserveMessageIDs": {
+              "description": "Preserve the original Message-IDs when relaying messages",
+              "type": "boolean"
+            },
             "ReturnPath": {
               "description": "Enforced Return-Path (if set) for relay bounces",
               "type": "string"

@@ -140,8 +140,8 @@ export default {
 							will be rejected:
 							<code>{{ mailbox.uiConfig.MessageRelay.BlockedRecipients }}</code>
 						</li>
-						<li class="form-text">
-							For testing purposes, a new unique <code>Message-Id</code> will be generated on send.
+						<li v-if="!mailbox.uiConfig.MessageRelay.PreserveMessageIDs" class="form-text">
+							For testing purposes, a new unique <code>Message-ID</code> will be generated on send.
 						</li>
 						<li v-if="mailbox.uiConfig.MessageRelay.OverrideFrom != ''" class="form-text">
 							The <code>From</code> email address has been overridden by the relay configuration to

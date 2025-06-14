@@ -1,0 +1,29 @@
+name: Tests (rqlite)
+on:
+  pull_request:
+    branches: [ develop, 'feature/**' ]
+  push:
+    branches: [ develop, 'feature/**' ]
+
+jobs:
+  test-rqlite:
+    runs-on: ubuntu-latest
+    services:
+      rqlite:
+        image: rqlite/rqlite:latest
+        ports:
+          - 4001:4001
+        env:
+          # the HTTP address the rqlite node should advertise
+          HTTP_ADV_ADDR: "localhost:4001"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+          cache-dependency-path: "**/*.sum"
+      - run: go test -p 1 ./internal/storage ./server ./internal/smtpd ./internal/pop3 ./internal/tools ./internal/html2text ./internal/htmlcheck ./internal/linkcheck -v
+        env:
+          # set Mailpit to use the rqlite service container
+          MP_DATABASE: "http://localhost:4001"

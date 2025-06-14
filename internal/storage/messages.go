@@ -201,12 +201,12 @@ func List(start int, beforeTS int64, limit int) ([]MessageSummary, error) {
 	}
 
 	if err := q.QueryAndClose(context.TODO(), db, func(row *sql.Rows) {
-		var created uint64
+		var created float64 // use float64 for rqlite compatibility
 		var id string
 		var messageID string
 		var subject string
 		var metadata string
-		var size uint64
+		var size float64 // use float64 for rqlite compatibility
 		var attachments int
 		var read int
 		var snippet string
@@ -226,7 +226,7 @@ func List(start int, beforeTS int64, limit int) ([]MessageSummary, error) {
 		em.ID = id
 		em.MessageID = messageID
 		em.Subject = subject
-		em.Size = size
+		em.Size = uint64(size)
 		em.Attachments = attachments
 		em.Read = read == 1
 		em.Snippet = snippet
@@ -294,7 +294,7 @@ func GetMessage(id string) (*Message, error) {
 			Where(`ID = ?`, id)
 
 		if err := q.QueryAndClose(context.TODO(), db, func(row *sql.Rows) {
-			var created uint64
+			var created float64 // use float64 for rqlite compatibility
 
 			if err := row.Scan(&created); err != nil {
 				logger.Log().Errorf("[db] %s", err.Error())
@@ -621,12 +621,14 @@ func DeleteMessages(ids []string) error {
 
 	for rows.Next() {
 		var id string
-		var size uint64
+		var size float64 // use float64 for rqlite compatibility
+
 		if err := rows.Scan(&id, &size); err != nil {
 			return err
 		}
+
 		toDelete = append(toDelete, id)
-		totalSize = totalSize + size
+		totalSize = totalSize + uint64(size)
 	}
 
 	if err = rows.Err(); err != nil {
