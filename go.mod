@@ -22,17 +22,17 @@ require (
 	github.com/lithammer/shortuuid/v4 v4.2.0
 	github.com/mneis/go-telnet v0.0.0-20221017141824-6f643e477c62
 	github.com/prometheus/client_golang v1.22.0
-	github.com/rqlite/gorqlite v0.0.0-20250128004930-114c7828b55a
+	github.com/rqlite/gorqlite v0.0.0-20250609141355-ac86a4a1c9a8
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/pflag v1.0.6
 	github.com/tg123/go-htpasswd v1.2.4
-	github.com/vanng822/go-premailer v1.24.0
+	github.com/vanng822/go-premailer v1.25.0
 	golang.org/x/crypto v0.39.0
 	golang.org/x/net v0.41.0
 	golang.org/x/text v0.26.0
 	golang.org/x/time v0.12.0
-	modernc.org/sqlite v1.37.1
+	modernc.org/sqlite v1.38.0
 )
 
 require (
