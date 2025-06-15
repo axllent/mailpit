@@ -26,7 +26,7 @@ import (
 
 // Store will save an email to the database tables.
 // Returns the database ID of the saved message.
-func Store(body *[]byte) (string, error) {
+func Store(body *[]byte, username *string) (string, error) {
 	parser := enmime.NewParser(enmime.DisableCharacterDetection(true))
 
 	// Parse message body with enmime
@@ -50,6 +50,7 @@ func Store(body *[]byte) (string, error) {
 		Cc:      addressToSlice(env, "Cc"),
 		Bcc:     addressToSlice(env, "Bcc"),
 		ReplyTo: addressToSlice(env, "Reply-To"),
+		Username: username,
 	}
 
 	messageID := strings.Trim(env.GetHeader("Message-ID"), "<>")
@@ -91,13 +92,13 @@ func Store(body *[]byte) (string, error) {
 	snippet := tools.CreateSnippet(env.Text, env.HTML)
 
 	sql := fmt.Sprintf(`INSERT INTO %s 
-		(Created, ID, MessageID, Subject, Metadata, Size, Inline, Attachments, SearchText, Read, Snippet) 
-		VALUES(?,?,?,?,?,?,?,?,?,0,?)`,
+    	(Created, ID, MessageID, Subject, Metadata, Size, Inline, Attachments, SearchText, Read, Snippet, Username) 
+	    VALUES(?,?,?,?,?,?,?,?,?,0,?,?)`,
 		tenant("mailbox"),
 	) // #nosec
 
 	// insert mail summary data
-	_, err = tx.Exec(sql, created.UnixMilli(), id, messageID, subject, string(summaryJSON), size, inline, attachments, searchText, snippet)
+	_, err = tx.Exec(sql, created.UnixMilli(), id, messageID, subject, string(summaryJSON), size, inline, attachments, searchText, snippet, obj.Username)
 	if err != nil {
 		return "", err
 	}
@@ -145,6 +146,11 @@ func Store(body *[]byte) (string, error) {
 		tags = append(tags, obj.tagsFromPlusAddresses()...)
 	}
 
+	// auto-tag by username if enabled
+	if config.TagsUsername && username != nil && *username != "" {
+		tags = append(tags, *username)
+	}
+
 	// extract tags from search matches, and sort and extract unique tags
 	tags = sortedUniqueTags(append(tags, tagFilterMatches(id)...))
 
@@ -189,7 +195,7 @@ func List(start int, beforeTS int64, limit int) ([]MessageSummary, error) {
 	tsStart := time.Now()
 
 	q := sqlf.From(tenant("mailbox") + " m").
-		Select(`m.Created, m.ID, m.MessageID, m.Subject, m.Metadata, m.Size, m.Attachments, m.Read, m.Snippet`).
+		Select(`m.Created, m.ID, m.MessageID, m.Subject, m.Metadata, m.Size, m.Attachments, m.Read, m.Snippet, m.Username`).
 		OrderBy("m.Created DESC")
 
 	if limit > 0 {
@@ -210,11 +216,16 @@ func List(start int, beforeTS int64, limit int) ([]MessageSummary, error) {
 		var attachments int
 		var read int
 		var snippet string
+		var username sql.NullString
 		em := MessageSummary{}
 
-		if err := row.Scan(&created, &id, &messageID, &subject, &metadata, &size, &attachments, &read, &snippet); err != nil {
+		if err := row.Scan(&created, &id, &messageID, &subject, &metadata, &size, &attachments, &read, &snippet, &username); err != nil {
 			logger.Log().Errorf("[db] %s", err.Error())
 			return
+		}
+
+		if username.Valid {
+			em.Username = &username.String
 		}
 
 		if err := json.Unmarshal([]byte(metadata), &em); err != nil {
@@ -270,6 +281,13 @@ func GetMessage(id string) (*Message, error) {
 	if err != nil {
 		return nil, err
 	}
+	var username sql.NullString
+	
+	row := db.QueryRow(fmt.Sprintf("SELECT Username FROM %s WHERE ID = ?", tenant("mailbox")), id)
+	if err := row.Scan(&username); err != nil {
+		return nil, err
+	}
+
 
 	var from *mail.Address
 	fromData := addressToSlice(env, "From")
@@ -321,13 +339,18 @@ func GetMessage(id string) (*Message, error) {
 		ReturnPath: returnPath,
 		Subject:    env.GetHeader("Subject"),
 		Tags:       getMessageTags(id),
+		Username:   nil,
 		Size:       uint64(len(raw)),
 		Text:       env.Text,
 	}
-
+	
 	obj.HTML = env.HTML
 	obj.Inline = []Attachment{}
 	obj.Attachments = []Attachment{}
+
+	if username.Valid {
+		obj.Username = &username.String
+	}
 
 	for _, i := range env.Inlines {
 		if i.FileName != "" || i.ContentID != "" {

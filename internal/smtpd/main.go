@@ -28,12 +28,12 @@ var (
 )
 
 // MailHandler handles the incoming message to store in the database
-func mailHandler(origin net.Addr, from string, to []string, data []byte) (string, error) {
-	return SaveToDatabase(origin, from, to, data)
+func mailHandler(origin net.Addr, from string, to []string, data []byte, username *string) (string, error) {
+	return SaveToDatabase(origin, from, to, data, username)
 }
 
 // SaveToDatabase will attempt to save a message to the database
-func SaveToDatabase(origin net.Addr, from string, to []string, data []byte) (string, error) {
+func SaveToDatabase(origin net.Addr, from string, to []string, data []byte, username *string) (string, error) {
 	if !config.SMTPStrictRFCHeaders && bytes.Contains(data, []byte("\r\r\n")) {
 		// replace all <CR><CR><LF> (\r\r\n) with <CR><LF> (\r\n)
 		// @see https://github.com/axllent/mailpit/issues/87 & https://github.com/axllent/mailpit/issues/153
@@ -110,7 +110,7 @@ func SaveToDatabase(origin net.Addr, from string, to []string, data []byte) (str
 		logger.Log().Debugf("[smtpd] added missing addresses to Bcc header: %s", strings.Join(missingAddresses, ", "))
 	}
 
-	id, err := storage.Store(&data)
+	id, err := storage.Store(&data, username)
 	if err != nil {
 		logger.Log().Errorf("[db] error storing message: %s", err.Error())
 		return "", err
