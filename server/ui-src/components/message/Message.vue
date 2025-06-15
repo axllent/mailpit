@@ -418,6 +418,12 @@ export default {
 								<small class="ms-2">({{ getFileSize(message.Size) }})</small>
 							</td>
 						</tr>
+						<tr v-if="message.Username" class="small">
+							<th class="small">Username</th>
+							<td class="small">
+								{{ message.Username }}
+							</td>
+						</tr>
 						<tr class="small">
 							<th>Tags</th>
 							<td>

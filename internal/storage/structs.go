@@ -34,6 +34,8 @@ type Message struct {
 	Date time.Time
 	// Message tags
 	Tags []string
+	// SMTP username (if provided)
+	Username *string `json:"Username"`
 	// Message body text
 	Text string
 	// Message body HTML
@@ -86,6 +88,8 @@ type MessageSummary struct {
 	Subject string
 	// Received RFC3339Nano date & time ([extended RFC3339](https://tools.ietf.org/html/rfc3339#section-5.6) format with optional nano seconds)
 	Created time.Time
+	// SMTP username (if provided)
+	Username *string
 	// Message tags
 	Tags []string
 	// Message size in bytes (total)
@@ -110,6 +114,7 @@ type DBMailSummary struct {
 	Cc      []*mail.Address
 	Bcc     []*mail.Address
 	ReplyTo []*mail.Address
+	Username *string
 }
 
 // ListUnsubscribe contains a summary of List-Unsubscribe & List-Unsubscribe-Post headers
