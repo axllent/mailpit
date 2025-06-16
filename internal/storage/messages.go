@@ -44,13 +44,15 @@ func Store(body *[]byte, username *string) (string, error) {
 		from = &mail.Address{Name: env.GetHeader("From")}
 	}
 
-	obj := DBMailSummary{
+	obj := Metadata{
 		From:    from,
 		To:      addressToSlice(env, "To"),
 		Cc:      addressToSlice(env, "Cc"),
 		Bcc:     addressToSlice(env, "Bcc"),
 		ReplyTo: addressToSlice(env, "Reply-To"),
-		Username: username,
+	}
+	if username != nil {
+		obj.Username = *username
 	}
 
 	messageID := strings.Trim(env.GetHeader("Message-ID"), "<>")
@@ -92,13 +94,13 @@ func Store(body *[]byte, username *string) (string, error) {
 	snippet := tools.CreateSnippet(env.Text, env.HTML)
 
 	sql := fmt.Sprintf(`INSERT INTO %s 
-    	(Created, ID, MessageID, Subject, Metadata, Size, Inline, Attachments, SearchText, Read, Snippet, Username) 
-	    VALUES(?,?,?,?,?,?,?,?,?,0,?,?)`,
+    	(Created, ID, MessageID, Subject, Metadata, Size, Inline, Attachments, SearchText, Read, Snippet) 
+	    VALUES(?,?,?,?,?,?,?,?,?,0,?)`,
 		tenant("mailbox"),
 	) // #nosec
 
 	// insert mail summary data
-	_, err = tx.Exec(sql, created.UnixMilli(), id, messageID, subject, string(summaryJSON), size, inline, attachments, searchText, snippet, obj.Username)
+	_, err = tx.Exec(sql, created.UnixMilli(), id, messageID, subject, string(summaryJSON), size, inline, attachments, searchText, snippet)
 	if err != nil {
 		return "", err
 	}
@@ -195,7 +197,7 @@ func List(start int, beforeTS int64, limit int) ([]MessageSummary, error) {
 	tsStart := time.Now()
 
 	q := sqlf.From(tenant("mailbox") + " m").
-		Select(`m.Created, m.ID, m.MessageID, m.Subject, m.Metadata, m.Size, m.Attachments, m.Read, m.Snippet, m.Username`).
+		Select(`m.Created, m.ID, m.MessageID, m.Subject, m.Metadata, m.Size, m.Attachments, m.Read, m.Snippet`).
 		OrderBy("m.Created DESC")
 
 	if limit > 0 {
@@ -211,27 +213,31 @@ func List(start int, beforeTS int64, limit int) ([]MessageSummary, error) {
 		var id string
 		var messageID string
 		var subject string
-		var metadata string
+		var metadataJSON string
 		var size float64 // use float64 for rqlite compatibility
 		var attachments int
 		var read int
 		var snippet string
-		var username sql.NullString
 		em := MessageSummary{}
+		var meta Metadata
 
-		if err := row.Scan(&created, &id, &messageID, &subject, &metadata, &size, &attachments, &read, &snippet, &username); err != nil {
+		err := row.Scan(&created, &id, &messageID, &subject, &metadataJSON, &size, &attachments, &read, &snippet)
+		if err != nil {
 			logger.Log().Errorf("[db] %s", err.Error())
 			return
 		}
 
-		if username.Valid {
-			em.Username = &username.String
-		}
-
-		if err := json.Unmarshal([]byte(metadata), &em); err != nil {
+		if err := json.Unmarshal([]byte(metadataJSON), &meta); err != nil {
 			logger.Log().Errorf("[json] %s", err.Error())
 			return
 		}
+
+		em.From = meta.From
+		em.To = meta.To
+		em.Cc = meta.Cc
+		em.Bcc = meta.Bcc
+		em.ReplyTo = meta.ReplyTo
+		em.Username = meta.Username
 
 		em.Created = time.UnixMilli(int64(created))
 		em.ID = id
@@ -281,21 +287,22 @@ func GetMessage(id string) (*Message, error) {
 	if err != nil {
 		return nil, err
 	}
-	var username sql.NullString
-	
-	row := db.QueryRow(fmt.Sprintf("SELECT Username FROM %s WHERE ID = ?", tenant("mailbox")), id)
-	if err := row.Scan(&username); err != nil {
-		return nil, err
+
+	// Load metadata from DB
+	meta, err := GetMetadata(id)
+	if err != nil {
+		meta = Metadata{}
 	}
 
-
-	var from *mail.Address
-	fromData := addressToSlice(env, "From")
-	if len(fromData) > 0 {
-		from = fromData[0]
-	} else if env.GetHeader("From") != "" {
-		from = &mail.Address{Name: env.GetHeader("From")}
+	from := meta.From
+	if from == nil {
+		fromData := addressToSlice(env, "From")
+		if len(fromData) > 0 {
+			from = fromData[0]
+		} else if env.GetHeader("From") != "" {
+			from = &mail.Address{Name: env.GetHeader("From")}
 	}
+}
 
 	messageID := strings.Trim(env.GetHeader("Message-ID"), "<>")
 
@@ -320,7 +327,6 @@ func GetMessage(id string) (*Message, error) {
 			}
 
 			logger.Log().Debugf("[db] %s does not contain a date header, using received datetime", id)
-
 			date = time.UnixMilli(int64(created))
 		}); err != nil {
 			logger.Log().Errorf("[db] %s", err.Error())
@@ -339,18 +345,13 @@ func GetMessage(id string) (*Message, error) {
 		ReturnPath: returnPath,
 		Subject:    env.GetHeader("Subject"),
 		Tags:       getMessageTags(id),
-		Username:   nil,
 		Size:       uint64(len(raw)),
 		Text:       env.Text,
+		Username:   meta.Username,
 	}
-	
 	obj.HTML = env.HTML
 	obj.Inline = []Attachment{}
 	obj.Attachments = []Attachment{}
-
-	if username.Valid {
-		obj.Username = &username.String
-	}
 
 	for _, i := range env.Inlines {
 		if i.FileName != "" || i.ContentID != "" {
@@ -769,4 +770,17 @@ func DeleteAllMessages() error {
 	websockets.Broadcast("truncate", nil)
 
 	return err
+}
+
+func GetMetadata(id string) (Metadata, error) {
+	var metadataJSON string
+	row := db.QueryRow(fmt.Sprintf("SELECT Metadata FROM %s WHERE ID = ?", tenant("mailbox")), id)
+	if err := row.Scan(&metadataJSON); err != nil {
+		return Metadata{}, err
+	}
+	var meta Metadata
+	if err := json.Unmarshal([]byte(metadataJSON), &meta); err != nil {
+		return Metadata{}, err
+	}
+	return meta, nil
 }

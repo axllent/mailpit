@@ -372,6 +372,7 @@ func initConfigFromEnv() {
 	config.TagsConfig = os.Getenv("MP_TAGS_CONFIG")
 	tools.TagsTitleCase = getEnabledFromEnv("MP_TAGS_TITLE_CASE")
 	config.TagsDisable = os.Getenv("MP_TAGS_DISABLE")
+	config.TagsUsername = getEnabledFromEnv("MP_TAGS_USERNAME")
 
 	// Prometheus metrics
 	if len(os.Getenv("MP_ENABLE_PROMETHEUS")) > 0 {
