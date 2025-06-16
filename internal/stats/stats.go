@@ -11,9 +11,16 @@ import (
 	"github.com/axllent/mailpit/internal/updater"
 )
 
+type versionCache struct {
+	value    string
+	err      error
+	expiry   time.Time
+	errCount int
+}
+
 var (
 	// to prevent hammering Github for latest version
-	latestVersionCache string
+	vCache versionCache
 
 	// StartedAt is set to the current ime when Mailpit starts
 	startedAt time.Time
@@ -62,6 +69,14 @@ type AppInformation struct {
 	}
 }
 
+func getBackoff(errCount int) time.Duration {
+	backoff := time.Duration(1<<errCount) * time.Minute
+	if backoff > 30*time.Minute {
+		backoff = 30 * time.Minute
+	}
+	return backoff
+}
+
 // Load the current statistics
 func Load() AppInformation {
 	info := AppInformation{}
@@ -78,20 +93,32 @@ func Load() AppInformation {
 	info.RuntimeStats.SMTPRejected = smtpRejected
 	info.RuntimeStats.SMTPIgnored = smtpIgnored
 
-	if latestVersionCache != "" {
-		info.LatestVersion = latestVersionCache
-	} else {
-		latest, _, _, err := updater.GithubLatest(config.Repo, config.RepoBinaryName)
-		if err == nil {
-			info.LatestVersion = latest
-			latestVersionCache = latest
+	mu.RLock()
+	cacheValid := time.Now().Before(vCache.expiry)
+	cacheValue := vCache.value
+	mu.RUnlock()
 
-			// clear latest version cache after 5 minutes
-			go func() {
-				time.Sleep(15 * time.Minute)
-				latestVersionCache = ""
-			}()
+	if cacheValid {
+		info.LatestVersion = cacheValue
+	} else {
+		mu.Lock()
+		// Re-check after acquiring write lock in case another goroutine refreshed it
+		if time.Now().Before(vCache.expiry) {
+			info.LatestVersion = vCache.value
+		} else {
+			latest, _, _, err := updater.GithubLatest(config.Repo, config.RepoBinaryName)
+			if err == nil {
+				vCache = versionCache{value: latest, expiry: time.Now().Add(15 * time.Minute)}
+				info.LatestVersion = latest
+			} else {
+				vCache.errCount++
+				vCache.err = err
+				vCache.value = "error"
+				vCache.expiry = time.Now().Add(getBackoff(vCache.errCount))
+				info.LatestVersion = "error"
+			}
 		}
+		mu.Unlock()
 	}
 
 	info.Database = config.Database
