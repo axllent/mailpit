@@ -11,15 +11,19 @@ import (
 	"github.com/axllent/mailpit/internal/updater"
 )
 
+// Stores cached version  along with its expiry time and error count.
+// Used to minimize repeated version lookups and track consecutive errors.
 type versionCache struct {
+	// github version string
 	value    string
-	err      error
+	// time to expire the cache
 	expiry   time.Time
+	// count of consecutive errors
 	errCount int
 }
 
 var (
-	// to prevent hammering Github for latest version
+	// Version cache storing the latest GitHub version
 	vCache versionCache
 
 	// StartedAt is set to the current ime when Mailpit starts
@@ -69,6 +73,7 @@ type AppInformation struct {
 	}
 }
 
+// Calculates exponential backoff duration based on the error count.
 func getBackoff(errCount int) time.Duration {
 	backoff := time.Duration(1<<errCount) * time.Minute
 	if backoff > 30*time.Minute {
@@ -112,10 +117,9 @@ func Load() AppInformation {
 				info.LatestVersion = latest
 			} else {
 				vCache.errCount++
-				vCache.err = err
-				vCache.value = "error"
+				vCache.value = ""
 				vCache.expiry = time.Now().Add(getBackoff(vCache.errCount))
-				info.LatestVersion = "error"
+				info.LatestVersion = ""
 			}
 		}
 		mu.Unlock()
