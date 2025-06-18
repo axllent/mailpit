@@ -1554,6 +1554,10 @@
           "items": {
             "$ref": "#/definitions/Address"
           }
+        },
+        "Username": {
+          "description": "Username used for authentication (if provided) with the SMTP or Send API",
+          "type": "string"
         }
       },
       "x-go-package": "github.com/axllent/mailpit/internal/storage"
@@ -1646,6 +1650,10 @@
           "items": {
             "$ref": "#/definitions/Address"
           }
+        },
+        "Username": {
+          "description": "Username used for authentication (if provided) with the SMTP or Send API",
+          "type": "string"
         }
       },
       "x-go-package": "github.com/axllent/mailpit/internal/storage"

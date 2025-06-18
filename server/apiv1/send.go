@@ -175,7 +175,12 @@ func SendMessageHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, err := data.Send(r.RemoteAddr)
+	var httpAuthUser *string
+	if user, _, ok := r.BasicAuth(); ok {
+		httpAuthUser = &user
+	}
+
+	id, err := data.Send(r.RemoteAddr, httpAuthUser)
 
 	if err != nil {
 		httpJSONError(w, err.Error())
@@ -190,7 +195,7 @@ func SendMessageHandler(w http.ResponseWriter, r *http.Request) {
 
 // Send will validate the message structure and attempt to send to Mailpit.
 // It returns a sending summary or an error.
-func (d SendRequest) Send(remoteAddr string) (string, error) {
+func (d SendRequest) Send(remoteAddr string, httpAuthUser *string) (string, error) {
 	ip, _, err := net.SplitHostPort(remoteAddr)
 	if err != nil {
 		return "", fmt.Errorf("error parsing request RemoteAddr: %s", err.Error())
@@ -302,5 +307,5 @@ func (d SendRequest) Send(remoteAddr string) (string, error) {
 		return "", fmt.Errorf("error building message: %s", err.Error())
 	}
 
-	return smtpd.SaveToDatabase(ipAddr, d.From.Email, addresses, buff.Bytes())
+	return smtpd.SaveToDatabase(ipAddr, d.From.Email, addresses, buff.Bytes(), httpAuthUser)
 }

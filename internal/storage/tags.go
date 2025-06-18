@@ -323,7 +323,7 @@ func findTagsInRawMessage(message *[]byte) []string {
 }
 
 // Returns tags found in email plus addresses (eg: test+tagname@example.com)
-func (d DBMailSummary) tagsFromPlusAddresses() []string {
+func (d Metadata) tagsFromPlusAddresses() []string {
 	tags := []string{}
 	for _, c := range d.To {
 		matches := addressPlusRe.FindAllStringSubmatch(c.Address, 1)

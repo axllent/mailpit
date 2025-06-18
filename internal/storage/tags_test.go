@@ -24,7 +24,7 @@ func TestTags(t *testing.T) {
 		ids := []string{}
 
 		for i := 0; i < 10; i++ {
-			id, err := Store(&testMimeEmail)
+			id, err := Store(&testMimeEmail, nil)
 			if err != nil {
 				t.Log("error ", err)
 				t.Fail()
@@ -57,7 +57,7 @@ func TestTags(t *testing.T) {
 		}
 
 		// test 20 tags
-		id, err := Store(&testMimeEmail)
+		id, err := Store(&testMimeEmail, nil)
 		if err != nil {
 			t.Log("error ", err)
 			t.Fail()
@@ -124,7 +124,7 @@ func TestTags(t *testing.T) {
 		}
 
 		// test 20 tags
-		id, err = Store(&testTagEmail)
+		id, err = Store(&testTagEmail, nil)
 		if err != nil {
 			t.Log("error ", err)
 			t.Fail()
@@ -140,4 +140,49 @@ func TestTags(t *testing.T) {
 		Close()
 	}
 
+}
+func TestUsernameAutoTagging(t *testing.T) {
+	setup("")
+	defer Close()
+
+	username := "testuser"
+
+	t.Run("Auto-tagging enabled", func(t *testing.T) {
+		config.TagsUsername = true
+		id, err := Store(&testTextEmail, &username)
+		if err != nil {
+			t.Fatalf("Store failed: %v", err)
+		}
+		msg, err := GetMessage(id)
+		if err != nil {
+			t.Fatalf("GetMessage failed: %v", err)
+		}
+		found := false
+		for _, tag := range msg.Tags {
+			if tag == username {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Errorf("Expected username '%s' in tags, got %v", username, msg.Tags)
+		}
+	})
+
+	t.Run("Auto-tagging disabled", func(t *testing.T) {
+		config.TagsUsername = false
+		id, err := Store(&testTextEmail, &username)
+		if err != nil {
+			t.Fatalf("Store failed: %v", err)
+		}
+		msg, err := GetMessage(id)
+		if err != nil {
+			t.Fatalf("GetMessage failed: %v", err)
+		}
+		for _, tag := range msg.Tags {
+			if tag == username {
+				t.Errorf("Did not expect username '%s' in tags when disabled, got %v", username, msg.Tags)
+			}
+		}
+	})
 }

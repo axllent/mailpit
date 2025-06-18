@@ -42,7 +42,7 @@ type Handler func(remoteAddr net.Addr, from string, to []string, data []byte) er
 
 // MsgIDHandler function called upon successful receipt of an email. Returns a message ID.
 // Results in a "250 2.0.0 Ok: queued as <message-id>" response.
-type MsgIDHandler func(remoteAddr net.Addr, from string, to []string, data []byte) (string, error)
+type MsgIDHandler func(remoteAddr net.Addr, from string, to []string, data []byte, username *string) (string, error)
 
 // HandlerRcpt function called on RCPT. Return accept status.
 type HandlerRcpt func(remoteAddr net.Addr, from string, to string) bool
@@ -255,6 +255,7 @@ type session struct {
 	xClientTrust  bool   // Trust XCLIENT from current IP address
 	tls           bool
 	authenticated bool
+	username      *string // username, nil if not authenticated
 }
 
 // Create new session from connection.
@@ -550,7 +551,7 @@ loop:
 				}
 				s.writef("250 2.0.0 Ok: queued")
 			} else if s.srv.MsgIDHandler != nil {
-				msgID, err := s.srv.MsgIDHandler(s.conn.RemoteAddr(), from, to, buffer.Bytes())
+				msgID, err := s.srv.MsgIDHandler(s.conn.RemoteAddr(), from, to, buffer.Bytes(), s.username)
 				if err != nil {
 					checkErrFormat := regexp.MustCompile(`^([2-5][0-9]{2})[\s\-](.+)$`)
 					if checkErrFormat.MatchString(err.Error()) {
@@ -917,6 +918,12 @@ func (s *session) handleAuthLogin(arg string) (bool, error) {
 
 	// Validate credentials.
 	authenticated, err := s.srv.AuthHandler(s.conn.RemoteAddr(), "LOGIN", username, password, nil)
+	if authenticated {
+		uname := string(username)
+		s.username = &uname
+	} else {
+		s.username = nil
+	}
 
 	return authenticated, err
 }

@@ -323,8 +323,9 @@ export default {
 							<th class="small">From</th>
 							<td class="privacy">
 								<span v-if="message.From">
-									<span v-if="message.From.Name" class="text-spaces">{{ message.From.Name + " "
-										}}</span>
+									<span v-if="message.From.Name" class="text-spaces">
+										{{ message.From.Name + " " }}
+									</span>
 									<span v-if="message.From.Address" class="small">
 										&lt;<a :href="searchURI(message.From.Address)" class="text-body">
 											{{ message.From.Address }}
@@ -416,6 +417,18 @@ export default {
 							<td>
 								{{ messageDate(message.Date) }}
 								<small class="ms-2">({{ getFileSize(message.Size) }})</small>
+							</td>
+						</tr>
+						<tr v-if="message.Username" class="small">
+							<th class="small">
+								Username
+								<i class="bi bi-exclamation-circle ms-1" data-bs-toggle="tooltip"
+									data-bs-placement="top" data-bs-custom-class="custom-tooltip"
+									data-bs-title="The SMTP or send API username the client authenticated with">
+								</i>
+							</th>
+							<td class="small">
+								{{ message.Username }}
 							</td>
 						</tr>
 						<tr class="small">
