@@ -91,20 +91,22 @@ export default {
 					<div class="modal-body">
 						<div class="row g-3">
 							<div class="col-xl-6">
-								<div class="row g-3" v-if="mailbox.appInfo.LatestVersion == ''">
-									<div class="col">
-										<div class="alert alert-warning mb-3">
-											There might be a newer version available. The check failed.
+								<div v-if="mailbox.appInfo.LatestVersion != 'disabled'">
+									<div class="row g-3" v-if="mailbox.appInfo.LatestVersion == ''">
+										<div class="col">
+											<div class="alert alert-warning mb-3">
+												There might be a newer version available. The check failed.
+											</div>
 										</div>
 									</div>
-								</div>
-								<div class="row g-3"
-									v-else-if="mailbox.appInfo.Version != mailbox.appInfo.LatestVersion">
-									<div class="col">
-										<a class="btn btn-warning d-block mb-3"
-											:href="'https://github.com/axllent/mailpit/releases/tag/' + mailbox.appInfo.LatestVersion">
-											A new version of Mailpit ({{ mailbox.appInfo.LatestVersion }}) is available.
-										</a>
+									<div class="row g-3"
+										v-else-if="mailbox.appInfo.Version != mailbox.appInfo.LatestVersion">
+										<div class="col">
+											<a class="btn btn-warning d-block mb-3"
+												:href="'https://github.com/axllent/mailpit/releases/tag/' + mailbox.appInfo.LatestVersion">
+												A new version of Mailpit ({{ mailbox.appInfo.LatestVersion }}) is available.
+											</a>
+										</div>
 									</div>
 								</div>
 								<div class="row g-3">

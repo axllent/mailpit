@@ -97,32 +97,36 @@ func Load() AppInformation {
 	info.RuntimeStats.SMTPRejected = smtpRejected
 	info.RuntimeStats.SMTPIgnored = smtpIgnored
 
-	mu.RLock()
-	cacheValid := time.Now().Before(vCache.expiry)
-	cacheValue := vCache.value
-	mu.RUnlock()
-
-	if cacheValid {
-		info.LatestVersion = cacheValue
+	if config.DisableVersionCheck {
+		info.LatestVersion = "disabled"
 	} else {
-		mu.Lock()
-		// Re-check after acquiring write lock in case another goroutine refreshed it
-		if time.Now().Before(vCache.expiry) {
-			info.LatestVersion = vCache.value
+		mu.RLock()
+		cacheValid := time.Now().Before(vCache.expiry)
+		cacheValue := vCache.value
+		mu.RUnlock()
+
+		if cacheValid {
+			info.LatestVersion = cacheValue
 		} else {
-			latest, _, _, err := updater.GithubLatest(config.Repo, config.RepoBinaryName)
-			if err == nil {
-				vCache = versionCache{value: latest, expiry: time.Now().Add(15 * time.Minute)}
-				info.LatestVersion = latest
+			mu.Lock()
+			// Re-check after acquiring write lock in case another goroutine refreshed it
+			if time.Now().Before(vCache.expiry) {
+				info.LatestVersion = vCache.value
 			} else {
+				latest, _, _, err := updater.GithubLatest(config.Repo, config.RepoBinaryName)
+				if err == nil {
+					vCache = versionCache{value: latest, expiry: time.Now().Add(15 * time.Minute)}
+					info.LatestVersion = latest
+				} else {
 				logger.Log().Errorf("Failed to fetch latest version: %v", err)
-				vCache.errCount++
-				vCache.value = ""
-				vCache.expiry = time.Now().Add(getBackoff(vCache.errCount))
-				info.LatestVersion = ""
+					vCache.errCount++
+					vCache.value = ""
+					vCache.expiry = time.Now().Add(getBackoff(vCache.errCount))
+					info.LatestVersion = ""
+				}
 			}
+			mu.Unlock()
 		}
-		mu.Unlock()
 	}
 
 	info.Database = config.Database
