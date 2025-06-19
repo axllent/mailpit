@@ -213,6 +213,9 @@ var (
 	// DisableHTMLCheck DEPRECATED 2024/04/13 - kept here to display console warning only
 	DisableHTMLCheck = false
 
+	// DisableVersionCheck disables version checking
+	DisableVersionCheck bool
+
 	// DemoMode disables SMTP relay, link checking & HTTP send functionality
 	DemoMode = false
 )
