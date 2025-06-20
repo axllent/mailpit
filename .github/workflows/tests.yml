@@ -36,9 +36,14 @@ jobs:
       with:
         node-version: 22
         cache: 'npm'
-    - if: startsWith(matrix.os, 'ubuntu') == true
+    - name: Install JavaScript dependencies
+      if: startsWith(matrix.os, 'ubuntu') == true
       run: npm install
-    - if: startsWith(matrix.os, 'ubuntu') == true
+    - name: Run JavaScript linting
+      if: startsWith(matrix.os, 'ubuntu') == true
+      run: npm run lint
+    - name: Test JavaScript packaging
+      if: startsWith(matrix.os, 'ubuntu') == true
       run: npm run package
 
     # validate the swagger file
