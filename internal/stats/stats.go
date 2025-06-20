@@ -118,7 +118,7 @@ func Load() AppInformation {
 					vCache = versionCache{value: latest, expiry: time.Now().Add(15 * time.Minute)}
 					info.LatestVersion = latest
 				} else {
-				logger.Log().Errorf("Failed to fetch latest version: %v", err)
+					logger.Log().Errorf("Failed to fetch latest version: %v", err)
 					vCache.errCount++
 					vCache.value = ""
 					vCache.expiry = time.Now().Add(getBackoff(vCache.errCount))
