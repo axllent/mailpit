@@ -70,21 +70,22 @@ type Result struct {
 
 // dial connects to spamd through TCP or a Unix socket.
 func (c *Client) dial() (connection, error) {
-	if c.net == "tcp" {
+	switch c.net {
+	case "tcp":
 		tcpAddr, err := net.ResolveTCPAddr("tcp", c.addr)
 		if err != nil {
 			return nil, err
 		}
 		return net.DialTCP("tcp", nil, tcpAddr)
-	} else if c.net == "unix" {
+	case "unix":
 		unixAddr, err := net.ResolveUnixAddr("unix", c.addr)
 		if err != nil {
 			return nil, err
 		}
 		return net.DialUnix("unix", nil, unixAddr)
+	default:
+		return nil, fmt.Errorf("unsupported network type: %s", c.net)
 	}
-
-	panic("Client.net must be either \"tcp\" or \"unix\"")
 }
 
 // Report checks if message is spam or not, and returns score plus report
@@ -103,7 +104,7 @@ func (c *Client) report(email []byte) ([]string, error) {
 		return nil, err
 	}
 
-	defer conn.Close()
+	defer func() { _ = conn.Close() }()
 
 	if err := conn.SetDeadline(time.Now().Add(time.Duration(c.timeout) * time.Second)); err != nil {
 		return nil, err
@@ -221,7 +222,7 @@ func (c *Client) Ping() error {
 	if err != nil {
 		return err
 	}
-	defer conn.Close()
+	defer func() { _ = conn.Close() }()
 
 	if err := conn.SetDeadline(time.Now().Add(time.Duration(c.timeout) * time.Second)); err != nil {
 		return err

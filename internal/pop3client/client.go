@@ -422,7 +422,7 @@ func (c *Conn) Noop() error {
 // Message deletions (DELE command) are only executed by the server on a graceful
 // quit and close.
 func (c *Conn) Quit() error {
-	defer c.conn.Close()
+	defer func() { _ = c.conn.Close() }()
 
 	if _, err := c.Cmd("QUIT", false); err != nil {
 		return err

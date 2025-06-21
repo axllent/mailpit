@@ -217,7 +217,7 @@ func (srv *Server) Serve(ln net.Listener) error {
 		return ErrServerClosed
 	}
 
-	defer ln.Close()
+	defer func() { _ = ln.Close() }()
 
 	for {
 		// if we are shutting down, don't accept new connections
@@ -229,7 +229,7 @@ func (srv *Server) Serve(ln net.Listener) error {
 
 		conn, err := ln.Accept()
 		if err != nil {
-			if netErr, ok := err.(net.Error); ok && netErr.Temporary() {
+			if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
 				continue
 			}
 			return err
@@ -356,7 +356,9 @@ func (srv *Server) Shutdown(ctx context.Context) error {
 // Function called to handle connection requests.
 func (s *session) serve() {
 	defer atomic.AddInt32(&s.srv.openSessions, -1)
-	defer s.conn.Close()
+	// pass the connection into the defer function to ensure it is closed,
+	// otherwise results in a 5s timeout for each connection
+	defer func(c net.Conn) { _ = c.Close() }(s.conn)
 
 	var from string
 	var gotFrom bool
@@ -517,9 +519,9 @@ loop:
 			// On other errors, allow the client to try again.
 			data, err := s.readData()
 			if err != nil {
-				switch err.(type) {
+				switch err := err.(type) {
 				case net.Error:
-					if err.(net.Error).Timeout() {
+					if err.Timeout() {
 						s.writef("421 4.4.2 %s %s ESMTP Service closing transmission channel after timeout exceeded", s.srv.Hostname, s.srv.AppName)
 					}
 					break loop
@@ -749,7 +751,7 @@ func (s *session) writef(format string, args ...interface{}) {
 	}
 
 	line := fmt.Sprintf(format, args...)
-	fmt.Fprintf(s.bw, "%s\r\n", line)
+	_, _ = fmt.Fprintf(s.bw, "%s\r\n", line)
 	_ = s.bw.Flush()
 
 	if Debug {

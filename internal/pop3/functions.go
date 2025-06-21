@@ -18,7 +18,7 @@ func authUser(username, password string) bool {
 
 // Send a response with debug logging
 func sendResponse(c net.Conn, m string) {
-	fmt.Fprintf(c, "%s\r\n", m)
+	_, _ = fmt.Fprintf(c, "%s\r\n", m)
 	logger.Log().Debugf("[pop3] response: %s", m)
 
 	if strings.HasPrefix(m, "-ERR ") {
@@ -29,7 +29,7 @@ func sendResponse(c net.Conn, m string) {
 
 // Send a response without debug logging (for data)
 func sendData(c net.Conn, m string) {
-	fmt.Fprintf(c, "%s\r\n", m)
+	_, _ = fmt.Fprintf(c, "%s\r\n", m)
 }
 
 // Get the latest 100 messages

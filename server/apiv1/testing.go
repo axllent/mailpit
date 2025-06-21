@@ -67,7 +67,7 @@ func GetMessageHTML(w http.ResponseWriter, r *http.Request) {
 		id, err = storage.LatestID(r)
 		if err != nil {
 			w.WriteHeader(404)
-			fmt.Fprint(w, err.Error())
+			_, _ = fmt.Fprint(w, err.Error())
 			return
 		}
 	}
@@ -75,12 +75,12 @@ func GetMessageHTML(w http.ResponseWriter, r *http.Request) {
 	msg, err := storage.GetMessage(id)
 	if err != nil {
 		w.WriteHeader(404)
-		fmt.Fprint(w, "Message not found")
+		_, _ = fmt.Fprint(w, "Message not found")
 		return
 	}
 	if msg.HTML == "" {
 		w.WriteHeader(404)
-		fmt.Fprint(w, "This message does not contain a HTML part")
+		_, _ = fmt.Fprint(w, "This message does not contain a HTML part")
 		return
 	}
 
@@ -161,7 +161,7 @@ func GetMessageText(w http.ResponseWriter, r *http.Request) {
 		id, err = storage.LatestID(r)
 		if err != nil {
 			w.WriteHeader(404)
-			fmt.Fprint(w, err.Error())
+			_, _ = fmt.Fprint(w, err.Error())
 			return
 		}
 	}
@@ -169,7 +169,7 @@ func GetMessageText(w http.ResponseWriter, r *http.Request) {
 	msg, err := storage.GetMessage(id)
 	if err != nil {
 		w.WriteHeader(404)
-		fmt.Fprint(w, "Message not found")
+		_, _ = fmt.Fprint(w, "Message not found")
 		return
 	}
 

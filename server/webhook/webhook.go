@@ -22,7 +22,7 @@ var (
 )
 
 // Send will post the MessageSummary to a webhook (if configured)
-func Send(msg interface{}) {
+func Send(msg any) {
 	if config.WebhookURL == "" {
 		return
 	}
@@ -70,7 +70,7 @@ func Send(msg interface{}) {
 				return
 			}
 
-			defer resp.Body.Close()
+			_ = resp.Body.Close()
 		})
 	}()
 }

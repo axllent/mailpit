@@ -60,7 +60,8 @@ func ProxyHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
+
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		logger.Log().Warnf("[proxy] %s", err.Error())
@@ -141,7 +142,7 @@ func absoluteURL(link, baseURL string) (string, error) {
 
 	// ensure link is HTTP(S)
 	if result.Scheme != "http" && result.Scheme != "https" {
-		return link, fmt.Errorf("Invalid URL: %s", result.String())
+		return link, fmt.Errorf("invalid URL: %s", result.String())
 	}
 
 	return result.String(), nil
@@ -153,5 +154,5 @@ func httpError(w http.ResponseWriter, msg string) {
 	w.Header().Set("Content-Security-Policy", config.ContentSecurityPolicy)
 	w.WriteHeader(http.StatusBadRequest)
 	w.Header().Set("Content-Type", "text/plain")
-	fmt.Fprint(w, msg)
+	_, _ = fmt.Fprint(w, msg)
 }

@@ -115,7 +115,7 @@ func extract(filePath string, directory string) error {
 	if err != nil {
 		return err
 	}
-	defer gzipReader.Close()
+	defer func() { _ = gzipReader.Close() }()
 
 	tarReader := tar.NewReader(gzipReader)
 

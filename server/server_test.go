@@ -345,7 +345,9 @@ func TestSendAPIAuthMiddleware(t *testing.T) {
 
 		// Set up UI auth that would normally block requests
 		testHash, _ := bcrypt.GenerateFromPassword([]byte("testpass"), bcrypt.DefaultCost)
-		auth.SetUIAuth("testuser:" + string(testHash))
+		if err := auth.SetUIAuth("testuser:" + string(testHash)); err != nil {
+			t.Fatalf("Failed to set UI auth: %s", err.Error())
+		}
 
 		r := apiRoutes()
 		ts := httptest.NewServer(r)
@@ -374,11 +376,15 @@ func TestSendAPIAuthMiddleware(t *testing.T) {
 
 		// Set up UI auth
 		uiHash, _ := bcrypt.GenerateFromPassword([]byte("uipass"), bcrypt.DefaultCost)
-		auth.SetUIAuth("uiuser:" + string(uiHash))
+		if err := auth.SetUIAuth("uiuser:" + string(uiHash)); err != nil {
+			t.Fatalf("Failed to set UI auth: %s", err.Error())
+		}
 
 		// Set up dedicated Send API auth
 		sendHash, _ := bcrypt.GenerateFromPassword([]byte("sendpass"), bcrypt.DefaultCost)
-		auth.SetSendAPIAuth("senduser:" + string(sendHash))
+		if err := auth.SetSendAPIAuth("senduser:" + string(sendHash)); err != nil {
+			t.Fatalf("Failed to set Send API auth: %s", err.Error())
+		}
 
 		r := apiRoutes()
 		ts := httptest.NewServer(r)
@@ -421,7 +427,9 @@ func TestSendAPIAuthMiddleware(t *testing.T) {
 
 		// Set up only UI auth
 		uiHash, _ := bcrypt.GenerateFromPassword([]byte("uipass"), bcrypt.DefaultCost)
-		auth.SetUIAuth("uiuser:" + string(uiHash))
+		if err := auth.SetUIAuth("uiuser:" + string(uiHash)); err != nil {
+			t.Fatalf("Failed to set UI auth: %s", err.Error())
+		}
 
 		r := apiRoutes()
 		ts := httptest.NewServer(r)
@@ -455,9 +463,14 @@ func TestSendAPIAuthMiddleware(t *testing.T) {
 
 		// Set up UI auth and Send API auth
 		uiHash, _ := bcrypt.GenerateFromPassword([]byte("uipass"), bcrypt.DefaultCost)
-		auth.SetUIAuth("uiuser:" + string(uiHash))
+		if err := auth.SetUIAuth("uiuser:" + string(uiHash)); err != nil {
+			t.Fatalf("Failed to set UI auth: %s", err.Error())
+		}
+
 		sendHash, _ := bcrypt.GenerateFromPassword([]byte("sendpass"), bcrypt.DefaultCost)
-		auth.SetSendAPIAuth("senduser:" + string(sendHash))
+		if err := auth.SetSendAPIAuth("senduser:" + string(sendHash)); err != nil {
+			t.Fatalf("Failed to set Send API auth: %s", err.Error())
+		}
 
 		r := apiRoutes()
 		ts := httptest.NewServer(r)
@@ -604,7 +617,7 @@ func clientGet(url string) ([]byte, error) {
 		return nil, fmt.Errorf("%s returned status %d", url, resp.StatusCode)
 	}
 
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	data, err := io.ReadAll(resp.Body)
 
@@ -625,7 +638,7 @@ func clientDelete(url, body string) ([]byte, error) {
 		return nil, err
 	}
 
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("%s returned status %d", url, resp.StatusCode)
@@ -650,7 +663,7 @@ func clientPut(url, body string) ([]byte, error) {
 		return nil, err
 	}
 
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("%s returned status %d", url, resp.StatusCode)
@@ -675,7 +688,7 @@ func clientPost(url, body string) ([]byte, error) {
 		return nil, err
 	}
 
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("%s returned status %d", url, resp.StatusCode)
@@ -702,7 +715,7 @@ func clientPostWithAuth(url, body, username, password string) ([]byte, error) {
 		return nil, err
 	}
 
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("%s returned status %d", url, resp.StatusCode)
@@ -728,7 +741,7 @@ func clientGetWithAuth(url, username, password string) ([]byte, error) {
 		return nil, err
 	}
 
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("%s returned status %d", url, resp.StatusCode)

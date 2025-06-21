@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -70,7 +71,7 @@ func GithubLatest(repo, name string) (string, string, string, error) {
 		return "", "", "", err
 	}
 
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	body, err := io.ReadAll(resp.Body)
 
@@ -119,7 +120,7 @@ func GithubLatest(repo, name string) (string, string, string, error) {
 
 	if len(allReleases) == 0 {
 		// no releases with suitable assets found
-		return "", "", "", fmt.Errorf("No binary releases found")
+		return "", "", "", errors.New("no binary releases found")
 	}
 
 	var latestRelease = Release{}
@@ -149,11 +150,11 @@ func GithubUpdate(repo, appName, currentVersion string) (string, error) {
 	}
 
 	if ver == currentVersion {
-		return "", fmt.Errorf("No new release found")
+		return "", errors.New("no new release found")
 	}
 
 	if semver.Compare(ver, currentVersion) < 1 {
-		return "", fmt.Errorf("No newer releases found (latest %s)", ver)
+		return "", fmt.Errorf("no newer releases found (latest %s)", ver)
 	}
 
 	tmpDir := getTempDir()
@@ -212,7 +213,7 @@ func downloadToFile(url, fileName string) error {
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// Create the file
 	out, err := os.Create(filepath.Clean(fileName))

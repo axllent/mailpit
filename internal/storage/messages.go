@@ -86,7 +86,7 @@ func Store(body *[]byte, username *string) (string, error) {
 	}
 
 	// roll back if it fails
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	subject := env.GetHeader("Subject")
 	size := uint64(len(*body))
@@ -118,8 +118,6 @@ func Store(body *[]byte, username *string) (string, error) {
 		} else {
 			_, err = tx.Exec(fmt.Sprintf(`INSERT INTO %s (ID, Email, Compressed) VALUES(?, ?, 1)`, tenant("mailbox_data")), id, compressed) // #nosec
 		}
-
-		compressed = nil
 	} else {
 		// insert uncompressed raw message
 		_, err = tx.Exec(fmt.Sprintf(`INSERT INTO %s (ID, Email, Compressed) VALUES(?, ?, 0)`, tenant("mailbox_data")), id, string(*body)) // #nosec
@@ -639,7 +637,7 @@ func DeleteMessages(ids []string) error {
 	if err != nil {
 		return err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	toDelete := []string{}
 	var totalSize uint64
@@ -738,7 +736,7 @@ func DeleteAllMessages() error {
 	}
 
 	// roll back if it fails
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	tables := []string{"mailbox", "mailbox_data", "tags", "message_tags"}
 

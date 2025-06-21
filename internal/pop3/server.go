@@ -271,7 +271,7 @@ func handleTransactionCommand(conn net.Conn, cmd string, args []string, messages
 		// begins with the termination octet, the line is "byte-stuffed" by
 		// pre-pending the termination octet to that line of the response.
 		// @see: https://www.ietf.org/rfc/rfc1939.txt
-		sendData(conn, strings.Replace(string(raw), "\n.", "\n..", -1))
+		sendData(conn, strings.ReplaceAll(string(raw), "\n.", "\n.."))
 		sendResponse(conn, ".")
 	case "TOP":
 		arg, err := getSafeArg(args, 0)

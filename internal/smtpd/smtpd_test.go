@@ -12,7 +12,6 @@ import (
 	"fmt"
 	"io"
 	"net"
-	"os"
 	"reflect"
 	"regexp"
 	"strings"
@@ -40,7 +39,7 @@ func newConn(t *testing.T, server *Server) net.Conn {
 
 // Send a command and verify the 3 digit code from the response.
 func cmdCode(t *testing.T, conn net.Conn, cmd string, code string) string {
-	fmt.Fprintf(conn, "%s\r\n", cmd)
+	_, _ = fmt.Fprintf(conn, "%s\r\n", cmd)
 	resp, err := bufio.NewReader(conn).ReadString('\n')
 	if err != nil {
 		t.Fatalf("Failed to read response from test server: %v", err)
@@ -72,7 +71,9 @@ func TestSimpleCommands(t *testing.T) {
 		conn := newConn(t, &Server{})
 		cmdCode(t, conn, tt.cmd, tt.code)
 		cmdCode(t, conn, "QUIT", "221")
-		conn.Close()
+		if err := conn.Close(); err != nil {
+			t.Errorf("Failed to close connection after command %s: %v", tt.cmd, err)
+		}
 	}
 }
 
@@ -90,7 +91,7 @@ func TestCmdHELO(t *testing.T) {
 	cmdCode(t, conn, "DATA", "503")
 
 	cmdCode(t, conn, "QUIT", "221")
-	conn.Close()
+	_ = conn.Close()
 }
 
 func TestCmdEHLO(t *testing.T) {
@@ -107,7 +108,7 @@ func TestCmdEHLO(t *testing.T) {
 	cmdCode(t, conn, "DATA", "503")
 
 	cmdCode(t, conn, "QUIT", "221")
-	conn.Close()
+	_ = conn.Close()
 }
 
 func TestCmdRSET(t *testing.T) {
@@ -121,7 +122,7 @@ func TestCmdRSET(t *testing.T) {
 	cmdCode(t, conn, "DATA", "503")
 
 	cmdCode(t, conn, "QUIT", "221")
-	conn.Close()
+	_ = conn.Close()
 }
 
 func TestCmdMAIL(t *testing.T) {
@@ -162,7 +163,7 @@ func TestCmdMAIL(t *testing.T) {
 	// TODO: MAIL with invalid AUTH parameter must return 501 syntax error
 
 	cmdCode(t, conn, "QUIT", "221")
-	conn.Close()
+	_ = conn.Close()
 }
 
 func TestCmdMAILMaxSize(t *testing.T) {
@@ -192,7 +193,7 @@ func TestCmdMAILMaxSize(t *testing.T) {
 
 	// Clients should send either RSET or QUIT after receiving 552 (RFC 1870 section 6.2).
 	cmdCode(t, conn, "QUIT", "221")
-	conn.Close()
+	_ = conn.Close()
 }
 
 func TestCmdRCPT(t *testing.T) {
@@ -239,7 +240,7 @@ func TestCmdRCPT(t *testing.T) {
 	cmdCode(t, conn, "RCPT TO:  <recipient@example.com>", "501")
 
 	cmdCode(t, conn, "QUIT", "221")
-	conn.Close()
+	_ = conn.Close()
 }
 
 func TestCmdMaxRecipients(t *testing.T) {
@@ -256,7 +257,7 @@ func TestCmdMaxRecipients(t *testing.T) {
 	cmdCode(t, conn, "RCPT TO: <recipient5@example.com>", "452")
 
 	cmdCode(t, conn, "QUIT", "221")
-	conn.Close()
+	_ = conn.Close()
 }
 
 func TestCmdDATA(t *testing.T) {
@@ -286,7 +287,7 @@ func TestCmdDATA(t *testing.T) {
 	cmdCode(t, conn, "Test message.\r\n.", "250")
 
 	cmdCode(t, conn, "QUIT", "221")
-	conn.Close()
+	_ = conn.Close()
 }
 
 func TestCmdDATAWithMaxSize(t *testing.T) {
@@ -323,7 +324,7 @@ func TestCmdDATAWithMaxSize(t *testing.T) {
 
 	// Clients should send either RSET or QUIT after receiving 552 (RFC 1870 section 6.2).
 	cmdCode(t, conn, "QUIT", "221")
-	conn.Close()
+	_ = conn.Close()
 }
 
 type mockHandler struct {
@@ -347,7 +348,7 @@ func TestCmdDATAWithHandler(t *testing.T) {
 	cmdCode(t, conn, "DATA", "354")
 	cmdCode(t, conn, "Test message.\r\n.", "250")
 	cmdCode(t, conn, "QUIT", "221")
-	conn.Close()
+	_ = conn.Close()
 
 	if m.handlerCalled != 1 {
 		t.Errorf("MailHandler called %d times, want one call", m.handlerCalled)
@@ -364,7 +365,7 @@ func TestCmdDATAWithHandlerError(t *testing.T) {
 	cmdCode(t, conn, "DATA", "354")
 	cmdCode(t, conn, "Test message.\r\n.", "451")
 	cmdCode(t, conn, "QUIT", "221")
-	conn.Close()
+	_ = conn.Close()
 
 	if m.handlerCalled != 1 {
 		t.Errorf("MailHandler called %d times, want one call", m.handlerCalled)
@@ -382,7 +383,7 @@ func TestCmdSTARTTLS(t *testing.T) {
 	cmdCode(t, conn, "STARTTLS FOO", "501")
 
 	cmdCode(t, conn, "QUIT", "221")
-	conn.Close()
+	_ = conn.Close()
 }
 
 func TestCmdSTARTTLSFailure(t *testing.T) {
@@ -411,7 +412,7 @@ func TestCmdSTARTTLSFailure(t *testing.T) {
 	}
 
 	cmdCode(t, conn, "QUIT", "221")
-	tlsConn.Close()
+	_ = tlsConn.Close()
 }
 
 // Utility function to make a valid TLS certificate for use by the server.
@@ -497,7 +498,7 @@ func TestCmdSTARTTLSSuccess(t *testing.T) {
 	cmdCode(t, tlsConn, "STARTTLS", "503")
 
 	cmdCode(t, tlsConn, "QUIT", "221")
-	tlsConn.Close()
+	_ = tlsConn.Close()
 }
 
 func TestCmdSTARTTLSRequired(t *testing.T) {
@@ -548,7 +549,7 @@ func TestCmdSTARTTLSRequired(t *testing.T) {
 	}
 
 	cmdCode(t, tlsConn, "QUIT", "221")
-	tlsConn.Close()
+	_ = tlsConn.Close()
 }
 
 func TestMakeHeaders(t *testing.T) {
@@ -798,8 +799,8 @@ func TestMakeEHLOResponse(t *testing.T) {
 		t.Errorf("AUTH does not appear in the extension list when an AuthHandler is specified")
 	}
 
-	reLogin := regexp.MustCompile("\\bLOGIN\\b")
-	rePlain := regexp.MustCompile("\\bPLAIN\\b")
+	reLogin := regexp.MustCompile(`\bLOGIN\b`)
+	rePlain := regexp.MustCompile(`\bPLAIN\b`)
 
 	// RFC 4954 specifies that, without TLS in use, plaintext authentication mechanisms must not be advertised.
 	s.tls = false
@@ -822,86 +823,86 @@ func TestMakeEHLOResponse(t *testing.T) {
 	}
 }
 
-func createTmpFile(content string) (file *os.File, err error) {
-	file, err = os.CreateTemp("", "")
-	if err != nil {
-		return
-	}
-	_, err = file.Write([]byte(content))
-	if err != nil {
-		return
-	}
-	err = file.Close()
-	return
-}
+// func createTmpFile(content string) (file *os.File, err error) {
+// 	file, err = os.CreateTemp("", "")
+// 	if err != nil {
+// 		return
+// 	}
+// 	_, err = file.Write([]byte(content))
+// 	if err != nil {
+// 		return
+// 	}
+// 	err = file.Close()
+// 	return
+// }
 
-func createTLSFiles() (
-	certFile *os.File,
-	keyFile *os.File,
-	passphrase string,
-	err error,
-) {
-	const certPEM = `-----BEGIN CERTIFICATE-----
-MIIDRzCCAi+gAwIBAgIJAKtg4oViVwv4MA0GCSqGSIb3DQEBCwUAMBQxEjAQBgNV
-BAMMCWxvY2FsaG9zdDAgFw0xODA0MjAxMzMxNTBaGA8yMDg2MDUwODEzMzE1MFow
-FDESMBAGA1UEAwwJbG9jYWxob3N0MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIB
-CgKCAQEA8h7vl0gUquis5jRtcnETyD+8WITZO0s53aIzp0Y+9HXiHW6FGJjbOZjM
-IvozNVni+83QWKumRTgeSzIIW2j4V8iFMSNrvWmhmCKloesXS1aY6H979e01Ve8J
-WAJFRe6vZJd6gC6Z/P+ELU3ie4Vtr1GYfkV7nZ6VFp5/V/5nxGFag5TUlpP5hcoS
-9r2kvXofosVwe3x3udT8SEbv5eBD4bKeVyJs/RLbxSuiU1358Y1cDdVuHjcvfm3c
-ajhheQ4vX9WXsk7LGGhnf1SrrPN/y+IDTXfvoHn+nJh4vMAB4yzQdE1V1N1AB8RA
-0yBVJ6dwxRrSg4BFrNWhj3gfsvrA7wIDAQABo4GZMIGWMB0GA1UdDgQWBBQ4/ncp
-befFuKH1hoYkPqLwuRrPRjAfBgNVHSMEGDAWgBQ4/ncpbefFuKH1hoYkPqLwuRrP
-RjAJBgNVHRMEAjAAMBEGCWCGSAGG+EIBAQQEAwIGQDALBgNVHQ8EBAMCBaAwEwYD
-VR0lBAwwCgYIKwYBBQUHAwEwFAYDVR0RBA0wC4IJbG9jYWxob3N0MA0GCSqGSIb3
-DQEBCwUAA4IBAQBJBetEXiEIzKAEpXGX87j6aUON51Fdf6BiLMCghuGKyhnaOG32
-4KJhtvVoS3ZUKPylh9c2VdItYlhWp76zd7YKk+3xUOixWeTMQHIvCvRGTyFibOPT
-mApwp2pEnJCe4vjUrBaRhiyI+xnB70cWVF2qeernlLUeJA1mfYyQLz+v06ebDWOL
-c/hPVQFB94lEdiyjGO7RZfIe8KwcK48g7iv0LQU4+c9MoWM2ZsVM1AL2tHzokSeA
-u64gDTW4K0Tzx1ab7KmOFXYUjbz/xWuReMt33EwDXAErKCjbVt2T55Qx8UoKzSh1
-tY0KDHdnYOzgsm2HIj2xcJqbeylYQvckNnoC
------END CERTIFICATE-----`
+// func createTLSFiles() (
+// 	certFile *os.File,
+// 	keyFile *os.File,
+// 	passphrase string,
+// 	err error,
+// ) {
+// 	const certPEM = `-----BEGIN CERTIFICATE-----
+// MIIDRzCCAi+gAwIBAgIJAKtg4oViVwv4MA0GCSqGSIb3DQEBCwUAMBQxEjAQBgNV
+// BAMMCWxvY2FsaG9zdDAgFw0xODA0MjAxMzMxNTBaGA8yMDg2MDUwODEzMzE1MFow
+// FDESMBAGA1UEAwwJbG9jYWxob3N0MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIB
+// CgKCAQEA8h7vl0gUquis5jRtcnETyD+8WITZO0s53aIzp0Y+9HXiHW6FGJjbOZjM
+// IvozNVni+83QWKumRTgeSzIIW2j4V8iFMSNrvWmhmCKloesXS1aY6H979e01Ve8J
+// WAJFRe6vZJd6gC6Z/P+ELU3ie4Vtr1GYfkV7nZ6VFp5/V/5nxGFag5TUlpP5hcoS
+// 9r2kvXofosVwe3x3udT8SEbv5eBD4bKeVyJs/RLbxSuiU1358Y1cDdVuHjcvfm3c
+// ajhheQ4vX9WXsk7LGGhnf1SrrPN/y+IDTXfvoHn+nJh4vMAB4yzQdE1V1N1AB8RA
+// 0yBVJ6dwxRrSg4BFrNWhj3gfsvrA7wIDAQABo4GZMIGWMB0GA1UdDgQWBBQ4/ncp
+// befFuKH1hoYkPqLwuRrPRjAfBgNVHSMEGDAWgBQ4/ncpbefFuKH1hoYkPqLwuRrP
+// RjAJBgNVHRMEAjAAMBEGCWCGSAGG+EIBAQQEAwIGQDALBgNVHQ8EBAMCBaAwEwYD
+// VR0lBAwwCgYIKwYBBQUHAwEwFAYDVR0RBA0wC4IJbG9jYWxob3N0MA0GCSqGSIb3
+// DQEBCwUAA4IBAQBJBetEXiEIzKAEpXGX87j6aUON51Fdf6BiLMCghuGKyhnaOG32
+// 4KJhtvVoS3ZUKPylh9c2VdItYlhWp76zd7YKk+3xUOixWeTMQHIvCvRGTyFibOPT
+// mApwp2pEnJCe4vjUrBaRhiyI+xnB70cWVF2qeernlLUeJA1mfYyQLz+v06ebDWOL
+// c/hPVQFB94lEdiyjGO7RZfIe8KwcK48g7iv0LQU4+c9MoWM2ZsVM1AL2tHzokSeA
+// u64gDTW4K0Tzx1ab7KmOFXYUjbz/xWuReMt33EwDXAErKCjbVt2T55Qx8UoKzSh1
+// tY0KDHdnYOzgsm2HIj2xcJqbeylYQvckNnoC
+// -----END CERTIFICATE-----`
 
-	const keyPEM = `-----BEGIN RSA PRIVATE KEY-----
-Proc-Type: 4,ENCRYPTED
-DEK-Info: AES-256-CBC,C16BF8745B2CDB53AC2B1D7609893AA0
+// 	const keyPEM = `-----BEGIN RSA PRIVATE KEY-----
+// Proc-Type: 4,ENCRYPTED
+// DEK-Info: AES-256-CBC,C16BF8745B2CDB53AC2B1D7609893AA0
 
-O13z7Yq7butaJmMfg9wRis9YnIDPsp4coYI6Ud+JGcP7iXoy95QMhovKWx25o1ol
-tvUTsrsG27fHGf9qG02KizApIVtO9c1e0swCWzFrKRQX0JDiZDmilb9xosBNNst1
-BOzOTRZEwFGSOCKZRBfSXyqC93TvLJ3DO9IUnKIeGt7upipvg29b/Dur/fyCy2WV
-bLHXwUTDBm7j49yfoEyGkDjoB2QO9wgcgbacbnQJQ25fTFUwZpZJEJv6o1tRhoYM
-ZMOhC9x1URmdHKN1+z2y5BrB6oNpParfeAMEvs/9FE6jJwYUR28Ql6Mhphfvr9W2
-5Gxd3J65Ao9Vi2I5j5X6aBuNjyhXN3ScLjPG4lVZm9RU/uTPEt81pig/d5nSAjvF
-Nfc08NuG3cnMyJSE/xScJ4D+GtX8U969wO4oKPCR4E/NFyXPR730ppupDFG6hzPD
-PDmiszDtU438JAZ8AuFa1LkbyFnEW6KVD4h7VRr8YDjirCqnkgjNSI6dFY0NQ8H7
-SyexB0lrceX6HZc+oNdAtkX3tYdzY3ExzUM5lSF1dkldnRbApLbqc4uuNIVXhXFM
-dJnoPdKAzM6i+2EeVUxWNdafKDxnjVSHIHzHfIFJLQ4GS5rnz9keRFdyDjQL07tT
-Lu9pPOmsadDXp7oSa81RgoCUfNZeR4jKpCk2BOft0L6ZSqwYFLcQHLIfJaGfn902
-TUOTxHt0KzEUYeYSrXC2a6cyvXAd1YI7lOgy60qG89VHyCc2v5Bs4c4FNUDC/+Dj
-4ZwogaAbSNkLaE0q3sYQRPdxSqLftyX0KitAgE7oGtdzBfe1cdBoozw3U67NEMMT
-6qvk5j7RepPRSrapHtK5pMMdg5XpKFWcOXZ26VHVrDCj4JKdjVb4iyiQi94VveV0
-w9+KcOtyrM7/jbQlCWnXpsIkP8VA/RIgh7CBn/h4oF1sO8ywP25OGQ7VWAVq1R9D
-8bl8GzIdR9PZpFyOxuIac4rPa8tkDeoXKs4cxoao7H/OZO9o9aTB7CJMTL9yv0Kb
-ntWuYxQchE6syoGsOgdGyZhaw4JeFkasDUP5beyNY+278NkzgGTOIMMTXIX46woP
-ehzHKGHXVGf7ZiSFF+zAHMXZRSwNVMkOYwlIoRg1IbvIRbAXqAR6xXQTCVzNG0SU
-cskojycBca1Cz3hDVIKYZd9beDhprVdr2a4K2nft2g2xRNjKPopsaqXx+VPibFUx
-X7542eQ3eAlhkWUuXvt0q5a9WJdjJp9ODA0/d0akF6JQlEHIAyLfoUKB1HYwgUGG
-6uRm651FDAab9U4cVC5PY1hfv/QwzpkNDkzgJAZ5SMOfZhq7IdBcqGd3lzPmq2FP
-Vy1LVZIl3eM+9uJx5TLsBHH6NhMwtNhFCNa/5ksodQYlTvR8IrrgWlYg4EL69vjS
-yt6HhhEN3lFCWvrQXQMp93UklbTlpVt6qcDXiC7HYbs3+EINargRd5Z+xL5i5vkN
-f9k7s0xqhloWNPZcyOXMrox8L81WOY+sP4mVlGcfDRLdEJ8X2ofJpOAcwYCnjsKd
-uEGsi+l2fTj/F+eZLE6sYoMprgJrbfeqtRWFguUgTn7s5hfU0tZ46al5d0vz8fWK
------END RSA PRIVATE KEY-----`
+// O13z7Yq7butaJmMfg9wRis9YnIDPsp4coYI6Ud+JGcP7iXoy95QMhovKWx25o1ol
+// tvUTsrsG27fHGf9qG02KizApIVtO9c1e0swCWzFrKRQX0JDiZDmilb9xosBNNst1
+// BOzOTRZEwFGSOCKZRBfSXyqC93TvLJ3DO9IUnKIeGt7upipvg29b/Dur/fyCy2WV
+// bLHXwUTDBm7j49yfoEyGkDjoB2QO9wgcgbacbnQJQ25fTFUwZpZJEJv6o1tRhoYM
+// ZMOhC9x1URmdHKN1+z2y5BrB6oNpParfeAMEvs/9FE6jJwYUR28Ql6Mhphfvr9W2
+// 5Gxd3J65Ao9Vi2I5j5X6aBuNjyhXN3ScLjPG4lVZm9RU/uTPEt81pig/d5nSAjvF
+// Nfc08NuG3cnMyJSE/xScJ4D+GtX8U969wO4oKPCR4E/NFyXPR730ppupDFG6hzPD
+// PDmiszDtU438JAZ8AuFa1LkbyFnEW6KVD4h7VRr8YDjirCqnkgjNSI6dFY0NQ8H7
+// SyexB0lrceX6HZc+oNdAtkX3tYdzY3ExzUM5lSF1dkldnRbApLbqc4uuNIVXhXFM
+// dJnoPdKAzM6i+2EeVUxWNdafKDxnjVSHIHzHfIFJLQ4GS5rnz9keRFdyDjQL07tT
+// Lu9pPOmsadDXp7oSa81RgoCUfNZeR4jKpCk2BOft0L6ZSqwYFLcQHLIfJaGfn902
+// TUOTxHt0KzEUYeYSrXC2a6cyvXAd1YI7lOgy60qG89VHyCc2v5Bs4c4FNUDC/+Dj
+// 4ZwogaAbSNkLaE0q3sYQRPdxSqLftyX0KitAgE7oGtdzBfe1cdBoozw3U67NEMMT
+// 6qvk5j7RepPRSrapHtK5pMMdg5XpKFWcOXZ26VHVrDCj4JKdjVb4iyiQi94VveV0
+// w9+KcOtyrM7/jbQlCWnXpsIkP8VA/RIgh7CBn/h4oF1sO8ywP25OGQ7VWAVq1R9D
+// 8bl8GzIdR9PZpFyOxuIac4rPa8tkDeoXKs4cxoao7H/OZO9o9aTB7CJMTL9yv0Kb
+// ntWuYxQchE6syoGsOgdGyZhaw4JeFkasDUP5beyNY+278NkzgGTOIMMTXIX46woP
+// ehzHKGHXVGf7ZiSFF+zAHMXZRSwNVMkOYwlIoRg1IbvIRbAXqAR6xXQTCVzNG0SU
+// cskojycBca1Cz3hDVIKYZd9beDhprVdr2a4K2nft2g2xRNjKPopsaqXx+VPibFUx
+// X7542eQ3eAlhkWUuXvt0q5a9WJdjJp9ODA0/d0akF6JQlEHIAyLfoUKB1HYwgUGG
+// 6uRm651FDAab9U4cVC5PY1hfv/QwzpkNDkzgJAZ5SMOfZhq7IdBcqGd3lzPmq2FP
+// Vy1LVZIl3eM+9uJx5TLsBHH6NhMwtNhFCNa/5ksodQYlTvR8IrrgWlYg4EL69vjS
+// yt6HhhEN3lFCWvrQXQMp93UklbTlpVt6qcDXiC7HYbs3+EINargRd5Z+xL5i5vkN
+// f9k7s0xqhloWNPZcyOXMrox8L81WOY+sP4mVlGcfDRLdEJ8X2ofJpOAcwYCnjsKd
+// uEGsi+l2fTj/F+eZLE6sYoMprgJrbfeqtRWFguUgTn7s5hfU0tZ46al5d0vz8fWK
+// -----END RSA PRIVATE KEY-----`
 
-	passphrase = "test"
+// 	passphrase = "test"
 
-	certFile, err = createTmpFile(certPEM)
-	if err != nil {
-		return
-	}
-	keyFile, err = createTmpFile(keyPEM)
-	return
-}
+// 	certFile, err = createTmpFile(certPEM)
+// 	if err != nil {
+// 		return
+// 	}
+// 	keyFile, err = createTmpFile(keyPEM)
+// 	return
+// }
 
 func TestAuthMechs(t *testing.T) {
 	s := session{}
@@ -966,7 +967,7 @@ func TestCmdAUTH(t *testing.T) {
 	cmdCode(t, conn, "AUTH", "502")
 
 	cmdCode(t, conn, "QUIT", "221")
-	conn.Close()
+	_ = conn.Close()
 }
 
 func TestCmdAUTHOptional(t *testing.T) {
@@ -1007,7 +1008,7 @@ func TestCmdAUTHOptional(t *testing.T) {
 	cmdCode(t, conn, "*", "501")
 
 	cmdCode(t, conn, "QUIT", "221")
-	conn.Close()
+	_ = conn.Close()
 }
 
 func TestCmdAUTHRequired(t *testing.T) {
@@ -1056,7 +1057,7 @@ func TestCmdAUTHRequired(t *testing.T) {
 	cmdCode(t, conn, "AUTH PLAIN", "504")
 
 	cmdCode(t, conn, "QUIT", "221")
-	conn.Close()
+	_ = conn.Close()
 }
 
 func TestCmdAUTHLOGIN(t *testing.T) {
@@ -1113,7 +1114,7 @@ func TestCmdAUTHLOGIN(t *testing.T) {
 	cmdCode(t, tlsConn, "AUTH CRAM-MD5", "503")
 
 	cmdCode(t, tlsConn, "QUIT", "221")
-	tlsConn.Close()
+	_ = tlsConn.Close()
 }
 
 func TestCmdAUTHLOGINFast(t *testing.T) {
@@ -1165,7 +1166,7 @@ func TestCmdAUTHLOGINFast(t *testing.T) {
 	cmdCode(t, tlsConn, "AUTH CRAM-MD5", "503")
 
 	cmdCode(t, tlsConn, "QUIT", "221")
-	tlsConn.Close()
+	_ = tlsConn.Close()
 }
 
 func TestCmdAUTHPLAIN(t *testing.T) {
@@ -1224,7 +1225,7 @@ func TestCmdAUTHPLAIN(t *testing.T) {
 	cmdCode(t, tlsConn, "AUTH CRAM-MD5", "503")
 
 	cmdCode(t, tlsConn, "QUIT", "221")
-	tlsConn.Close()
+	_ = tlsConn.Close()
 }
 
 func TestCmdAUTHPLAINEmpty(t *testing.T) {
@@ -1283,7 +1284,7 @@ func TestCmdAUTHPLAINEmpty(t *testing.T) {
 	cmdCode(t, tlsConn, "AUTH CRAM-MD5", "503")
 
 	cmdCode(t, tlsConn, "QUIT", "221")
-	tlsConn.Close()
+	_ = tlsConn.Close()
 }
 
 func TestCmdAUTHPLAINFast(t *testing.T) {
@@ -1335,7 +1336,7 @@ func TestCmdAUTHPLAINFast(t *testing.T) {
 	cmdCode(t, tlsConn, "AUTH CRAM-MD5", "503")
 
 	cmdCode(t, tlsConn, "QUIT", "221")
-	tlsConn.Close()
+	_ = tlsConn.Close()
 }
 
 func TestCmdAUTHPLAINFastAndEmpty(t *testing.T) {
@@ -1387,7 +1388,7 @@ func TestCmdAUTHPLAINFastAndEmpty(t *testing.T) {
 	cmdCode(t, tlsConn, "AUTH CRAM-MD5", "503")
 
 	cmdCode(t, tlsConn, "QUIT", "221")
-	tlsConn.Close()
+	_ = tlsConn.Close()
 }
 
 // makeCRAMMD5Response is a helper function to create the CRAM-MD5 hash.
@@ -1457,7 +1458,7 @@ func TestCmdAUTHCRAMMD5(t *testing.T) {
 	cmdCode(t, conn, "AUTH CRAM-MD5", "503")
 
 	cmdCode(t, conn, "QUIT", "221")
-	conn.Close()
+	_ = conn.Close()
 }
 
 func TestCmdAUTHCRAMMD5WithTLS(t *testing.T) {
@@ -1523,7 +1524,7 @@ func TestCmdAUTHCRAMMD5WithTLS(t *testing.T) {
 	cmdCode(t, tlsConn, "AUTH CRAM-MD5", "503")
 
 	cmdCode(t, tlsConn, "QUIT", "221")
-	tlsConn.Close()
+	_ = tlsConn.Close()
 }
 
 // Benchmark the mail handling without the network stack introducing latency.
@@ -1540,17 +1541,17 @@ func BenchmarkReceive(b *testing.B) {
 
 	// Benchmark a full mail transaction.
 	for i := 0; i < b.N; i++ {
-		fmt.Fprintf(clientConn, "%s\r\n", "HELO host.example.com")
+		_, _ = fmt.Fprintf(clientConn, "%s\r\n", "HELO host.example.com")
 		_, _ = reader.ReadString('\n')
-		fmt.Fprintf(clientConn, "%s\r\n", "MAIL FROM:<sender@example.com>")
+		_, _ = fmt.Fprintf(clientConn, "%s\r\n", "MAIL FROM:<sender@example.com>")
 		_, _ = reader.ReadString('\n')
-		fmt.Fprintf(clientConn, "%s\r\n", "RCPT TO:<recipient@example.com>")
+		_, _ = fmt.Fprintf(clientConn, "%s\r\n", "RCPT TO:<recipient@example.com>")
 		_, _ = reader.ReadString('\n')
-		fmt.Fprintf(clientConn, "%s\r\n", "DATA")
+		_, _ = fmt.Fprintf(clientConn, "%s\r\n", "DATA")
 		_, _ = reader.ReadString('\n')
-		fmt.Fprintf(clientConn, "%s\r\n", "Test message.\r\n.")
+		_, _ = fmt.Fprintf(clientConn, "%s\r\n", "Test message.\r\n.")
 		_, _ = reader.ReadString('\n')
-		fmt.Fprintf(clientConn, "%s\r\n", "QUIT")
+		_, _ = fmt.Fprintf(clientConn, "%s\r\n", "QUIT")
 		_, _ = reader.ReadString('\n')
 	}
 }
@@ -1589,11 +1590,11 @@ func TestCmdShutdown(t *testing.T) {
 	cmdCode(t, conn, "QUIT", "221")
 
 	// connection should now be closed
-	fmt.Fprintf(conn, "%s\r\n", "HELO host.example.com")
+	_, _ = fmt.Fprintf(conn, "%s\r\n", "HELO host.example.com")
 	_, err := bufio.NewReader(conn).ReadString('\n')
 	if err != io.EOF {
 		t.Errorf("Expected connection to be closed\n")
 	}
 
-	conn.Close()
+	_ = conn.Close()
 }

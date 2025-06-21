@@ -8,7 +8,7 @@ import (
 // IsFile returns whether a file exists and is readable
 func IsFile(path string) bool {
 	f, err := os.Open(filepath.Clean(path))
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 	return err == nil
 }
 

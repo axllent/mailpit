@@ -19,7 +19,7 @@ func Unzip(src string, dest string) ([]string, error) {
 	if err != nil {
 		return filenames, err
 	}
-	defer r.Close()
+	defer func() { _ = r.Close() }()
 
 	for _, f := range r.File {
 

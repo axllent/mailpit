@@ -290,8 +290,9 @@ func middleWareFunc(fn http.HandlerFunc) http.HandlerFunc {
 		}
 
 		// Check basic authentication headers if configured.
-		// OPTIONS requests are skipped if CORS is enabled, since browsers omit credentials for preflight.
-		if !(AccessControlAllowOrigin != "" && r.Method == http.MethodOptions) && auth.UICredentials != nil {
+		// OPTIONS requests are skipped if CORS is enabled, since browsers omit credentials for preflight checks.
+		isCORSOptionsRequest := AccessControlAllowOrigin != "" && r.Method == http.MethodOptions
+		if !isCORSOptionsRequest && auth.UICredentials != nil {
 			user, pass, ok := r.BasicAuth()
 
 			if !ok {
@@ -312,7 +313,7 @@ func middleWareFunc(fn http.HandlerFunc) http.HandlerFunc {
 
 		w.Header().Set("Content-Encoding", "gzip")
 		gz := gzip.NewWriter(w)
-		defer gz.Close()
+		defer func() { _ = gz.Close() }()
 		gzr := gzipResponseWriter{Writer: gz, ResponseWriter: w}
 		fn(gzr, r)
 	}

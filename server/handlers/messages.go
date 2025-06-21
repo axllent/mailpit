@@ -39,5 +39,5 @@ func RedirectToLatestMessage(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	http.Redirect(w, r, uri, 302)
+	http.Redirect(w, r, uri, http.StatusFound)
 }

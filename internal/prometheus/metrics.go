@@ -179,10 +179,10 @@ func StartSeparateServer() {
 func GetMode() string {
 	mode := strings.ToLower(strings.TrimSpace(config.PrometheusListen))
 
-	switch {
-	case mode == "false", mode == "":
+	switch mode {
+	case "false", "":
 		return "disabled"
-	case mode == "true":
+	case "true":
 		return "integrated"
 	default:
 		return "separate"

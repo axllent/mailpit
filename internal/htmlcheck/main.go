@@ -152,13 +152,14 @@ func (c CanIEmail) getTest(k string) (Warning, error) {
 				s.Platform = platform
 				s.Version = version
 
-				if support == "y" {
+				switch support {
+				case "y":
 					y++
 					s.Support = "yes"
-				} else if support == "n" {
+				case "n":
 					n++
 					s.Support = "no"
-				} else {
+				default:
 					p++
 					s.Support = "partial"
 

@@ -121,14 +121,14 @@ func Run() {
 	// handles `sendmail -bs`
 	// telnet directly to SMTP
 	if UseB && UseS {
-		var caller telnet.Caller = telnet.StandardCaller
-
-		if isSocket {
+		var caller = telnet.StandardCaller
+		switch isSocket {
+		case true:
 			if err := telnet.DialToAndCallUnix(socketAddr, caller); err != nil {
 				fmt.Println(err)
 				os.Exit(1)
 			}
-		} else {
+		default:
 			if err := telnet.DialToAndCall(SMTPAddr, caller); err != nil {
 				fmt.Println(err)
 				os.Exit(1)

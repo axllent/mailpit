@@ -210,7 +210,7 @@ func SpamAssassinCheck(w http.ResponseWriter, r *http.Request) {
 		id, err = storage.LatestID(r)
 		if err != nil {
 			w.WriteHeader(404)
-			fmt.Fprint(w, err.Error())
+			_, _ = fmt.Fprint(w, err.Error())
 			return
 		}
 	}

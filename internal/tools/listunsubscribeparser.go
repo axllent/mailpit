@@ -27,7 +27,7 @@ func ListUnsubscribeParser(v string) ([]string, error) {
 	comments := reComments.FindAllStringSubmatch(v, -1)
 	for _, c := range comments {
 		// strip comments
-		v = strings.Replace(v, c[0], "", -1)
+		v = strings.ReplaceAll(v, c[0], "")
 		v = strings.TrimSpace(v)
 	}
 

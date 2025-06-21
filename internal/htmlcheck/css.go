@@ -193,10 +193,10 @@ func downloadToBytes(url string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != 200 {
-		err := fmt.Errorf("Error downloading %s", url)
+		err := fmt.Errorf("error downloading %s", url)
 		return nil, err
 	}
 
