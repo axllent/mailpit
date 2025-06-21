@@ -2,6 +2,25 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.26.2]
+
+### Feature
+- Store username with messages, auto-tag, and UI display ([#521](https://github.com/axllent/mailpit/issues/521))
+- Allow version checking to be disabled ([#524](https://github.com/axllent/mailpit/issues/524))
+
+### Chore
+- Apply linting to all JavaScript/Vue files with eslint & prettier
+- Update Go dependencies
+- Update node dependencies
+
+### Fix
+- Improve version polling, add thread safety and exponential backoff ([#523](https://github.com/axllent/mailpit/issues/523))
+
+### Test
+- Add JavaScript linting tests to CI
+- Add Go linting (gofmt) to CI
+
+
 ## [v1.26.1]
 
 ### Feature
