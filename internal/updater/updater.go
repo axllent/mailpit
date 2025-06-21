@@ -1,4 +1,4 @@
-// package Updater checks and downloads new versions
+// Package updater checks and downloads new versions
 package updater
 
 import (

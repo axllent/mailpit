@@ -93,6 +93,7 @@ func init() {
 
 	rootCmd.Flags().StringVarP(&config.Database, "database", "d", config.Database, "Database to store persistent data")
 	rootCmd.Flags().BoolVar(&config.DisableWAL, "disable-wal", config.DisableWAL, "Disable WAL for local database (allows NFS mounted DBs)")
+	rootCmd.Flags().BoolVar(&config.DisableVersionCheck, "disable-version-check", config.DisableVersionCheck, "Disable version update checking")
 	rootCmd.Flags().IntVar(&config.Compression, "compression", config.Compression, "Compression level to store raw messages (0-3)")
 	rootCmd.Flags().StringVar(&config.Label, "label", config.Label, "Optional label identify this Mailpit instance")
 	rootCmd.Flags().StringVar(&config.TenantID, "tenant-id", config.TenantID, "Database tenant ID to isolate data")
@@ -158,6 +159,7 @@ func init() {
 	rootCmd.Flags().StringVar(&config.TagsConfig, "tags-config", config.TagsConfig, "Load tags filters from yaml configuration file")
 	rootCmd.Flags().BoolVar(&tools.TagsTitleCase, "tags-title-case", tools.TagsTitleCase, "TitleCase new tags generated from plus-addresses and X-Tags")
 	rootCmd.Flags().StringVar(&config.TagsDisable, "tags-disable", config.TagsDisable, "Disable auto-tagging, comma separated (eg: plus-addresses,x-tags)")
+	rootCmd.Flags().BoolVar(&config.TagsUsername, "tags-username", config.TagsUsername, "Auto-tag messages with the authenticated username")
 
 	// Prometheus metrics
 	rootCmd.Flags().StringVar(&config.PrometheusListen, "enable-prometheus", config.PrometheusListen, "Enable Prometheus metrics: true|false|<ip:port> (eg:'0.0.0.0:9090')")
@@ -202,6 +204,8 @@ func initConfigFromEnv() {
 	}
 
 	config.DisableWAL = getEnabledFromEnv("MP_DISABLE_WAL")
+
+	config.DisableVersionCheck = getEnabledFromEnv("MP_DISABLE_VERSION_CHECK")
 
 	if len(os.Getenv("MP_COMPRESSION")) > 0 {
 		config.Compression, _ = strconv.Atoi(os.Getenv("MP_COMPRESSION"))
@@ -371,6 +375,7 @@ func initConfigFromEnv() {
 	config.TagsConfig = os.Getenv("MP_TAGS_CONFIG")
 	tools.TagsTitleCase = getEnabledFromEnv("MP_TAGS_TITLE_CASE")
 	config.TagsDisable = os.Getenv("MP_TAGS_DISABLE")
+	config.TagsUsername = getEnabledFromEnv("MP_TAGS_USERNAME")
 
 	// Prometheus metrics
 	if len(os.Getenv("MP_ENABLE_PROMETHEUS")) > 0 {

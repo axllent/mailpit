@@ -1,59 +1,57 @@
 <script>
-import { mailbox } from '../stores/mailbox.js'
+import { mailbox } from "../stores/mailbox.js";
 
 export default {
-    data() {
-        return {
-            updating: false,
-            needsUpdate: false,
-            timeout: 500,
-        }
-    },
+	data() {
+		return {
+			updating: false,
+			needsUpdate: false,
+			timeout: 500,
+		};
+	},
 
-    computed: {
-        mailboxUnread() {
-            return mailbox.unread
-        }
-    },
+	computed: {
+		mailboxUnread() {
+			return mailbox.unread;
+		},
+	},
 
-    watch: {
-        mailboxUnread: {
-            handler() {
-                if (this.updating) {
-                    this.needsUpdate = true
-                    return
-                }
+	watch: {
+		mailboxUnread: {
+			handler() {
+				if (this.updating) {
+					this.needsUpdate = true;
+					return;
+				}
 
-                this.scheduleUpdate()
-            },
-            immediate: true
-        }
-    },
+				this.scheduleUpdate();
+			},
+			immediate: true,
+		},
+	},
 
-    methods: {
-        scheduleUpdate() {
-            this.updating = true
-            this.needsUpdate = false
+	methods: {
+		scheduleUpdate() {
+			this.updating = true;
+			this.needsUpdate = false;
 
-            window.setTimeout(() => {
-                this.updateAppBadge()
-                this.updating = false
+			window.setTimeout(() => {
+				this.updateAppBadge();
+				this.updating = false;
 
-                if (this.needsUpdate) {
-                    this.scheduleUpdate()
-                }
-            }, this.timeout)
-        },
+				if (this.needsUpdate) {
+					this.scheduleUpdate();
+				}
+			}, this.timeout);
+		},
 
-        updateAppBadge() {
-            if (!('setAppBadge' in navigator)) {
-                return
-            }
+		updateAppBadge() {
+			if (!("setAppBadge" in navigator)) {
+				return;
+			}
 
-            navigator.setAppBadge(this.mailboxUnread)
-        }
-    }
-}
+			navigator.setAppBadge(this.mailboxUnread);
+		},
+	},
+};
 </script>
-
-<template></template>

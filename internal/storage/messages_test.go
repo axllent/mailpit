@@ -16,7 +16,7 @@ func TestTextEmailInserts(t *testing.T) {
 	start := time.Now()
 
 	for i := 0; i < testRuns; i++ {
-		if _, err := Store(&testTextEmail); err != nil {
+		if _, err := Store(&testTextEmail, nil); err != nil {
 			t.Log("error ", err)
 			t.Fail()
 		}
@@ -54,7 +54,7 @@ func TestMimeEmailInserts(t *testing.T) {
 		start := time.Now()
 
 		for i := 0; i < testRuns; i++ {
-			if _, err := Store(&testMimeEmail); err != nil {
+			if _, err := Store(&testMimeEmail, nil); err != nil {
 				t.Log("error ", err)
 				t.Fail()
 			}
@@ -94,7 +94,7 @@ func TestRetrieveMimeEmail(t *testing.T) {
 				t.Logf("Testing mime email retrieval (tenant %s)", tenantID)
 			}
 
-			id, err := Store(&testMimeEmail)
+			id, err := Store(&testMimeEmail, nil)
 			if err != nil {
 				t.Log("error ", err)
 				t.Fail()
@@ -151,7 +151,7 @@ func TestMessageSummary(t *testing.T) {
 			t.Logf("Testing message summary (tenant %s)", tenantID)
 		}
 
-		if _, err := Store(&testMimeEmail); err != nil {
+		if _, err := Store(&testMimeEmail, nil); err != nil {
 			t.Log("error ", err)
 			t.Fail()
 		}
@@ -185,7 +185,7 @@ func BenchmarkImportText(b *testing.B) {
 	defer Close()
 
 	for i := 0; i < b.N; i++ {
-		if _, err := Store(&testTextEmail); err != nil {
+		if _, err := Store(&testTextEmail, nil); err != nil {
 			b.Log("error ", err)
 			b.Fail()
 		}
@@ -197,7 +197,7 @@ func BenchmarkImportMime(b *testing.B) {
 	defer Close()
 
 	for i := 0; i < b.N; i++ {
-		if _, err := Store(&testMimeEmail); err != nil {
+		if _, err := Store(&testMimeEmail, nil); err != nil {
 			b.Log("error ", err)
 			b.Fail()
 		}

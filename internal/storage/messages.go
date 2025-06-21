@@ -25,8 +25,9 @@ import (
 )
 
 // Store will save an email to the database tables.
+// The username is the authentication username of either the SMTP or HTTP client (blank for none).
 // Returns the database ID of the saved message.
-func Store(body *[]byte) (string, error) {
+func Store(body *[]byte, username *string) (string, error) {
 	parser := enmime.NewParser(enmime.DisableCharacterDetection(true))
 
 	// Parse message body with enmime
@@ -44,12 +45,15 @@ func Store(body *[]byte) (string, error) {
 		from = &mail.Address{Name: env.GetHeader("From")}
 	}
 
-	obj := DBMailSummary{
+	obj := Metadata{
 		From:    from,
 		To:      addressToSlice(env, "To"),
 		Cc:      addressToSlice(env, "Cc"),
 		Bcc:     addressToSlice(env, "Bcc"),
 		ReplyTo: addressToSlice(env, "Reply-To"),
+	}
+	if username != nil {
+		obj.Username = *username
 	}
 
 	messageID := strings.Trim(env.GetHeader("Message-ID"), "<>")
@@ -91,8 +95,8 @@ func Store(body *[]byte) (string, error) {
 	snippet := tools.CreateSnippet(env.Text, env.HTML)
 
 	sql := fmt.Sprintf(`INSERT INTO %s 
-		(Created, ID, MessageID, Subject, Metadata, Size, Inline, Attachments, SearchText, Read, Snippet) 
-		VALUES(?,?,?,?,?,?,?,?,?,0,?)`,
+    	(Created, ID, MessageID, Subject, Metadata, Size, Inline, Attachments, SearchText, Read, Snippet) 
+	    VALUES(?,?,?,?,?,?,?,?,?,0,?)`,
 		tenant("mailbox"),
 	) // #nosec
 
@@ -143,6 +147,11 @@ func Store(body *[]byte) (string, error) {
 	if !config.TagsDisablePlus {
 		// get tags from plus-addresses
 		tags = append(tags, obj.tagsFromPlusAddresses()...)
+	}
+
+	// auto-tag by username if enabled
+	if config.TagsUsername && username != nil && *username != "" {
+		tags = append(tags, *username)
 	}
 
 	// extract tags from search matches, and sort and extract unique tags
@@ -205,22 +214,31 @@ func List(start int, beforeTS int64, limit int) ([]MessageSummary, error) {
 		var id string
 		var messageID string
 		var subject string
-		var metadata string
+		var metadataJSON string
 		var size float64 // use float64 for rqlite compatibility
 		var attachments int
 		var read int
 		var snippet string
 		em := MessageSummary{}
+		var meta Metadata
 
-		if err := row.Scan(&created, &id, &messageID, &subject, &metadata, &size, &attachments, &read, &snippet); err != nil {
+		err := row.Scan(&created, &id, &messageID, &subject, &metadataJSON, &size, &attachments, &read, &snippet)
+		if err != nil {
 			logger.Log().Errorf("[db] %s", err.Error())
 			return
 		}
 
-		if err := json.Unmarshal([]byte(metadata), &em); err != nil {
+		if err := json.Unmarshal([]byte(metadataJSON), &meta); err != nil {
 			logger.Log().Errorf("[json] %s", err.Error())
 			return
 		}
+
+		em.From = meta.From
+		em.To = meta.To
+		em.Cc = meta.Cc
+		em.Bcc = meta.Bcc
+		em.ReplyTo = meta.ReplyTo
+		em.Username = meta.Username
 
 		em.Created = time.UnixMilli(int64(created))
 		em.ID = id
@@ -271,12 +289,20 @@ func GetMessage(id string) (*Message, error) {
 		return nil, err
 	}
 
-	var from *mail.Address
-	fromData := addressToSlice(env, "From")
-	if len(fromData) > 0 {
-		from = fromData[0]
-	} else if env.GetHeader("From") != "" {
-		from = &mail.Address{Name: env.GetHeader("From")}
+	// Load metadata from DB
+	meta, err := GetMetadata(id)
+	if err != nil {
+		meta = Metadata{}
+	}
+
+	from := meta.From
+	if from == nil {
+		fromData := addressToSlice(env, "From")
+		if len(fromData) > 0 {
+			from = fromData[0]
+		} else if env.GetHeader("From") != "" {
+			from = &mail.Address{Name: env.GetHeader("From")}
+		}
 	}
 
 	messageID := strings.Trim(env.GetHeader("Message-ID"), "<>")
@@ -302,7 +328,6 @@ func GetMessage(id string) (*Message, error) {
 			}
 
 			logger.Log().Debugf("[db] %s does not contain a date header, using received datetime", id)
-
 			date = time.UnixMilli(int64(created))
 		}); err != nil {
 			logger.Log().Errorf("[db] %s", err.Error())
@@ -323,8 +348,8 @@ func GetMessage(id string) (*Message, error) {
 		Tags:       getMessageTags(id),
 		Size:       uint64(len(raw)),
 		Text:       env.Text,
+		Username:   meta.Username,
 	}
-
 	obj.HTML = env.HTML
 	obj.Inline = []Attachment{}
 	obj.Attachments = []Attachment{}
@@ -746,4 +771,18 @@ func DeleteAllMessages() error {
 	websockets.Broadcast("truncate", nil)
 
 	return err
+}
+
+// GetMetadata retrieves the metadata for a message by its ID
+func GetMetadata(id string) (Metadata, error) {
+	var metadataJSON string
+	row := db.QueryRow(fmt.Sprintf("SELECT Metadata FROM %s WHERE ID = ?", tenant("mailbox")), id)
+	if err := row.Scan(&metadataJSON); err != nil {
+		return Metadata{}, err
+	}
+	var meta Metadata
+	if err := json.Unmarshal([]byte(metadataJSON), &meta); err != nil {
+		return Metadata{}, err
+	}
+	return meta, nil
 }
