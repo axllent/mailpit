@@ -138,17 +138,6 @@ func deleteMessageTag(id, name string) error {
 	return pruneUnusedTags()
 }
 
-// DeleteAllMessageTags deleted all tags from a message
-func DeleteAllMessageTags(id string) error {
-	if _, err := sqlf.DeleteFrom(tenant("message_tags")).
-		Where(tenant("message_tags.ID")+" = ?", id).
-		ExecAndClose(context.TODO(), db); err != nil {
-		return err
-	}
-
-	return pruneUnusedTags()
-}
-
 // GetAllTags returns all used tags
 func GetAllTags() []string {
 	var tags = []string{}

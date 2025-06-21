@@ -1,11 +1,13 @@
 package storage
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"testing"
 
 	"github.com/axllent/mailpit/config"
+	"github.com/leporo/sqlf"
 )
 
 func TestTags(t *testing.T) {
@@ -83,7 +85,7 @@ func TestTags(t *testing.T) {
 		assertEqual(t, strings.Join(newTags[1:], "|"), strings.Join(returnedTags, "|"), "Message tags do not match after deleting 1")
 
 		// remove all tags
-		if err := DeleteAllMessageTags(id); err != nil {
+		if err := deleteAllMessageTags(id); err != nil {
 			t.Log("error ", err)
 			t.Fail()
 		}
@@ -97,7 +99,7 @@ func TestTags(t *testing.T) {
 		}
 		returnedTags = getMessageTags(id)
 		assertEqual(t, "Duplicate Tag", strings.Join(returnedTags, "|"), "Message tags should be duplicated")
-		if err := DeleteAllMessageTags(id); err != nil {
+		if err := deleteAllMessageTags(id); err != nil {
 			t.Log("error ", err)
 			t.Fail()
 		}
@@ -109,7 +111,7 @@ func TestTags(t *testing.T) {
 		}
 		returnedTags = getMessageTags(id)
 		assertEqual(t, "Dirty Tag", strings.Join(returnedTags, "|"), "Dirty message tag did not clean as expected")
-		if err := DeleteAllMessageTags(id); err != nil {
+		if err := deleteAllMessageTags(id); err != nil {
 			t.Log("error ", err)
 			t.Fail()
 		}
@@ -132,7 +134,7 @@ func TestTags(t *testing.T) {
 
 		returnedTags = getMessageTags(id)
 		assertEqual(t, "BccTag|CcTag|FromFag|ToTag|X-tag1|X-tag2", strings.Join(returnedTags, "|"), "Tags not detected correctly")
-		if err := DeleteAllMessageTags(id); err != nil {
+		if err := deleteAllMessageTags(id); err != nil {
 			t.Log("error ", err)
 			t.Fail()
 		}
@@ -185,4 +187,15 @@ func TestUsernameAutoTagging(t *testing.T) {
 			}
 		}
 	})
+}
+
+// DeleteAllMessageTags deleted all tags from a message
+func deleteAllMessageTags(id string) error {
+	if _, err := sqlf.DeleteFrom(tenant("message_tags")).
+		Where(tenant("message_tags.ID")+" = ?", id).
+		ExecAndClose(context.TODO(), db); err != nil {
+		return err
+	}
+
+	return pruneUnusedTags()
 }

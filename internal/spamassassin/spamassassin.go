@@ -57,13 +57,6 @@ func SetService(s string) {
 	}
 }
 
-// SetTimeout defines the timeout
-func SetTimeout(t int) {
-	if t > 0 {
-		timeout = t
-	}
-}
-
 // Ping returns whether a service is active or not
 func Ping() error {
 	if service == "postmark" {
