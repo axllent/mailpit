@@ -1,15 +1,18 @@
 <script>
-import axios from 'axios'
-import commonMixins from '../../mixins/CommonMixins'
+import axios from "axios";
+import commonMixins from "../../mixins/CommonMixins";
 
 export default {
+	mixins: [commonMixins],
+
 	props: {
-		message: Object,
+		message: {
+			type: Object,
+			required: true,
+		},
 	},
 
 	emits: ["setLinkErrors"],
-
-	mixins: [commonMixins],
 
 	data() {
 		return {
@@ -19,116 +22,116 @@ export default {
 			check: false,
 			loaded: false,
 			loading: false,
-		}
-	},
-
-	created() {
-		this.autoScan = localStorage.getItem('LinkCheckAutoScan')
-		this.followRedirects = localStorage.getItem('LinkCheckFollowRedirects')
-	},
-
-	mounted() {
-		this.loaded = true
-		if (this.autoScan) {
-			this.doCheck()
-		}
-	},
-
-	watch: {
-		autoScan(v) {
-			if (!this.loaded) {
-				return
-			}
-			if (v) {
-				localStorage.setItem('LinkCheckAutoScan', true)
-				if (!this.check) {
-					this.doCheck()
-				}
-			} else {
-				localStorage.removeItem('LinkCheckAutoScan')
-			}
-		},
-		followRedirects(v) {
-			if (!this.loaded) {
-				return
-			}
-			if (v) {
-				localStorage.setItem('LinkCheckFollowRedirects', true)
-			} else {
-				localStorage.removeItem('LinkCheckFollowRedirects')
-			}
-			if (this.check) {
-				this.doCheck()
-			}
-		}
+		};
 	},
 
 	computed: {
 		groupedStatuses() {
-			let results = {}
+			const results = {};
 
 			if (!this.check) {
-				return results
+				return results;
 			}
 
 			// group by status
-			this.check.Links.forEach(function (r) {
+			this.check.Links.forEach((r) => {
 				if (!results[r.StatusCode]) {
-					let css = ""
+					let css = "";
 					if (r.StatusCode >= 400 || r.StatusCode === 0) {
-						css = "text-danger"
+						css = "text-danger";
 					} else if (r.StatusCode >= 300) {
-						css = "text-info"
+						css = "text-info";
 					}
 
 					if (r.StatusCode === 0) {
-						r.Status = 'Cannot connect to server'
+						r.Status = "Cannot connect to server";
 					}
 					results[r.StatusCode] = {
 						StatusCode: r.StatusCode,
 						Status: r.Status,
 						Class: css,
-						URLS: []
-					}
+						URLS: [],
+					};
 				}
-				results[r.StatusCode].URLS.push(r.URL)
-			})
+				results[r.StatusCode].URLS.push(r.URL);
+			});
 
-			let newArr = []
+			const newArr = [];
 
 			for (const i in results) {
-				newArr.push(results[i])
+				newArr.push(results[i]);
 			}
 
 			// sort statuses
-			let sorted = newArr.sort((a, b) => {
+			const sorted = newArr.sort((a, b) => {
 				if (a.StatusCode === 0) {
-					return false
+					return false;
 				}
-				return a.StatusCode < b.StatusCode
-			})
+				return a.StatusCode < b.StatusCode;
+			});
 
+			return sorted;
+		},
+	},
 
-			return sorted
+	watch: {
+		autoScan(v) {
+			if (!this.loaded) {
+				return;
+			}
+			if (v) {
+				localStorage.setItem("LinkCheckAutoScan", true);
+				if (!this.check) {
+					this.doCheck();
+				}
+			} else {
+				localStorage.removeItem("LinkCheckAutoScan");
+			}
+		},
+		followRedirects(v) {
+			if (!this.loaded) {
+				return;
+			}
+			if (v) {
+				localStorage.setItem("LinkCheckFollowRedirects", true);
+			} else {
+				localStorage.removeItem("LinkCheckFollowRedirects");
+			}
+			if (this.check) {
+				this.doCheck();
+			}
+		},
+	},
+
+	created() {
+		this.autoScan = localStorage.getItem("LinkCheckAutoScan");
+		this.followRedirects = localStorage.getItem("LinkCheckFollowRedirects");
+	},
+
+	mounted() {
+		this.loaded = true;
+		if (this.autoScan) {
+			this.doCheck();
 		}
 	},
 
 	methods: {
 		doCheck() {
-			this.check = false
-			this.loading = true
-			let uri = this.resolve('/api/v1/message/' + this.message.ID + '/link-check')
+			this.check = false;
+			this.loading = true;
+			let uri = this.resolve("/api/v1/message/" + this.message.ID + "/link-check");
 			if (this.followRedirects) {
-				uri += '?follow=true'
+				uri += "?follow=true";
 			}
 
 			// ignore any error, do not show loader
-			axios.get(uri, null)
+			axios
+				.get(uri, null)
 				.then((result) => {
-					this.check = result.data
-					this.error = false
+					this.check = result.data;
+					this.error = false;
 
-					this.$emit('setLinkErrors', result.data.Errors)
+					this.$emit("setLinkErrors", result.data.Errors);
 				})
 				.catch((error) => {
 					// handle error
@@ -136,27 +139,27 @@ export default {
 						// The request was made and the server responded with a status code
 						// that falls out of the range of 2xx
 						if (error.response.data.Error) {
-							this.error = error.response.data.Error
+							this.error = error.response.data.Error;
 						} else {
-							this.error = error.response.data
+							this.error = error.response.data;
 						}
 					} else if (error.request) {
 						// The request was made but no response was received
 						// `error.request` is an instance of XMLHttpRequest in the browser and an instance of
 						// http.ClientRequest in node.js
-						this.error = 'Error sending data to the server. Please try again.'
+						this.error = "Error sending data to the server. Please try again.";
 					} else {
 						// Something happened in setting up the request that triggered an Error
-						this.error = error.message
+						this.error = error.message;
 					}
 				})
 				.then((result) => {
 					// always run
-					this.loading = false
-				})
+					this.loading = false;
+				});
 		},
-	}
-}
+	},
+};
 </script>
 
 <template>
@@ -164,24 +167,24 @@ export default {
 		<div class="row mb-3 align-items-center">
 			<div class="col">
 				<h4 class="mb-0">
-					<template v-if="!check">
-						Link check
-					</template>
+					<template v-if="!check"> Link check </template>
 					<template v-else>
 						<template v-if="check.Links.length">
-							Scanned {{ formatNumber(check.Links.length) }}
-							link<template v-if="check.Links.length != 1">s</template>
+							Scanned {{ formatNumber(check.Links.length) }} link<template v-if="check.Links.length != 1"
+								>s</template
+							>
 						</template>
-						<template v-else>
-							No links detected
-						</template>
+						<template v-else> No links detected </template>
 					</template>
 				</h4>
 			</div>
 			<div class="col-auto">
 				<div class="input-group">
-					<button class="btn btn-outline-secondary" data-bs-toggle="modal"
-						data-bs-target="#AboutLinkCheckResults">
+					<button
+						class="btn btn-outline-secondary"
+						data-bs-toggle="modal"
+						data-bs-target="#AboutLinkCheckResults"
+					>
 						<i class="bi bi-info-circle-fill"></i>
 						Help
 					</button>
@@ -195,12 +198,12 @@ export default {
 
 		<div v-if="!check">
 			<p class="text-muted">
-				Link check scans your email text &amp; HTML for unique links, testing the response status codes.
-				This includes links to images and remote CSS stylesheets.
+				Link check scans your email text &amp; HTML for unique links, testing the response status codes. This
+				includes links to images and remote CSS stylesheets.
 			</p>
 
 			<p class="text-center my-5">
-				<button v-if="!check" class="btn btn-primary btn-lg" @click="doCheck()" :disabled="loading">
+				<button v-if="!check" class="btn btn-primary btn-lg" :disabled="loading" @click="doCheck()">
 					<template v-if="loading">
 						Checking links
 						<div class="ms-1 spinner-border spinner-border-sm text-light" role="status">
@@ -215,14 +218,14 @@ export default {
 			</p>
 		</div>
 
-		<div v-else v-for="s, k in groupedStatuses">
+		<div v-for="(s, k) in groupedStatuses" v-else :key="k">
 			<div class="card mb-3">
 				<div class="card-header h4" :class="s.Class">
 					Status {{ s.StatusCode }}
 					<small v-if="s.Status != ''" class="ms-2 small text-muted">({{ s.Status }})</small>
 				</div>
 				<ul class="list-group list-group-flush">
-					<li v-for="u in s.URLS" class="list-group-item">
+					<li v-for="(u, i) in s.URLS" :key="'status' + i" class="list-group-item">
 						<a :href="u" target="_blank" class="no-icon">{{ u }}</a>
 					</li>
 				</ul>
@@ -235,22 +238,31 @@ export default {
 				{{ error }}
 			</div>
 		</template>
-
 	</div>
 
-	<div class="modal fade" id="LinkCheckOptions" tabindex="-1" aria-labelledby="LinkCheckOptionsLabel"
-		aria-hidden="true">
+	<div
+		id="LinkCheckOptions"
+		class="modal fade"
+		tabindex="-1"
+		aria-labelledby="LinkCheckOptionsLabel"
+		aria-hidden="true"
+	>
 		<div class="modal-dialog modal-lg modal-dialog-scrollable">
 			<div class="modal-content">
 				<div class="modal-header">
-					<h1 class="modal-title fs-5" id="LinkCheckOptionsLabel">Link check options</h1>
+					<h1 id="LinkCheckOptionsLabel" class="modal-title fs-5">Link check options</h1>
 					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 				</div>
 				<div class="modal-body">
 					<h6 class="mt-4">Follow HTTP redirects (status 301 & 302)</h6>
 					<div class="form-check form-switch mb-4">
-						<input class="form-check-input" type="checkbox" role="switch" v-model="followRedirects"
-							id="LinkCheckFollowRedirectsSwitch">
+						<input
+							id="LinkCheckFollowRedirectsSwitch"
+							v-model="followRedirects"
+							class="form-check-input"
+							type="checkbox"
+							role="switch"
+						/>
 						<label class="form-check-label" for="LinkCheckFollowRedirectsSwitch">
 							<template v-if="followRedirects">Following HTTP redirects</template>
 							<template v-else>Not following HTTP redirects</template>
@@ -259,8 +271,13 @@ export default {
 
 					<h6 class="mt-4">Automatic link checking</h6>
 					<div class="form-check form-switch mb-3">
-						<input class="form-check-input" type="checkbox" role="switch" v-model="autoScan"
-							id="LinkCheckAutoCheckSwitch">
+						<input
+							id="LinkCheckAutoCheckSwitch"
+							v-model="autoScan"
+							class="form-check-input"
+							type="checkbox"
+							role="switch"
+						/>
 						<label class="form-check-label" for="LinkCheckAutoCheckSwitch">
 							<template v-if="autoScan">Automatic link checking is enabled</template>
 							<template v-else>Automatic link checking is disabled</template>
@@ -270,7 +287,6 @@ export default {
 							Only enable this if you understand the potential risks &amp; consequences.
 						</div>
 					</div>
-
 				</div>
 				<div class="modal-footer">
 					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -279,25 +295,39 @@ export default {
 		</div>
 	</div>
 
-	<div class="modal fade" id="AboutLinkCheckResults" tabindex="-1" aria-labelledby="AboutLinkCheckResultsLabel"
-		aria-hidden="true">
+	<div
+		id="AboutLinkCheckResults"
+		class="modal fade"
+		tabindex="-1"
+		aria-labelledby="AboutLinkCheckResultsLabel"
+		aria-hidden="true"
+	>
 		<div class="modal-dialog modal-lg modal-dialog-scrollable">
 			<div class="modal-content">
 				<div class="modal-header">
-					<h1 class="modal-title fs-5" id="AboutLinkCheckResultsLabel">About Link check</h1>
+					<h1 id="AboutLinkCheckResultsLabel" class="modal-title fs-5">About Link check</h1>
 					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 				</div>
 				<div class="modal-body">
-					<div class="accordion" id="LinkCheckAboutAccordion">
+					<div id="LinkCheckAboutAccordion" class="accordion">
 						<div class="accordion-item">
 							<h2 class="accordion-header">
-								<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-									data-bs-target="#col1" aria-expanded="false" aria-controls="col1">
+								<button
+									class="accordion-button collapsed"
+									type="button"
+									data-bs-toggle="collapse"
+									data-bs-target="#col1"
+									aria-expanded="false"
+									aria-controls="col1"
+								>
 									What is Link check?
 								</button>
 							</h2>
-							<div id="col1" class="accordion-collapse collapse"
-								data-bs-parent="#LinkCheckAboutAccordion">
+							<div
+								id="col1"
+								class="accordion-collapse collapse"
+								data-bs-parent="#LinkCheckAboutAccordion"
+							>
 								<div class="accordion-body">
 									Link check scans your message HTML and text for all unique links, images and linked
 									stylesheets. It then does a HTTP <code>HEAD</code> request to each link, 5 at a
@@ -307,35 +337,52 @@ export default {
 						</div>
 						<div class="accordion-item">
 							<h2 class="accordion-header">
-								<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-									data-bs-target="#col2" aria-expanded="false" aria-controls="col2">
+								<button
+									class="accordion-button collapsed"
+									type="button"
+									data-bs-toggle="collapse"
+									data-bs-target="#col2"
+									aria-expanded="false"
+									aria-controls="col2"
+								>
 									What are "301" and "302" links?
 								</button>
 							</h2>
-							<div id="col2" class="accordion-collapse collapse"
-								data-bs-parent="#LinkCheckAboutAccordion">
+							<div
+								id="col2"
+								class="accordion-collapse collapse"
+								data-bs-parent="#LinkCheckAboutAccordion"
+							>
 								<div class="accordion-body">
 									<p>
-										These are links that redirect you to another URL, for example newsletters
-										often use redirect links to track user clicks.
+										These are links that redirect you to another URL, for example newsletters often
+										use redirect links to track user clicks.
 									</p>
 									<p>
 										By default Link check will not follow these links, however you can turn this on
-										via
-										the settings and Link check will "follow" those redirects.
+										via the settings and Link check will "follow" those redirects.
 									</p>
 								</div>
 							</div>
 						</div>
 						<div class="accordion-item">
 							<h2 class="accordion-header">
-								<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-									data-bs-target="#col3" aria-expanded="false" aria-controls="col3">
+								<button
+									class="accordion-button collapsed"
+									type="button"
+									data-bs-toggle="collapse"
+									data-bs-target="#col3"
+									aria-expanded="false"
+									aria-controls="col3"
+								>
 									Why are some links returning an error but work in my browser?
 								</button>
 							</h2>
-							<div id="col3" class="accordion-collapse collapse"
-								data-bs-parent="#LinkCheckAboutAccordion">
+							<div
+								id="col3"
+								class="accordion-collapse collapse"
+								data-bs-parent="#LinkCheckAboutAccordion"
+							>
 								<div class="accordion-body">
 									<p>This may be due to various reasons, for instance:</p>
 									<ul>
@@ -345,20 +392,29 @@ export default {
 											The webserver is blocking requests that don't come from authenticated web
 											browsers.
 										</li>
-										<li>The webserver or doesn't allow HTTP <code>HEAD</code> requests. </li>
+										<li>The webserver or doesn't allow HTTP <code>HEAD</code> requests.</li>
 									</ul>
 								</div>
 							</div>
 						</div>
 						<div class="accordion-item">
 							<h2 class="accordion-header">
-								<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-									data-bs-target="#col4" aria-expanded="false" aria-controls="col4">
+								<button
+									class="accordion-button collapsed"
+									type="button"
+									data-bs-toggle="collapse"
+									data-bs-target="#col4"
+									aria-expanded="false"
+									aria-controls="col4"
+								>
 									What are the risks of running Link check automatically?
 								</button>
 							</h2>
-							<div id="col4" class="accordion-collapse collapse"
-								data-bs-parent="#LinkCheckAboutAccordion">
+							<div
+								id="col4"
+								class="accordion-collapse collapse"
+								data-bs-parent="#LinkCheckAboutAccordion"
+							>
 								<div class="accordion-body">
 									<p>
 										Depending on the type of messages you are testing, opening all links on all
@@ -382,7 +438,6 @@ export default {
 								</div>
 							</div>
 						</div>
-
 					</div>
 				</div>
 				<div class="modal-footer">

@@ -33,7 +33,7 @@ func LoadTagFilters() {
 			logger.Log().Warnf("[tags] ignoring tag item with missing 'match'")
 			continue
 		}
-		if t.Tags == nil || len(t.Tags) == 0 {
+		if len(t.Tags) == 0 {
 			logger.Log().Warnf("[tags] ignoring tag items with missing 'tags' array")
 			continue
 		}
