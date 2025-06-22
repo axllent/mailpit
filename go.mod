@@ -1,11 +1,6 @@
 module github.com/axllent/mailpit
 
-go 1.23.0
-
-toolchain go1.23.2
-
-// https://github.com/jaytaylor/html2text/issues/67
-replace github.com/olekukonko/tablewriter => github.com/olekukonko/tablewriter v0.0.5
+go 1.24.3
 
 require (
 	github.com/PuerkitoBio/goquery v1.10.3
@@ -15,7 +10,7 @@ require (
 	github.com/gomarkdown/markdown v0.0.0-20250311123330-531bef5e742b
 	github.com/gorilla/mux v1.8.1
 	github.com/gorilla/websocket v1.5.3
-	github.com/jhillyerd/enmime/v2 v2.1.0
+	github.com/jhillyerd/enmime/v2 v2.2.0
 	github.com/klauspost/compress v1.18.0
 	github.com/kovidgoyal/imaging v1.6.4
 	github.com/leporo/sqlf v1.4.0
@@ -42,15 +37,19 @@ require (
 	github.com/cention-sany/utf7 v0.0.0-20170124080048-26cad61bd60a // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
+	github.com/fatih/color v1.18.0 // indirect
 	github.com/gogs/chardet v0.0.0-20211120154057-b7413eaefb8f // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/css v1.0.1 // indirect
+	github.com/inbucket/html2text v1.0.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
-	github.com/jaytaylor/html2text v0.0.0-20230321000545-74c2419ad056 // indirect
+	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-runewidth v0.0.16 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/ncruces/go-strftime v0.1.9 // indirect
+	github.com/olekukonko/errors v1.1.0 // indirect
+	github.com/olekukonko/ll v0.0.9 // indirect
 	github.com/olekukonko/tablewriter v1.0.7 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/prometheus/client_model v0.6.2 // indirect
