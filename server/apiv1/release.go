@@ -17,25 +17,6 @@ import (
 	"github.com/lithammer/shortuuid/v4"
 )
 
-// swagger:parameters ReleaseMessageParams
-type releaseMessageParams struct {
-	// Message database ID
-	//
-	// in: path
-	// description: Message database ID
-	// required: true
-	ID string
-
-	// in: body
-	Body struct {
-		// Array of email addresses to relay the message to
-		//
-		// required: true
-		// example: ["user1@example.com", "user2@example.com"]
-		To []string
-	}
-}
-
 // ReleaseMessage (method: POST) will release a message via a pre-configured external SMTP server.
 func ReleaseMessage(w http.ResponseWriter, r *http.Request) {
 	// swagger:route POST /api/v1/message/{ID}/release message ReleaseMessageParams

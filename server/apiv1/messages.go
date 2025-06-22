@@ -8,35 +8,6 @@ import (
 	"github.com/axllent/mailpit/internal/storage"
 )
 
-// swagger:parameters GetMessagesParams
-type getMessagesParams struct {
-	// Pagination offset
-	//
-	// in: query
-	// name: start
-	// required: false
-	// default: 0
-	// type: integer
-	Start int `json:"start"`
-
-	// Limit number of results
-	//
-	// in: query
-	// name: limit
-	// required: false
-	// default: 50
-	// type: integer
-	Limit int `json:"limit"`
-}
-
-// Summary of messages
-// swagger:response MessagesSummaryResponse
-type messagesSummaryResponse struct {
-	// The messages summary
-	// in: body
-	Body MessagesSummary
-}
-
 // MessagesSummary is a summary of a list of messages
 type MessagesSummary struct {
 	// Total number of messages in mailbox
@@ -109,39 +80,6 @@ func GetMessages(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewEncoder(w).Encode(res); err != nil {
 		httpError(w, err.Error())
 	}
-}
-
-// swagger:parameters SetReadStatusParams
-type setReadStatusParams struct {
-	// in: body
-	Body struct {
-		// Read status
-		//
-		// required: false
-		// default: false
-		// example: true
-		Read bool
-
-		// Optional array of message database IDs
-		//
-		// required: false
-		// default: []
-		// example: ["4oRBnPtCXgAqZniRhzLNmS", "hXayS6wnCgNnt6aFTvmOF6"]
-		IDs []string
-
-		// Optional messages matching a search
-		//
-		// required: false
-		// example: tag:backups
-		Search string
-	}
-
-	// Optional [timezone identifier](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) used only for `before:` & `after:` searches (eg: "Pacific/Auckland").
-	//
-	// in: query
-	// required: false
-	// type string
-	TZ string `json:"tz"`
 }
 
 // SetReadStatus (method: PUT) will update the status to Read/Unread for all provided IDs.
@@ -225,19 +163,6 @@ func SetReadStatus(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write([]byte("ok"))
 }
 
-// swagger:parameters DeleteMessagesParams
-type deleteMessagesParams struct {
-	// Delete request
-	// in: body
-	Body struct {
-		// Array of message database IDs
-		//
-		// required: false
-		// example: ["4oRBnPtCXgAqZniRhzLNmS", "hXayS6wnCgNnt6aFTvmOF6"]
-		IDs []string
-	}
-}
-
 // DeleteMessages (method: DELETE) deletes all messages matching IDS.
 func DeleteMessages(w http.ResponseWriter, r *http.Request) {
 	// swagger:route DELETE /api/v1/messages messages DeleteMessagesParams
@@ -277,39 +202,6 @@ func DeleteMessages(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Add("Content-Type", "text/plain")
 	_, _ = w.Write([]byte("ok"))
-}
-
-// swagger:parameters SearchParams
-type searchParams struct {
-	// Search query
-	//
-	// in: query
-	// required: true
-	// type: string
-	Query string `json:"query"`
-
-	// Pagination offset
-	//
-	// in: query
-	// required: false
-	// default: 0
-	// type integer
-	Start string `json:"start"`
-
-	// Limit results
-	//
-	// in: query
-	// required: false
-	// default: 50
-	// type integer
-	Limit string `json:"limit"`
-
-	// Optional [timezone identifier](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) used only for `before:` & `after:` searches (eg: "Pacific/Auckland").
-	//
-	// in: query
-	// required: false
-	// type string
-	TZ string `json:"tz"`
 }
 
 // Search returns the latest messages as JSON
@@ -367,23 +259,6 @@ func Search(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewEncoder(w).Encode(res); err != nil {
 		httpError(w, err.Error())
 	}
-}
-
-// swagger:parameters DeleteSearchParams
-type deleteSearchParams struct {
-	// Search query
-	//
-	// in: query
-	// required: true
-	// type: string
-	Query string `json:"query"`
-
-	// [Timezone identifier](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) used only for `before:` & `after:` searches (eg: "Pacific/Auckland").
-	//
-	// in: query
-	// required: false
-	// type string
-	TZ string `json:"tz"`
 }
 
 // DeleteSearch will delete all messages matching a search

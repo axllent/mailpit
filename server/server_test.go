@@ -283,7 +283,9 @@ func TestAPIv1Send(t *testing.T) {
 		t.Errorf("Expected nil, received %s", err.Error())
 	}
 
-	resp := apiv1.SendMessageConfirmation{}
+	resp := struct {
+		ID string
+	}{}
 
 	if err := json.Unmarshal(b, &resp); err != nil {
 		t.Error(err.Error())

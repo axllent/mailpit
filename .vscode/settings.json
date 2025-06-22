@@ -26,6 +26,7 @@
         "Mechs",
         "navhtml",
         "neostandard",
+        "nolint",
         "popperjs",
         "readyz",
         "RSET",

@@ -35,9 +35,7 @@ func httpJSONError(w http.ResponseWriter, msg string) {
 	w.Header().Set("Referrer-Policy", "no-referrer")
 	w.Header().Set("Content-Security-Policy", config.ContentSecurityPolicy)
 	w.WriteHeader(http.StatusBadRequest)
-	e := JSONErrorMessage{
-		Error: msg,
-	}
+	e := struct{ Error string }{Error: msg}
 
 	w.Header().Add("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(e); err != nil {

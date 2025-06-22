@@ -10,16 +10,7 @@ import (
 	"github.com/axllent/mailpit/internal/stats"
 )
 
-// Application information
-// swagger:response AppInfoResponse
-type appInfoResponse struct {
-	// Application information
-	//
-	// in: body
-	Body stats.AppInformation
-}
-
-// AppInfo returns some basic details about the running app, and latest release.
+// AppInfo returns some basic details about the running app including the latest release (unless disabled).
 func AppInfo(w http.ResponseWriter, _ *http.Request) {
 	// swagger:route GET /api/v1/info application AppInformation
 	//
@@ -42,59 +33,9 @@ func AppInfo(w http.ResponseWriter, _ *http.Request) {
 	}
 }
 
-// Response includes global web UI settings
-//
-// swagger:model WebUIConfiguration
-type webUIConfiguration struct {
-	// Optional label to identify this Mailpit instance
-	Label string
-	// Message Relay information
-	MessageRelay struct {
-		// Whether message relaying (release) is enabled
-		Enabled bool
-		// The configured SMTP server address
-		SMTPServer string
-		// Enforced Return-Path (if set) for relay bounces
-		ReturnPath string
-		// Only allow relaying to these recipients (regex)
-		AllowedRecipients string
-		// Block relaying to these recipients (regex)
-		BlockedRecipients string
-		// Overrides the "From" address for all relayed messages
-		OverrideFrom string
-		// Preserve the original Message-IDs when relaying messages
-		PreserveMessageIDs bool
-
-		// DEPRECATED 2024/03/12
-		// swagger:ignore
-		RecipientAllowlist string
-	}
-
-	// Whether SpamAssassin is enabled
-	SpamAssassin bool
-
-	// Whether Chaos support is enabled at runtime
-	ChaosEnabled bool
-
-	// Whether messages with duplicate IDs are ignored
-	DuplicatesIgnored bool
-
-	// Whether the delete button should be hidden
-	HideDeleteAllButton bool
-}
-
-// Web UI configuration response
-// swagger:response WebUIConfigurationResponse
-type webUIConfigurationResponse struct {
-	// Web UI configuration settings
-	//
-	// in: body
-	Body webUIConfiguration
-}
-
 // WebUIConfig returns configuration settings for the web UI.
 func WebUIConfig(w http.ResponseWriter, _ *http.Request) {
-	// swagger:route GET /api/v1/webui application WebUIConfiguration
+	// swagger:route GET /api/v1/webui application WebUIConfigurationResponse
 	//
 	// # Get web UI configuration
 	//
@@ -110,29 +51,29 @@ func WebUIConfig(w http.ResponseWriter, _ *http.Request) {
 	//	  200: WebUIConfigurationResponse
 	//	  400: ErrorResponse
 
-	conf := webUIConfiguration{}
+	conf := webUIConfigurationResponse{}
 
-	conf.Label = config.Label
-	conf.MessageRelay.Enabled = config.ReleaseEnabled
+	conf.Body.Label = config.Label
+	conf.Body.MessageRelay.Enabled = config.ReleaseEnabled
 	if config.ReleaseEnabled {
-		conf.MessageRelay.SMTPServer = fmt.Sprintf("%s:%d", config.SMTPRelayConfig.Host, config.SMTPRelayConfig.Port)
-		conf.MessageRelay.ReturnPath = config.SMTPRelayConfig.ReturnPath
-		conf.MessageRelay.AllowedRecipients = config.SMTPRelayConfig.AllowedRecipients
-		conf.MessageRelay.BlockedRecipients = config.SMTPRelayConfig.BlockedRecipients
-		conf.MessageRelay.OverrideFrom = config.SMTPRelayConfig.OverrideFrom
-		conf.MessageRelay.PreserveMessageIDs = config.SMTPRelayConfig.PreserveMessageIDs
+		conf.Body.MessageRelay.SMTPServer = fmt.Sprintf("%s:%d", config.SMTPRelayConfig.Host, config.SMTPRelayConfig.Port)
+		conf.Body.MessageRelay.ReturnPath = config.SMTPRelayConfig.ReturnPath
+		conf.Body.MessageRelay.AllowedRecipients = config.SMTPRelayConfig.AllowedRecipients
+		conf.Body.MessageRelay.BlockedRecipients = config.SMTPRelayConfig.BlockedRecipients
+		conf.Body.MessageRelay.OverrideFrom = config.SMTPRelayConfig.OverrideFrom
+		conf.Body.MessageRelay.PreserveMessageIDs = config.SMTPRelayConfig.PreserveMessageIDs
 
 		// DEPRECATED 2024/03/12
-		conf.MessageRelay.RecipientAllowlist = config.SMTPRelayConfig.AllowedRecipients
+		conf.Body.MessageRelay.RecipientAllowlist = config.SMTPRelayConfig.AllowedRecipients
 	}
 
-	conf.SpamAssassin = config.EnableSpamAssassin != ""
-	conf.ChaosEnabled = chaos.Enabled
-	conf.DuplicatesIgnored = config.IgnoreDuplicateIDs
-	conf.HideDeleteAllButton = config.HideDeleteAllButton
+	conf.Body.SpamAssassin = config.EnableSpamAssassin != ""
+	conf.Body.ChaosEnabled = chaos.Enabled
+	conf.Body.DuplicatesIgnored = config.IgnoreDuplicateIDs
+	conf.Body.HideDeleteAllButton = config.HideDeleteAllButton
 
 	w.Header().Add("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(conf); err != nil {
+	if err := json.NewEncoder(w).Encode(conf.Body); err != nil {
 		httpError(w, err.Error())
 	}
 }

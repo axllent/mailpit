@@ -22,21 +22,6 @@ var (
 	thumbHeight = 120
 )
 
-// swagger:parameters ThumbnailParams
-type thumbnailParams struct {
-	// Message database ID or "latest"
-	//
-	// in: path
-	// required: true
-	ID string
-
-	// Attachment part ID
-	//
-	// in: path
-	// required: true
-	PartID string
-}
-
 // Thumbnail returns a thumbnail image for an attachment (images only)
 func Thumbnail(w http.ResponseWriter, r *http.Request) {
 	// swagger:route GET /api/v1/message/{ID}/part/{PartID}/thumb message ThumbnailParams

@@ -16,26 +16,6 @@ import (
 	"golang.org/x/net/html/atom"
 )
 
-// swagger:parameters GetMessageHTMLParams
-type getMessageHTMLParams struct {
-	// Message database ID or "latest"
-	//
-	// in: path
-	// required: true
-	ID string
-
-	// If this is route is to be embedded in an iframe, set embed to `1` in the URL to add `target="_blank"` and `rel="noreferrer noopener"` to all links.
-	//
-	// In addition, a small script will be added to the end of the document to post (postMessage()) the height of the document back to the parent window for optional iframe height resizing.
-	//
-	// Note that this will also *transform* the message into a full HTML document (if it isn't already), so this option is useful for viewing but not programmatic testing.
-	//
-	// in: query
-	// required: false
-	// type: string
-	Embed string `json:"embed"`
-}
-
 // GetMessageHTML (method: GET) returns a rendered version of a message's HTML part
 func GetMessageHTML(w http.ResponseWriter, r *http.Request) {
 	// swagger:route GET /view/{ID}.html testing GetMessageHTMLParams
@@ -121,15 +101,6 @@ func GetMessageHTML(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Add("Content-Type", "text/html; charset=utf-8")
 	_, _ = w.Write([]byte(htmlStr))
-}
-
-// swagger:parameters GetMessageTextParams
-type getMessageTextParams struct {
-	// Message database ID or "latest"
-	//
-	// in: path
-	// required: true
-	ID string
 }
 
 // GetMessageText (method: GET) returns a message's text part

@@ -7,18 +7,6 @@ import (
 	"github.com/axllent/mailpit/internal/smtpd/chaos"
 )
 
-// ChaosTriggers are the Chaos triggers
-type ChaosTriggers chaos.Triggers
-
-// Response for the Chaos triggers configuration
-// swagger:response ChaosResponse
-type chaosResponse struct {
-	// The current Chaos triggers
-	//
-	// in: body
-	Body ChaosTriggers
-}
-
 // GetChaos returns the current Chaos triggers
 func GetChaos(w http.ResponseWriter, _ *http.Request) {
 	// swagger:route GET /api/v1/chaos testing getChaos
@@ -48,12 +36,6 @@ func GetChaos(w http.ResponseWriter, _ *http.Request) {
 	if err := json.NewEncoder(w).Encode(conf); err != nil {
 		httpError(w, err.Error())
 	}
-}
-
-// swagger:parameters setChaosParams
-type setChaosParams struct {
-	// in: body
-	Body ChaosTriggers
 }
 
 // SetChaos sets the Chaos configuration.

@@ -11,15 +11,6 @@ import (
 	"github.com/gorilla/mux"
 )
 
-// swagger:parameters GetMessageParams
-type getMessageParams struct {
-	// Message database ID or "latest"
-	//
-	// in: path
-	// required: true
-	ID string
-}
-
 // GetMessage (method: GET) returns the Message as JSON
 func GetMessage(w http.ResponseWriter, r *http.Request) {
 	// swagger:route GET /api/v1/message/{ID} message GetMessageParams
@@ -65,19 +56,6 @@ func GetMessage(w http.ResponseWriter, r *http.Request) {
 		httpError(w, err.Error())
 	}
 }
-
-// swagger:parameters GetHeadersParams
-type getHeadersParams struct {
-	// Message database ID or "latest"
-	//
-	// in: path
-	// required: true
-	ID string
-}
-
-// Message headers
-// swagger:model MessageHeadersResponse
-type messageHeaders map[string][]string
 
 // GetHeaders (method: GET) returns the message headers as JSON
 func GetHeaders(w http.ResponseWriter, r *http.Request) {
@@ -132,21 +110,6 @@ func GetHeaders(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// swagger:parameters AttachmentParams
-type attachmentParams struct {
-	// Message database ID or "latest"
-	//
-	// in: path
-	// required: true
-	ID string
-
-	// Attachment part ID
-	//
-	// in: path
-	// required: true
-	PartID string
-}
-
 // DownloadAttachment (method: GET) returns the attachment data
 func DownloadAttachment(w http.ResponseWriter, r *http.Request) {
 	// swagger:route GET /api/v1/message/{ID}/part/{PartID} message AttachmentParams
@@ -197,15 +160,6 @@ func DownloadAttachment(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", a.ContentType)
 	w.Header().Set("Content-Disposition", "filename=\""+fileName+"\"")
 	_, _ = w.Write(a.Content)
-}
-
-// swagger:parameters DownloadRawParams
-type downloadRawParams struct {
-	// Message database ID or "latest"
-	//
-	// in: path
-	// required: true
-	ID string
 }
 
 // DownloadRaw (method: GET) returns the full email source as plain text
