@@ -168,6 +168,24 @@ func Store(body *[]byte, username *string) (string, error) {
 		return "", err
 	}
 
+	// we do not want to to broadcast null values for MetaData else this does not align
+	// with the message summary documented in the API docs, so we set them to empty slices.
+	if c.From == nil {
+		c.From = &mail.Address{}
+	}
+	if c.To == nil {
+		c.To = []*mail.Address{}
+	}
+	if c.Cc == nil {
+		c.Cc = []*mail.Address{}
+	}
+	if c.Bcc == nil {
+		c.Bcc = []*mail.Address{}
+	}
+	if c.ReplyTo == nil {
+		c.ReplyTo = []*mail.Address{}
+	}
+
 	c.Created = created
 	c.ID = id
 	c.MessageID = messageID
