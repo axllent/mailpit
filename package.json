@@ -41,7 +41,7 @@
     "eslint-config-prettier": "^10.1.5",
     "eslint-plugin-vue": "^10.2.0",
     "neostandard": "^0.12.1",
-    "prettier": "^3.5.3"
+    "prettier": "^3.6.2"
   },
   "prettier":{
     "tabWidth": 4,
