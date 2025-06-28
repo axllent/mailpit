@@ -6,7 +6,6 @@ import (
 	"runtime"
 
 	"github.com/axllent/mailpit/config"
-	"github.com/axllent/mailpit/internal/updater"
 	"github.com/spf13/cobra"
 )
 
@@ -15,29 +14,41 @@ var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "Display the current version & update information",
 	Long:  `Display the current version & update information (if available).`,
-	RunE: func(cmd *cobra.Command, args []string) error {
-
-		updater.AllowPrereleases = true
-
+	Run: func(cmd *cobra.Command, args []string) {
 		update, _ := cmd.Flags().GetBool("update")
 
 		if update {
-			return updateApp()
+			// Update the application
+			rel, err := config.GHRUConfig.SelfUpdate()
+			if err != nil {
+				fmt.Printf("Error updating: %s\n", err)
+				os.Exit(1)
+			}
+
+			fmt.Printf("Updated %s to version %s\n", os.Args[0], rel.Tag)
+			os.Exit(0)
 		}
 
 		fmt.Printf("%s %s compiled with %s on %s/%s\n",
 			os.Args[0], config.Version, runtime.Version(), runtime.GOOS, runtime.GOARCH)
 
-		latest, _, _, err := updater.GithubLatest(config.Repo, config.RepoBinaryName)
-		if err == nil && updater.GreaterThan(latest, config.Version) {
-			fmt.Printf(
-				"\nUpdate available: %s\nRun `%s version -u` to update (requires read/write access to install directory).\n",
-				latest,
-				os.Args[0],
-			)
+		release, err := config.GHRUConfig.Latest()
+		if err != nil {
+			fmt.Printf("Error checking for latest release: %s\n", err)
+			os.Exit(1)
 		}
 
-		return nil
+		// The latest version is the same version
+		if release.Tag == config.Version {
+			os.Exit(0)
+		}
+
+		// A newer release is available
+		fmt.Printf(
+			"\nUpdate available: %s\nRun `%s version -u` to update (requires read/write access to install directory).\n",
+			release.Tag,
+			os.Args[0],
+		)
 	},
 }
 
@@ -46,14 +57,4 @@ func init() {
 
 	versionCmd.Flags().
 		BoolP("update", "u", false, "update to latest version")
-}
-
-func updateApp() error {
-	rel, err := updater.GithubUpdate(config.Repo, config.RepoBinaryName, config.Version)
-	if err != nil {
-		return err
-	}
-
-	fmt.Printf("Updated %s to version %s\n", os.Args[0], rel)
-	return nil
 }

@@ -9,7 +9,6 @@ import (
 	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/internal/logger"
 	"github.com/axllent/mailpit/internal/storage"
-	"github.com/axllent/mailpit/internal/updater"
 )
 
 // Stores cached version  along with its expiry time and error count.
@@ -113,10 +112,10 @@ func Load() AppInformation {
 			if time.Now().Before(vCache.expiry) {
 				info.LatestVersion = vCache.value
 			} else {
-				latest, _, _, err := updater.GithubLatest(config.Repo, config.RepoBinaryName)
+				latest, err := config.GHRUConfig.Latest()
 				if err == nil {
-					vCache = versionCache{value: latest, expiry: time.Now().Add(15 * time.Minute)}
-					info.LatestVersion = latest
+					vCache = versionCache{value: latest.Tag, expiry: time.Now().Add(15 * time.Minute)}
+					info.LatestVersion = latest.Tag
 				} else {
 					logger.Log().Errorf("Failed to fetch latest version: %v", err)
 					vCache.errCount++
