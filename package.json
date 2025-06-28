@@ -37,7 +37,7 @@
     "esbuild": "^0.25.0",
     "esbuild-plugin-vue-next": "^0.1.4",
     "esbuild-sass-plugin": "^3.0.0",
-    "eslint": "^9.29.0",
+    "eslint": "^9.30.0",
     "eslint-config-prettier": "^10.1.5",
     "eslint-plugin-vue": "^10.2.0",
     "neostandard": "^0.12.1",
