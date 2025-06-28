@@ -71,7 +71,7 @@ func createRelaySMTPClient(config config.SMTPRelayConfigStruct, addr string) (*s
 
 		client, err := smtp.NewClient(conn, tlsConf.ServerName)
 		if err != nil {
-			conn.Close()
+			_ = conn.Close()
 			return nil, fmt.Errorf("SMTP client error: %v", err)
 		}
 
@@ -89,7 +89,7 @@ func createRelaySMTPClient(config config.SMTPRelayConfigStruct, addr string) (*s
 		tlsConf.InsecureSkipVerify = config.AllowInsecure
 
 		if err = client.StartTLS(tlsConf); err != nil {
-			client.Close()
+			_ = client.Close()
 			return nil, fmt.Errorf("error creating StartTLS config: %v", err)
 		}
 	}
@@ -106,7 +106,7 @@ func Relay(from string, to []string, msg []byte) error {
 	if err != nil {
 		return err
 	}
-	defer c.Close()
+	defer func() { _ = c.Close() }()
 
 	auth := relayAuthFromConfig()
 
@@ -193,7 +193,7 @@ func (a *loginAuth) Next(fromServer []byte, more bool) ([]byte, error) {
 		case "Password:":
 			return []byte(a.password), nil
 		default:
-			return nil, errors.New("Unknown fromServer")
+			return nil, errors.New("unknown fromServer")
 		}
 	}
 

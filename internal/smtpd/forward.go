@@ -37,7 +37,7 @@ func createForwardingSMTPClient(config config.SMTPForwardConfigStruct, addr stri
 
 		client, err := smtp.NewClient(conn, tlsConf.ServerName)
 		if err != nil {
-			conn.Close()
+			_ = conn.Close()
 			return nil, fmt.Errorf("SMTP client error: %v", err)
 		}
 
@@ -55,7 +55,7 @@ func createForwardingSMTPClient(config config.SMTPForwardConfigStruct, addr stri
 		tlsConf.InsecureSkipVerify = config.AllowInsecure
 
 		if err = client.StartTLS(tlsConf); err != nil {
-			client.Close()
+			_ = client.Close()
 			return nil, fmt.Errorf("error creating StartTLS config: %v", err)
 		}
 	}
@@ -72,7 +72,7 @@ func forward(from string, msg []byte) error {
 	if err != nil {
 		return err
 	}
-	defer c.Close()
+	defer func() { _ = c.Close() }()
 
 	auth := forwardAuthFromConfig()
 

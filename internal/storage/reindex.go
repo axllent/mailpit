@@ -114,7 +114,7 @@ func ReindexAll() {
 		}
 
 		// roll back if it fails
-		defer tx.Rollback()
+		defer func() { _ = tx.Rollback() }()
 
 		// insert mail summary data
 		for _, u := range updates {

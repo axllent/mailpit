@@ -2,7 +2,7 @@
 
 Notable changes to Mailpit will be documented in this file.
 
-## [v1.26.2]
+## [v1.27.0]
 
 ### Feature
 - Store username with messages, auto-tag, and UI display ([#521](https://github.com/axllent/mailpit/issues/521))
@@ -12,9 +12,17 @@ Notable changes to Mailpit will be documented in this file.
 - Apply linting to all JavaScript/Vue files with eslint & prettier
 - Update Go dependencies
 - Update node dependencies
+- Remove unused functionality/deadcode (golangci-lint)
+- Refactor error handling and resource management across multiple files (golangci-lint)
+- Refactor API Swagger definitions and remove unused structs
+- Bump minimum Go version to v1.24.3 for jhillyerd/enmime/v2
+- Switch version checks & self-updater to use ghru/v2
+- Update Go dependencies
+- Update node dependencies
 
 ### Fix
 - Improve version polling, add thread safety and exponential backoff ([#523](https://github.com/axllent/mailpit/issues/523))
+- Align websocket new message values with global Message Summary (no null values) ([#526](https://github.com/axllent/mailpit/issues/526))
 
 ### Test
 - Add JavaScript linting tests to CI

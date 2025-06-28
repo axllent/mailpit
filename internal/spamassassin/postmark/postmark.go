@@ -59,7 +59,7 @@ func Check(email []byte, timeout int) (Response, error) {
 		return r, err
 	}
 
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	err = json.NewDecoder(resp.Body).Decode(&r)
 

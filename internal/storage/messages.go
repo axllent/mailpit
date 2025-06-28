@@ -86,7 +86,7 @@ func Store(body *[]byte, username *string) (string, error) {
 	}
 
 	// roll back if it fails
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	subject := env.GetHeader("Subject")
 	size := uint64(len(*body))
@@ -118,8 +118,6 @@ func Store(body *[]byte, username *string) (string, error) {
 		} else {
 			_, err = tx.Exec(fmt.Sprintf(`INSERT INTO %s (ID, Email, Compressed) VALUES(?, ?, 1)`, tenant("mailbox_data")), id, compressed) // #nosec
 		}
-
-		compressed = nil
 	} else {
 		// insert uncompressed raw message
 		_, err = tx.Exec(fmt.Sprintf(`INSERT INTO %s (ID, Email, Compressed) VALUES(?, ?, 0)`, tenant("mailbox_data")), id, string(*body)) // #nosec
@@ -168,6 +166,24 @@ func Store(body *[]byte, username *string) (string, error) {
 	c := &MessageSummary{}
 	if err := json.Unmarshal(summaryJSON, c); err != nil {
 		return "", err
+	}
+
+	// we do not want to to broadcast null values for MetaData else this does not align
+	// with the message summary documented in the API docs, so we set them to empty slices.
+	if c.From == nil {
+		c.From = &mail.Address{}
+	}
+	if c.To == nil {
+		c.To = []*mail.Address{}
+	}
+	if c.Cc == nil {
+		c.Cc = []*mail.Address{}
+	}
+	if c.Bcc == nil {
+		c.Bcc = []*mail.Address{}
+	}
+	if c.ReplyTo == nil {
+		c.ReplyTo = []*mail.Address{}
 	}
 
 	c.Created = created
@@ -639,7 +655,7 @@ func DeleteMessages(ids []string) error {
 	if err != nil {
 		return err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	toDelete := []string{}
 	var totalSize uint64
@@ -738,7 +754,7 @@ func DeleteAllMessages() error {
 	}
 
 	// roll back if it fails
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	tables := []string{"mailbox", "mailbox_data", "tags", "message_tags"}
 

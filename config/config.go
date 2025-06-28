@@ -11,6 +11,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/axllent/ghru/v2"
 	"github.com/axllent/mailpit/internal/auth"
 	"github.com/axllent/mailpit/internal/logger"
 	"github.com/axllent/mailpit/internal/smtpd/chaos"
@@ -19,6 +20,18 @@ import (
 )
 
 var (
+	// Version is the Mailpit version, updated with every release
+	Version = "dev"
+
+	// GHRUConfig is the configuration for the GitHub Release Updater
+	// used to check for updates and self-update
+	GHRUConfig = ghru.Config{
+		Repo:           "axllent/mailpit",
+		ArchiveName:    "mailpit-{{.OS}}-{{.Arch}}",
+		BinaryName:     "mailpit",
+		CurrentVersion: Version,
+	}
+
 	// SMTPListen to listen on <interface>:<port>
 	SMTPListen = "[::]:1025"
 
@@ -197,15 +210,6 @@ var (
 	// PrometheusListen address for Prometheus metrics server
 	// Empty = disabled, true= use existing web server, address = separate server
 	PrometheusListen string
-
-	// Version is the default application version, updated on release
-	Version = "dev"
-
-	// Repo on Github for updater
-	Repo = "axllent/mailpit"
-
-	// RepoBinaryName on Github for updater
-	RepoBinaryName = "mailpit"
 
 	// ChaosTriggers are parsed and set in the chaos module
 	ChaosTriggers string

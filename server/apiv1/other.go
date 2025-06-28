@@ -15,19 +15,6 @@ import (
 	"github.com/jhillyerd/enmime/v2"
 )
 
-// swagger:parameters HTMLCheckParams
-type htmlCheckParams struct {
-	// Message database ID or "latest"
-	//
-	// in: path
-	// description: Message database ID or "latest"
-	// required: true
-	ID string
-}
-
-// HTMLCheckResponse summary response
-type HTMLCheckResponse = htmlcheck.Response
-
 // HTMLCheck returns a summary of the HTML client support
 func HTMLCheck(w http.ResponseWriter, r *http.Request) {
 	// swagger:route GET /api/v1/message/{ID}/html-check other HTMLCheckParams
@@ -93,25 +80,6 @@ func HTMLCheck(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// swagger:parameters LinkCheckParams
-type linkCheckParams struct {
-	// Message database ID or "latest"
-	//
-	// in: path
-	// required: true
-	ID string
-
-	// Follow redirects
-	//
-	// in: query
-	// required: false
-	// default: false
-	Follow string `json:"follow"`
-}
-
-// LinkCheckResponse summary response
-type LinkCheckResponse = linkcheck.Response
-
 // LinkCheck returns a summary of links in the email
 func LinkCheck(w http.ResponseWriter, r *http.Request) {
 	// swagger:route GET /api/v1/message/{ID}/link-check other LinkCheckParams
@@ -170,18 +138,6 @@ func LinkCheck(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// swagger:parameters SpamAssassinCheckParams
-type spamAssassinCheckParams struct {
-	// Message database ID or "latest"
-	//
-	// in: path
-	// required: true
-	ID string
-}
-
-// SpamAssassinResponse summary response
-type SpamAssassinResponse = spamassassin.Result
-
 // SpamAssassinCheck returns a summary of SpamAssassin results (if enabled)
 func SpamAssassinCheck(w http.ResponseWriter, r *http.Request) {
 	// swagger:route GET /api/v1/message/{ID}/sa-check other SpamAssassinCheckParams
@@ -210,7 +166,7 @@ func SpamAssassinCheck(w http.ResponseWriter, r *http.Request) {
 		id, err = storage.LatestID(r)
 		if err != nil {
 			w.WriteHeader(404)
-			fmt.Fprint(w, err.Error())
+			_, _ = fmt.Fprint(w, err.Error())
 			return
 		}
 	}

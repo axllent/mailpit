@@ -39,14 +39,14 @@ func Sync(d string) error {
 
 	if URL != "" {
 		if !linkRe.MatchString(URL) {
-			return errors.New("Invalid URL")
+			return errors.New("invalid URL")
 		}
 
 		base = strings.TrimRight(URL, "/") + "/"
 	}
 
 	if base == "" && config.Database == "" {
-		return errors.New("No database or API URL specified")
+		return errors.New("no database or API URL specified")
 	}
 
 	if !tools.IsDir(outDir) {
@@ -109,7 +109,7 @@ func loadIDs() error {
 	}
 
 	if len(summary) == 0 {
-		return errors.New("No messages found")
+		return errors.New("no messages found")
 	}
 
 	return nil

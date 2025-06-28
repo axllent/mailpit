@@ -27,7 +27,6 @@ import (
 
 var (
 	db           *sql.DB
-	dbFile       string
 	sqlDriver    string
 	dbLastAction time.Time
 
@@ -139,7 +138,6 @@ func InitDB() error {
 
 	LoadTagFilters()
 
-	dbFile = p
 	dbLastAction = time.Now()
 
 	sigs := make(chan os.Signal, 1)

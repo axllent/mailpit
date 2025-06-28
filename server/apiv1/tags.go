@@ -32,24 +32,6 @@ func GetAllTags(w http.ResponseWriter, _ *http.Request) {
 	}
 }
 
-// swagger:parameters SetTagsParams
-type setTagsParams struct {
-	// in: body
-	Body struct {
-		// Array of tag names to set
-		//
-		// required: true
-		// example: ["Tag 1", "Tag 2"]
-		Tags []string
-
-		// Array of message database IDs
-		//
-		// required: true
-		// example: ["4oRBnPtCXgAqZniRhzLNmS", "hXayS6wnCgNnt6aFTvmOF6"]
-		IDs []string
-	}
-}
-
 // SetMessageTags (method: PUT) will set the tags for all provided IDs
 func SetMessageTags(w http.ResponseWriter, r *http.Request) {
 	// swagger:route PUT /api/v1/tags tags SetTagsParams
@@ -98,25 +80,6 @@ func SetMessageTags(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write([]byte("ok"))
 }
 
-// swagger:parameters RenameTagParams
-type renameTagParams struct {
-	// The url-encoded tag name to rename
-	//
-	// in: path
-	// required: true
-	// type: string
-	Tag string
-
-	// in: body
-	Body struct {
-		// New name
-		//
-		// required: true
-		// example: New name
-		Name string
-	}
-}
-
 // RenameTag (method: PUT) used to rename a tag
 func RenameTag(w http.ResponseWriter, r *http.Request) {
 	// swagger:route PUT /api/v1/tags/{Tag} tags RenameTagParams
@@ -159,15 +122,6 @@ func RenameTag(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Add("Content-Type", "text/plain")
 	_, _ = w.Write([]byte("ok"))
-}
-
-// swagger:parameters DeleteTagParams
-type deleteTagParams struct {
-	// The url-encoded tag name to delete
-	//
-	// in: path
-	// required: true
-	Tag string
 }
 
 // DeleteTag (method: DELETE) used to delete a tag

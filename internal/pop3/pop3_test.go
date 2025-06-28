@@ -29,22 +29,21 @@ func TestPOP3(t *testing.T) {
 
 	// connect with bad password
 	t.Log("Testing invalid login")
-	c, err := connectBadAuth()
-	if err == nil {
+	if _, err := connectBadAuth(); err == nil {
 		t.Error("invalid login gained access")
 		return
 	}
 
 	t.Log("Testing valid login")
-	c, err = connectAuth()
+	c, err := connectAuth()
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err.Error())
 		return
 	}
 
 	count, size, err := c.Stat()
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err.Error())
 		return
 	}
 
@@ -53,7 +52,7 @@ func TestPOP3(t *testing.T) {
 
 	// quit else we get old data
 	if err := c.Quit(); err != nil {
-		t.Errorf(err.Error())
+		t.Error(err.Error())
 		return
 	}
 
@@ -63,13 +62,13 @@ func TestPOP3(t *testing.T) {
 
 	c, err = connectAuth()
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err.Error())
 		return
 	}
 
 	count, _, err = c.Stat()
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err.Error())
 		return
 	}
 
@@ -80,7 +79,7 @@ func TestPOP3(t *testing.T) {
 	for i := 1; i <= 20; i++ {
 		_, err := c.Retr(i)
 		if err != nil {
-			t.Errorf(err.Error())
+			t.Error(err.Error())
 			return
 		}
 	}
@@ -89,14 +88,14 @@ func TestPOP3(t *testing.T) {
 
 	for i := 1; i <= 25; i++ {
 		if err := c.Dele(i); err != nil {
-			t.Errorf(err.Error())
+			t.Error(err.Error())
 			return
 		}
 	}
 
 	// messages get deleted after a QUIT
 	if err := c.Quit(); err != nil {
-		t.Errorf(err.Error())
+		t.Error(err.Error())
 		return
 	}
 
@@ -105,7 +104,7 @@ func TestPOP3(t *testing.T) {
 
 	c, err = connectAuth()
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err.Error())
 		return
 	}
 
@@ -113,7 +112,7 @@ func TestPOP3(t *testing.T) {
 
 	count, _, err = c.Stat()
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err.Error())
 		return
 	}
 
@@ -121,13 +120,13 @@ func TestPOP3(t *testing.T) {
 
 	// messages get deleted after a QUIT
 	if err := c.Quit(); err != nil {
-		t.Errorf(err.Error())
+		t.Error(err.Error())
 		return
 	}
 
 	c, err = connectAuth()
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err.Error())
 		return
 	}
 
@@ -135,7 +134,7 @@ func TestPOP3(t *testing.T) {
 
 	for i := 1; i <= 25; i++ {
 		if err := c.Dele(i); err != nil {
-			t.Errorf(err.Error())
+			t.Error(err.Error())
 			return
 		}
 	}
@@ -143,31 +142,31 @@ func TestPOP3(t *testing.T) {
 	t.Log("Undeleting messages")
 
 	if err := c.Rset(); err != nil {
-		t.Errorf(err.Error())
+		t.Error(err.Error())
 		return
 	}
 
 	if err := c.Quit(); err != nil {
-		t.Errorf(err.Error())
+		t.Error(err.Error())
 		return
 	}
 
 	c, err = connectAuth()
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err.Error())
 		return
 	}
 
 	count, _, err = c.Stat()
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err.Error())
 		return
 	}
 
 	assertEqual(t, count, 25, "incorrect message count")
 
 	if err := c.Quit(); err != nil {
-		t.Errorf(err.Error())
+		t.Error(err.Error())
 		return
 	}
 }
@@ -190,7 +189,7 @@ func TestAuthentication(t *testing.T) {
 	// non-authenticated connection
 	c, err := connect()
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err.Error())
 		return
 	}
 
@@ -207,7 +206,7 @@ func TestAuthentication(t *testing.T) {
 	}
 
 	if err := c.Quit(); err != nil {
-		t.Errorf(err.Error())
+		t.Error(err.Error())
 		return
 	}
 
@@ -216,7 +215,7 @@ func TestAuthentication(t *testing.T) {
 	// authenticated connection
 	c, err = connectAuth()
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err.Error())
 		return
 	}
 
@@ -233,13 +232,15 @@ func TestAuthentication(t *testing.T) {
 	}
 
 	if err := c.Quit(); err != nil {
-		t.Errorf(err.Error())
+		t.Error(err.Error())
 		return
 	}
 }
 
 func setup() {
-	auth.SetPOP3Auth("username:password")
+	if err := auth.SetPOP3Auth("username:password"); err != nil {
+		panic(err)
+	}
 	logger.NoLogging = true
 	config.MaxMessages = 0
 	config.Database = os.Getenv("MP_DATABASE")

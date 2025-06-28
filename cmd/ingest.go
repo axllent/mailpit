@@ -55,7 +55,7 @@ The --recent flag will only consider files with a modification date within the l
 						logger.Log().Errorf("%s: %s", path, err.Error())
 						return nil
 					}
-					defer f.Close() // #nosec
+					defer func() { _ = f.Close() }()
 
 					body, err := io.ReadAll(f)
 					if err != nil {

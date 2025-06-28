@@ -16,26 +16,6 @@ import (
 	"golang.org/x/net/html/atom"
 )
 
-// swagger:parameters GetMessageHTMLParams
-type getMessageHTMLParams struct {
-	// Message database ID or "latest"
-	//
-	// in: path
-	// required: true
-	ID string
-
-	// If this is route is to be embedded in an iframe, set embed to `1` in the URL to add `target="_blank"` and `rel="noreferrer noopener"` to all links.
-	//
-	// In addition, a small script will be added to the end of the document to post (postMessage()) the height of the document back to the parent window for optional iframe height resizing.
-	//
-	// Note that this will also *transform* the message into a full HTML document (if it isn't already), so this option is useful for viewing but not programmatic testing.
-	//
-	// in: query
-	// required: false
-	// type: string
-	Embed string `json:"embed"`
-}
-
 // GetMessageHTML (method: GET) returns a rendered version of a message's HTML part
 func GetMessageHTML(w http.ResponseWriter, r *http.Request) {
 	// swagger:route GET /view/{ID}.html testing GetMessageHTMLParams
@@ -67,7 +47,7 @@ func GetMessageHTML(w http.ResponseWriter, r *http.Request) {
 		id, err = storage.LatestID(r)
 		if err != nil {
 			w.WriteHeader(404)
-			fmt.Fprint(w, err.Error())
+			_, _ = fmt.Fprint(w, err.Error())
 			return
 		}
 	}
@@ -75,12 +55,12 @@ func GetMessageHTML(w http.ResponseWriter, r *http.Request) {
 	msg, err := storage.GetMessage(id)
 	if err != nil {
 		w.WriteHeader(404)
-		fmt.Fprint(w, "Message not found")
+		_, _ = fmt.Fprint(w, "Message not found")
 		return
 	}
 	if msg.HTML == "" {
 		w.WriteHeader(404)
-		fmt.Fprint(w, "This message does not contain a HTML part")
+		_, _ = fmt.Fprint(w, "This message does not contain a HTML part")
 		return
 	}
 
@@ -123,15 +103,6 @@ func GetMessageHTML(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write([]byte(htmlStr))
 }
 
-// swagger:parameters GetMessageTextParams
-type getMessageTextParams struct {
-	// Message database ID or "latest"
-	//
-	// in: path
-	// required: true
-	ID string
-}
-
 // GetMessageText (method: GET) returns a message's text part
 func GetMessageText(w http.ResponseWriter, r *http.Request) {
 	// swagger:route GET /view/{ID}.txt testing GetMessageTextParams
@@ -161,7 +132,7 @@ func GetMessageText(w http.ResponseWriter, r *http.Request) {
 		id, err = storage.LatestID(r)
 		if err != nil {
 			w.WriteHeader(404)
-			fmt.Fprint(w, err.Error())
+			_, _ = fmt.Fprint(w, err.Error())
 			return
 		}
 	}
@@ -169,7 +140,7 @@ func GetMessageText(w http.ResponseWriter, r *http.Request) {
 	msg, err := storage.GetMessage(id)
 	if err != nil {
 		w.WriteHeader(404)
-		fmt.Fprint(w, "Message not found")
+		_, _ = fmt.Fprint(w, "Message not found")
 		return
 	}
 

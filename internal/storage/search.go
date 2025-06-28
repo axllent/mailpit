@@ -193,7 +193,7 @@ func DeleteSearch(search, timezone string) error {
 		}
 
 		// roll back if it fails
-		defer tx.Rollback()
+		defer func() { _ = tx.Rollback() }()
 
 		for _, ids := range chunks {
 			delIDs := make([]interface{}, len(ids))
