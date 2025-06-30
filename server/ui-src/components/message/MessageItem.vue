@@ -107,11 +107,12 @@ export default {
 					"vspace",
 					"xml:lang",
 				],
-				FORBID_ATTR: ["script"],
+				FORBID_ATTR: ["script"], // all JavaScript should be removed
+				ALLOW_UNKNOWN_PROTOCOLS: true, // allow link href protocols like myapp:// etc
 			});
 
 			// for debugging
-			// this.debugDOMPurify(DOMPurify.removed)
+			// this.debugDOMPurify(DOMPurify.removed);
 
 			return clean;
 		},
