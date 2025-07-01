@@ -20,7 +20,7 @@
     "dayjs": "^1.11.10",
     "dompurify": "^3.1.6",
     "highlight.js": "^11.11.1",
-    "ical.js": "^2.0.1",
+    "ical.js": "^2.2.0",
     "mitt": "^3.0.1",
     "modern-screenshot": "^4.4.30",
     "rapidoc": "^9.3.4",
