@@ -2,6 +2,14 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.27.1]
+
+### Chore
+- Allow unknown href link protocols in HTML view such as myapp:// ([#532](https://github.com/axllent/mailpit/issues/532))
+- Update Go dependencies
+- Update node dependencies
+
+
 ## [v1.27.0]
 
 ### Chore
@@ -1812,3 +1820,5 @@ Notable changes to Mailpit will be documented in this file.
 
 
 ## [0.0.1-beta]
+
+
