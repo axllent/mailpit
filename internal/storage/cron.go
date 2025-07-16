@@ -60,20 +60,19 @@ func pruneMessages() {
 	var size float64 // use float64 for rqlite compatibility
 
 	// prune using `--max` if set
-	if config.MaxMessages > 0 {
-		total := CountTotal()
-		if total > uint64(config.MaxAgeInHours) {
-			offset := config.MaxMessages
-			if config.DemoMode {
-				offset = 500
-			}
-			q := sqlf.Select("ID, Size").
-				From(tenant("mailbox")).
-				OrderBy("Created DESC").
-				Limit(5000).
-				Offset(offset)
+	if config.MaxMessages > 0 && CountTotal() > uint64(config.MaxMessages) {
+		offset := config.MaxMessages
+		if config.DemoMode {
+			offset = 500
+		}
+		q := sqlf.Select("ID, Size").
+			From(tenant("mailbox")).
+			OrderBy("Created DESC").
+			Limit(5000).
+			Offset(offset)
 
-			if err := q.QueryAndClose(context.TODO(), db, func(row *sql.Rows) {
+		if err := q.QueryAndClose(
+			context.TODO(), db, func(row *sql.Rows) {
 				var id string
 
 				if err := row.Scan(&id, &size); err != nil {
@@ -83,10 +82,10 @@ func pruneMessages() {
 				ids = append(ids, id)
 				prunedSize = prunedSize + uint64(size)
 
-			}); err != nil {
-				logger.Log().Errorf("[db] %s", err.Error())
-				return
-			}
+			},
+		); err != nil {
+			logger.Log().Errorf("[db] %s", err.Error())
+			return
 		}
 	}
 
