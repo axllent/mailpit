@@ -30,9 +30,28 @@ func RunTests(msg *storage.Message, followRedirects bool) (Response, error) {
 }
 
 func extractTextLinks(msg *storage.Message) []string {
+	testLinkRe := regexp.MustCompile(`(?im)([^<]\b)((http|https):\/\/([\-\w@:%_\+'!.~#?,&\/\/=;]+))`)
+	// RFC2396 appendix E states angle brackets are recommended for text/plain emails to
+	// recognize potential spaces in between the URL
+	// @see https://www.rfc-editor.org/rfc/rfc2396#appendix-E
+	bracketLinkRe := regexp.MustCompile(`(?im)<((http|https):\/\/([\-\w@:%_\+'!.~#?,&\/\/=;][^>]+))>`)
+
 	links := []string{}
 
-	links = append(links, linkRe.FindAllString(msg.Text, -1)...)
+	matches := testLinkRe.FindAllStringSubmatch(msg.Text, -1)
+	for _, match := range matches {
+		if len(match) > 0 {
+			links = append(links, match[2])
+		}
+	}
+
+	angleMatches := bracketLinkRe.FindAllStringSubmatch(msg.Text, -1)
+	for _, match := range angleMatches {
+		if len(match) > 0 {
+			link := strings.ReplaceAll(match[1], "\n", "")
+			links = append(links, link)
+		}
+	}
 
 	return links
 }
