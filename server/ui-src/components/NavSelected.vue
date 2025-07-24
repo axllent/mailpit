@@ -28,7 +28,7 @@ export default {
 			if (!mailbox.selected.length) {
 				return false;
 			}
-			this.put(this.resolve(`/api/v1/messages`), { Read: true, IDs: mailbox.selected }, (response) => {
+			this.put(this.resolve(`/api/v1/messages`), { Read: true, IDs: mailbox.selected }, () => {
 				window.scrollInPlace = true;
 				this.loadMessages();
 			});
@@ -43,7 +43,7 @@ export default {
 			if (!mailbox.selected.length) {
 				return false;
 			}
-			this.put(this.resolve(`/api/v1/messages`), { Read: false, IDs: mailbox.selected }, (response) => {
+			this.put(this.resolve(`/api/v1/messages`), { Read: false, IDs: mailbox.selected }, () => {
 				window.scrollInPlace = true;
 				this.loadMessages();
 			});
@@ -57,7 +57,7 @@ export default {
 				return false;
 			}
 
-			this.delete(this.resolve(`/api/v1/messages`), { IDs: ids }, (response) => {
+			this.delete(this.resolve(`/api/v1/messages`), { IDs: ids }, () => {
 				window.scrollInPlace = true;
 				this.loadMessages();
 			});

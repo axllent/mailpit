@@ -64,7 +64,7 @@ export default {
 					To: this.addresses,
 				};
 
-				this.post(this.resolve("/api/v1/message/" + this.message.ID + "/release"), data, (response) => {
+				this.post(this.resolve("/api/v1/message/" + this.message.ID + "/release"), data, () => {
 					this.modal("ReleaseModal").hide();
 					if (this.deleteAfterRelease) {
 						this.$emit("delete");

@@ -143,12 +143,12 @@ export default {
 		window.addEventListener("resize", this.resizeIFrames);
 
 		const headersTab = document.getElementById("nav-headers-tab");
-		headersTab.addEventListener("shown.bs.tab", (event) => {
+		headersTab.addEventListener("shown.bs.tab", () => {
 			this.loadHeaders = true;
 		});
 
 		const rawTab = document.getElementById("nav-raw-tab");
-		rawTab.addEventListener("shown.bs.tab", (event) => {
+		rawTab.addEventListener("shown.bs.tab", () => {
 			this.srcURI = this.resolve("/api/v1/message/" + this.message.ID + "/raw");
 			this.resizeIFrames();
 		});
@@ -180,7 +180,7 @@ export default {
 			this.isHTMLTabSelected();
 
 			document.querySelectorAll('button[data-bs-toggle="tab"]').forEach((listObj) => {
-				listObj.addEventListener("shown.bs.tab", (event) => {
+				listObj.addEventListener("shown.bs.tab", () => {
 					this.isHTMLTabSelected();
 				});
 			});
@@ -203,7 +203,9 @@ export default {
 								anchorEl.setAttribute("target", "_blank");
 							}
 						}
-					} catch (error) {}
+					} catch {
+						// ignore errors when accessing the iframe content
+					}
 					this.resizeIFrames();
 				}
 			}, 500);
@@ -280,7 +282,7 @@ export default {
 				Tags: this.messageTags,
 			};
 
-			this.put(this.resolve("/api/v1/tags"), data, (response) => {
+			this.put(this.resolve("/api/v1/tags"), data, () => {
 				window.scrollInPlace = true;
 				this.$emit("loadMessages");
 			});
