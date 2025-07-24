@@ -20,6 +20,7 @@ import (
 	"github.com/axllent/mailpit/internal/logger"
 	"github.com/axllent/mailpit/internal/pop3"
 	"github.com/axllent/mailpit/internal/prometheus"
+	"github.com/axllent/mailpit/internal/snakeoil"
 	"github.com/axllent/mailpit/internal/stats"
 	"github.com/axllent/mailpit/internal/storage"
 	"github.com/axllent/mailpit/internal/tools"
@@ -99,6 +100,12 @@ func Listen() {
 		Addr:         config.HTTPListen,
 		ReadTimeout:  30 * time.Second,
 		WriteTimeout: 30 * time.Second,
+	}
+
+	// add temporary self-signed certificates to get deleted afterwards
+	for _, keyPair := range snakeoil.Certificates() {
+		storage.AddTempFile(keyPair.Public)
+		storage.AddTempFile(keyPair.Private)
 	}
 
 	if config.UITLSCert != "" && config.UITLSKey != "" {
