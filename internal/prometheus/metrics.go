@@ -108,7 +108,7 @@ func InitMetrics() {
 
 // UpdateMetrics updates all metrics with current values
 func UpdateMetrics() {
-	info := stats.Load()
+	info := stats.Load(false)
 
 	totalMessages.Set(float64(info.Messages))
 	unreadMessages.Set(float64(info.Unread))

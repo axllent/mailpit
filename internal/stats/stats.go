@@ -81,7 +81,7 @@ func getBackoff(errCount int) time.Duration {
 }
 
 // Load the current statistics
-func Load() AppInformation {
+func Load(detectLatestVersion bool) AppInformation {
 	info := AppInformation{}
 	info.Version = config.Version
 
@@ -98,7 +98,7 @@ func Load() AppInformation {
 
 	if config.DisableVersionCheck {
 		info.LatestVersion = "disabled"
-	} else {
+	} else if detectLatestVersion {
 		mu.RLock()
 		cacheValid := time.Now().Before(vCache.expiry)
 		cacheValue := vCache.value
