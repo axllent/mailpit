@@ -9,6 +9,7 @@ import (
 	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/internal/logger"
 	"github.com/axllent/mailpit/internal/storage"
+	"github.com/axllent/mailpit/internal/tools"
 )
 
 // Stores cached version  along with its expiry time and error count.
@@ -146,7 +147,7 @@ func Track() {
 func LogSMTPAccepted(size int) {
 	mu.Lock()
 	smtpAccepted = smtpAccepted + 1
-	smtpAcceptedSize = smtpAcceptedSize + uint64(size)
+	smtpAcceptedSize = smtpAcceptedSize + tools.SafeUint64(size)
 	mu.Unlock()
 }
 
