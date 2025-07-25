@@ -165,8 +165,9 @@ func StartSeparateServer() {
 
 	// Create a dedicated server instance
 	server := &http.Server{
-		Addr:    config.PrometheusListen,
-		Handler: mux,
+		Addr:              config.PrometheusListen,
+		Handler:           mux,
+		ReadHeaderTimeout: 5 * time.Second,
 	}
 
 	// Start HTTP server
