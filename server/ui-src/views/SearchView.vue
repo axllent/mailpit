@@ -36,7 +36,7 @@ export default {
 	},
 
 	watch: {
-		$route(to, from) {
+		$route() {
 			this.doSearch();
 		},
 	},

@@ -215,7 +215,7 @@ func handleTransactionCommand(conn net.Conn, cmd string, args []string, messages
 		for _, m := range messages {
 			totalSize += m.Size
 		}
-		sendResponse(conn, fmt.Sprintf("+OK %d %d", len(messages), int64(totalSize)))
+		sendResponse(conn, fmt.Sprintf("+OK %d %d", len(messages), totalSize))
 	case "LIST":
 		totalSize := uint64(0)
 		for _, m := range messages {
@@ -229,12 +229,12 @@ func handleTransactionCommand(conn net.Conn, cmd string, args []string, messages
 				sendResponse(conn, "-ERR no such message")
 				return
 			}
-			sendResponse(conn, fmt.Sprintf("+OK %d %d", nr, int64(messages[nr-1].Size)))
+			sendResponse(conn, fmt.Sprintf("+OK %d %d", nr, messages[nr-1].Size))
 		} else {
-			sendResponse(conn, fmt.Sprintf("+OK %d messages (%d octets)", len(messages), int64(totalSize)))
+			sendResponse(conn, fmt.Sprintf("+OK %d messages (%d octets)", len(messages), totalSize))
 
 			for row, m := range messages {
-				sendResponse(conn, fmt.Sprintf("%d %d", row+1, int64(m.Size))) // Convert Size to int64 when printing
+				sendResponse(conn, fmt.Sprintf("%d %d", row+1, m.Size))
 			}
 			sendResponse(conn, ".")
 		}

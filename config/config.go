@@ -15,6 +15,7 @@ import (
 	"github.com/axllent/mailpit/internal/auth"
 	"github.com/axllent/mailpit/internal/logger"
 	"github.com/axllent/mailpit/internal/smtpd/chaos"
+	"github.com/axllent/mailpit/internal/snakeoil"
 	"github.com/axllent/mailpit/internal/spamassassin"
 	"github.com/axllent/mailpit/internal/tools"
 )
@@ -333,8 +334,19 @@ func VerifyConfig() error {
 	}
 
 	if UITLSCert != "" {
-		UITLSCert = filepath.Clean(UITLSCert)
-		UITLSKey = filepath.Clean(UITLSKey)
+		if strings.HasPrefix(UITLSCert, "sans:") {
+			// generate a self-signed certificate
+			UITLSCert = snakeoil.Public(UITLSCert)
+		} else {
+			UITLSCert = filepath.Clean(UITLSCert)
+		}
+
+		if strings.HasPrefix(UITLSKey, "sans:") {
+			// generate a self-signed key
+			UITLSKey = snakeoil.Private(UITLSKey)
+		} else {
+			UITLSKey = filepath.Clean(UITLSKey)
+		}
 
 		if !isFile(UITLSCert) {
 			return fmt.Errorf("[ui] TLS certificate not found or readable: %s", UITLSCert)
@@ -393,8 +405,19 @@ func VerifyConfig() error {
 	}
 
 	if SMTPTLSCert != "" {
-		SMTPTLSCert = filepath.Clean(SMTPTLSCert)
-		SMTPTLSKey = filepath.Clean(SMTPTLSKey)
+		if strings.HasPrefix(SMTPTLSCert, "sans:") {
+			// generate a self-signed certificate
+			SMTPTLSCert = snakeoil.Public(SMTPTLSCert)
+		} else {
+			SMTPTLSCert = filepath.Clean(SMTPTLSCert)
+		}
+
+		if strings.HasPrefix(SMTPTLSKey, "sans:") {
+			// generate a self-signed key
+			SMTPTLSKey = snakeoil.Private(SMTPTLSKey)
+		} else {
+			SMTPTLSKey = filepath.Clean(SMTPTLSKey)
+		}
 
 		if !isFile(SMTPTLSCert) {
 			return fmt.Errorf("[smtp] TLS certificate not found or readable: %s", SMTPTLSCert)
@@ -462,8 +485,18 @@ func VerifyConfig() error {
 
 	// POP3 server
 	if POP3TLSCert != "" {
-		POP3TLSCert = filepath.Clean(POP3TLSCert)
-		POP3TLSKey = filepath.Clean(POP3TLSKey)
+		if strings.HasPrefix(POP3TLSCert, "sans:") {
+			// generate a self-signed certificate
+			POP3TLSCert = snakeoil.Public(POP3TLSCert)
+		} else {
+			POP3TLSCert = filepath.Clean(POP3TLSCert)
+		}
+		if strings.HasPrefix(POP3TLSKey, "sans:") {
+			// generate a self-signed key
+			POP3TLSKey = snakeoil.Private(POP3TLSKey)
+		} else {
+			POP3TLSKey = filepath.Clean(POP3TLSKey)
+		}
 
 		if !isFile(POP3TLSCert) {
 			return fmt.Errorf("[pop3] TLS certificate not found or readable: %s", POP3TLSCert)

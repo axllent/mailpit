@@ -9,6 +9,7 @@ import (
 
 	"github.com/axllent/mailpit/internal/html2text"
 	"github.com/axllent/mailpit/internal/logger"
+	"github.com/axllent/mailpit/internal/tools"
 	"github.com/jhillyerd/enmime/v2"
 )
 
@@ -88,7 +89,7 @@ func cleanString(str string) string {
 // LogMessagesDeleted logs the number of messages deleted
 func logMessagesDeleted(n int) {
 	mu.Lock()
-	StatsDeleted = StatsDeleted + uint64(n)
+	StatsDeleted = StatsDeleted + tools.SafeUint64(n)
 	mu.Unlock()
 }
 

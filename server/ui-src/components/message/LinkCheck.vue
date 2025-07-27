@@ -153,7 +153,7 @@ export default {
 						this.error = error.message;
 					}
 				})
-				.then((result) => {
+				.then(() => {
 					// always run
 					this.loading = false;
 				});

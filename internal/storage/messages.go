@@ -108,7 +108,7 @@ func Store(body *[]byte, username *string) (string, error) {
 
 	if config.Compression > 0 {
 		// insert compressed raw message
-		compressed := dbEncoder.EncodeAll(*body, make([]byte, 0, int(size)))
+		compressed := dbEncoder.EncodeAll(*body, make([]byte, 0, size))
 
 		if sqlDriver == "rqlite" {
 			// rqlite does not support binary data in query, so we need to encode the compressed message into hexadecimal
@@ -202,7 +202,7 @@ func Store(body *[]byte, username *string) (string, error) {
 
 	BroadcastMailboxStats()
 
-	logger.Log().Debugf("[db] saved message %s (%d bytes)", id, int64(size))
+	logger.Log().Debugf("[db] saved message %s (%d bytes)", id, size)
 
 	return id, nil
 }

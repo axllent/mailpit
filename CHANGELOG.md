@@ -2,6 +2,28 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.27.2]
+
+### Feature
+- Add ability to generate self-signed (snakeoil) certificates for UI, SMTP and POP3 ([#539](https://github.com/axllent/mailpit/issues/539))
+
+### Chore
+- Allow sendmail to send to untrusted TLS server
+- Update eslint config, remove neostandard
+- Refactor JS functions and remove unused parameters
+- Update Go dependencies
+- Update node dependencies
+
+### Fix
+- Use MaxMessages to determine pruning ([#536](https://github.com/axllent/mailpit/issues/536))
+- Support angle brackets for text/plain URLs with spaces ([#535](https://github.com/axllent/mailpit/issues/535))
+- Do not check latest release for Prometheus statistics ([#522](https://github.com/axllent/mailpit/issues/522))
+
+### Security
+- Prevent integer overflow conversion to uint64
+- Add ReadHeaderTimeout to Prometheus metrics server
+
+
 ## [v1.27.1]
 
 ### Chore

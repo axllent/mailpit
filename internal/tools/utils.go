@@ -36,3 +36,22 @@ func Normalize(s string) string {
 
 	return strings.TrimSpace(s)
 }
+
+// SafeUint64 converts an int or int64 to uint64, ensuring it does not exceed the maximum value for uint64.
+func SafeUint64(i any) uint64 {
+	switch v := i.(type) {
+	case int:
+		if v < 0 {
+			return 0
+		}
+		return uint64(v)
+	case int64:
+		if v < 0 {
+			return 0
+		}
+		return uint64(v)
+	default:
+		// only accepts int or int64
+		return 0
+	}
+}
