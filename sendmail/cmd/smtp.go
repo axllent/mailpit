@@ -8,7 +8,6 @@ import (
 	"net"
 	"net/mail"
 	"net/smtp"
-	"net/url"
 	"os"
 	"strings"
 
@@ -75,12 +74,6 @@ func Send(addr string, from string, to []string, msg []byte) error {
 }
 
 func sendMail(addr string, a smtp.Auth, from string, to []string, msg []byte) error {
-	addrParsed, err := url.Parse(addr) // ensure addr is a valid URL
-	if err != nil {
-		return fmt.Errorf("invalid address: %s", addr)
-	}
-
-	host := addrParsed.Host
 	if err := validateLine(from); err != nil {
 		return err
 	}
@@ -102,7 +95,7 @@ func sendMail(addr string, a smtp.Auth, from string, to []string, msg []byte) er
 	}
 
 	if ok, _ := c.Extension("STARTTLS"); ok {
-		config := &tls.Config{ServerName: host, InsecureSkipVerify: true} // #nosec
+		config := &tls.Config{ServerName: addr, InsecureSkipVerify: true} // #nosec
 		if err = c.StartTLS(config); err != nil {
 			return err
 		}

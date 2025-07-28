@@ -2,6 +2,12 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.27.3]
+
+### Fix
+- Fix sendmail when using an  `--smtp-addr <ip>:<port>` ([#542](https://github.com/axllent/mailpit/issues/542))
+
+
 ## [v1.27.2]
 
 ### Feature
