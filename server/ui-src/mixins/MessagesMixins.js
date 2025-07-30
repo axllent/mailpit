@@ -14,7 +14,7 @@ export default {
 	},
 
 	watch: {
-		"mailbox.refresh": function (v) {
+		"mailbox.refresh"(v) {
 			if (v) {
 				// trigger a refresh
 				this.loadMessages();
@@ -45,9 +45,9 @@ export default {
 			const params = {};
 			mailbox.selected = [];
 
-			params["limit"] = pagination.limit;
+			params.limit = pagination.limit;
 			if (pagination.start > 0) {
-				params["start"] = pagination.start;
+				params.start = pagination.start;
 			}
 
 			this.get(this.apiURI, params, (response) => {

@@ -32,7 +32,7 @@ var (
 )
 
 // InitMetrics initializes all Prometheus metrics
-func InitMetrics() {
+func initMetrics() {
 	// Create metrics
 	totalMessages = prometheus.NewGauge(prometheus.GaugeOpts{
 		Name: "mailpit_messages",
@@ -107,8 +107,8 @@ func InitMetrics() {
 }
 
 // UpdateMetrics updates all metrics with current values
-func UpdateMetrics() {
-	info := stats.Load()
+func updateMetrics() {
+	info := stats.Load(false)
 
 	totalMessages.Set(float64(info.Messages))
 	unreadMessages.Set(float64(info.Unread))
@@ -130,7 +130,7 @@ func UpdateMetrics() {
 	}
 }
 
-// Returns the Prometheus handler & disables double compression in middleware
+// GetHandler returns the Prometheus handler & disables double compression in middleware
 func GetHandler() http.Handler {
 	return promhttp.HandlerFor(Registry, promhttp.HandlerOpts{
 		DisableCompression: true,
@@ -139,8 +139,8 @@ func GetHandler() http.Handler {
 
 // StartUpdater starts the periodic metrics update routine
 func StartUpdater() {
-	InitMetrics()
-	UpdateMetrics()
+	initMetrics()
+	updateMetrics()
 
 	// Start periodic updates
 	go func() {
@@ -148,7 +148,7 @@ func StartUpdater() {
 		defer ticker.Stop()
 
 		for range ticker.C {
-			UpdateMetrics()
+			updateMetrics()
 		}
 	}()
 }
@@ -165,8 +165,9 @@ func StartSeparateServer() {
 
 	// Create a dedicated server instance
 	server := &http.Server{
-		Addr:    config.PrometheusListen,
-		Handler: mux,
+		Addr:              config.PrometheusListen,
+		Handler:           mux,
+		ReadHeaderTimeout: 5 * time.Second,
 	}
 
 	// Start HTTP server

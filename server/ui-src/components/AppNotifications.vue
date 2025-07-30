@@ -52,7 +52,7 @@ export default {
 				let response;
 				try {
 					response = JSON.parse(e.data);
-				} catch (e) {
+				} catch {
 					return;
 				}
 
@@ -128,7 +128,7 @@ export default {
 				}
 			};
 
-			ws.onclose = (e) => {
+			ws.onclose = () => {
 				if (this.socketLastConnection === 0) {
 					// connection failed immediately after connecting to Mailpit implies proxy websockets aren't configured
 					console.log("Unable to connect to websocket, disabling websocket support");

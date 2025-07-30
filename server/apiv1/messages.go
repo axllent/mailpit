@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/axllent/mailpit/internal/storage"
+	"github.com/axllent/mailpit/internal/tools"
 )
 
 // MessagesSummary is a summary of a list of messages
@@ -241,9 +242,9 @@ func Search(w http.ResponseWriter, r *http.Request) {
 
 	res.Start = start
 	res.Messages = messages
-	res.Count = uint64(len(messages)) // legacy - now undocumented in API specs
-	res.Total = stats.Total           // total messages in mailbox
-	res.MessagesCount = uint64(results)
+	res.Count = tools.SafeUint64(len(messages)) // legacy - now undocumented in API specs
+	res.Total = stats.Total                     // total messages in mailbox
+	res.MessagesCount = tools.SafeUint64(results)
 	res.Unread = stats.Unread
 	res.Tags = stats.Tags
 
@@ -253,7 +254,7 @@ func Search(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res.MessagesUnreadCount = uint64(unread)
+	res.MessagesUnreadCount = tools.SafeUint64(unread)
 
 	w.Header().Add("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(res); err != nil {

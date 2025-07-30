@@ -47,14 +47,14 @@ export default {
 		},
 
 		markAllRead() {
-			this.put(this.resolve(`/api/v1/messages`), { read: true }, (response) => {
+			this.put(this.resolve(`/api/v1/messages`), { read: true }, () => {
 				window.scrollInPlace = true;
 				this.loadMessages();
 			});
 		},
 
 		deleteAllMessages() {
-			this.delete(this.resolve(`/api/v1/messages`), false, (response) => {
+			this.delete(this.resolve(`/api/v1/messages`), false, () => {
 				pagination.start = 0;
 				this.loadMessages();
 			});

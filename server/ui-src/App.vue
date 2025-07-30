@@ -17,7 +17,7 @@ export default {
 	mixins: [CommonMixins],
 
 	watch: {
-		$route(to, from) {
+		$route() {
 			// hide mobile menu on URL change
 			this.hideNav();
 		},

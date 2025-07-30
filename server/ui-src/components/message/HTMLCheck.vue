@@ -257,7 +257,10 @@ export default {
 			if (platforms) {
 				try {
 					this.platforms = JSON.parse(platforms);
-				} catch (e) {}
+				} catch {
+					// if parsing fails, reset to default
+					this.platforms = [];
+				}
 			}
 
 			// set all options

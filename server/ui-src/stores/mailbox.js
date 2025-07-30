@@ -33,7 +33,7 @@ export const mailbox = reactive({
 
 watch(
 	() => mailbox.count,
-	(v) => {
+	() => {
 		mailbox.selected = [];
 	},
 );
