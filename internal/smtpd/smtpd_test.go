@@ -1598,3 +1598,172 @@ func TestCmdShutdown(t *testing.T) {
 
 	_ = conn.Close()
 }
+
+type mockDropRejectedHandler struct {
+	handlerCalled int
+	lastFrom      string
+	lastTo        []string
+	msgIDCalled   int
+	lastMsgIDFrom string
+	lastMsgIDTo   []string
+}
+
+func (m *mockDropRejectedHandler) handler(remoteAddr net.Addr, from string, to []string, data []byte) error {
+	m.handlerCalled++
+	m.lastFrom = from
+	m.lastTo = append([]string{}, to...) // copy slice
+	return nil
+}
+
+func (m *mockDropRejectedHandler) msgIDHandler(remoteAddr net.Addr, from string, to []string, data []byte, username *string) (string, error) {
+	m.msgIDCalled++
+	m.lastMsgIDFrom = from
+	m.lastMsgIDTo = append([]string{}, to...) // copy slice
+	return "test-message-id", nil
+}
+
+// Test the SilentlyDropRejectedRecipients option
+func TestSilentlyDropRejectedRecipients(t *testing.T) {
+	tests := []struct {
+		name                           string
+		silentlyDropRejectedRecipients bool
+		handlerRcpt                    func(net.Addr, string, string) bool
+		rcptCommands                   []struct{ addr, expectedCode string }
+		expectedHandlerCalls           int
+		expectedHandlerRecipients      []string
+		useMsgIDHandler                bool
+	}{
+		{
+			name:                           "Disabled_DefaultBehavior",
+			silentlyDropRejectedRecipients: false,
+			handlerRcpt: func(remoteAddr net.Addr, from string, to string) bool {
+				return !strings.HasSuffix(to, "@rejected.com")
+			},
+			rcptCommands: []struct{ addr, expectedCode string }{
+				{"valid@example.com", "250"},
+				{"invalid@rejected.com", "550"},
+			},
+			expectedHandlerCalls:      1,
+			expectedHandlerRecipients: []string{"valid@example.com"},
+		},
+		{
+			name:                           "Enabled_MixedRecipients",
+			silentlyDropRejectedRecipients: true,
+			handlerRcpt: func(remoteAddr net.Addr, from string, to string) bool {
+				return !strings.HasSuffix(to, "@rejected.com")
+			},
+			rcptCommands: []struct{ addr, expectedCode string }{
+				{"valid1@example.com", "250"},
+				{"valid2@example.com", "250"},
+				{"invalid1@rejected.com", "250"}, // Now accepted but dropped
+				{"invalid2@rejected.com", "250"}, // Now accepted but dropped
+			},
+			expectedHandlerCalls:      1,
+			expectedHandlerRecipients: []string{"valid1@example.com", "valid2@example.com"},
+		},
+		{
+			name:                           "Enabled_AllRejected",
+			silentlyDropRejectedRecipients: true,
+			handlerRcpt: func(remoteAddr net.Addr, from string, to string) bool {
+				return false // Reject all
+			},
+			rcptCommands: []struct{ addr, expectedCode string }{
+				{"test1@example.com", "250"}, // Accepted but dropped
+				{"test2@example.com", "250"}, // Accepted but dropped
+			},
+			expectedHandlerCalls:      0, // No handler calls since all rejected
+			expectedHandlerRecipients: nil,
+		},
+		{
+			name:                           "Enabled_OnlyValid",
+			silentlyDropRejectedRecipients: true,
+			handlerRcpt: func(remoteAddr net.Addr, from string, to string) bool {
+				return strings.HasSuffix(to, "@valid.com")
+			},
+			rcptCommands: []struct{ addr, expectedCode string }{
+				{"user1@valid.com", "250"},
+				{"user2@valid.com", "250"},
+				{"user3@valid.com", "250"},
+			},
+			expectedHandlerCalls:      1,
+			expectedHandlerRecipients: []string{"user1@valid.com", "user2@valid.com", "user3@valid.com"},
+		},
+		{
+			name:                           "Enabled_WithMsgIDHandler",
+			silentlyDropRejectedRecipients: true,
+			handlerRcpt: func(remoteAddr net.Addr, from string, to string) bool {
+				return !strings.HasSuffix(to, "@rejected.com")
+			},
+			rcptCommands: []struct{ addr, expectedCode string }{
+				{"valid@example.com", "250"},
+				{"invalid@rejected.com", "250"}, // Accepted but dropped
+			},
+			expectedHandlerCalls:      1,
+			expectedHandlerRecipients: []string{"valid@example.com"},
+			useMsgIDHandler:           true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mock := &mockDropRejectedHandler{}
+
+			server := &Server{
+				Hostname:                       "mail.example.com",
+				AppName:                        "TestMail",
+				MaxRecipients:                  100,
+				HandlerRcpt:                    tt.handlerRcpt,
+				SilentlyDropRejectedRecipients: tt.silentlyDropRejectedRecipients,
+			}
+
+			if tt.useMsgIDHandler {
+				server.MsgIDHandler = mock.msgIDHandler
+			} else {
+				server.Handler = mock.handler
+			}
+
+			conn := newConn(t, server)
+			defer func() { _ = conn.Close() }()
+
+			cmdCode(t, conn, "HELO host.example.com", "250")
+			cmdCode(t, conn, "MAIL FROM:<sender@example.com>", "250")
+
+			// Send RCPT commands
+			for _, rcpt := range tt.rcptCommands {
+				cmdCode(t, conn, "RCPT TO:<"+rcpt.addr+">", rcpt.expectedCode)
+			}
+
+			// Send DATA
+			cmdCode(t, conn, "DATA", "354")
+			cmdCode(t, conn, "Subject: Test\r\n\r\nTest message\r\n.", "250")
+			cmdCode(t, conn, "QUIT", "221")
+
+			// Verify handler calls
+			if tt.useMsgIDHandler {
+				if mock.msgIDCalled != tt.expectedHandlerCalls {
+					t.Errorf("Expected %d MsgIDHandler calls, got %d", tt.expectedHandlerCalls, mock.msgIDCalled)
+				}
+				if tt.expectedHandlerCalls > 0 {
+					if mock.lastMsgIDFrom != "sender@example.com" {
+						t.Errorf("Expected from 'sender@example.com', got '%s'", mock.lastMsgIDFrom)
+					}
+					if !reflect.DeepEqual(mock.lastMsgIDTo, tt.expectedHandlerRecipients) {
+						t.Errorf("Expected recipients %v, got %v", tt.expectedHandlerRecipients, mock.lastMsgIDTo)
+					}
+				}
+			} else {
+				if mock.handlerCalled != tt.expectedHandlerCalls {
+					t.Errorf("Expected %d handler calls, got %d", tt.expectedHandlerCalls, mock.handlerCalled)
+				}
+				if tt.expectedHandlerCalls > 0 {
+					if mock.lastFrom != "sender@example.com" {
+						t.Errorf("Expected from 'sender@example.com', got '%s'", mock.lastFrom)
+					}
+					if !reflect.DeepEqual(mock.lastTo, tt.expectedHandlerRecipients) {
+						t.Errorf("Expected recipients %v, got %v", tt.expectedHandlerRecipients, mock.lastTo)
+					}
+				}
+			}
+		})
+	}
+}
