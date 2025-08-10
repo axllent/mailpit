@@ -2,6 +2,17 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.27.4]
+
+### Feature
+- Allow rejected SMTP recipients to be silently dropped ([#549](https://github.com/axllent/mailpit/issues/549))
+
+### Chore
+- Update Go dependencies
+- Update node dependencies
+- Update caniemail test database
+
+
 ## [v1.27.3]
 
 ### Fix
