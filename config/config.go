@@ -181,6 +181,9 @@ var (
 	// SMTPAllowedRecipientsRegexp is the compiled version of SMTPAllowedRecipients
 	SMTPAllowedRecipientsRegexp *regexp.Regexp
 
+	// SMTPSilentlyDropRejectedRecipients if true, will accept emails to rejected recipients with 2xx response but silently drop them
+	SMTPSilentlyDropRejectedRecipients bool
+
 	// POP3Listen address - if set then Mailpit will start the POP3 server and listen on this address
 	POP3Listen = "[::]:1110"
 
