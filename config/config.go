@@ -181,8 +181,8 @@ var (
 	// SMTPAllowedRecipientsRegexp is the compiled version of SMTPAllowedRecipients
 	SMTPAllowedRecipientsRegexp *regexp.Regexp
 
-	// SMTPSilentlyDropRejectedRecipients if true, will accept emails to rejected recipients with 2xx response but silently drop them
-	SMTPSilentlyDropRejectedRecipients bool
+	// SMTPIgnoreRejectedRecipients if true, will accept emails to rejected recipients with 2xx response but silently drop them
+	SMTPIgnoreRejectedRecipients bool
 
 	// POP3Listen address - if set then Mailpit will start the POP3 server and listen on this address
 	POP3Listen = "[::]:1110"
@@ -582,6 +582,14 @@ func VerifyConfig() error {
 
 		SMTPAllowedRecipientsRegexp = restrictRegexp
 		logger.Log().Infof("[smtp] only allowing recipients matching regexp: %s", SMTPAllowedRecipients)
+	}
+
+	if SMTPIgnoreRejectedRecipients {
+		if SMTPAllowedRecipientsRegexp == nil {
+			logger.Log().Warn("[smtp] ignoring rejected recipients has no effect without setting smtp-allowed-recipients")
+		} else {
+			logger.Log().Info("[smtp] ignoring rejected recipients")
+		}
 	}
 
 	if err := parseRelayConfig(SMTPRelayConfigFile); err != nil {

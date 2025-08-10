@@ -1622,20 +1622,20 @@ func (m *mockDropRejectedHandler) msgIDHandler(remoteAddr net.Addr, from string,
 	return "test-message-id", nil
 }
 
-// Test the SilentlyDropRejectedRecipients option
-func TestSilentlyDropRejectedRecipients(t *testing.T) {
+// Test the IgnoreRejectedRecipients option
+func TestIgnoreRejectedRecipients(t *testing.T) {
 	tests := []struct {
-		name                           string
-		silentlyDropRejectedRecipients bool
-		handlerRcpt                    func(net.Addr, string, string) bool
-		rcptCommands                   []struct{ addr, expectedCode string }
-		expectedHandlerCalls           int
-		expectedHandlerRecipients      []string
-		useMsgIDHandler                bool
+		name                      string
+		IgnoreRejectedRecipients  bool
+		handlerRcpt               func(net.Addr, string, string) bool
+		rcptCommands              []struct{ addr, expectedCode string }
+		expectedHandlerCalls      int
+		expectedHandlerRecipients []string
+		useMsgIDHandler           bool
 	}{
 		{
-			name:                           "Disabled_DefaultBehavior",
-			silentlyDropRejectedRecipients: false,
+			name:                     "Disabled_DefaultBehavior",
+			IgnoreRejectedRecipients: false,
 			handlerRcpt: func(remoteAddr net.Addr, from string, to string) bool {
 				return !strings.HasSuffix(to, "@rejected.com")
 			},
@@ -1647,8 +1647,8 @@ func TestSilentlyDropRejectedRecipients(t *testing.T) {
 			expectedHandlerRecipients: []string{"valid@example.com"},
 		},
 		{
-			name:                           "Enabled_MixedRecipients",
-			silentlyDropRejectedRecipients: true,
+			name:                     "Enabled_MixedRecipients",
+			IgnoreRejectedRecipients: true,
 			handlerRcpt: func(remoteAddr net.Addr, from string, to string) bool {
 				return !strings.HasSuffix(to, "@rejected.com")
 			},
@@ -1662,8 +1662,8 @@ func TestSilentlyDropRejectedRecipients(t *testing.T) {
 			expectedHandlerRecipients: []string{"valid1@example.com", "valid2@example.com"},
 		},
 		{
-			name:                           "Enabled_AllRejected",
-			silentlyDropRejectedRecipients: true,
+			name:                     "Enabled_AllRejected",
+			IgnoreRejectedRecipients: true,
 			handlerRcpt: func(remoteAddr net.Addr, from string, to string) bool {
 				return false // Reject all
 			},
@@ -1675,8 +1675,8 @@ func TestSilentlyDropRejectedRecipients(t *testing.T) {
 			expectedHandlerRecipients: nil,
 		},
 		{
-			name:                           "Enabled_OnlyValid",
-			silentlyDropRejectedRecipients: true,
+			name:                     "Enabled_OnlyValid",
+			IgnoreRejectedRecipients: true,
 			handlerRcpt: func(remoteAddr net.Addr, from string, to string) bool {
 				return strings.HasSuffix(to, "@valid.com")
 			},
@@ -1689,8 +1689,8 @@ func TestSilentlyDropRejectedRecipients(t *testing.T) {
 			expectedHandlerRecipients: []string{"user1@valid.com", "user2@valid.com", "user3@valid.com"},
 		},
 		{
-			name:                           "Enabled_WithMsgIDHandler",
-			silentlyDropRejectedRecipients: true,
+			name:                     "Enabled_WithMsgIDHandler",
+			IgnoreRejectedRecipients: true,
 			handlerRcpt: func(remoteAddr net.Addr, from string, to string) bool {
 				return !strings.HasSuffix(to, "@rejected.com")
 			},
@@ -1709,11 +1709,11 @@ func TestSilentlyDropRejectedRecipients(t *testing.T) {
 			mock := &mockDropRejectedHandler{}
 
 			server := &Server{
-				Hostname:                       "mail.example.com",
-				AppName:                        "TestMail",
-				MaxRecipients:                  100,
-				HandlerRcpt:                    tt.handlerRcpt,
-				SilentlyDropRejectedRecipients: tt.silentlyDropRejectedRecipients,
+				Hostname:                 "mail.example.com",
+				AppName:                  "TestMail",
+				MaxRecipients:            100,
+				HandlerRcpt:              tt.handlerRcpt,
+				IgnoreRejectedRecipients: tt.IgnoreRejectedRecipients,
 			}
 
 			if tt.useMsgIDHandler {

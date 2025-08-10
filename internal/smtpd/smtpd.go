@@ -92,27 +92,27 @@ type LogFunc func(remoteIP, verb, line string)
 
 // Server is an SMTP server.
 type Server struct {
-	Addr                           string // TCP address to listen on, defaults to ":25" (all addresses, port 25) if empty
-	AppName                        string
-	AuthHandler                    AuthHandler
-	AuthMechs                      map[string]bool // Override list of allowed authentication mechanisms. Currently supported: LOGIN, PLAIN, CRAM-MD5. Enabling LOGIN and PLAIN will reduce RFC 4954 compliance.
-	AuthRequired                   bool            // Require authentication for every command except AUTH, EHLO, HELO, NOOP, RSET or QUIT as per RFC 4954. Ignored if AuthHandler is not configured.
-	DisableReverseDNS              bool            // Disable reverse DNS lookups, enforces "unknown" hostname
-	Handler                        Handler
-	HandlerRcpt                    HandlerRcpt
-	Hostname                       string
-	LogRead                        LogFunc
-	LogWrite                       LogFunc
-	MaxSize                        int // Maximum message size allowed, in bytes
-	MaxRecipients                  int // Maximum number of recipients, defaults to 100.
-	MsgIDHandler                   MsgIDHandler
-	SilentlyDropRejectedRecipients bool // Accept emails to rejected recipients with 2xx response but silently drop them
-	Timeout                        time.Duration
-	TLSConfig                      *tls.Config
-	TLSListener                    bool        // Listen for incoming TLS connections only (not recommended as it may reduce compatibility). Ignored if TLS is not configured.
-	TLSRequired                    bool        // Require TLS for every command except NOOP, EHLO, STARTTLS, or QUIT as per RFC 3207. Ignored if TLS is not configured.
-	Protocol                       string      // Default tcp, supports unix
-	SocketPerm                     fs.FileMode // if using Unix socket, socket permissions
+	Addr                     string // TCP address to listen on, defaults to ":25" (all addresses, port 25) if empty
+	AppName                  string
+	AuthHandler              AuthHandler
+	AuthMechs                map[string]bool // Override list of allowed authentication mechanisms. Currently supported: LOGIN, PLAIN, CRAM-MD5. Enabling LOGIN and PLAIN will reduce RFC 4954 compliance.
+	AuthRequired             bool            // Require authentication for every command except AUTH, EHLO, HELO, NOOP, RSET or QUIT as per RFC 4954. Ignored if AuthHandler is not configured.
+	DisableReverseDNS        bool            // Disable reverse DNS lookups, enforces "unknown" hostname
+	Handler                  Handler
+	HandlerRcpt              HandlerRcpt
+	Hostname                 string
+	LogRead                  LogFunc
+	LogWrite                 LogFunc
+	MaxSize                  int // Maximum message size allowed, in bytes
+	MaxRecipients            int // Maximum number of recipients, defaults to 100.
+	MsgIDHandler             MsgIDHandler
+	IgnoreRejectedRecipients bool // Accept emails to rejected recipients with 2xx response but silently drop them
+	Timeout                  time.Duration
+	TLSConfig                *tls.Config
+	TLSListener              bool        // Listen for incoming TLS connections only (not recommended as it may reduce compatibility). Ignored if TLS is not configured.
+	TLSRequired              bool        // Require TLS for every command except NOOP, EHLO, STARTTLS, or QUIT as per RFC 3207. Ignored if TLS is not configured.
+	Protocol                 string      // Default tcp, supports unix
+	SocketPerm               fs.FileMode // if using Unix socket, socket permissions
 
 	inShutdown   int32 // server was closed or shutdown
 	openSessions int32 // count of open sessions
@@ -497,7 +497,7 @@ loop:
 					if accept {
 						to = append(to, match[1])
 						s.writef("250 2.1.5 Ok")
-					} else if s.srv.SilentlyDropRejectedRecipients {
+					} else if s.srv.IgnoreRejectedRecipients {
 						hasRejectedRecipients = true
 						s.writef("250 2.1.5 Ok")
 					} else {

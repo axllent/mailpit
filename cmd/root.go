@@ -126,7 +126,7 @@ func init() {
 	rootCmd.Flags().BoolVar(&config.SMTPStrictRFCHeaders, "smtp-strict-rfc-headers", config.SMTPStrictRFCHeaders, "Return SMTP error if message headers contain <CR><CR><LF>")
 	rootCmd.Flags().IntVar(&config.SMTPMaxRecipients, "smtp-max-recipients", config.SMTPMaxRecipients, "Maximum SMTP recipients allowed")
 	rootCmd.Flags().StringVar(&config.SMTPAllowedRecipients, "smtp-allowed-recipients", config.SMTPAllowedRecipients, "Only allow SMTP recipients matching a regular expression (default allow all)")
-	rootCmd.Flags().BoolVar(&config.SMTPSilentlyDropRejectedRecipients, "smtp-silently-drop-rejected-recipients", config.SMTPSilentlyDropRejectedRecipients, "Accept emails to rejected recipients with 2xx response but silently drop them")
+	rootCmd.Flags().BoolVar(&config.SMTPIgnoreRejectedRecipients, "smtp-ignore-rejected-recipients", config.SMTPIgnoreRejectedRecipients, "Ignore rejected SMTP recipients with 2xx response")
 	rootCmd.Flags().BoolVar(&smtpd.DisableReverseDNS, "smtp-disable-rdns", smtpd.DisableReverseDNS, "Disable SMTP reverse DNS lookups")
 
 	// SMTP relay
@@ -302,8 +302,8 @@ func initConfigFromEnv() {
 	if len(os.Getenv("MP_SMTP_ALLOWED_RECIPIENTS")) > 0 {
 		config.SMTPAllowedRecipients = os.Getenv("MP_SMTP_ALLOWED_RECIPIENTS")
 	}
-	if getEnabledFromEnv("MP_SMTP_SILENTLY_DROP_REJECTED_RECIPIENTS") {
-		config.SMTPSilentlyDropRejectedRecipients = true
+	if getEnabledFromEnv("MP_SMTP_IGNORE_REJECTED_RECIPIENTS") {
+		config.SMTPIgnoreRejectedRecipients = true
 	}
 	if getEnabledFromEnv("MP_SMTP_DISABLE_RDNS") {
 		smtpd.DisableReverseDNS = true
