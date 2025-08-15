@@ -239,11 +239,29 @@ func handleTransactionCommand(conn net.Conn, cmd string, args []string, messages
 			sendResponse(conn, ".")
 		}
 	case "UIDL":
-		sendResponse(conn, "+OK unique-id listing follows")
-		for row, m := range messages {
-			sendResponse(conn, fmt.Sprintf("%d %s", row+1, m.ID))
+		if len(args) > 0 {
+			nr, err := strconv.Atoi(args[0])
+			if err != nil {
+				sendResponse(conn, "-ERR no such message")
+				return
+			}
+
+			if nr < 1 || nr > len(messages) {
+				sendResponse(conn, "-ERR no such message")
+				return
+			}
+
+			m := messages[nr-1]
+
+			sendResponse(conn, fmt.Sprintf("+OK %d %s", nr, m.ID))
+		} else {
+			sendResponse(conn, "+OK unique-id listing follows")
+			for row, m := range messages {
+				sendResponse(conn, fmt.Sprintf("%d %s", row+1, m.ID))
+			}
+			sendResponse(conn, ".")
 		}
-		sendResponse(conn, ".")
+
 	case "RETR":
 		if len(args) != 1 {
 			sendResponse(conn, "-ERR no such message")

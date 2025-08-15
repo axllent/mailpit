@@ -84,6 +84,35 @@ func TestPOP3(t *testing.T) {
 		}
 	}
 
+	t.Log("Checking UIDL without a message id")
+
+	messageIDs, err := c.Uidl(0)
+	if err != nil {
+		t.Error(err.Error())
+		return
+	}
+
+	if len(messageIDs) != 50 {
+		assertEqual(t, len(messageIDs), 50, "incorrect UIDL message count")
+	}
+
+	t.Log("Checking UIDL with a message ID")
+
+	messageIDs, err = c.Uidl(50)
+	if err != nil {
+		t.Error(err.Error())
+		return
+	}
+
+	assertEqual(t, len(messageIDs), 1, "incorrect UIDL message count")
+
+	t.Log("Checking UIDL with an invalid message ID")
+
+	if _, err := c.Uidl(51); err == nil {
+		t.Errorf("UIDL 51 should return an error")
+		return
+	}
+
 	t.Log("Deleting 25 messages")
 
 	for i := 1; i <= 25; i++ {
