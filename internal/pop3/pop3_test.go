@@ -84,6 +84,14 @@ func TestPOP3(t *testing.T) {
 		}
 	}
 
+	t.Log("Checking UIDL with multiple arguments")
+
+	_, err = c.Cmd("UIDL", false, 1, 2, 3)
+	if err == nil {
+		t.Error("UIDL with multiple arguments should return an error")
+		return
+	}
+
 	t.Log("Checking UIDL without a message id")
 
 	messageIDs, err := c.Uidl(0)

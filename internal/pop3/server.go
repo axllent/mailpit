@@ -239,7 +239,9 @@ func handleTransactionCommand(conn net.Conn, cmd string, args []string, messages
 			sendResponse(conn, ".")
 		}
 	case "UIDL":
-		if len(args) > 0 {
+		if len(args) > 1 {
+			sendResponse(conn, "-ERR UIDL takes at most one argument")
+		} else if len(args) == 1 {
 			nr, err := strconv.Atoi(args[0])
 			if err != nil {
 				sendResponse(conn, "-ERR no such message")
