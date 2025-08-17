@@ -2,6 +2,17 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.27.5]
+
+### Chore
+- Update Go dependencies
+- Update node dependencies
+- Update caniemail test database
+
+### Fix
+- Support optional UIDL argument in POP3 server ([#552](https://github.com/axllent/mailpit/issues/552))
+
+
 ## [v1.27.4]
 
 ### Feature
