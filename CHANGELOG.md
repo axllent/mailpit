@@ -2,6 +2,17 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.27.6]
+
+### Feature
+- Add optional --no-release-check to version subcommand ([#557](https://github.com/axllent/mailpit/issues/557))
+
+### Chore
+- Set HELO/EHLO hostname when connecting to external SMTP server ([#556](https://github.com/axllent/mailpit/issues/556))
+- Update Go dependencies
+- Update node dependencies
+
+
 ## [v1.27.5]
 
 ### Chore
