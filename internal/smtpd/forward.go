@@ -51,6 +51,13 @@ func createForwardingSMTPClient(config config.SMTPForwardConfigStruct, addr stri
 		return nil, fmt.Errorf("error connecting to %s: %v", addr, err)
 	}
 
+	// Set the hostname for HELO/EHLO
+	if hostname, err := os.Hostname(); err == nil {
+		if err := client.Hello(hostname); err != nil {
+			return nil, fmt.Errorf("error saying HELO/EHLO to %s: %v", addr, err)
+		}
+	}
+
 	if config.STARTTLS {
 		tlsConf := &tls.Config{ServerName: config.Host} // #nosec
 		tlsConf.InsecureSkipVerify = config.AllowInsecure
@@ -58,13 +65,6 @@ func createForwardingSMTPClient(config config.SMTPForwardConfigStruct, addr stri
 		if err = client.StartTLS(tlsConf); err != nil {
 			_ = client.Close()
 			return nil, fmt.Errorf("error creating StartTLS config: %v", err)
-		}
-	}
-
-	// Set the hostname for HELO/EHLO
-	if hostname, err := os.Hostname(); err == nil {
-		if err := client.Hello(hostname); err != nil {
-			return nil, fmt.Errorf("error saying HELO/EHLO to %s: %v", addr, err)
 		}
 	}
 
