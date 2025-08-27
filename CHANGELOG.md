@@ -2,6 +2,12 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.27.7]
+
+### Fix
+- Move HELO/EHLO hostname setting to the correct position in SMTP client creation ([#558](https://github.com/axllent/mailpit/issues/558))
+
+
 ## [v1.27.6]
 
 ### Feature
