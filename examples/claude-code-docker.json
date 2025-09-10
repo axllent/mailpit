@@ -1,0 +1,59 @@
+{
+  "// NOTE": "Configuration for Claude Code with Dockerized Mailpit",
+  "// USAGE": "Add this to your claude_desktop_config.json mcpServers section",
+  
+  "mcpServers": {
+    "mailpit-docker-websocket": {
+      "// DESCRIPTION": "Connect to Dockerized Mailpit via WebSocket",
+      "transport": {
+        "type": "websocket",
+        "host": "localhost", 
+        "port": 8026,
+        "path": "/mcp"
+      },
+      "auth": {
+        "type": "bearer",
+        "token": "mcp-secret-token-123"
+      },
+      "// NOTE": "Requires: docker-compose -f examples/docker-compose.mcp.yml up"
+    },
+    
+    "mailpit-docker-exec": {
+      "// DESCRIPTION": "Execute Mailpit commands in Docker container",
+      "command": "docker",
+      "args": [
+        "exec", "-i", "mailpit-mcp",
+        "mailpit", 
+        "--mcp-server",
+        "--mcp-transport", "stdio",
+        "--database", "/data/mailpit.db"
+      ],
+      "// NOTE": "Requires: docker container named 'mailpit-mcp' to be running"
+    },
+
+    "mailpit-compose-exec": {
+      "// DESCRIPTION": "Execute via docker-compose (recommended for development)",
+      "command": "docker-compose", 
+      "args": [
+        "-f", "examples/docker-compose.mcp.yml",
+        "exec", "-T", "mailpit",
+        "mailpit",
+        "--mcp-server", 
+        "--mcp-transport", "stdio",
+        "--database", "/data/mailpit.db"
+      ],
+      "// NOTE": "Run from project root directory"
+    },
+    
+    "mailpit-local-with-docker-data": {
+      "// DESCRIPTION": "Local Mailpit binary accessing Docker volume data",
+      "command": "mailpit",
+      "args": [
+        "--mcp-server",
+        "--mcp-transport", "stdio",
+        "--database", "/var/lib/docker/volumes/mailpit_mailpit-data/_data/mailpit.db"
+      ],
+      "// NOTE": "Adjust volume path based on your Docker setup"
+    }
+  }
+}

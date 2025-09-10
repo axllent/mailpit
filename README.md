@@ -36,6 +36,7 @@ Mailpit was originally **inspired** by MailHog which is [no longer maintained](h
 - [Usage](#usage)
 - [Postmark API Emulation](#postmark-api-emulation)
 - [MCP Server for AI Assistants](#mcp-server-for-ai-assistants)
+  - [MCP with Docker](#mcp-with-docker)
 
 ## Features
 
@@ -304,6 +305,175 @@ Include authentication header if token is configured:
 const ws = new WebSocket('ws://localhost:8026/mcp', {
   headers: { 'Authorization': 'Bearer your-mcp-token' }
 });
+```
+
+### MCP with Docker
+
+When running Mailpit in Docker, the MCP server integration depends on your setup:
+
+#### Docker with WebSocket Transport
+
+**For AI assistants running on host** (recommended):
+```bash
+docker run -d \
+  --name mailpit \
+  -p 8025:8025 \
+  -p 1025:1025 \
+  -p 8026:8026 \
+  -e MP_MCP_SERVER=true \
+  -e MP_MCP_TRANSPORT=websocket \
+  -e MP_MCP_AUTH_TOKEN=your-mcp-token \
+  axllent/mailpit
+```
+
+**Claude Code Configuration** for Docker WebSocket:
+```json
+{
+  "mcpServers": {
+    "mailpit-docker": {
+      "transport": {
+        "type": "websocket",
+        "host": "localhost",
+        "port": 8026,
+        "path": "/mcp"
+      },
+      "auth": {
+        "type": "bearer",
+        "token": "your-mcp-token"
+      }
+    }
+  }
+}
+```
+
+#### Docker with stdio Transport
+
+**For containerized AI assistants**, use Docker networks:
+
+```yaml
+# docker-compose.yml
+version: '3.8'
+services:
+  mailpit:
+    image: axllent/mailpit
+    ports:
+      - "8025:8025"
+      - "1025:1025" 
+    environment:
+      MP_MCP_SERVER: true
+      MP_MCP_TRANSPORT: stdio
+    volumes:
+      - mailpit-data:/data
+    networks:
+      - ai-network
+
+  claude-assistant:
+    image: your-ai-assistant:latest
+    depends_on:
+      - mailpit
+    environment:
+      MAILPIT_MCP_COMMAND: "docker exec mailpit-container mailpit --mcp-server --mcp-transport stdio --database /data/mailpit.db"
+    networks:
+      - ai-network
+
+networks:
+  ai-network:
+    driver: bridge
+
+volumes:
+  mailpit-data:
+```
+
+#### Docker Volume Considerations
+
+**Persistent Data Access**: Ensure the database is accessible to MCP:
+```bash
+docker run -d \
+  --name mailpit \
+  -v mailpit-data:/data \
+  -e MP_DATA_FILE=/data/mailpit.db \
+  -e MP_MCP_SERVER=true \
+  axllent/mailpit
+```
+
+**Host Directory Binding** for local AI assistants:
+```bash
+docker run -d \
+  --name mailpit \
+  -v $(pwd)/mailpit-data:/data \
+  -p 8026:8026 \
+  -e MP_MCP_SERVER=true \
+  -e MP_MCP_TRANSPORT=websocket \
+  axllent/mailpit
+```
+
+#### Security with Docker
+
+**Production Docker Deployment**:
+```bash
+docker run -d \
+  --name mailpit-prod \
+  -p 127.0.0.1:8026:8026 \
+  -e MP_MCP_SERVER=true \
+  -e MP_MCP_TRANSPORT=websocket \
+  -e MP_MCP_AUTH_TOKEN=$(openssl rand -hex 32) \
+  --restart unless-stopped \
+  axllent/mailpit
+```
+
+**Docker Network Isolation**:
+```yaml
+services:
+  mailpit:
+    image: axllent/mailpit
+    networks:
+      - internal
+      - mcp-network
+    # Don't expose MCP port externally
+    expose:
+      - "8026"
+    environment:
+      MP_MCP_SERVER: true
+      MP_MCP_AUTH_TOKEN: ${MCP_TOKEN}
+
+networks:
+  internal:
+    driver: bridge
+    internal: true
+  mcp-network:
+    driver: bridge
+```
+
+#### Testing Docker MCP Setup
+
+**Test WebSocket Connection**:
+```bash
+# Install wscat: npm install -g wscat
+wscat -c ws://localhost:8026/mcp -H "Authorization: Bearer your-mcp-token"
+```
+
+**Test via curl** (HTTP endpoint for debugging):
+```bash
+curl -H "Authorization: Bearer your-mcp-token" \
+     -H "Content-Type: application/json" \
+     -d '{"method":"list_messages","params":{"limit":5}}' \
+     http://localhost:8026/mcp/rpc
+```
+
+**Docker Health Check** with MCP:
+```yaml
+services:
+  mailpit:
+    image: axllent/mailpit
+    healthcheck:
+      test: [
+        "CMD", 
+        "sh", "-c",
+        "/mailpit readyz && nc -z localhost 8026"
+      ]
+      interval: 15s
+      timeout: 3s
+      retries: 3
 ```
 
 

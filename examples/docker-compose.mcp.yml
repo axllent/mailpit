@@ -1,0 +1,144 @@
+version: '3.8'
+
+# Docker Compose configuration for Mailpit with MCP server support
+# Use this as a template for different deployment scenarios
+
+services:
+  # Basic Mailpit with MCP WebSocket (recommended for most use cases)
+  mailpit:
+    image: axllent/mailpit
+    container_name: mailpit-mcp
+    ports:
+      - "8025:8025"   # Web UI and API
+      - "1025:1025"   # SMTP server
+      - "8026:8026"   # MCP WebSocket server
+    environment:
+      # Basic Mailpit configuration
+      MP_DATA_FILE: /data/mailpit.db
+      MP_SMTP_AUTH_ACCEPT_ANY: true
+      
+      # Postmark API emulation
+      MP_POSTMARK_API: true
+      MP_POSTMARK_TOKEN: dev-token-123
+      MP_POSTMARK_ACCEPT_ANY: true  # Development mode
+      
+      # MCP server configuration
+      MP_MCP_SERVER: true
+      MP_MCP_TRANSPORT: websocket
+      MP_MCP_HTTP_ADDR: ":8026"
+      MP_MCP_AUTH_TOKEN: mcp-secret-token-123
+    volumes:
+      - mailpit-data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: [
+        "CMD", 
+        "sh", "-c", 
+        "/mailpit readyz && nc -z localhost 8026"
+      ]
+      interval: 15s
+      timeout: 3s
+      retries: 3
+    networks:
+      - mailpit-network
+
+  # Example: Application that sends emails via Postmark API
+  example-app:
+    image: node:18-alpine
+    container_name: example-app
+    depends_on:
+      - mailpit
+    environment:
+      # Configure app to use Mailpit instead of real Postmark
+      POSTMARK_SERVER_TOKEN: dev-token-123
+      POSTMARK_API_URL: http://mailpit:8025
+      
+      # Other app configuration
+      NODE_ENV: development
+      DATABASE_URL: postgresql://postgres:password@postgres:5432/myapp_dev
+    volumes:
+      - ./example-app:/app
+    working_dir: /app
+    command: npm run dev
+    networks:
+      - mailpit-network
+    profiles: ["example"]  # Only start with --profile example
+
+  # Example: PostgreSQL for the example app
+  postgres:
+    image: postgres:15-alpine
+    container_name: example-postgres
+    environment:
+      POSTGRES_DB: myapp_dev
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - mailpit-network
+    profiles: ["example"]
+
+  # Production-like setup with security
+  mailpit-prod:
+    image: axllent/mailpit
+    container_name: mailpit-production
+    ports:
+      # Only bind to localhost for security
+      - "127.0.0.1:8025:8025"
+      - "127.0.0.1:8026:8026"
+      # SMTP can be accessed from containers
+      - "1025:1025"
+    environment:
+      MP_DATA_FILE: /data/mailpit.db
+      MP_SMTP_AUTH_ACCEPT_ANY: false
+      MP_SMTP_AUTH_FILE: /config/smtp-auth.txt
+      
+      # Postmark API with specific token
+      MP_POSTMARK_API: true
+      MP_POSTMARK_TOKEN: ${POSTMARK_TOKEN}  # Set in .env file
+      
+      # MCP with authentication
+      MP_MCP_SERVER: true
+      MP_MCP_TRANSPORT: websocket
+      MP_MCP_AUTH_TOKEN: ${MCP_AUTH_TOKEN}  # Set in .env file
+      
+      # Security settings
+      MP_UI_AUTH_FILE: /config/ui-auth.txt
+      MP_WEBROOT: /mail/
+    volumes:
+      - mailpit-prod-data:/data
+      - ./config:/config:ro
+    restart: unless-stopped
+    networks:
+      - internal-network
+      - mcp-external
+    profiles: ["production"]
+
+networks:
+  mailpit-network:
+    driver: bridge
+  internal-network:
+    driver: bridge
+    internal: true  # No external access
+  mcp-external:
+    driver: bridge  # Allow MCP external access
+
+volumes:
+  mailpit-data:
+    driver: local
+  mailpit-prod-data:
+    driver: local
+  postgres-data:
+    driver: local
+
+# Configuration templates:
+# 
+# .env file for production:
+# POSTMARK_TOKEN=your-real-postmark-token-here
+# MCP_AUTH_TOKEN=your-secure-mcp-token-here
+#
+# config/smtp-auth.txt:
+# username:password
+# 
+# config/ui-auth.txt:
+# admin:secure-password

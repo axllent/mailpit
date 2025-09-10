@@ -188,40 +188,101 @@ abstract class MailpitTestCase extends TestCase
 
 ## Docker Development
 
+### MCP with Docker
+
+#### Option 1: WebSocket Transport (Recommended)
+
+Use the provided Docker Compose configuration:
+
+```bash
+# Start Mailpit with MCP WebSocket support
+docker-compose -f examples/docker-compose.mcp.yml up
+```
+
+**Claude Code Configuration** (`claude_desktop_config.json`):
+```json
+{
+  "mcpServers": {
+    "mailpit-docker": {
+      "transport": {
+        "type": "websocket",
+        "host": "localhost",
+        "port": 8026,
+        "path": "/mcp"
+      },
+      "auth": {
+        "type": "bearer", 
+        "token": "mcp-secret-token-123"
+      }
+    }
+  }
+}
+```
+
+#### Option 2: Docker Exec with stdio
+
+**Start Container**:
+```bash
+docker run -d --name mailpit-mcp \
+  -p 8025:8025 -p 1025:1025 \
+  -e MP_MCP_SERVER=true \
+  -e MP_POSTMARK_API=true \
+  axllent/mailpit
+```
+
+**Claude Code Configuration**:
+```json
+{
+  "mcpServers": {
+    "mailpit-docker": {
+      "command": "docker",
+      "args": [
+        "exec", "-i", "mailpit-mcp",
+        "mailpit", "--mcp-server", "--mcp-transport", "stdio",
+        "--database", "/data/mailpit.db"
+      ]
+    }
+  }
+}
+```
+
+#### Option 3: Docker Compose Exec
+
+**Claude Code Configuration**:
+```json
+{
+  "mcpServers": {
+    "mailpit-compose": {
+      "command": "docker-compose",
+      "args": [
+        "-f", "examples/docker-compose.mcp.yml",
+        "exec", "-T", "mailpit",
+        "mailpit", "--mcp-server", "--mcp-transport", "stdio"
+      ]
+    }
+  }
+}
+```
+
 ### Docker Compose for Development
 
-```yaml
-# docker-compose.dev.yml
-version: '3.8'
-services:
-  mailpit:
-    image: axllent/mailpit
-    ports:
-      - "8025:8025"  # Web UI
-      - "1025:1025"  # SMTP
-      - "8026:8026"  # MCP WebSocket
-    environment:
-      MP_POSTMARK_API: true
-      MP_POSTMARK_ACCEPT_ANY: true
-      MP_MCP_SERVER: true
-      MP_MCP_TRANSPORT: websocket
-    volumes:
-      - ./mailpit-data:/data
+See the comprehensive example in `examples/docker-compose.mcp.yml` which includes:
 
-  app:
-    build: .
-    depends_on:
-      - mailpit
-    environment:
-      POSTMARK_API_TOKEN: dev-token-123
-      POSTMARK_API_URL: http://mailpit:8025
-      SMTP_HOST: mailpit
-      SMTP_PORT: 1025
-```
+- Basic development setup with MCP WebSocket
+- Production configuration with security
+- Example application integration
+- Health checks and networking
 
 ### Usage
 ```bash
-docker-compose -f docker-compose.dev.yml up
+# Development mode
+docker-compose -f examples/docker-compose.mcp.yml up
+
+# With example application
+docker-compose -f examples/docker-compose.mcp.yml --profile example up
+
+# Production mode  
+docker-compose -f examples/docker-compose.mcp.yml --profile production up
 ```
 
 ## Continuous Integration
