@@ -26,6 +26,8 @@ import (
 	"github.com/axllent/mailpit/internal/tools"
 	"github.com/axllent/mailpit/server/apiv1"
 	"github.com/axllent/mailpit/server/handlers"
+	mcpserver "github.com/axllent/mailpit/server/mcp"
+	"github.com/axllent/mailpit/server/postmark"
 	"github.com/axllent/mailpit/server/websockets"
 	"github.com/gorilla/mux"
 	"github.com/lithammer/shortuuid/v4"
@@ -50,6 +52,11 @@ func Listen() {
 	go websockets.MessageHub.Run()
 
 	go pop3.Run()
+
+	// Start MCP server if enabled
+	if config.EnableMCPServer {
+		go mcpserver.Start()
+	}
 
 	r := apiRoutes()
 
@@ -157,8 +164,22 @@ func Listen() {
 	}
 }
 
+// registerPostmarkRoutes registers Postmark API routes if enabled
+func registerPostmarkRoutes(r *mux.Router) {
+	if config.EnablePostmarkAPI {
+		// Postmark API endpoints
+		r.HandleFunc("/email", postmark.SendEmailHandler).Methods("POST")
+		r.HandleFunc("/email/batch", postmark.SendBatchHandler).Methods("POST")
+		r.HandleFunc("/email/withTemplate", postmark.SendTemplateHandler).Methods("POST")
+		logger.Log().Info("[postmark] API enabled on /email endpoints")
+	}
+}
+
 func apiRoutes() *mux.Router {
 	r := mux.NewRouter()
+
+	// Postmark API emulation
+	registerPostmarkRoutes(r)
 
 	// API V1
 	r.HandleFunc(config.Webroot+"api/v1/messages", middleWareFunc(apiv1.GetMessages)).Methods("GET")

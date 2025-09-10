@@ -17,6 +17,7 @@ require (
 	github.com/leporo/sqlf v1.4.0
 	github.com/lithammer/shortuuid/v4 v4.2.0
 	github.com/mneis/go-telnet v0.0.0-20221017141824-6f643e477c62
+	github.com/modelcontextprotocol/go-sdk v0.1.0
 	github.com/prometheus/client_golang v1.23.0
 	github.com/rqlite/gorqlite v0.0.0-20250609141355-ac86a4a1c9a8
 	github.com/sirupsen/logrus v1.9.3

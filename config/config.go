@@ -226,6 +226,27 @@ var (
 
 	// DemoMode disables SMTP relay, link checking & HTTP send functionality
 	DemoMode = false
+
+	// EnablePostmarkAPI enables Postmark API emulation
+	EnablePostmarkAPI bool
+
+	// PostmarkAPIToken for authentication
+	PostmarkAPIToken string
+
+	// PostmarkAcceptAnyToken accepts any authentication token
+	PostmarkAcceptAnyToken bool
+
+	// EnableMCPServer enables MCP server
+	EnableMCPServer bool
+
+	// MCPTransport type (stdio or http)
+	MCPTransport = "stdio"
+
+	// MCPHTTPAddr for HTTP transport
+	MCPHTTPAddr = ":8026"
+
+	// MCPAuthToken for authentication
+	MCPAuthToken string
 )
 
 // AutoTag struct for auto-tagging

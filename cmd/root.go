@@ -15,6 +15,7 @@ import (
 	"github.com/axllent/mailpit/internal/storage"
 	"github.com/axllent/mailpit/internal/tools"
 	"github.com/axllent/mailpit/server"
+	mcpserver "github.com/axllent/mailpit/server/mcp"
 	"github.com/axllent/mailpit/server/webhook"
 	"github.com/spf13/cobra"
 )
@@ -46,6 +47,15 @@ Documentation:
 			prometheus.StartUpdater()
 		case "separate":
 			go prometheus.StartSeparateServer()
+		}
+
+		// Start MCP server if enabled
+		if config.EnableMCPServer {
+			if config.MCPTransport == "stdio" {
+				go mcpserver.RunMCPStdio()
+			} else if config.MCPTransport == "http" {
+				go mcpserver.RunMCPHTTP(config.MCPHTTPAddr)
+			}
 		}
 
 		go server.Listen()
@@ -187,6 +197,17 @@ func init() {
 	// DEPRECATED FLAG 2024/04/13 - no longer used
 	rootCmd.Flags().BoolVar(&config.DisableHTMLCheck, "disable-html-check", config.DisableHTMLCheck, "Disable the HTML check functionality (web UI & API)")
 	rootCmd.Flags().Lookup("disable-html-check").Hidden = true
+
+	// Postmark API emulation
+	rootCmd.Flags().BoolVar(&config.EnablePostmarkAPI, "postmark-api", config.EnablePostmarkAPI, "Enable Postmark API emulation")
+	rootCmd.Flags().StringVar(&config.PostmarkAPIToken, "postmark-token", config.PostmarkAPIToken, "Postmark API authentication token")
+	rootCmd.Flags().BoolVar(&config.PostmarkAcceptAnyToken, "postmark-accept-any", config.PostmarkAcceptAnyToken, "Accept any Postmark authentication token")
+
+	// MCP server
+	rootCmd.Flags().BoolVar(&config.EnableMCPServer, "mcp-server", config.EnableMCPServer, "Enable MCP server for AI assistants")
+	rootCmd.Flags().StringVar(&config.MCPTransport, "mcp-transport", config.MCPTransport, "MCP transport type (stdio|http)")
+	rootCmd.Flags().StringVar(&config.MCPHTTPAddr, "mcp-http-addr", config.MCPHTTPAddr, "MCP HTTP server address")
+	rootCmd.Flags().StringVar(&config.MCPAuthToken, "mcp-auth-token", config.MCPAuthToken, "MCP authentication token for HTTP transport")
 }
 
 // Load settings from environment
@@ -388,6 +409,17 @@ func initConfigFromEnv() {
 
 	// Demo mode
 	config.DemoMode = getEnabledFromEnv("MP_DEMO_MODE")
+
+	// Postmark API
+	config.EnablePostmarkAPI = getEnabledFromEnv("MP_ENABLE_POSTMARK_API")
+	config.PostmarkAPIToken = os.Getenv("MP_POSTMARK_API_TOKEN")
+	config.PostmarkAcceptAnyToken = getEnabledFromEnv("MP_POSTMARK_ACCEPT_ANY_TOKEN")
+
+	// MCP server
+	config.EnableMCPServer = getEnabledFromEnv("MP_ENABLE_MCP_SERVER")
+	config.MCPTransport = os.Getenv("MP_MCP_TRANSPORT")
+	config.MCPHTTPAddr = os.Getenv("MP_MCP_HTTP_ADDR")
+	config.MCPAuthToken = os.Getenv("MP_MCP_AUTH_TOKEN")
 }
 
 // load deprecated settings from environment and warn
