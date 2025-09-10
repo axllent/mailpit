@@ -225,36 +225,50 @@ mailpit
 
 ### Integration with Claude Code
 
-Add Mailpit as an MCP server using the Claude Code CLI:
+**⚠️ Important**: MCP server functionality requires the custom-built Mailpit image, not the official `axllent/mailpit` image.
+
+#### Step 1: Build Custom Docker Image
 
 ```bash
-# Add Mailpit MCP server for email analysis
-claude mcp add mailpit --env MP_MCP_SERVER=true --env MP_MCP_TRANSPORT=stdio -- mailpit --mcp-server --database /path/to/your/mailpit.db
+# Build custom image with MCP support
+docker build -t mailpit-with-mcp .
 
-# Or use a local configuration file (.mcp.json)
-claude mcp add --scope project mailpit --env MP_MCP_SERVER=true -- mailpit --mcp-server --database ./mailpit.db
+# Deploy the container with MCP and Postmark API
+docker run -d \
+  --name mailpit-prod \
+  -p 127.0.0.1:8025:8025 \
+  -p 1025:1025 \
+  -e MP_MCP_SERVER=true \
+  -e MP_MCP_TRANSPORT=stdio \
+  -e MP_POSTMARK_API=true \
+  -e MP_POSTMARK_TOKEN=your-secure-token \
+  -e MP_POSTMARK_ACCEPT_ANY=true \
+  --restart unless-stopped \
+  mailpit-with-mcp
 ```
 
-**Alternative: Local Configuration File**
+#### Step 2: Configure Claude Code MCP
 
-Create a `.mcp.json` file in your project:
+**Global Configuration (Recommended - works across all projects):**
+```bash
+# Add Mailpit as a global MCP server
+claude mcp add --scope user mailpit-global -- docker exec -i mailpit-prod /mailpit --mcp-server --database=/data/mailpit.db --mcp-transport=stdio --smtp=:0 --listen=:0
+```
 
-```json
-{
-  "mcpServers": {
-    "mailpit": {
-      "command": "mailpit",
-      "args": [
-        "--mcp-server",
-        "--database", "./mailpit.db"
-      ],
-      "env": {
-        "MP_MCP_SERVER": "true",
-        "MP_MCP_TRANSPORT": "stdio"
-      }
-    }
-  }
-}
+**Project-Specific Configuration:**
+```bash
+# Add to specific project only
+claude mcp add --scope project mailpit-local -- docker exec -i mailpit-prod /mailpit --mcp-server --database=/data/mailpit.db --mcp-transport=stdio --smtp=:0 --listen=:0
+```
+
+#### Step 3: Verify Configuration
+
+```bash
+# Check MCP server status
+claude mcp list
+
+# Should show:
+# mailpit-global: docker exec -i mailpit-prod /mailpit --mcp-server... - ✓ Connected
 ```
 
 ### Available MCP Tools
@@ -319,40 +333,39 @@ When running Mailpit in Docker, both MCP server and Postmark API features can be
 
 #### Docker with stdio Transport
 
-**For local development** (recommended):
+**Step 1: Build and Deploy Custom Image**
 ```bash
+# Build custom image (required for MCP support)
+docker build -t mailpit-with-mcp .
+
+# Deploy with MCP and Postmark API enabled
 docker run -d \
-  --name mailpit \
-  -p 8025:8025 \
+  --name mailpit-prod \
+  -p 127.0.0.1:8025:8025 \
   -p 1025:1025 \
   -e MP_MCP_SERVER=true \
   -e MP_MCP_TRANSPORT=stdio \
   -e MP_POSTMARK_API=true \
-  -e MP_POSTMARK_TOKEN=dev-token-123 \
+  -e MP_POSTMARK_TOKEN=your-secure-token \
   -e MP_POSTMARK_ACCEPT_ANY=true \
-  axllent/mailpit
+  --restart unless-stopped \
+  mailpit-with-mcp
 ```
 
-**Claude Code Configuration** for Docker:
+**Step 2: Claude Code Configuration**
 ```bash
-# Add Docker-based MCP server
-claude mcp add mailpit-docker -- docker exec -i mailpit mailpit --mcp-server --mcp-transport stdio --database /data/mailpit.db
+# Global MCP server (works from any project directory)
+claude mcp add --scope user mailpit-docker -- docker exec -i mailpit-prod /mailpit --mcp-server --database=/data/mailpit.db --mcp-transport=stdio --smtp=:0 --listen=:0
 ```
 
-**Alternative: Docker Exec Configuration**
-```json
-{
-  "mcpServers": {
-    "mailpit-docker": {
-      "command": "docker",
-      "args": [
-        "exec", "-i", "mailpit",
-        "mailpit", "--mcp-server", "--mcp-transport", "stdio",
-        "--database", "/data/mailpit.db"
-      ]
-    }
-  }
-}
+**Step 3: Verify Setup**
+```bash
+# Check container is running
+docker ps --filter name=mailpit-prod
+
+# Check MCP server connection
+claude mcp list | grep mailpit-docker
+# Should show: ✓ Connected
 ```
 
 #### Docker Compose Configuration
@@ -539,6 +552,166 @@ services:
       - mailpit
 ```
 
+## Troubleshooting
+
+### MCP Server Issues
+
+#### "command not found" or "--mcp-transport: command not found"
+This indicates you're using the official Docker image which doesn't include MCP support. You must build a custom image:
+
+```bash
+# Build custom image with MCP support
+docker build -t mailpit-with-mcp .
+
+# Use custom image instead of axllent/mailpit
+docker run -d --name mailpit-prod \
+  -p 8025:8025 -p 1025:1025 \
+  -e MP_MCP_SERVER=true \
+  -e MP_POSTMARK_API=true \
+  mailpit-with-mcp
+```
+
+#### "Failed to connect to MCP server"
+1. **Check if MCP server is running**:
+   ```bash
+   docker exec mailpit-prod ps aux | grep mailpit
+   ```
+
+2. **Verify MCP server is accessible**:
+   ```bash
+   docker exec mailpit-prod /mailpit --version
+   ```
+
+3. **Check container logs**:
+   ```bash
+   docker logs mailpit-prod
+   ```
+
+#### Database Path Issues
+If you see "failed to open database" errors:
+
+1. **Create the data directory**:
+   ```bash
+   docker exec mailpit-prod mkdir -p /data
+   ```
+
+2. **Use correct database path**:
+   ```bash
+   # Correct path (inside container)
+   /data/mailpit.db
+   
+   # Incorrect paths
+   ~/mailpit.db  # This resolves to root's home inside container
+   ./mailpit.db  # Relative paths may not work consistently
+   ```
+
+#### Cross-Directory MCP Access
+When your project is in a different directory than where you want to run claude mcp commands:
+
+1. **Use global scope** (recommended):
+   ```bash
+   claude mcp add --scope user mailpit-global -- docker exec -i mailpit-prod /mailpit --mcp-server --database=/data/mailpit.db --mcp-transport=stdio --smtp=:0 --listen=:0
+   ```
+
+2. **Or copy config to project directory**:
+   ```bash
+   cp ~/.config/claude-desktop/claude_desktop_config.json /path/to/project/
+   ```
+
+#### Port Conflicts in MCP Configuration
+When MCP server conflicts with main Mailpit instance, disable HTTP and SMTP for MCP:
+
+```bash
+# Add these flags to disable conflicting ports
+--smtp=:0 --listen=:0
+
+# Complete working command:
+claude mcp add --scope user mailpit-global -- docker exec -i mailpit-prod /mailpit --mcp-server --database=/data/mailpit.db --mcp-transport=stdio --smtp=:0 --listen=:0
+```
+
+#### Verify MCP Connection
+Check if MCP server is properly connected:
+
+```bash
+# List all MCP servers
+claude mcp list
+
+# Should show:
+# ✓ Connected  mailpit-global
+```
+
+### Postmark API Issues
+
+#### Application Not Receiving Emails
+1. **Verify Postmark API is enabled**:
+   ```bash
+   curl http://localhost:8025/api/v1/server
+   # Should show PostmarkAPIEnabled: true
+   ```
+
+2. **Check authentication token**:
+   ```bash
+   # Your app should use the same token as configured
+   MP_POSTMARK_TOKEN=your-token
+   ```
+
+3. **Verify API URL configuration**:
+   ```javascript
+   // Make sure your app points to Mailpit
+   client.apiUrl = "http://localhost:8025";  // Not postmarkapp.com
+   ```
+
+### Common Docker Issues
+
+#### Container Won't Start
+Check for port conflicts:
+```bash
+# See what's using the ports
+netstat -tulpn | grep :8025
+netstat -tulpn | grep :1025
+
+# Use different ports if needed
+docker run -p 18025:8025 -p 11025:1025 mailpit-with-mcp
+```
+
+#### Environment Variables Not Working
+Make sure environment variables are properly set:
+```bash
+# Check container environment
+docker exec mailpit-prod env | grep MP_
+
+# Should show:
+# MP_MCP_SERVER=true
+# MP_POSTMARK_API=true
+# MP_POSTMARK_TOKEN=your-token
+```
+
+### Getting Help
+
+If you're still experiencing issues:
+
+1. **Check the logs**:
+   ```bash
+   docker logs mailpit-prod -f
+   ```
+
+2. **Verify your setup**:
+   ```bash
+   # Test basic functionality
+   curl http://localhost:8025/api/v1/messages
+   
+   # Test Postmark API
+   curl -X POST http://localhost:8025/email \
+     -H "Content-Type: application/json" \
+     -H "X-Postmark-Server-Token: your-token" \
+     -d '{"From":"test@test.com","To":"test@test.com","Subject":"Test","TextBody":"Test"}'
+   ```
+
+3. **Create an issue** at [https://github.com/btafoya/mailpit/issues](https://github.com/btafoya/mailpit/issues) with:
+   - Docker version and OS
+   - Complete error messages
+   - Your docker run command
+   - Output from `docker logs mailpit-prod`
 
 ### Configuring sendmail
 
