@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  mailpit:
+    build: .
+    # or use: image: axllent/mailpit:latest (when available)
+    ports:
+      - "8025:8025"   # Web UI
+      - "1025:1025"   # SMTP
+      - "8026:8026"   # MCP server (WebSocket)
+    environment:
+      # Basic Mailpit configuration
+      MP_DATA_FILE: /data/mailpit.db
+      MP_SMTP_AUTH_ACCEPT_ANY: true
+      MP_SMTP_AUTH_ALLOW_INSECURE: true
+      
+      # Postmark API emulation
+      MP_POSTMARK_API: true
+      MP_POSTMARK_TOKEN: your-secret-token-here
+      # MP_POSTMARK_ACCEPT_ANY: true  # Uncomment for development
+      
+      # MCP server for AI assistants
+      MP_MCP_SERVER: true
+      MP_MCP_TRANSPORT: websocket
+      MP_MCP_HTTP_ADDR: ":8026"
+      MP_MCP_AUTH_TOKEN: your-mcp-token-here
+    volumes:
+      - mailpit-data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["/mailpit", "readyz"]
+      interval: 15s
+      timeout: 3s
+      retries: 3
+
+  # Example application using Postmark API
+  example-app:
+    image: node:18-alpine
+    depends_on:
+      - mailpit
+    environment:
+      # Configure app to use Mailpit instead of real Postmark
+      POSTMARK_SERVER_TOKEN: your-secret-token-here
+      POSTMARK_API_URL: http://mailpit:8025
+    volumes:
+      - ./example:/app
+    working_dir: /app
+    command: npm start
+    profiles: ["example"]
+
+volumes:
+  mailpit-data:
