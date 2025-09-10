@@ -225,7 +225,19 @@ mailpit
 
 ### Integration with Claude Code
 
-Add to your `claude_desktop_config.json`:
+Add Mailpit as an MCP server using the Claude Code CLI:
+
+```bash
+# Add Mailpit MCP server for email analysis
+claude mcp add mailpit --env MP_MCP_SERVER=true --env MP_MCP_TRANSPORT=stdio -- mailpit --mcp-server --database /path/to/your/mailpit.db
+
+# Or use a local configuration file (.mcp.json)
+claude mcp add --scope project mailpit --env MP_MCP_SERVER=true -- mailpit --mcp-server --database ./mailpit.db
+```
+
+**Alternative: Local Configuration File**
+
+Create a `.mcp.json` file in your project:
 
 ```json
 {
@@ -233,9 +245,8 @@ Add to your `claude_desktop_config.json`:
     "mailpit": {
       "command": "mailpit",
       "args": [
-        "--mcp-server", 
-        "--mcp-transport", "stdio",
-        "--database", "/path/to/your/mailpit.db"
+        "--mcp-server",
+        "--database", "./mailpit.db"
       ],
       "env": {
         "MP_MCP_SERVER": "true",
@@ -274,84 +285,79 @@ AI: Analyze this message for deliverability issues
 
 ### MCP Transport Options
 
-**stdio** (recommended for local AI assistants):
+**stdio** (recommended for local development):
 ```bash
 mailpit --mcp-server --mcp-transport stdio
 ```
 
-**WebSocket** (for remote access):
+**HTTP** (for remote access - when supported by Claude Code):
 ```bash
-mailpit --mcp-server --mcp-transport websocket --mcp-http-addr :8026
+mailpit --mcp-server --mcp-transport http --mcp-http-addr :8025
 ```
 
 ### Configuration Options
 
 ```bash
 --mcp-server                        # Enable MCP server
---mcp-transport string              # Transport type: stdio|websocket (default: stdio)
---mcp-http-addr string              # WebSocket address (default: :8026)
---mcp-auth-token string             # Authentication token for WebSocket transport
+--mcp-transport string              # Transport type: stdio|http (default: stdio)
+--mcp-http-addr string              # HTTP server address (default: :8025)
+--mcp-auth-token string             # Authentication token for HTTP transport
 ```
 
-### WebSocket Access
+### Remote Access
 
-When using WebSocket transport, the MCP server is available at:
+When using HTTP transport, the MCP server endpoints are available at:
 ```
-ws://localhost:8026/mcp
+http://localhost:8025/mcp
 ```
 
-Include authentication header if token is configured:
-```javascript
-const ws = new WebSocket('ws://localhost:8026/mcp', {
-  headers: { 'Authorization': 'Bearer your-mcp-token' }
-});
-```
+Note: Remote MCP access depends on Claude Code client support for HTTP transport. Check the latest Claude Code documentation for current transport support.
 
 ### MCP with Docker
 
 When running Mailpit in Docker, both MCP server and Postmark API features can be enabled together for comprehensive email testing and AI assistant integration:
 
-#### Docker with WebSocket Transport
+#### Docker with stdio Transport
 
-**For AI assistants running on host** (recommended):
+**For local development** (recommended):
 ```bash
 docker run -d \
   --name mailpit \
   -p 8025:8025 \
   -p 1025:1025 \
-  -p 8026:8026 \
   -e MP_MCP_SERVER=true \
-  -e MP_MCP_TRANSPORT=websocket \
-  -e MP_MCP_AUTH_TOKEN=your-mcp-token \
+  -e MP_MCP_TRANSPORT=stdio \
   -e MP_POSTMARK_API=true \
   -e MP_POSTMARK_TOKEN=dev-token-123 \
   -e MP_POSTMARK_ACCEPT_ANY=true \
   axllent/mailpit
 ```
 
-**Claude Code Configuration** for Docker WebSocket:
+**Claude Code Configuration** for Docker:
+```bash
+# Add Docker-based MCP server
+claude mcp add mailpit-docker -- docker exec -i mailpit mailpit --mcp-server --mcp-transport stdio --database /data/mailpit.db
+```
+
+**Alternative: Docker Exec Configuration**
 ```json
 {
   "mcpServers": {
     "mailpit-docker": {
-      "transport": {
-        "type": "websocket",
-        "host": "localhost",
-        "port": 8026,
-        "path": "/mcp"
-      },
-      "auth": {
-        "type": "bearer",
-        "token": "your-mcp-token"
-      }
+      "command": "docker",
+      "args": [
+        "exec", "-i", "mailpit",
+        "mailpit", "--mcp-server", "--mcp-transport", "stdio",
+        "--database", "/data/mailpit.db"
+      ]
     }
   }
 }
 ```
 
-#### Docker with stdio Transport
+#### Docker Compose Configuration
 
-**For containerized AI assistants**, use Docker networks:
+**For complex environments**, use Docker Compose:
 
 ```yaml
 # docker-compose.yml
@@ -370,24 +376,15 @@ services:
       MP_POSTMARK_ACCEPT_ANY: true
     volumes:
       - mailpit-data:/data
-    networks:
-      - ai-network
-
-  claude-assistant:
-    image: your-ai-assistant:latest
-    depends_on:
-      - mailpit
-    environment:
-      MAILPIT_MCP_COMMAND: "docker exec mailpit-container mailpit --mcp-server --mcp-transport stdio --database /data/mailpit.db"
-    networks:
-      - ai-network
-
-networks:
-  ai-network:
-    driver: bridge
 
 volumes:
   mailpit-data:
+```
+
+**Claude Code Integration with Docker Compose**:
+```bash
+# Add Docker Compose-based MCP server
+claude mcp add mailpit-compose -- docker-compose exec -T mailpit mailpit --mcp-server --mcp-transport stdio --database /data/mailpit.db
 ```
 
 #### Docker Volume Considerations
@@ -462,21 +459,28 @@ networks:
 
 #### Testing Docker MCP Setup
 
-**Test WebSocket Connection**:
+**Test MCP Connection**:
 ```bash
-# Install wscat: npm install -g wscat
-wscat -c ws://localhost:8026/mcp -H "Authorization: Bearer your-mcp-token"
+# Test that Mailpit MCP server is working
+claude mcp test mailpit-docker
 ```
 
-**Test via curl** (HTTP endpoint for debugging):
+**Verify Docker Container**:
 ```bash
-curl -H "Authorization: Bearer your-mcp-token" \
-     -H "Content-Type: application/json" \
-     -d '{"method":"list_messages","params":{"limit":5}}' \
-     http://localhost:8026/mcp/rpc
+# Check container is running
+docker ps --filter name=mailpit
+
+# Check container logs
+docker logs mailpit --tail 10
+
+# Test SMTP port
+telnet localhost 1025
+
+# Test web interface
+curl http://localhost:8025/api/v1/messages
 ```
 
-**Docker Health Check** with MCP:
+**Docker Health Check**:
 ```yaml
 services:
   mailpit:
@@ -485,7 +489,7 @@ services:
       test: [
         "CMD", 
         "sh", "-c",
-        "/mailpit readyz && nc -z localhost 8026"
+        "/mailpit readyz"
       ]
       interval: 15s
       timeout: 3s

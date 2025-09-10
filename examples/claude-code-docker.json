@@ -1,21 +1,20 @@
 {
-  "// NOTE": "Configuration for Claude Code with Dockerized Mailpit",
-  "// USAGE": "Add this to your claude_desktop_config.json mcpServers section",
+  "// NOTE": "Configuration examples for Claude Code with Dockerized Mailpit",
+  "// USAGE": "Use the CLI commands below rather than JSON configuration",
+  
+  "// RECOMMENDED": "Use Claude Code CLI instead:",
+  "// claude mcp add mailpit-docker -- docker exec -i mailpit mailpit --mcp-server --mcp-transport stdio",
   
   "mcpServers": {
-    "mailpit-docker-websocket": {
-      "// DESCRIPTION": "Connect to Dockerized Mailpit via WebSocket",
-      "transport": {
-        "type": "websocket",
-        "host": "localhost", 
-        "port": 8026,
-        "path": "/mcp"
-      },
-      "auth": {
-        "type": "bearer",
-        "token": "mcp-secret-token-123"
-      },
-      "// NOTE": "Requires: docker-compose -f examples/docker-compose.mcp.yml up"
+    "mailpit-docker-stdio": {
+      "// DESCRIPTION": "Connect to Dockerized Mailpit via stdio",
+      "command": "docker",
+      "args": [
+        "exec", "-i", "mailpit-mcp",
+        "mailpit", "--mcp-server", "--mcp-transport", "stdio",
+        "--database", "/data/mailpit.db"
+      ],
+      "// NOTE": "Requires: docker run with name 'mailpit-mcp'"
     },
     
     "mailpit-docker-exec": {

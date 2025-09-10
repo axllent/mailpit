@@ -4,14 +4,13 @@ version: '3.8'
 # Use this as a template for different deployment scenarios
 
 services:
-  # Basic Mailpit with MCP WebSocket (recommended for most use cases)
+  # Basic Mailpit with MCP stdio (recommended for most use cases)
   mailpit:
     image: axllent/mailpit
     container_name: mailpit-mcp
     ports:
       - "8025:8025"   # Web UI and API
       - "1025:1025"   # SMTP server
-      - "8026:8026"   # MCP WebSocket server
     environment:
       # Basic Mailpit configuration
       MP_DATA_FILE: /data/mailpit.db
@@ -24,9 +23,7 @@ services:
       
       # MCP server configuration
       MP_MCP_SERVER: true
-      MP_MCP_TRANSPORT: websocket
-      MP_MCP_HTTP_ADDR: ":8026"
-      MP_MCP_AUTH_TOKEN: mcp-secret-token-123
+      MP_MCP_TRANSPORT: stdio
     volumes:
       - mailpit-data:/data
     restart: unless-stopped
@@ -34,7 +31,7 @@ services:
       test: [
         "CMD", 
         "sh", "-c", 
-        "/mailpit readyz && nc -z localhost 8026"
+        "/mailpit readyz"
       ]
       interval: 15s
       timeout: 3s
@@ -97,10 +94,9 @@ services:
       MP_POSTMARK_API: true
       MP_POSTMARK_TOKEN: ${POSTMARK_TOKEN}  # Set in .env file
       
-      # MCP with authentication
+      # MCP server configuration
       MP_MCP_SERVER: true
-      MP_MCP_TRANSPORT: websocket
-      MP_MCP_AUTH_TOKEN: ${MCP_AUTH_TOKEN}  # Set in .env file
+      MP_MCP_TRANSPORT: stdio
       
       # Security settings
       MP_UI_AUTH_FILE: /config/ui-auth.txt

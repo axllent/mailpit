@@ -190,33 +190,19 @@ abstract class MailpitTestCase extends TestCase
 
 ### MCP with Docker
 
-#### Option 1: WebSocket Transport (Recommended)
+#### Option 1: Docker Compose (Recommended)
 
 Use the provided Docker Compose configuration:
 
 ```bash
-# Start Mailpit with MCP WebSocket support
+# Start Mailpit with MCP stdio support
 docker-compose -f examples/docker-compose.mcp.yml up
 ```
 
-**Claude Code Configuration** (`claude_desktop_config.json`):
-```json
-{
-  "mcpServers": {
-    "mailpit-docker": {
-      "transport": {
-        "type": "websocket",
-        "host": "localhost",
-        "port": 8026,
-        "path": "/mcp"
-      },
-      "auth": {
-        "type": "bearer", 
-        "token": "mcp-secret-token-123"
-      }
-    }
-  }
-}
+**Claude Code Configuration**:
+```bash
+# Add Docker Compose-based MCP server
+claude mcp add mailpit-compose -- docker-compose -f examples/docker-compose.mcp.yml exec -T mailpit mailpit --mcp-server --mcp-transport stdio --database /data/mailpit.db
 ```
 
 #### Option 2: Docker Exec with stdio
