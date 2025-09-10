@@ -227,6 +227,8 @@ docker run -d --name mailpit-mcp \
   -p 8025:8025 -p 1025:1025 \
   -e MP_MCP_SERVER=true \
   -e MP_POSTMARK_API=true \
+  -e MP_POSTMARK_TOKEN=dev-token-123 \
+  -e MP_POSTMARK_ACCEPT_ANY=true \
   axllent/mailpit
 ```
 

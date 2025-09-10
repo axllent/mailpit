@@ -309,7 +309,7 @@ const ws = new WebSocket('ws://localhost:8026/mcp', {
 
 ### MCP with Docker
 
-When running Mailpit in Docker, the MCP server integration depends on your setup:
+When running Mailpit in Docker, both MCP server and Postmark API features can be enabled together for comprehensive email testing and AI assistant integration:
 
 #### Docker with WebSocket Transport
 
@@ -323,6 +323,9 @@ docker run -d \
   -e MP_MCP_SERVER=true \
   -e MP_MCP_TRANSPORT=websocket \
   -e MP_MCP_AUTH_TOKEN=your-mcp-token \
+  -e MP_POSTMARK_API=true \
+  -e MP_POSTMARK_TOKEN=dev-token-123 \
+  -e MP_POSTMARK_ACCEPT_ANY=true \
   axllent/mailpit
 ```
 
@@ -362,6 +365,9 @@ services:
     environment:
       MP_MCP_SERVER: true
       MP_MCP_TRANSPORT: stdio
+      MP_POSTMARK_API: true
+      MP_POSTMARK_TOKEN: dev-token-123
+      MP_POSTMARK_ACCEPT_ANY: true
     volumes:
       - mailpit-data:/data
     networks:
@@ -393,6 +399,8 @@ docker run -d \
   -v mailpit-data:/data \
   -e MP_DATA_FILE=/data/mailpit.db \
   -e MP_MCP_SERVER=true \
+  -e MP_POSTMARK_API=true \
+  -e MP_POSTMARK_TOKEN=dev-token-123 \
   axllent/mailpit
 ```
 
@@ -404,6 +412,8 @@ docker run -d \
   -p 8026:8026 \
   -e MP_MCP_SERVER=true \
   -e MP_MCP_TRANSPORT=websocket \
+  -e MP_POSTMARK_API=true \
+  -e MP_POSTMARK_TOKEN=dev-token-123 \
   axllent/mailpit
 ```
 
@@ -413,10 +423,14 @@ docker run -d \
 ```bash
 docker run -d \
   --name mailpit-prod \
+  -p 127.0.0.1:8025:8025 \
   -p 127.0.0.1:8026:8026 \
+  -p 1025:1025 \
   -e MP_MCP_SERVER=true \
   -e MP_MCP_TRANSPORT=websocket \
   -e MP_MCP_AUTH_TOKEN=$(openssl rand -hex 32) \
+  -e MP_POSTMARK_API=true \
+  -e MP_POSTMARK_TOKEN=$(openssl rand -hex 32) \
   --restart unless-stopped \
   axllent/mailpit
 ```
@@ -435,6 +449,8 @@ services:
     environment:
       MP_MCP_SERVER: true
       MP_MCP_AUTH_TOKEN: ${MCP_TOKEN}
+      MP_POSTMARK_API: true
+      MP_POSTMARK_TOKEN: ${POSTMARK_TOKEN}
 
 networks:
   internal:
@@ -474,6 +490,49 @@ services:
       interval: 15s
       timeout: 3s
       retries: 3
+```
+
+#### Using Postmark API with Docker
+
+Once Postmark API is enabled in your Docker container, configure your application to use the containerized Mailpit:
+
+**Node.js Application**:
+```javascript
+const postmark = require("postmark");
+const client = new postmark.ServerClient("dev-token-123");
+
+// Point to Docker container
+client.apiUrl = "http://localhost:8025";
+
+client.sendEmail({
+  From: "test@example.com",
+  To: "user@example.com",
+  Subject: "Docker Test",
+  TextBody: "Testing Postmark API via Docker!"
+});
+```
+
+**Docker Compose Application Integration**:
+```yaml
+version: '3.8'
+services:
+  mailpit:
+    image: axllent/mailpit
+    environment:
+      MP_POSTMARK_API: true
+      MP_POSTMARK_TOKEN: dev-token-123
+      MP_MCP_SERVER: true
+    ports:
+      - "8025:8025"
+      - "8026:8026"
+  
+  app:
+    build: .
+    environment:
+      POSTMARK_SERVER_TOKEN: dev-token-123
+      POSTMARK_API_URL: http://mailpit:8025
+    depends_on:
+      - mailpit
 ```
 
 
