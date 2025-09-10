@@ -29,6 +29,13 @@ Mailpit was originally **inspired** by MailHog which is [no longer maintained](h
 
 ![Mailpit](https://raw.githubusercontent.com/axllent/mailpit/develop/server/ui-src/screenshot.png)
 
+## Table of Contents
+
+- [Features](#features)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Postmark API Emulation](#postmark-api-emulation)
+- [MCP Server for AI Assistants](#mcp-server-for-ai-assistants)
 
 ## Features
 
@@ -52,6 +59,8 @@ easily handling tens of thousands of emails, with automatic email pruning (by de
 - [Chaos](https://mailpit.axllent.org/docs/integration/chaos/) feature to enable configurable SMTP errors to test application resilience
 - `List-Unsubscribe` syntax validation
 - Optional [webhook](https://mailpit.axllent.org/docs/integration/webhook/) for received messages
+- **[Postmark API emulation](https://postmarkapp.com/developer)** - drop-in replacement for Postmark API during development & testing
+- **[MCP server](https://spec.modelcontextprotocol.io/)** - enables AI assistants (like Claude Code) to read and analyze messages for debugging workflows
 
 
 ## Installation
@@ -108,6 +117,194 @@ If installed using homebrew, you may run `brew services start mailpit` to always
 ### Testing Mailpit
 
 Please refer to [the documentation](https://mailpit.axllent.org/docs/install/testing/) on how to easily test email delivery to Mailpit.
+
+
+## Postmark API Emulation
+
+Mailpit can emulate the [Postmark API](https://postmarkapp.com/developer) for seamless testing of applications that use Postmark for email delivery.
+
+### Enable Postmark API
+
+```bash
+mailpit --postmark-api --postmark-token "your-secret-token"
+```
+
+Or using environment variables:
+```bash
+export MP_POSTMARK_API=true
+export MP_POSTMARK_TOKEN="your-secret-token"
+mailpit
+```
+
+### Available Endpoints
+
+- **POST /email** - Send single email
+- **POST /email/batch** - Send multiple emails 
+- **POST /email/withTemplate** - Send template-based email
+
+### Usage with Postmark SDKs
+
+#### Node.js
+```javascript
+const postmark = require("postmark");
+const client = new postmark.ServerClient("your-secret-token");
+
+// Point to Mailpit instead of Postmark
+client.apiUrl = "http://localhost:8025";
+
+// Send email normally
+client.sendEmail({
+  From: "sender@example.com",
+  To: "recipient@example.com", 
+  Subject: "Test Email",
+  TextBody: "Hello from Mailpit!",
+  HtmlBody: "<p>Hello from <strong>Mailpit</strong>!</p>"
+});
+```
+
+#### Python
+```python
+from postmarker.core import PostmarkClient
+
+# Configure client to use Mailpit
+client = PostmarkClient(
+    server_token='your-secret-token',
+    api_base='http://localhost:8025'
+)
+
+# Send email
+client.emails.send(
+    From='sender@example.com',
+    To='recipient@example.com',
+    Subject='Test Email',
+    HtmlBody='<p>Hello from <strong>Mailpit</strong>!</p>'
+)
+```
+
+#### PHP
+```php
+use Postmark\PostmarkClient;
+
+$client = new PostmarkClient('your-secret-token');
+// Set custom API URL for Mailpit
+$client->setApiUrl('http://localhost:8025');
+
+$client->sendEmail([
+    'From' => 'sender@example.com',
+    'To' => 'recipient@example.com', 
+    'Subject' => 'Test Email',
+    'HtmlBody' => '<p>Hello from <strong>Mailpit</strong>!</p>'
+]);
+```
+
+### Configuration Options
+
+```bash
+--postmark-api                      # Enable Postmark API emulation
+--postmark-token string             # Authentication token (required)  
+--postmark-accept-any               # Accept any token (development mode)
+```
+
+## MCP Server for AI Assistants
+
+Mailpit includes an [MCP (Model Context Protocol)](https://spec.modelcontextprotocol.io/) server that enables AI assistants to read and analyze messages during development and debugging.
+
+### Enable MCP Server
+
+```bash
+mailpit --mcp-server --mcp-transport stdio
+```
+
+Or using environment variables:
+```bash
+export MP_MCP_SERVER=true
+export MP_MCP_TRANSPORT=stdio  # or websocket
+mailpit
+```
+
+### Integration with Claude Code
+
+Add to your `claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "mailpit": {
+      "command": "mailpit",
+      "args": [
+        "--mcp-server", 
+        "--mcp-transport", "stdio",
+        "--database", "/path/to/your/mailpit.db"
+      ],
+      "env": {
+        "MP_MCP_SERVER": "true",
+        "MP_MCP_TRANSPORT": "stdio"
+      }
+    }
+  }
+}
+```
+
+### Available MCP Tools
+
+The MCP server provides 4 tools for AI assistants:
+
+1. **list_messages** - List and filter messages with optional search and tags
+2. **get_message** - Retrieve full message content including headers and attachments  
+3. **search_messages** - Advanced search with date filters and content matching
+4. **analyze_message** - Comprehensive analysis including HTML compatibility, link checking, and spam scoring
+
+### Usage Examples
+
+Once configured, AI assistants can:
+
+```
+AI: List recent messages
+→ Uses list_messages tool to show latest emails
+
+AI: Show me the email about the password reset
+→ Uses search_messages to find relevant email
+→ Uses get_message to retrieve full content
+
+AI: Analyze this message for deliverability issues  
+→ Uses analyze_message to check HTML compatibility, 
+  validate links, and assess spam score
+```
+
+### MCP Transport Options
+
+**stdio** (recommended for local AI assistants):
+```bash
+mailpit --mcp-server --mcp-transport stdio
+```
+
+**WebSocket** (for remote access):
+```bash
+mailpit --mcp-server --mcp-transport websocket --mcp-http-addr :8026
+```
+
+### Configuration Options
+
+```bash
+--mcp-server                        # Enable MCP server
+--mcp-transport string              # Transport type: stdio|websocket (default: stdio)
+--mcp-http-addr string              # WebSocket address (default: :8026)
+--mcp-auth-token string             # Authentication token for WebSocket transport
+```
+
+### WebSocket Access
+
+When using WebSocket transport, the MCP server is available at:
+```
+ws://localhost:8026/mcp
+```
+
+Include authentication header if token is configured:
+```javascript
+const ws = new WebSocket('ws://localhost:8026/mcp', {
+  headers: { 'Authorization': 'Bearer your-mcp-token' }
+});
+```
 
 
 ### Configuring sendmail
