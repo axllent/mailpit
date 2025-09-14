@@ -2,6 +2,14 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.27.8]
+
+### Chore
+- Update Go dependencies
+- Update node dependencies
+- Update caniemail test database
+
+
 ## [v1.27.7]
 
 ### Fix
