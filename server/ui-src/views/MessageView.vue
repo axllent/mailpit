@@ -485,11 +485,11 @@ export default {
 				title="Release message"
 				@click="initReleaseModal()"
 			>
-				<i class="bi bi-send"></i>
+				<i class="bi bi-send me-md-2"></i>
 				<span class="d-none d-md-inline">Release</span>
 			</button>
 			<button class="btn btn-outline-light me-1 me-sm-2" title="Delete message" @click="deleteMessage()">
-				<i class="bi bi-trash-fill"></i>
+				<i class="bi bi-trash-fill me-md-2"></i>
 				<span class="d-none d-md-inline">Delete</span>
 			</button>
 		</div>
