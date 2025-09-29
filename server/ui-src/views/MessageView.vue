@@ -463,7 +463,7 @@ export default {
 </script>
 
 <template>
-	<div class="navbar navbar-expand-lg navbar-dark row flex-shrink-0 bg-primary text-white d-print-none">
+	<div class="navbar navbar-expand-lg row flex-shrink-0 bg-primary text-white d-print-none" data-bs-theme="dark">
 		<div class="d-none d-xl-block col-xl-3 col-auto pe-0">
 			<RouterLink to="/" class="navbar-brand text-white me-0" @click="pagination.start = 0">
 				<img :src="resolve('/mailpit.svg')" alt="Mailpit" />
@@ -485,11 +485,11 @@ export default {
 				title="Release message"
 				@click="initReleaseModal()"
 			>
-				<i class="bi bi-send"></i>
+				<i class="bi bi-send me-md-2"></i>
 				<span class="d-none d-md-inline">Release</span>
 			</button>
 			<button class="btn btn-outline-light me-1 me-sm-2" title="Delete message" @click="deleteMessage()">
-				<i class="bi bi-trash-fill"></i>
+				<i class="bi bi-trash-fill me-md-2"></i>
 				<span class="d-none d-md-inline">Delete</span>
 			</button>
 		</div>
