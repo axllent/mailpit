@@ -2,6 +2,16 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.27.9]
+
+### Chore
+- UI tweaks to pagination layout for clearer navigation ([#568](https://github.com/axllent/mailpit/issues/568))
+- Add margin to icons in release and delete buttons for consistent spacing
+- Update navbar theme to use data-bs-theme attribute for consistency
+- Update Go dependencies
+- Update node dependencies
+
+
 ## [v1.27.8]
 
 ### Chore
