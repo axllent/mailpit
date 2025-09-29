@@ -87,6 +87,7 @@ export default {
 		v-model="pagination.limit"
 		class="form-select form-select-sm d-inline w-auto me-2 me-xl-3"
 		:disabled="total == 0"
+		title="The number of messages displayed per page"
 		@change="changeLimit"
 	>
 		<option v-for="option in limitOptions" :key="option" :value="option">{{ option }}</option>
