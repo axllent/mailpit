@@ -10,7 +10,7 @@ jobs:
       issues: write
       pull-requests: write
     steps:
-      - uses: actions/stale@v9.1.0
+      - uses: actions/stale@v10.0.0
         with:
           days-before-issue-stale: 7
           days-before-issue-close: 3
