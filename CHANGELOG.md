@@ -2,6 +2,20 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.27.10]
+
+### Security
+- Prevent potential information disclosure via indirect expvar library (Prometheus)
+
+### Chore
+- Add tooltip to messages nav dropdown
+- Update GitHub Actions
+- Add tooltip to messages nav dropdown
+- Update GitHub Actions
+- Update Go dependencies
+- Update node dependencies
+
+
 ## [v1.27.9]
 
 ### Chore
