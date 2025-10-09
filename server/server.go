@@ -86,9 +86,6 @@ func Listen() {
 	r.Path(config.Webroot + "search").Handler(middleWareFunc(index)).Methods("GET")
 	r.Path(config.Webroot).Handler(middleWareFunc(index)).Methods("GET")
 
-	// put it all together
-	http.Handle("/", r)
-
 	if auth.UICredentials != nil {
 		logger.Log().Info("[http] enabling basic authentication")
 	}
@@ -100,6 +97,7 @@ func Listen() {
 		Addr:         config.HTTPListen,
 		ReadTimeout:  30 * time.Second,
 		WriteTimeout: 30 * time.Second,
+		Handler:      r,
 	}
 
 	// add temporary self-signed certificates to get deleted afterwards
