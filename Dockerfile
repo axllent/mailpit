@@ -27,4 +27,8 @@ EXPOSE 1025/tcp 1110/tcp 8025/tcp
 
 HEALTHCHECK --interval=15s --start-period=10s --start-interval=1s CMD ["/mailpit", "readyz"]
 
+RUN adduser --disabled-password --gecos "" -u 1001 non-root
+
+USER non-root
+
 ENTRYPOINT ["/mailpit"]
