@@ -79,9 +79,9 @@ func Thumbnail(w http.ResponseWriter, r *http.Request) {
 	var dstImageFill *image.NRGBA
 
 	if img.Bounds().Dx() < thumbWidth || img.Bounds().Dy() < thumbHeight {
-		dstImageFill = imaging.Fit(img, thumbWidth, thumbHeight, imaging.Lanczos)
+		dstImageFill = imaging.Fit(img, thumbWidth, thumbHeight, imaging.Lanczos).(*image.NRGBA)
 	} else {
-		dstImageFill = imaging.Fill(img, thumbWidth, thumbHeight, imaging.Center, imaging.Lanczos)
+		dstImageFill = imaging.Fill(img, thumbWidth, thumbHeight, imaging.Center, imaging.Lanczos).(*image.NRGBA)
 	}
 	// create white image and paste image over the top
 	// preventing black backgrounds for transparent GIF/PNG images
