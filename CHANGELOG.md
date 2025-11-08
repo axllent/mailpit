@@ -2,6 +2,14 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.27.11]
+
+### Chore
+- Update Go dependencies
+- Update node dependencies
+- Add type assertion for value in imaging assignment
+
+
 ## [v1.27.10]
 
 ### Security
