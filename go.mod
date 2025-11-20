@@ -24,9 +24,9 @@ require (
 	github.com/spf13/pflag v1.0.10
 	github.com/tg123/go-htpasswd v1.2.4
 	github.com/vanng822/go-premailer v1.25.0
-	golang.org/x/crypto v0.43.0
-	golang.org/x/net v0.46.0
-	golang.org/x/text v0.30.0
+	golang.org/x/crypto v0.45.0
+	golang.org/x/net v0.47.0
+	golang.org/x/text v0.31.0
 	golang.org/x/time v0.14.0
 	modernc.org/sqlite v1.40.0
 )
