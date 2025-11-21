@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/axllent/ghru/v2"
+
 	"github.com/axllent/mailpit/internal/auth"
 	"github.com/axllent/mailpit/internal/logger"
 	"github.com/axllent/mailpit/internal/smtpd/chaos"
@@ -248,6 +249,7 @@ type SMTPRelayConfigStruct struct {
 	BlockedRecipients       string         `yaml:"blocked-recipients"` // regex, if set prevents relating to these addresses
 	BlockedRecipientsRegexp *regexp.Regexp // compiled regexp using BlockedRecipients
 	PreserveMessageIDs      bool           `yaml:"preserve-message-ids"` // preserve the original Message-ID when relaying
+	ForwardSMTPErrors       bool           `yaml:"forward-smtp-errors"`  // whether to log smtp-errors or forward them to upstream-client
 
 	// DEPRECATED 2024/03/12
 	RecipientAllowlist string `yaml:"recipient-allowlist"`
@@ -279,7 +281,8 @@ func VerifyConfig() error {
 	// The default Content Security Policy is updates on every application page load to replace script-src 'self'
 	// with a random nonce ID to prevent XSS. This applies to the Mailpit app & API.
 	// See server.middleWareFunc()
-	ContentSecurityPolicy = fmt.Sprintf("default-src 'self'; script-src 'self'; style-src %s 'unsafe-inline'; frame-src 'self'; img-src * data: blob:; font-src %s data:; media-src 'self'; connect-src 'self' ws: wss:; object-src 'none'; base-uri 'self';",
+	ContentSecurityPolicy = fmt.Sprintf(
+		"default-src 'self'; script-src 'self'; style-src %s 'unsafe-inline'; frame-src 'self'; img-src * data: blob:; font-src %s data:; media-src 'self'; connect-src 'self' ws: wss:; object-src 'none'; base-uri 'self';",
 		cssFontRestriction, cssFontRestriction,
 	)
 
@@ -571,8 +574,10 @@ func VerifyConfig() error {
 			}
 
 			SMTPRelayMatchingRegexp = re
-			logger.Log().Infof("[relay] auto-relaying new messages to recipients matching \"%s\" via %s:%d",
-				SMTPRelayMatching, SMTPRelayConfig.Host, SMTPRelayConfig.Port)
+			logger.Log().Infof(
+				"[relay] auto-relaying new messages to recipients matching \"%s\" via %s:%d",
+				SMTPRelayMatching, SMTPRelayConfig.Host, SMTPRelayConfig.Port,
+			)
 		}
 	}
 

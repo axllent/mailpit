@@ -17,6 +17,7 @@ require (
 	github.com/leporo/sqlf v1.4.0
 	github.com/lithammer/shortuuid/v4 v4.2.0
 	github.com/mneis/go-telnet v0.0.0-20221017141824-6f643e477c62
+	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.22.0
 	github.com/rqlite/gorqlite v0.0.0-20250609141355-ac86a4a1c9a8
 	github.com/sirupsen/logrus v1.9.3
@@ -52,7 +53,6 @@ require (
 	github.com/olekukonko/errors v1.1.0 // indirect
 	github.com/olekukonko/ll v0.0.9 // indirect
 	github.com/olekukonko/tablewriter v1.0.8 // indirect
-	github.com/pkg/errors v0.9.1 // indirect
 	github.com/prometheus/client_model v0.6.2 // indirect
 	github.com/prometheus/common v0.65.0 // indirect
 	github.com/prometheus/procfs v0.17.0 // indirect

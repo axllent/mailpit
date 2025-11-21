@@ -328,6 +328,7 @@ func initConfigFromEnv() {
 	config.SMTPRelayConfig.AllowedRecipients = os.Getenv("MP_SMTP_RELAY_ALLOWED_RECIPIENTS")
 	config.SMTPRelayConfig.BlockedRecipients = os.Getenv("MP_SMTP_RELAY_BLOCKED_RECIPIENTS")
 	config.SMTPRelayConfig.PreserveMessageIDs = getEnabledFromEnv("MP_SMTP_RELAY_PRESERVE_MESSAGE_IDS")
+	config.SMTPRelayConfig.ForwardSMTPErrors = getEnabledFromEnv("MP_SMTP_RELAY_FWD_SMTP_ERRORS")
 
 	// SMTP forwarding
 	config.SMTPForwardConfigFile = os.Getenv("MP_SMTP_FORWARD_CONFIG")
