@@ -7,10 +7,11 @@ import (
 	"os"
 	"strings"
 
+	"github.com/pkg/errors"
+
 	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/internal/logger"
 	"github.com/axllent/mailpit/internal/tools"
-	"github.com/pkg/errors"
 )
 
 // Wrapper to auto relay messages if configured

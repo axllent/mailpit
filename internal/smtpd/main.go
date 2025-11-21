@@ -9,6 +9,9 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/lithammer/shortuuid/v4"
+	"github.com/pkg/errors"
+
 	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/internal/auth"
 	"github.com/axllent/mailpit/internal/logger"
@@ -16,8 +19,6 @@ import (
 	"github.com/axllent/mailpit/internal/storage"
 	"github.com/axllent/mailpit/internal/tools"
 	"github.com/axllent/mailpit/server/websockets"
-	"github.com/lithammer/shortuuid/v4"
-	"github.com/pkg/errors"
 )
 
 var (
@@ -241,24 +242,24 @@ func listenAndServe(addr string, handler MsgIDHandler, authHandler AuthHandler) 
 	if config.SMTPAuthAllowInsecure {
 		srv.AuthMechs = map[string]bool{
 			"CRAM-MD5": false,
-			"PLAIN": true,
-			"LOGIN": true,
+			"PLAIN":    true,
+			"LOGIN":    true,
 		}
 	}
 
 	if auth.SMTPCredentials != nil {
 		srv.AuthMechs = map[string]bool{
 			"CRAM-MD5": false,
-			"PLAIN": true,
-			"LOGIN": true,
+			"PLAIN":    true,
+			"LOGIN":    true,
 		}
 		srv.AuthHandler = authHandler
 		srv.AuthRequired = true
 	} else if config.SMTPAuthAcceptAny {
 		srv.AuthMechs = map[string]bool{
 			"CRAM-MD5": false,
-			"PLAIN": true,
-			"LOGIN": true,
+			"PLAIN":    true,
+			"LOGIN":    true,
 		}
 		srv.AuthHandler = authHandlerAny
 	}
