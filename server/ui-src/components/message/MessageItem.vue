@@ -143,12 +143,12 @@ export default {
 		window.addEventListener("resize", this.resizeIFrames);
 
 		const headersTab = document.getElementById("nav-headers-tab");
-		headersTab.addEventListener("shown.bs.tab", (event) => {
+		headersTab.addEventListener("shown.bs.tab", () => {
 			this.loadHeaders = true;
 		});
 
 		const rawTab = document.getElementById("nav-raw-tab");
-		rawTab.addEventListener("shown.bs.tab", (event) => {
+		rawTab.addEventListener("shown.bs.tab", () => {
 			this.srcURI = this.resolve("/api/v1/message/" + this.message.ID + "/raw");
 			this.resizeIFrames();
 		});
@@ -180,7 +180,7 @@ export default {
 			this.isHTMLTabSelected();
 
 			document.querySelectorAll('button[data-bs-toggle="tab"]').forEach((listObj) => {
-				listObj.addEventListener("shown.bs.tab", (event) => {
+				listObj.addEventListener("shown.bs.tab", () => {
 					this.isHTMLTabSelected();
 				});
 			});
@@ -203,7 +203,9 @@ export default {
 								anchorEl.setAttribute("target", "_blank");
 							}
 						}
-					} catch (error) {}
+					} catch {
+						// ignore errors when accessing the iframe content
+					}
 					this.resizeIFrames();
 				}
 			}, 500);
@@ -280,7 +282,7 @@ export default {
 				Tags: this.messageTags,
 			};
 
-			this.put(this.resolve("/api/v1/tags"), data, (response) => {
+			this.put(this.resolve("/api/v1/tags"), data, () => {
 				window.scrollInPlace = true;
 				this.$emit("loadMessages");
 			});
@@ -290,15 +292,24 @@ export default {
 		textToHTML(s) {
 			let html = s;
 
-			// full links with http(s)
-			const re = /(\b(https?|ftp):\/\/[-\w@:%_+'!.~#?,&//=;]+)/gim;
-			html = html.replace(re, "˱˱˱a href=ˠˠˠ$&ˠˠˠ target=_blank rel=noopener˲˲˲$&˱˱˱/a˲˲˲");
+			// RFC2396 appendix E states angle brackets are recommended for text/plain emails to
+			// recognize potential spaces in between the URL
+			// @see https://www.rfc-editor.org/rfc/rfc2396#appendix-E
+			const angleLinks = /<((https?|ftp):\/\/[-\w@:%_+'!.~#?,&//=; ][^>]+)>/gim;
+			html = html.replace(angleLinks, "<˱˱˱a href=ˠˠˠ$1ˠˠˠ target=_blank rel=noopener˲˲˲$1˱˱˱/a˲˲˲>");
+
+			// find links without angle brackets, starting with http(s) or ftp
+			const regularLinks = /([^ˠ˲]\b)(((https?|ftp):\/\/[-\w@:%_+'!.~#?,&//=;]+))/gim;
+			html = html.replace(regularLinks, "$1˱˱˱a href=ˠˠˠ$2ˠˠˠ target=_blank rel=noopener˲˲˲$2˱˱˱/a˲˲˲");
 
 			// plain www links without https?:// prefix
-			const re2 = /(^|[^/])(www\.[\S]+(\b|$))/gim;
-			html = html.replace(re2, "$1˱˱˱a href=ˠˠˠhttp://$2ˠˠˠ target=ˠˠˠ_blankˠˠˠ rel=ˠˠˠnoopenerˠˠˠ˲˲˲$2˱˱˱/a˲˲˲");
+			const shortLinks = /(^|[^/])(www\.[\S]+(\b|$))/gim;
+			html = html.replace(
+				shortLinks,
+				"$1˱˱˱a href=ˠˠˠhttp://$2ˠˠˠ target=ˠˠˠ_blankˠˠˠ rel=ˠˠˠnoopenerˠˠˠ˲˲˲$2˱˱˱/a˲˲˲",
+			);
 
-			// escape to HTML & convert <>" back
+			// escape to HTML & convert <>" characters back
 			html = html
 				.replace(/&/g, "&amp;")
 				.replace(/</g, "&lt;")

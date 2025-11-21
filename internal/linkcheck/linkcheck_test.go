@@ -31,7 +31,14 @@ var (
 	</html>`
 
 	expectedHTMLLinks = []string{
-		"http://example.com", "https://example.com", "HTTPS://EXAMPLE.COM", "http://localhost", "https://localhost", "https://127.0.0.1", "http://link with spaces", "http://example.com/?blaah=yes&test=true",
+		"http://example.com",
+		"https://example.com",
+		"HTTPS://EXAMPLE.COM",
+		"http://localhost",
+		"https://localhost",
+		"https://127.0.0.1",
+		"http://link with spaces",
+		"http://example.com/?blaah=yes&test=true",
 		"http://remote-host/style.css",  // css
 		"https://example.com/image.jpg", // images
 	}
@@ -41,10 +48,18 @@ var (
 		[http://localhost]
 		www.google.com < ignored
 		|||http://example.com/?some=query-string|||
+		// RFC2396 appendix E states angle brackets are recommended for text/plain emails to
+		// recognize potential spaces in between the URL
+		<https://example.com/ link with spaces>
 	`
 
 	expectedTextLinks = []string{
-		"http://example.com", "https://example.com", "HTTPS://EXAMPLE.COM", "http://localhost", "http://example.com/?some=query-string",
+		"http://example.com",
+		"https://example.com",
+		"HTTPS://EXAMPLE.COM",
+		"http://localhost",
+		"http://example.com/?some=query-string",
+		"https://example.com/ link with spaces",
 	}
 )
 

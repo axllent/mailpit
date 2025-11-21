@@ -17,9 +17,9 @@ jobs:
           # the HTTP address the rqlite node should advertise
           HTTP_ADV_ADDR: "localhost:4001"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Setup Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: 'stable'
           cache-dependency-path: "**/*.sum"

@@ -92,26 +92,27 @@ type LogFunc func(remoteIP, verb, line string)
 
 // Server is an SMTP server.
 type Server struct {
-	Addr              string // TCP address to listen on, defaults to ":25" (all addresses, port 25) if empty
-	AppName           string
-	AuthHandler       AuthHandler
-	AuthMechs         map[string]bool // Override list of allowed authentication mechanisms. Currently supported: LOGIN, PLAIN, CRAM-MD5. Enabling LOGIN and PLAIN will reduce RFC 4954 compliance.
-	AuthRequired      bool            // Require authentication for every command except AUTH, EHLO, HELO, NOOP, RSET or QUIT as per RFC 4954. Ignored if AuthHandler is not configured.
-	DisableReverseDNS bool            // Disable reverse DNS lookups, enforces "unknown" hostname
-	Handler           Handler
-	HandlerRcpt       HandlerRcpt
-	Hostname          string
-	LogRead           LogFunc
-	LogWrite          LogFunc
-	MaxSize           int // Maximum message size allowed, in bytes
-	MaxRecipients     int // Maximum number of recipients, defaults to 100.
-	MsgIDHandler      MsgIDHandler
-	Timeout           time.Duration
-	TLSConfig         *tls.Config
-	TLSListener       bool        // Listen for incoming TLS connections only (not recommended as it may reduce compatibility). Ignored if TLS is not configured.
-	TLSRequired       bool        // Require TLS for every command except NOOP, EHLO, STARTTLS, or QUIT as per RFC 3207. Ignored if TLS is not configured.
-	Protocol          string      // Default tcp, supports unix
-	SocketPerm        fs.FileMode // if using Unix socket, socket permissions
+	Addr                     string // TCP address to listen on, defaults to ":25" (all addresses, port 25) if empty
+	AppName                  string
+	AuthHandler              AuthHandler
+	AuthMechs                map[string]bool // Override list of allowed authentication mechanisms. Currently supported: LOGIN, PLAIN, CRAM-MD5. Enabling LOGIN and PLAIN will reduce RFC 4954 compliance.
+	AuthRequired             bool            // Require authentication for every command except AUTH, EHLO, HELO, NOOP, RSET or QUIT as per RFC 4954. Ignored if AuthHandler is not configured.
+	DisableReverseDNS        bool            // Disable reverse DNS lookups, enforces "unknown" hostname
+	Handler                  Handler
+	HandlerRcpt              HandlerRcpt
+	Hostname                 string
+	LogRead                  LogFunc
+	LogWrite                 LogFunc
+	MaxSize                  int // Maximum message size allowed, in bytes
+	MaxRecipients            int // Maximum number of recipients, defaults to 100.
+	MsgIDHandler             MsgIDHandler
+	IgnoreRejectedRecipients bool // Accept emails to rejected recipients with 2xx response but silently drop them
+	Timeout                  time.Duration
+	TLSConfig                *tls.Config
+	TLSListener              bool        // Listen for incoming TLS connections only (not recommended as it may reduce compatibility). Ignored if TLS is not configured.
+	TLSRequired              bool        // Require TLS for every command except NOOP, EHLO, STARTTLS, or QUIT as per RFC 3207. Ignored if TLS is not configured.
+	Protocol                 string      // Default tcp, supports unix
+	SocketPerm               fs.FileMode // if using Unix socket, socket permissions
 
 	inShutdown   int32 // server was closed or shutdown
 	openSessions int32 // count of open sessions
@@ -363,6 +364,7 @@ func (s *session) serve() {
 	var from string
 	var gotFrom bool
 	var to []string
+	var hasRejectedRecipients bool
 	var buffer bytes.Buffer
 
 	// RFC 5321 specifies support for minimum of 100 recipients is required.
@@ -397,6 +399,7 @@ loop:
 			from = ""
 			gotFrom = false
 			to = nil
+			hasRejectedRecipients = false
 			buffer.Reset()
 		case "EHLO":
 			s.remoteName = args
@@ -406,6 +409,7 @@ loop:
 			from = ""
 			gotFrom = false
 			to = nil
+			hasRejectedRecipients = false
 			buffer.Reset()
 		case "MAIL":
 			if s.srv.TLSConfig != nil && s.srv.TLSRequired && !s.tls {
@@ -457,6 +461,7 @@ loop:
 			}
 
 			to = nil
+			hasRejectedRecipients = false
 			buffer.Reset()
 		case "RCPT":
 			if s.srv.TLSConfig != nil && s.srv.TLSRequired && !s.tls {
@@ -492,6 +497,9 @@ loop:
 					if accept {
 						to = append(to, match[1])
 						s.writef("250 2.1.5 Ok")
+					} else if s.srv.IgnoreRejectedRecipients {
+						hasRejectedRecipients = true
+						s.writef("250 2.1.5 Ok")
 					} else {
 						s.writef("550 5.1.0 Requested action not taken: mailbox unavailable")
 					}
@@ -506,7 +514,8 @@ loop:
 				s.writef("530 5.7.0 Authentication required")
 				break
 			}
-			if !gotFrom || len(to) == 0 {
+			hasRecipients := len(to) > 0 || hasRejectedRecipients
+			if !gotFrom || !hasRecipients {
 				s.writef("503 5.5.1 Bad sequence of commands (MAIL & RCPT required before DATA)")
 				break
 			}
@@ -536,11 +545,13 @@ loop:
 
 			// Create Received header & write message body into buffer.
 			buffer.Reset()
-			buffer.Write(s.makeHeaders(to))
+			if len(to) > 0 {
+				buffer.Write(s.makeHeaders(to))
+			}
 			buffer.Write(data)
 
-			// Pass mail on to handler.
-			if s.srv.Handler != nil {
+			// Pass mail on to handler only if there are valid recipients.
+			if len(to) > 0 && s.srv.Handler != nil {
 				err := s.srv.Handler(s.conn.RemoteAddr(), from, to, buffer.Bytes())
 				if err != nil {
 					checkErrFormat := regexp.MustCompile(`^([2-5][0-9]{2})[\s\-](.+)$`)
@@ -552,7 +563,7 @@ loop:
 					break
 				}
 				s.writef("250 2.0.0 Ok: queued")
-			} else if s.srv.MsgIDHandler != nil {
+			} else if len(to) > 0 && s.srv.MsgIDHandler != nil {
 				msgID, err := s.srv.MsgIDHandler(s.conn.RemoteAddr(), from, to, buffer.Bytes(), s.username)
 				if err != nil {
 					checkErrFormat := regexp.MustCompile(`^([2-5][0-9]{2})[\s\-](.+)$`)
@@ -570,6 +581,13 @@ loop:
 					s.writef("250 2.0.0 Ok: queued")
 				}
 			} else {
+				if hasRejectedRecipients && Debug {
+					if s.srv.LogWrite != nil {
+						s.srv.LogWrite(s.remoteIP, "DEBUG", "Message from sender silently dropped (rejected recipients)")
+					} else {
+						log.Printf("%s DEBUG Message from sender silently dropped (rejected recipients)", s.remoteIP)
+					}
+				}
 				s.writef("250 2.0.0 Ok: queued")
 			}
 
@@ -577,6 +595,7 @@ loop:
 			from = ""
 			gotFrom = false
 			to = nil
+			hasRejectedRecipients = false
 			buffer.Reset()
 		case "QUIT":
 			s.writef("221 2.0.0 %s %s ESMTP Service closing transmission channel", s.srv.Hostname, s.srv.AppName)
@@ -590,6 +609,7 @@ loop:
 			from = ""
 			gotFrom = false
 			to = nil
+			hasRejectedRecipients = false
 			buffer.Reset()
 		case "NOOP":
 			s.writef("250 2.0.0 Ok")
@@ -666,6 +686,7 @@ loop:
 			from = ""
 			gotFrom = false
 			to = nil
+			hasRejectedRecipients = false
 			buffer.Reset()
 		case "AUTH":
 			if s.srv.TLSConfig != nil && s.srv.TLSRequired && !s.tls {

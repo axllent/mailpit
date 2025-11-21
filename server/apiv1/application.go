@@ -28,7 +28,7 @@ func AppInfo(w http.ResponseWriter, _ *http.Request) {
 	//		400: ErrorResponse
 
 	w.Header().Add("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(stats.Load()); err != nil {
+	if err := json.NewEncoder(w).Encode(stats.Load(true)); err != nil {
 		httpError(w, err.Error())
 	}
 }

@@ -85,8 +85,9 @@ export default {
 <template>
 	<select
 		v-model="pagination.limit"
-		class="form-select form-select-sm d-inline w-auto me-2"
+		class="form-select form-select-sm d-inline w-auto me-2 me-xl-3"
 		:disabled="total == 0"
+		title="The number of messages displayed per page"
 		@change="changeLimit"
 	>
 		<option v-for="option in limitOptions" :key="option" :value="option">{{ option }}</option>
@@ -98,11 +99,11 @@ export default {
 			<small>of</small>
 			{{ formatNumber(total) }}
 		</template>
-		<span v-else class="text-muted">0 of 0</span>
+		<span v-else class="text-light">0 of 0</span>
 	</small>
 
 	<button
-		class="btn btn-outline-light ms-2 me-1"
+		class="btn btn-outline-light ms-2 ms-xl-3 me-1"
 		:disabled="!canPrev"
 		:title="'View previous ' + pagination.limit + ' messages'"
 		@click="viewPrev"

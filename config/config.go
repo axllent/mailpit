@@ -16,6 +16,7 @@ import (
 	"github.com/axllent/mailpit/internal/auth"
 	"github.com/axllent/mailpit/internal/logger"
 	"github.com/axllent/mailpit/internal/smtpd/chaos"
+	"github.com/axllent/mailpit/internal/snakeoil"
 	"github.com/axllent/mailpit/internal/spamassassin"
 	"github.com/axllent/mailpit/internal/tools"
 )
@@ -181,6 +182,9 @@ var (
 	// SMTPAllowedRecipientsRegexp is the compiled version of SMTPAllowedRecipients
 	SMTPAllowedRecipientsRegexp *regexp.Regexp
 
+	// SMTPIgnoreRejectedRecipients if true, will accept emails to rejected recipients with 2xx response but silently drop them
+	SMTPIgnoreRejectedRecipients bool
+
 	// POP3Listen address - if set then Mailpit will start the POP3 server and listen on this address
 	POP3Listen = "[::]:1110"
 
@@ -336,8 +340,19 @@ func VerifyConfig() error {
 	}
 
 	if UITLSCert != "" {
-		UITLSCert = filepath.Clean(UITLSCert)
-		UITLSKey = filepath.Clean(UITLSKey)
+		if strings.HasPrefix(UITLSCert, "sans:") {
+			// generate a self-signed certificate
+			UITLSCert = snakeoil.Public(UITLSCert)
+		} else {
+			UITLSCert = filepath.Clean(UITLSCert)
+		}
+
+		if strings.HasPrefix(UITLSKey, "sans:") {
+			// generate a self-signed key
+			UITLSKey = snakeoil.Private(UITLSKey)
+		} else {
+			UITLSKey = filepath.Clean(UITLSKey)
+		}
 
 		if !isFile(UITLSCert) {
 			return fmt.Errorf("[ui] TLS certificate not found or readable: %s", UITLSCert)
@@ -396,8 +411,19 @@ func VerifyConfig() error {
 	}
 
 	if SMTPTLSCert != "" {
-		SMTPTLSCert = filepath.Clean(SMTPTLSCert)
-		SMTPTLSKey = filepath.Clean(SMTPTLSKey)
+		if strings.HasPrefix(SMTPTLSCert, "sans:") {
+			// generate a self-signed certificate
+			SMTPTLSCert = snakeoil.Public(SMTPTLSCert)
+		} else {
+			SMTPTLSCert = filepath.Clean(SMTPTLSCert)
+		}
+
+		if strings.HasPrefix(SMTPTLSKey, "sans:") {
+			// generate a self-signed key
+			SMTPTLSKey = snakeoil.Private(SMTPTLSKey)
+		} else {
+			SMTPTLSKey = filepath.Clean(SMTPTLSKey)
+		}
 
 		if !isFile(SMTPTLSCert) {
 			return fmt.Errorf("[smtp] TLS certificate not found or readable: %s", SMTPTLSCert)
@@ -465,8 +491,18 @@ func VerifyConfig() error {
 
 	// POP3 server
 	if POP3TLSCert != "" {
-		POP3TLSCert = filepath.Clean(POP3TLSCert)
-		POP3TLSKey = filepath.Clean(POP3TLSKey)
+		if strings.HasPrefix(POP3TLSCert, "sans:") {
+			// generate a self-signed certificate
+			POP3TLSCert = snakeoil.Public(POP3TLSCert)
+		} else {
+			POP3TLSCert = filepath.Clean(POP3TLSCert)
+		}
+		if strings.HasPrefix(POP3TLSKey, "sans:") {
+			// generate a self-signed key
+			POP3TLSKey = snakeoil.Private(POP3TLSKey)
+		} else {
+			POP3TLSKey = filepath.Clean(POP3TLSKey)
+		}
 
 		if !isFile(POP3TLSCert) {
 			return fmt.Errorf("[pop3] TLS certificate not found or readable: %s", POP3TLSCert)
@@ -549,6 +585,14 @@ func VerifyConfig() error {
 
 		SMTPAllowedRecipientsRegexp = restrictRegexp
 		logger.Log().Infof("[smtp] only allowing recipients matching regexp: %s", SMTPAllowedRecipients)
+	}
+
+	if SMTPIgnoreRejectedRecipients {
+		if SMTPAllowedRecipientsRegexp == nil {
+			logger.Log().Warn("[smtp] ignoring rejected recipients has no effect without setting smtp-allowed-recipients")
+		} else {
+			logger.Log().Info("[smtp] ignoring rejected recipients")
+		}
 	}
 
 	if err := parseRelayConfig(SMTPRelayConfigFile); err != nil {

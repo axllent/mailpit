@@ -2,6 +2,113 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.27.11]
+
+### Chore
+- Update Go dependencies
+- Update node dependencies
+- Add type assertion for value in imaging assignment
+
+
+## [v1.27.10]
+
+### Security
+- Prevent potential information disclosure via indirect expvar library (Prometheus)
+
+### Chore
+- Add tooltip to messages nav dropdown
+- Update GitHub Actions
+- Add tooltip to messages nav dropdown
+- Update GitHub Actions
+- Update Go dependencies
+- Update node dependencies
+
+
+## [v1.27.9]
+
+### Chore
+- UI tweaks to pagination layout for clearer navigation ([#568](https://github.com/axllent/mailpit/issues/568))
+- Add margin to icons in release and delete buttons for consistent spacing
+- Update navbar theme to use data-bs-theme attribute for consistency
+- Update Go dependencies
+- Update node dependencies
+
+
+## [v1.27.8]
+
+### Chore
+- Update Go dependencies
+- Update node dependencies
+- Update caniemail test database
+
+
+## [v1.27.7]
+
+### Fix
+- Move HELO/EHLO hostname setting to the correct position in SMTP client creation ([#558](https://github.com/axllent/mailpit/issues/558))
+
+
+## [v1.27.6]
+
+### Feature
+- Add optional --no-release-check to version subcommand ([#557](https://github.com/axllent/mailpit/issues/557))
+
+### Chore
+- Set HELO/EHLO hostname when connecting to external SMTP server ([#556](https://github.com/axllent/mailpit/issues/556))
+- Update Go dependencies
+- Update node dependencies
+
+
+## [v1.27.5]
+
+### Chore
+- Update Go dependencies
+- Update node dependencies
+- Update caniemail test database
+
+### Fix
+- Support optional UIDL argument in POP3 server ([#552](https://github.com/axllent/mailpit/issues/552))
+
+
+## [v1.27.4]
+
+### Feature
+- Allow rejected SMTP recipients to be silently dropped ([#549](https://github.com/axllent/mailpit/issues/549))
+
+### Chore
+- Update Go dependencies
+- Update node dependencies
+- Update caniemail test database
+
+
+## [v1.27.3]
+
+### Fix
+- Fix sendmail when using an  `--smtp-addr <ip>:<port>` ([#542](https://github.com/axllent/mailpit/issues/542))
+
+
+## [v1.27.2]
+
+### Feature
+- Add ability to generate self-signed (snakeoil) certificates for UI, SMTP and POP3 ([#539](https://github.com/axllent/mailpit/issues/539))
+
+### Chore
+- Allow sendmail to send to untrusted TLS server
+- Update eslint config, remove neostandard
+- Refactor JS functions and remove unused parameters
+- Update Go dependencies
+- Update node dependencies
+
+### Fix
+- Use MaxMessages to determine pruning ([#536](https://github.com/axllent/mailpit/issues/536))
+- Support angle brackets for text/plain URLs with spaces ([#535](https://github.com/axllent/mailpit/issues/535))
+- Do not check latest release for Prometheus statistics ([#522](https://github.com/axllent/mailpit/issues/522))
+
+### Security
+- Prevent integer overflow conversion to uint64
+- Add ReadHeaderTimeout to Prometheus metrics server
+
+
 ## [v1.27.1]
 
 ### Chore

@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net/smtp"
+	"os"
 	"strings"
 
 	"github.com/axllent/mailpit/config"
@@ -88,6 +89,13 @@ func createRelaySMTPClient(config config.SMTPRelayConfigStruct, addr string) (*s
 	client, err := smtp.Dial(addr)
 	if err != nil {
 		return nil, fmt.Errorf("error connecting to %s: %v", addr, err)
+	}
+
+	// Set the hostname for HELO/EHLO
+	if hostname, err := os.Hostname(); err == nil {
+		if err := client.Hello(hostname); err != nil {
+			return nil, fmt.Errorf("error saying HELO/EHLO to %s: %v", addr, err)
+		}
 	}
 
 	if config.STARTTLS {

@@ -36,7 +36,7 @@ export default {
 	},
 
 	watch: {
-		$route(to, from) {
+		$route() {
 			this.loadMailbox();
 		},
 	},
@@ -176,7 +176,7 @@ export default {
 </script>
 
 <template>
-	<div class="navbar navbar-expand-lg navbar-dark row flex-shrink-0 bg-primary text-white d-print-none">
+	<div class="navbar navbar-expand-lg row flex-shrink-0 bg-primary text-white d-print-none" data-bs-theme="dark">
 		<div class="col-xl-2 col-md-3 col-auto pe-0">
 			<RouterLink to="/" class="navbar-brand text-white me-0" @click="reloadMailbox">
 				<img :src="resolve('/mailpit.svg')" alt="Mailpit" />

@@ -208,15 +208,16 @@ func listenAndServe(addr string, handler MsgIDHandler, authHandler AuthHandler) 
 
 	Debug = true // to enable Mailpit logging
 	srv := &Server{
-		Addr:              addr,
-		MsgIDHandler:      handler,
-		HandlerRcpt:       handlerRcpt,
-		AppName:           "Mailpit",
-		Hostname:          "",
-		AuthHandler:       nil,
-		AuthRequired:      false,
-		MaxRecipients:     config.SMTPMaxRecipients,
-		DisableReverseDNS: DisableReverseDNS,
+		Addr:                     addr,
+		MsgIDHandler:             handler,
+		HandlerRcpt:              handlerRcpt,
+		AppName:                  "Mailpit",
+		Hostname:                 "",
+		AuthHandler:              nil,
+		AuthRequired:             false,
+		MaxRecipients:            config.SMTPMaxRecipients,
+		IgnoreRejectedRecipients: config.SMTPIgnoreRejectedRecipients,
+		DisableReverseDNS:        DisableReverseDNS,
 		LogRead: func(remoteIP, verb, line string) {
 			logger.Log().Debugf("[smtpd] %s (%s) %s", verbLogTranslator(verb), remoteIP, line)
 		},
