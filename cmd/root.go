@@ -6,6 +6,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/spf13/cobra"
+
 	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/internal/auth"
 	"github.com/axllent/mailpit/internal/logger"
@@ -16,7 +18,6 @@ import (
 	"github.com/axllent/mailpit/internal/tools"
 	"github.com/axllent/mailpit/server"
 	"github.com/axllent/mailpit/server/webhook"
-	"github.com/spf13/cobra"
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -351,6 +352,7 @@ func initConfigFromEnv() {
 	config.SMTPForwardConfig.ReturnPath = os.Getenv("MP_SMTP_FORWARD_RETURN_PATH")
 	config.SMTPForwardConfig.OverrideFrom = os.Getenv("MP_SMTP_FORWARD_OVERRIDE_FROM")
 	config.SMTPForwardConfig.To = os.Getenv("MP_SMTP_FORWARD_TO")
+	config.SMTPForwardConfig.ForwardSMTPErrors = getEnabledFromEnv("MP_SMTP_FORWARD_FWD_SMTP_ERRORS")
 
 	// Chaos
 	chaos.Enabled = getEnabledFromEnv("MP_ENABLE_CHAOS")

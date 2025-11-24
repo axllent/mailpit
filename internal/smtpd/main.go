@@ -91,7 +91,20 @@ func SaveToDatabase(origin net.Addr, from string, to []string, data []byte, smtp
 	}
 
 	// if enabled, this will forward a copy to preconfigured addresses
-	autoForwardMessage(from, &data)
+	if forwardErr := autoForwardMessage(from, &data); forwardErr != nil {
+		logger.Log().Errorf("%s", forwardErr.Error())
+
+		if config.SMTPForwardConfig.ForwardSMTPErrors {
+			for {
+				unwrappedErr := errors.Unwrap(forwardErr)
+				if unwrappedErr == nil {
+					break
+				}
+				forwardErr = unwrappedErr
+			}
+			return "", forwardErr
+		}
+	}
 
 	// build array of all addresses in the header to compare to the []to array
 	emails, hasBccHeader := scanAddressesInHeader(msg.Header)
