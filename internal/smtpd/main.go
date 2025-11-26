@@ -9,9 +9,6 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/lithammer/shortuuid/v4"
-	"github.com/pkg/errors"
-
 	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/internal/auth"
 	"github.com/axllent/mailpit/internal/logger"
@@ -19,6 +16,8 @@ import (
 	"github.com/axllent/mailpit/internal/storage"
 	"github.com/axllent/mailpit/internal/tools"
 	"github.com/axllent/mailpit/server/websockets"
+	"github.com/lithammer/shortuuid/v4"
+	"github.com/pkg/errors"
 )
 
 var (
@@ -76,7 +75,7 @@ func SaveToDatabase(origin net.Addr, from string, to []string, data []byte, smtp
 
 	// if enabled, this may conditionally relay the email through to the preconfigured smtp server
 	if relayErr := autoRelayMessage(from, to, &data); relayErr != nil {
-		logger.Log().Errorf("%s", relayErr.Error())
+		logger.Log().Error(relayErr.Error())
 
 		if config.SMTPRelayConfig.ForwardSMTPErrors {
 			for {
@@ -92,7 +91,7 @@ func SaveToDatabase(origin net.Addr, from string, to []string, data []byte, smtp
 
 	// if enabled, this will forward a copy to preconfigured addresses
 	if forwardErr := autoForwardMessage(from, &data); forwardErr != nil {
-		logger.Log().Errorf("%s", forwardErr.Error())
+		logger.Log().Error(forwardErr.Error())
 
 		if config.SMTPForwardConfig.ForwardSMTPErrors {
 			for {

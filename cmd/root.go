@@ -6,8 +6,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/spf13/cobra"
-
 	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/internal/auth"
 	"github.com/axllent/mailpit/internal/logger"
@@ -18,6 +16,7 @@ import (
 	"github.com/axllent/mailpit/internal/tools"
 	"github.com/axllent/mailpit/server"
 	"github.com/axllent/mailpit/server/webhook"
+	"github.com/spf13/cobra"
 )
 
 // rootCmd represents the base command when called without any subcommands

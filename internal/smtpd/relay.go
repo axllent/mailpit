@@ -7,11 +7,10 @@ import (
 	"os"
 	"strings"
 
-	"github.com/pkg/errors"
-
 	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/internal/logger"
 	"github.com/axllent/mailpit/internal/tools"
+	"github.com/pkg/errors"
 )
 
 // Wrapper to auto relay messages if configured
@@ -36,12 +35,12 @@ func autoRelayMessage(from string, to []string, data *[]byte) error {
 	if config.SMTPRelayAll {
 		if err := Relay(from, to, *data); err != nil {
 			return errors.WithMessage(err, "[relay] error")
-		} else {
-			logger.Log().Debugf(
-				"[relay] sent message to %s from %s via %s:%d",
-				strings.Join(to, ", "), from, config.SMTPRelayConfig.Host, config.SMTPRelayConfig.Port,
-			)
 		}
+
+		logger.Log().Debugf(
+			"[relay] sent message to %s from %s via %s:%d",
+			strings.Join(to, ", "), from, config.SMTPRelayConfig.Host, config.SMTPRelayConfig.Port,
+		)
 	} else if config.SMTPRelayMatchingRegexp != nil {
 		filtered := []string{}
 		for _, t := range to {
@@ -56,12 +55,12 @@ func autoRelayMessage(from string, to []string, data *[]byte) error {
 
 		if err := Relay(from, filtered, *data); err != nil {
 			return errors.WithMessage(err, "[relay] error")
-		} else {
-			logger.Log().Debugf(
-				"[relay] auto-relay message to %s from %s via %s:%d",
-				strings.Join(filtered, ", "), from, config.SMTPRelayConfig.Host, config.SMTPRelayConfig.Port,
-			)
 		}
+
+		logger.Log().Debugf(
+			"[relay] auto-relay message to %s from %s via %s:%d",
+			strings.Join(filtered, ", "), from, config.SMTPRelayConfig.Host, config.SMTPRelayConfig.Port,
+		)
 	}
 
 	return nil

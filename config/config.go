@@ -12,7 +12,6 @@ import (
 	"strings"
 
 	"github.com/axllent/ghru/v2"
-
 	"github.com/axllent/mailpit/internal/auth"
 	"github.com/axllent/mailpit/internal/logger"
 	"github.com/axllent/mailpit/internal/smtpd/chaos"
