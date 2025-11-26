@@ -14,7 +14,7 @@ var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "Display the current version & update information",
 	Long:  `Display the current version & update information (if available).`,
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(cmd *cobra.Command, _ []string) {
 		update, _ := cmd.Flags().GetBool("update")
 		noReleaseCheck, _ := cmd.Flags().GetBool("no-release-check")
 

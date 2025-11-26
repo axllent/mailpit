@@ -18,7 +18,7 @@ var reindexCmd = &cobra.Command{
 If you have several thousand messages in your mailbox, then it is advised to shut down
 Mailpit while you reindex as this process will likely result in database locking issues.`,
 	Args: cobra.ExactArgs(1),
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, args []string) {
 		config.Database = args[0]
 		config.MaxMessages = 0
 
