@@ -28,7 +28,7 @@ status 1 if unhealthy.
 If running within Docker, it should automatically detect environment
 settings to determine the HTTP bind interface & port.
 `,
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, _ []string) {
 		webroot := strings.TrimRight(path.Join("/", config.Webroot, "/"), "/") + "/"
 		proto := "http"
 		if useHTTPS {

@@ -17,7 +17,7 @@ The database can either be the database file (eg: --database /var/lib/mailpit/ma
 URL of a running Mailpit instance (eg: --http http://127.0.0.1/). If dumping over HTTP, the URL
 should be the base URL of your running Mailpit instance, not the link to the API itself.`,
 	Args: cobra.ExactArgs(1),
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, args []string) {
 		if err := dump.Sync(args[0]); err != nil {
 			logger.Log().Fatal(err)
 		}
