@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/axllent/ghru/v2"
+
 	"github.com/axllent/mailpit/internal/auth"
 	"github.com/axllent/mailpit/internal/logger"
 	"github.com/axllent/mailpit/internal/smtpd/chaos"
@@ -252,6 +253,7 @@ type SMTPRelayConfigStruct struct {
 	BlockedRecipients       string         `yaml:"blocked-recipients"` // regex, if set prevents relating to these addresses
 	BlockedRecipientsRegexp *regexp.Regexp // compiled regexp using BlockedRecipients
 	PreserveMessageIDs      bool           `yaml:"preserve-message-ids"` // preserve the original Message-ID when relaying
+	ForwardSMTPErrors       bool           `yaml:"forward-smtp-errors"`  // whether to log smtp-errors or forward them to upstream-client
 
 	// DEPRECATED 2024/03/12
 	RecipientAllowlist string `yaml:"recipient-allowlist"`
@@ -259,18 +261,19 @@ type SMTPRelayConfigStruct struct {
 
 // SMTPForwardConfigStruct struct for parsing yaml & storing variables
 type SMTPForwardConfigStruct struct {
-	To            string `yaml:"to"`             // comma-separated list of email addresses
-	Host          string `yaml:"host"`           // SMTP host
-	Port          int    `yaml:"port"`           // SMTP port
-	STARTTLS      bool   `yaml:"starttls"`       // whether to use STARTTLS
-	TLS           bool   `yaml:"tls"`            // whether to use TLS
-	AllowInsecure bool   `yaml:"allow-insecure"` // allow insecure authentication, ignore TLS validation
-	Auth          string `yaml:"auth"`           // none, plain, login, cram-md5
-	Username      string `yaml:"username"`       // plain & cram-md5
-	Password      string `yaml:"password"`       // plain
-	Secret        string `yaml:"secret"`         // cram-md5
-	ReturnPath    string `yaml:"return-path"`    // allow overriding the bounce address
-	OverrideFrom  string `yaml:"override-from"`  // allow overriding of the from address
+	To                string `yaml:"to"`                  // comma-separated list of email addresses
+	Host              string `yaml:"host"`                // SMTP host
+	Port              int    `yaml:"port"`                // SMTP port
+	STARTTLS          bool   `yaml:"starttls"`            // whether to use STARTTLS
+	TLS               bool   `yaml:"tls"`                 // whether to use TLS
+	AllowInsecure     bool   `yaml:"allow-insecure"`      // allow insecure authentication, ignore TLS validation
+	Auth              string `yaml:"auth"`                // none, plain, login, cram-md5
+	Username          string `yaml:"username"`            // plain & cram-md5
+	Password          string `yaml:"password"`            // plain
+	Secret            string `yaml:"secret"`              // cram-md5
+	ReturnPath        string `yaml:"return-path"`         // allow overriding the bounce address
+	OverrideFrom      string `yaml:"override-from"`       // allow overriding of the from address
+	ForwardSMTPErrors bool   `yaml:"forward-smtp-errors"` // whether to log smtp-errors or forward them to upstream-client
 }
 
 // VerifyConfig wil do some basic checking
@@ -283,7 +286,8 @@ func VerifyConfig() error {
 	// The default Content Security Policy is updates on every application page load to replace script-src 'self'
 	// with a random nonce ID to prevent XSS. This applies to the Mailpit app & API.
 	// See server.middleWareFunc()
-	ContentSecurityPolicy = fmt.Sprintf("default-src 'self'; script-src 'self'; style-src %s 'unsafe-inline'; frame-src 'self'; img-src * data: blob:; font-src %s data:; media-src 'self'; connect-src 'self' ws: wss:; object-src 'none'; base-uri 'self';",
+	ContentSecurityPolicy = fmt.Sprintf(
+		"default-src 'self'; script-src 'self'; style-src %s 'unsafe-inline'; frame-src 'self'; img-src * data: blob:; font-src %s data:; media-src 'self'; connect-src 'self' ws: wss:; object-src 'none'; base-uri 'self';",
 		cssFontRestriction, cssFontRestriction,
 	)
 
@@ -615,8 +619,10 @@ func VerifyConfig() error {
 			}
 
 			SMTPRelayMatchingRegexp = re
-			logger.Log().Infof("[relay] auto-relaying new messages to recipients matching \"%s\" via %s:%d",
-				SMTPRelayMatching, SMTPRelayConfig.Host, SMTPRelayConfig.Port)
+			logger.Log().Infof(
+				"[relay] auto-relaying new messages to recipients matching \"%s\" via %s:%d",
+				SMTPRelayMatching, SMTPRelayConfig.Host, SMTPRelayConfig.Port,
+			)
 		}
 	}
 

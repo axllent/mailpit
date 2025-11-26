@@ -2,11 +2,12 @@ package smtpd
 
 import (
 	"crypto/tls"
-	"errors"
 	"fmt"
 	"net/smtp"
 	"os"
 	"strings"
+
+	"github.com/pkg/errors"
 
 	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/internal/logger"
@@ -14,7 +15,7 @@ import (
 )
 
 // Wrapper to auto relay messages if configured
-func autoRelayMessage(from string, to []string, data *[]byte) {
+func autoRelayMessage(from string, to []string, data *[]byte) error {
 	if config.SMTPRelayConfig.BlockedRecipientsRegexp != nil {
 		filteredTo := []string{}
 		for _, address := range to {
@@ -29,15 +30,17 @@ func autoRelayMessage(from string, to []string, data *[]byte) {
 	}
 
 	if len(to) == 0 {
-		return
+		return nil
 	}
 
 	if config.SMTPRelayAll {
 		if err := Relay(from, to, *data); err != nil {
-			logger.Log().Errorf("[relay] error: %s", err.Error())
+			return errors.WithMessage(err, "[relay] error")
 		} else {
-			logger.Log().Debugf("[relay] sent message to %s from %s via %s:%d",
-				strings.Join(to, ", "), from, config.SMTPRelayConfig.Host, config.SMTPRelayConfig.Port)
+			logger.Log().Debugf(
+				"[relay] sent message to %s from %s via %s:%d",
+				strings.Join(to, ", "), from, config.SMTPRelayConfig.Host, config.SMTPRelayConfig.Port,
+			)
 		}
 	} else if config.SMTPRelayMatchingRegexp != nil {
 		filtered := []string{}
@@ -48,16 +51,20 @@ func autoRelayMessage(from string, to []string, data *[]byte) {
 		}
 
 		if len(filtered) == 0 {
-			return
+			return nil
 		}
 
 		if err := Relay(from, filtered, *data); err != nil {
-			logger.Log().Errorf("[relay] error: %s", err.Error())
+			return errors.WithMessage(err, "[relay] error")
 		} else {
-			logger.Log().Debugf("[relay] auto-relay message to %s from %s via %s:%d",
-				strings.Join(filtered, ", "), from, config.SMTPRelayConfig.Host, config.SMTPRelayConfig.Port)
+			logger.Log().Debugf(
+				"[relay] auto-relay message to %s from %s via %s:%d",
+				strings.Join(filtered, ", "), from, config.SMTPRelayConfig.Host, config.SMTPRelayConfig.Port,
+			)
 		}
 	}
+
+	return nil
 }
 
 func createRelaySMTPClient(config config.SMTPRelayConfigStruct, addr string) (*smtp.Client, error) {
@@ -134,26 +141,29 @@ func Relay(from string, to []string, msg []byte) error {
 	}
 
 	if err = c.Mail(from); err != nil {
-		return fmt.Errorf("error response to MAIL command: %s", err.Error())
+		return errors.WithMessage(err, "error sending MAIL command")
 	}
 
 	for _, addr := range to {
 		if err = c.Rcpt(addr); err != nil {
 			logger.Log().Warnf("error response to RCPT command for %s: %s", addr, err.Error())
+			if config.SMTPRelayConfig.ForwardSMTPErrors {
+				return errors.WithMessagef(err, "error response to RCPT command for %s", addr)
+			}
 		}
 	}
 
 	w, err := c.Data()
 	if err != nil {
-		return fmt.Errorf("error response to DATA command: %s", err.Error())
+		return errors.WithMessage(err, "error response to DATA command")
 	}
 
 	if _, err := w.Write(msg); err != nil {
-		return fmt.Errorf("error sending message: %s", err.Error())
+		return errors.WithMessage(err, "error sending message")
 	}
 
 	if err := w.Close(); err != nil {
-		return fmt.Errorf("error closing connection: %s", err.Error())
+		return errors.WithMessage(err, "error closing connection")
 	}
 
 	return c.Quit()
@@ -186,7 +196,10 @@ type loginAuth struct {
 
 // LoginAuth authentication
 func LoginAuth(username, password string) smtp.Auth {
-	return &loginAuth{username, password}
+	return &loginAuth{
+		username,
+		password,
+	}
 }
 
 func (a *loginAuth) Start(_ *smtp.ServerInfo) (string, []byte, error) {

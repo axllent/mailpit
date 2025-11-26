@@ -9,6 +9,9 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/lithammer/shortuuid/v4"
+	"github.com/pkg/errors"
+
 	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/internal/auth"
 	"github.com/axllent/mailpit/internal/logger"
@@ -16,7 +19,6 @@ import (
 	"github.com/axllent/mailpit/internal/storage"
 	"github.com/axllent/mailpit/internal/tools"
 	"github.com/axllent/mailpit/server/websockets"
-	"github.com/lithammer/shortuuid/v4"
 )
 
 var (
@@ -73,10 +75,36 @@ func SaveToDatabase(origin net.Addr, from string, to []string, data []byte, smtp
 	}
 
 	// if enabled, this may conditionally relay the email through to the preconfigured smtp server
-	autoRelayMessage(from, to, &data)
+	if relayErr := autoRelayMessage(from, to, &data); relayErr != nil {
+		logger.Log().Errorf("%s", relayErr.Error())
+
+		if config.SMTPRelayConfig.ForwardSMTPErrors {
+			for {
+				unwrappedErr := errors.Unwrap(relayErr)
+				if unwrappedErr == nil {
+					break
+				}
+				relayErr = unwrappedErr
+			}
+			return "", relayErr
+		}
+	}
 
 	// if enabled, this will forward a copy to preconfigured addresses
-	autoForwardMessage(from, &data)
+	if forwardErr := autoForwardMessage(from, &data); forwardErr != nil {
+		logger.Log().Errorf("%s", forwardErr.Error())
+
+		if config.SMTPForwardConfig.ForwardSMTPErrors {
+			for {
+				unwrappedErr := errors.Unwrap(forwardErr)
+				if unwrappedErr == nil {
+					break
+				}
+				forwardErr = unwrappedErr
+			}
+			return "", forwardErr
+		}
+	}
 
 	// build array of all addresses in the header to compare to the []to array
 	emails, hasBccHeader := scanAddressesInHeader(msg.Header)
@@ -225,15 +253,27 @@ func listenAndServe(addr string, handler MsgIDHandler, authHandler AuthHandler) 
 	}
 
 	if config.SMTPAuthAllowInsecure {
-		srv.AuthMechs = map[string]bool{"CRAM-MD5": false, "PLAIN": true, "LOGIN": true}
+		srv.AuthMechs = map[string]bool{
+			"CRAM-MD5": false,
+			"PLAIN":    true,
+			"LOGIN":    true,
+		}
 	}
 
 	if auth.SMTPCredentials != nil {
-		srv.AuthMechs = map[string]bool{"CRAM-MD5": false, "PLAIN": true, "LOGIN": true}
+		srv.AuthMechs = map[string]bool{
+			"CRAM-MD5": false,
+			"PLAIN":    true,
+			"LOGIN":    true,
+		}
 		srv.AuthHandler = authHandler
 		srv.AuthRequired = true
 	} else if config.SMTPAuthAcceptAny {
-		srv.AuthMechs = map[string]bool{"CRAM-MD5": false, "PLAIN": true, "LOGIN": true}
+		srv.AuthMechs = map[string]bool{
+			"CRAM-MD5": false,
+			"PLAIN":    true,
+			"LOGIN":    true,
+		}
 		srv.AuthHandler = authHandlerAny
 	}
 
