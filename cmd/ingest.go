@@ -30,7 +30,7 @@ Mailpit server. Each email must be a separate file (eg: Maildir format, not mbox
 The --recent flag will only consider files with a modification date within the last X days.`,
 	// Hidden: true,
 	Args: cobra.MinimumNArgs(1),
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, args []string) {
 		var count int
 		var total int
 		var per100start = time.Now()
