@@ -227,9 +227,10 @@ export default {
 			for (const i in message.OtherParts) {
 				a.push(message.OtherParts[i]);
 			}
-			for (const i in message.Inline) {
-				a.push(message.Inline[i]);
-			}
+
+			// NOTE: Do not include message.Inline parts here
+			// Inline attachments should only appear embedded in HTML content,
+			// not in the attachment list at the bottom of the email
 
 			return a.length ? a : false;
 		},

@@ -1,0 +1,19 @@
+From: sender@example.com
+To: recipient@example.com
+Subject: Test regular attachment
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="boundary789"
+
+--boundary789
+Content-Type: text/html; charset=utf-8
+
+<html><body><p>Message with regular attachment</p></body></html>
+
+--boundary789
+Content-Type: application/pdf; name="document.pdf"
+Content-Disposition: attachment; filename="document.pdf"
+Content-Transfer-Encoding: base64
+
+JVBERi0xLjQKJcOkw7zDtsOfCjIgMCBvYmoKPDwvTGVuZ3RoIDMgMCBSL0ZpbHRlci9GbGF0ZURlY29kZT4+CnN0cmVhbQo=
+
+--boundary789--
