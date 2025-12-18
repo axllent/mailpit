@@ -251,6 +251,7 @@ type SMTPRelayConfigStruct struct {
 	AllowedRecipientsRegexp *regexp.Regexp // compiled regexp using AllowedRecipients
 	BlockedRecipients       string         `yaml:"blocked-recipients"` // regex, if set prevents relating to these addresses
 	BlockedRecipientsRegexp *regexp.Regexp // compiled regexp using BlockedRecipients
+	DefaultReleaseTo        string         `yaml:"default-release-to"` // default "To" address for releasing messages
 	PreserveMessageIDs      bool           `yaml:"preserve-message-ids"` // preserve the original Message-ID when relaying
 	ForwardSMTPErrors       bool           `yaml:"forward-smtp-errors"`  // whether to log smtp-errors or forward them to upstream-client
 

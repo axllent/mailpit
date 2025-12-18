@@ -44,7 +44,12 @@ export default {
 		// include only unique email addresses, regardless of casing
 		this.allAddresses = JSON.parse(JSON.stringify([...new Map(a.map((ad) => [ad.toLowerCase(), ad])).values()]));
 
-		this.addresses = this.allAddresses;
+		// use configured default release address if set, otherwise use all message addresses
+		if (this.mailbox.uiConfig.MessageRelay.DefaultReleaseTo) {
+			this.addresses = [this.mailbox.uiConfig.MessageRelay.DefaultReleaseTo];
+		} else {
+			this.addresses = this.allAddresses;
+		}
 	},
 
 	methods: {
@@ -160,6 +165,10 @@ export default {
 
 					<h6>Notes</h6>
 					<ul>
+						<li v-if="mailbox.uiConfig.MessageRelay.DefaultReleaseTo != ''" class="form-text">
+							A <b>default release address</b> has been configured:
+							<code>{{ mailbox.uiConfig.MessageRelay.DefaultReleaseTo }}</code>
+						</li>
 						<li v-if="mailbox.uiConfig.MessageRelay.AllowedRecipients != ''" class="form-text">
 							A recipient <b>allowlist</b> has been configured. Any mail address not matching the
 							following will be rejected:

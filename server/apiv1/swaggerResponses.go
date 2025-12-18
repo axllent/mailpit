@@ -74,6 +74,8 @@ type webUIConfigurationResponse struct {
 			AllowedRecipients string
 			// Block relaying to these recipients (regex)
 			BlockedRecipients string
+			// Default "To" address for releasing messages (pre-populates the release form)
+			DefaultReleaseTo string
 			// Overrides the "From" address for all relayed messages
 			OverrideFrom string
 			// Preserve the original Message-IDs when relaying messages

@@ -60,6 +60,7 @@ func WebUIConfig(w http.ResponseWriter, _ *http.Request) {
 		conf.Body.MessageRelay.ReturnPath = config.SMTPRelayConfig.ReturnPath
 		conf.Body.MessageRelay.AllowedRecipients = config.SMTPRelayConfig.AllowedRecipients
 		conf.Body.MessageRelay.BlockedRecipients = config.SMTPRelayConfig.BlockedRecipients
+		conf.Body.MessageRelay.DefaultReleaseTo = config.SMTPRelayConfig.DefaultReleaseTo
 		conf.Body.MessageRelay.OverrideFrom = config.SMTPRelayConfig.OverrideFrom
 		conf.Body.MessageRelay.PreserveMessageIDs = config.SMTPRelayConfig.PreserveMessageIDs
 
