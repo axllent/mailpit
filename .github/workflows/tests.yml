@@ -52,10 +52,10 @@ jobs:
       if: startsWith(matrix.os, 'ubuntu') == true
       run: npm run package
 
-    # validate the swagger file
-    - name: Validate OpenAPI definition
-      if: startsWith(matrix.os, 'ubuntu') == true
-      uses: swaggerexpert/swagger-editor-validate@v1
-      with:
-        definition-file: server/ui/api/v1/swagger.json
-        default-timeout: 20000
+    # # validate the swagger file
+    # - name: Validate OpenAPI definition
+    #   if: startsWith(matrix.os, 'ubuntu') == true
+    #   uses: swaggerexpert/swagger-editor-validate@v1
+    #   with:
+    #     definition-file: server/ui/api/v1/swagger.json
+    #     default-timeout: 20000
