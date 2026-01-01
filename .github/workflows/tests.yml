@@ -38,7 +38,7 @@ jobs:
     # build the assets
     - name: Set up node environment
       if: startsWith(matrix.os, 'ubuntu') == true
-      uses: actions/setup-node@v5
+      uses: actions/setup-node@v6
       with:
         node-version: 22
         cache: 'npm'
