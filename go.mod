@@ -12,7 +12,7 @@ require (
 	github.com/gorilla/mux v1.8.1
 	github.com/gorilla/websocket v1.5.3
 	github.com/jhillyerd/enmime/v2 v2.1.0
-	github.com/klauspost/compress v1.18.1
+	github.com/klauspost/compress v1.18.2
 	github.com/kovidgoyal/imaging v1.8.17
 	github.com/leporo/sqlf v1.4.0
 	github.com/lithammer/shortuuid/v4 v4.2.0

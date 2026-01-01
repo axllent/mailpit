@@ -56,8 +56,8 @@ github.com/jaytaylor/html2text v0.0.0-20230321000545-74c2419ad056 h1:iCHtR9CQykt
 github.com/jaytaylor/html2text v0.0.0-20230321000545-74c2419ad056/go.mod h1:CVKlgaMiht+LXvHG173ujK6JUhZXKb2u/BQtjPDIvyk=
 github.com/jhillyerd/enmime/v2 v2.1.0 h1:c8Qwi5Xq5EdtMN6byQWoZ/8I2RMTo6OJ7Xay+s1oPO0=
 github.com/jhillyerd/enmime/v2 v2.1.0/go.mod h1:EJ74dcRbBcqHSP2TBu08XRoy6y3Yx0cevwb1YkGMEmQ=
-github.com/klauspost/compress v1.18.1 h1:bcSGx7UbpBqMChDtsF28Lw6v/G94LPrrbMbdC3JH2co=
-github.com/klauspost/compress v1.18.1/go.mod h1:ZQFFVG+MdnR0P+l6wpXgIL4NTtwiKIdBnrBd8Nrxr+0=
+github.com/klauspost/compress v1.18.2 h1:iiPHWW0YrcFgpBYhsA6D1+fqHssJscY/Tm/y2Uqnapk=
+github.com/klauspost/compress v1.18.2/go.mod h1:R0h/fSBs8DE4ENlcrlib3PsXS61voFxhIs2DeRhCvJ4=
 github.com/kovidgoyal/go-parallel v1.1.1 h1:1OzpNjtrUkBPq3UaqrnvOoB2F9RttSt811uiUXyI7ok=
 github.com/kovidgoyal/go-parallel v1.1.1/go.mod h1:BJNIbe6+hxyFWv7n6oEDPj3PA5qSw5OCtf0hcVxWJiw=
 github.com/kovidgoyal/go-shm v1.0.0 h1:HJEel9D1F9YhULvClEHJLawoRSj/1u/EDV7MJbBPgQo=
