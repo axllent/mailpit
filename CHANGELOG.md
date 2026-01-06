@@ -2,6 +2,25 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.28.1]
+
+### Security
+- Restrict screenshot proxy to only support asset links contained in messages [CVE-2026-21859](https://github.com/axllent/mailpit/security/advisories/GHSA-8v65-47jx-7mfr)
+
+### Chore
+- Bump actions/checkout from 5 to 6 ([#610](https://github.com/axllent/mailpit/issues/610))
+- Bump actions/cache from 4 to 5 ([#607](https://github.com/axllent/mailpit/issues/607))
+- Bump actions/stale from 10.0.0 to 10.1.1 ([#604](https://github.com/axllent/mailpit/issues/604))
+- Bump actions/setup-node from 5 to 6 ([#598](https://github.com/axllent/mailpit/issues/598))
+- Bump esbuild from 0.25.12 to 0.27.2 ([#611](https://github.com/axllent/mailpit/issues/611))
+- Update Go dependencies
+- Update node dependencies
+
+### Test
+- Add inline message tests
+- Increase swagger test timeout
+
+
 ## [v1.28.0]
 
 ### Feature
@@ -100,6 +119,10 @@ Notable changes to Mailpit will be documented in this file.
 
 ## [v1.27.2]
 
+### Security
+- Prevent integer overflow conversion to uint64
+- Add ReadHeaderTimeout to Prometheus metrics server
+
 ### Feature
 - Add ability to generate self-signed (snakeoil) certificates for UI, SMTP and POP3 ([#539](https://github.com/axllent/mailpit/issues/539))
 
@@ -114,10 +137,6 @@ Notable changes to Mailpit will be documented in this file.
 - Use MaxMessages to determine pruning ([#536](https://github.com/axllent/mailpit/issues/536))
 - Support angle brackets for text/plain URLs with spaces ([#535](https://github.com/axllent/mailpit/issues/535))
 - Do not check latest release for Prometheus statistics ([#522](https://github.com/axllent/mailpit/issues/522))
-
-### Security
-- Prevent integer overflow conversion to uint64
-- Add ReadHeaderTimeout to Prometheus metrics server
 
 
 ## [v1.27.1]
@@ -1748,6 +1767,9 @@ Notable changes to Mailpit will be documented in this file.
 
 ## [1.1.4]
 
+### Security
+- Add restrictive HTTP Content-Security-Policy
+
 ### Feature
 - Add --quiet flag to display only errors
 
@@ -1755,9 +1777,6 @@ Notable changes to Mailpit will be documented in this file.
 - Remove left & right borders (message list)
 - Add favicon unread message counter
 - Minor UI color change & unread count position adjustment
-
-### Security
-- Add restrictive HTTP Content-Security-Policy
 
 
 ## [1.1.3]
@@ -1845,13 +1864,13 @@ Notable changes to Mailpit will be documented in this file.
 
 ## [0.1.2]
 
-### Feature
-- Optional browser notifications (HTTPS only)
-
 ### Security
 - Use strconv.Atoi() for safe string to int conversions
 - Sanitize mailbox names
 - Don't allow tar files containing a ".."
+
+### Feature
+- Optional browser notifications (HTTPS only)
 
 
 ## [0.1.1]
