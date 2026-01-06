@@ -72,9 +72,10 @@ func SaveToDatabase(origin net.Addr, from string, to []string, data []byte, smtp
 			return "", nil
 		}
 	}
+	subject := msg.Header.Get("Subject")
 
 	// if enabled, this may conditionally relay the email through to the preconfigured smtp server
-	if relayErr := autoRelayMessage(from, to, &data); relayErr != nil {
+	if relayErr := autoRelayMessage(from, to, subject, &data); relayErr != nil {
 		logger.Log().Error(relayErr.Error())
 
 		if config.SMTPRelayConfig.ForwardSMTPErrors {
@@ -147,7 +148,6 @@ func SaveToDatabase(origin net.Addr, from string, to []string, data []byte, smtp
 
 	data = nil // avoid memory leaks
 
-	subject := msg.Header.Get("Subject")
 	logger.Log().Debugf("[smtpd] received (%s) from:%s subject:%q", cleanIP(origin), from, subject)
 
 	return id, err

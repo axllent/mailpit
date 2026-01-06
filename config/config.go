@@ -165,6 +165,12 @@ var (
 	// SMTPRelayMatchingRegexp is the compiled version of SMTPRelayMatching
 	SMTPRelayMatchingRegexp *regexp.Regexp
 
+	// SMTPRelayMatchingSubject if set, will auto-release to recipients matching this subject regular expression
+	SMTPRelayMatchingSubject string
+
+	// SMTPRelayMatchingSubjectRegexp is the compiled version of SMTPRelayMatchingSubject
+	SMTPRelayMatchingSubjectRegexp *regexp.Regexp
+
 	// SMTPForwardConfigFile to parse a yaml file and store config of the forwarding SMTP server
 	SMTPForwardConfigFile string
 
@@ -604,7 +610,7 @@ func VerifyConfig() error {
 		return err
 	}
 
-	if !ReleaseEnabled && SMTPRelayAll || !ReleaseEnabled && SMTPRelayMatching != "" {
+	if !ReleaseEnabled && SMTPRelayAll || !ReleaseEnabled && (SMTPRelayMatching != "" || SMTPRelayMatchingSubject != "") {
 		return errors.New("[relay] a relay configuration must be set to auto-relay any messages")
 	}
 
@@ -621,6 +627,23 @@ func VerifyConfig() error {
 			logger.Log().Infof(
 				"[relay] auto-relaying new messages to recipients matching \"%s\" via %s:%d",
 				SMTPRelayMatching, SMTPRelayConfig.Host, SMTPRelayConfig.Port,
+			)
+		}
+	}
+
+	if SMTPRelayMatchingSubject != "" {
+		if SMTPRelayAll {
+			logger.Log().Warnf("[relay] ignoring smtp-relay-matching-subject when smtp-relay-all is enabled")
+		} else {
+			re, err := regexp.Compile(SMTPRelayMatchingSubject)
+			if err != nil {
+				return fmt.Errorf("[relay] failed to compile smtp-relay-matching-subject regexp: %s", err.Error())
+			}
+
+			SMTPRelayMatchingSubjectRegexp = re
+			logger.Log().Infof(
+				"[relay] auto-relaying new messages with subject matching \"%s\" via %s:%d",
+				SMTPRelayMatchingSubject, SMTPRelayConfig.Host, SMTPRelayConfig.Port,
 			)
 		}
 	}

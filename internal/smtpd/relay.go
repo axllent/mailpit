@@ -3,6 +3,7 @@ package smtpd
 import (
 	"crypto/tls"
 	"fmt"
+	"mime"
 	"net/smtp"
 	"os"
 	"strings"
@@ -14,7 +15,7 @@ import (
 )
 
 // Wrapper to auto relay messages if configured
-func autoRelayMessage(from string, to []string, data *[]byte) error {
+func autoRelayMessage(from string, to []string, subject string, data *[]byte) error {
 	if config.SMTPRelayConfig.BlockedRecipientsRegexp != nil {
 		filteredTo := []string{}
 		for _, address := range to {
@@ -41,16 +42,31 @@ func autoRelayMessage(from string, to []string, data *[]byte) error {
 			"[relay] sent message to %s from %s via %s:%d",
 			strings.Join(to, ", "), from, config.SMTPRelayConfig.Host, config.SMTPRelayConfig.Port,
 		)
-	} else if config.SMTPRelayMatchingRegexp != nil {
+	} else if config.SMTPRelayMatchingRegexp != nil || config.SMTPRelayMatchingSubjectRegexp != nil {
 		filtered := []string{}
 		for _, t := range to {
-			if config.SMTPRelayMatchingRegexp.MatchString(t) {
-				filtered = append(filtered, t)
+			if config.SMTPRelayMatchingRegexp != nil && !config.SMTPRelayMatchingRegexp.MatchString(t) {
+				continue
 			}
+
+			filtered = append(filtered, t)
 		}
 
 		if len(filtered) == 0 {
+			logger.Log().Debugf("[relay] Empty filter list")
 			return nil
+		}
+
+		if config.SMTPRelayMatchingRegexp == nil && config.SMTPRelayMatchingSubjectRegexp != nil {
+			decodedSubject, err := (&mime.WordDecoder{}).DecodeHeader(subject)
+			if err != nil {
+				return errors.WithMessage(err, "[relay] error")
+			}
+
+			if !config.SMTPRelayMatchingSubjectRegexp.MatchString(decodedSubject) {
+				logger.Log().Debugf("[relay] ignoring auto-relay: subject does not match")
+				return nil
+			}
 		}
 
 		if err := Relay(from, filtered, *data); err != nil {

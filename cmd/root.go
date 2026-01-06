@@ -133,6 +133,7 @@ func init() {
 	rootCmd.Flags().StringVar(&config.SMTPRelayConfigFile, "smtp-relay-config", config.SMTPRelayConfigFile, "SMTP relay configuration file to allow releasing messages")
 	rootCmd.Flags().BoolVar(&config.SMTPRelayAll, "smtp-relay-all", config.SMTPRelayAll, "Auto-relay all new messages via external SMTP server (caution!)")
 	rootCmd.Flags().StringVar(&config.SMTPRelayMatching, "smtp-relay-matching", config.SMTPRelayMatching, "Auto-relay new messages to only matching recipients (regular expression)")
+	rootCmd.Flags().StringVar(&config.SMTPRelayMatchingSubject, "smtp-relay-matching-subject", config.SMTPRelayMatchingSubject, "Auto-relay new messages to only matching subjects (regular expression)")
 
 	// SMTP forwarding
 	rootCmd.Flags().StringVar(&config.SMTPForwardConfigFile, "smtp-forward-config", config.SMTPForwardConfigFile, "SMTP forwarding configuration file for all messages")
@@ -315,6 +316,7 @@ func initConfigFromEnv() {
 		config.SMTPRelayAll = true
 	}
 	config.SMTPRelayMatching = os.Getenv("MP_SMTP_RELAY_MATCHING")
+	config.SMTPRelayMatchingSubject = os.Getenv("MP_SMTP_RELAY_MATCHING_SUBJECT")
 	config.SMTPRelayConfig = config.SMTPRelayConfigStruct{}
 	config.SMTPRelayConfig.Host = os.Getenv("MP_SMTP_RELAY_HOST")
 	if len(os.Getenv("MP_SMTP_RELAY_PORT")) > 0 {
