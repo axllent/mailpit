@@ -10,12 +10,13 @@ jobs:
       issues: write
       pull-requests: write
     steps:
-      - uses: actions/stale@v10.0.0
+      - uses: actions/stale@v10.1.1
         with:
           days-before-issue-stale: 7
           days-before-issue-close: 3
           exempt-issue-labels: "enhancement,bug,awaiting feedback"
           stale-issue-label: "stale"
+          close-issue-reason: "completed"
           stale-issue-message: "This issue has been marked as stale because it has been open for 7 days with no activity."
           close-issue-message: "This issue was closed because there has been no activity since being marked as stale."
           days-before-pr-stale: -1

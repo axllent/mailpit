@@ -28,6 +28,7 @@ trim = true
 # HTML comments added for grouping order, stripped on generation
 commit_parsers = [
   {body = ".*security", group = "<!-- 1 -->Security"},
+  {message = "(?i)^security", group = "<!-- 1 -->Security"},
   {message = "(?i)^feat", group = "<!-- 2 -->Feature"},
   {message = "(?i)^chore", group = "<!-- 3 -->Chore"},
   {message = "(?i)^libs", group = "<!-- 3 -->Chore"},

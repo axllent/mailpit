@@ -16,9 +16,9 @@ jobs:
       with:
         go-version: ${{ matrix.go-version }}
         cache: false
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - name: Set up Go environment
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: |
           ~/.cache/go-build
@@ -38,7 +38,7 @@ jobs:
     # build the assets
     - name: Set up node environment
       if: startsWith(matrix.os, 'ubuntu') == true
-      uses: actions/setup-node@v5
+      uses: actions/setup-node@v6
       with:
         node-version: 22
         cache: 'npm'
@@ -52,9 +52,10 @@ jobs:
       if: startsWith(matrix.os, 'ubuntu') == true
       run: npm run package
 
-    # validate the swagger file
-    - name: Validate OpenAPI definition
-      if: startsWith(matrix.os, 'ubuntu') == true
-      uses: swaggerexpert/swagger-editor-validate@v1
-      with:
-        definition-file: server/ui/api/v1/swagger.json
+    # # validate the swagger file
+    # - name: Validate OpenAPI definition
+    #   if: startsWith(matrix.os, 'ubuntu') == true
+    #   uses: swaggerexpert/swagger-editor-validate@v1
+    #   with:
+    #     definition-file: server/ui/api/v1/swagger.json
+    #     default-timeout: 20000

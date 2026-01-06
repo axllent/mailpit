@@ -1,0 +1,27 @@
+From: sender@example.com
+To: recipient@example.com
+Subject: Test mixed attachments
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="boundary111"
+
+--boundary111
+Content-Type: text/html; charset=utf-8
+
+<html><body><img src="cid:inline@example.com" alt="Inline"/><p>Document attached</p></body></html>
+
+--boundary111
+Content-Type: image/png; name="inline.png"
+Content-Disposition: inline; filename="inline.png"
+Content-ID: <inline@example.com>
+Content-Transfer-Encoding: base64
+
+iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==
+
+--boundary111
+Content-Type: application/pdf; name="document.pdf"
+Content-Disposition: attachment; filename="document.pdf"
+Content-Transfer-Encoding: base64
+
+JVBERi0xLjQKJcOkw7zDtsOfCjIgMCBvYmoKPDwvTGVuZ3RoIDMgMCBSL0ZpbHRlci9GbGF0ZURlY29kZT4+CnN0cmVhbQo=
+
+--boundary111--
