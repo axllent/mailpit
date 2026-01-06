@@ -112,5 +112,10 @@ export default {
 			this.favicon.href = canvas.toDataURL("image/png");
 		},
 	},
+
+	render() {
+		// to remove webkit warnings about missing template or render function
+		return false;
+	},
 };
 </script>

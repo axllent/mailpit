@@ -53,5 +53,10 @@ export default {
 			navigator.setAppBadge(this.mailboxUnread);
 		},
 	},
+
+	render() {
+		// to remove webkit warnings about missing template or render function
+		return false;
+	},
 };
 </script>
