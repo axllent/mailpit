@@ -455,7 +455,6 @@ export default {
 			window.setTimeout(() => {
 				// delay to allow elements to load / focus
 				this.$refs.ReleaseRef.initTags();
-				document.querySelector('#ReleaseModal input[role="combobox"]').focus();
 			}, 500);
 		},
 	},
