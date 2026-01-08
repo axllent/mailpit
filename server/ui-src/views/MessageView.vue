@@ -442,7 +442,11 @@ export default {
 				if (pagination.limit !== pagination.defaultLimit) {
 					p.limit = pagination.limit.toString();
 				}
-				this.$router.push("/?" + new URLSearchParams(p).toString());
+				if (p.start || p.limit) {
+					this.$router.push("/?" + new URLSearchParams(p).toString());
+				} else {
+					this.$router.push("/");
+				}
 			}
 		},
 
@@ -455,7 +459,6 @@ export default {
 			window.setTimeout(() => {
 				// delay to allow elements to load / focus
 				this.$refs.ReleaseRef.initTags();
-				document.querySelector('#ReleaseModal input[role="combobox"]').focus();
 			}, 500);
 		},
 	},

@@ -44,7 +44,20 @@ export default {
 		// include only unique email addresses, regardless of casing
 		this.allAddresses = JSON.parse(JSON.stringify([...new Map(a.map((ad) => [ad.toLowerCase(), ad])).values()]));
 
-		this.addresses = this.allAddresses;
+		// include default release addresses from mailbox settings
+		const defaultAddr = mailbox.defaultReleaseAddresses;
+		for (const i in defaultAddr) {
+			if (!this.allAddresses.includes(defaultAddr[i])) {
+				this.allAddresses.push(defaultAddr[i]);
+			}
+		}
+
+		if (defaultAddr.length === 0) {
+			// prefill with all addresses if no default is set
+			this.addresses = this.allAddresses;
+		} else {
+			this.addresses = defaultAddr;
+		}
 	},
 
 	methods: {
@@ -140,6 +153,13 @@ export default {
 								<option v-for="t in allAddresses" :key="'address+' + t" :value="t">{{ t }}</option>
 							</select>
 							<div class="invalid-feedback">Invalid email address</div>
+							<div class="form-text mt-1">
+								Default release addresses can be configured in
+								<a href="#" data-bs-toggle="modal" data-bs-target="#SettingsModal">
+									<i class="bi bi-gear-fill ms-1"></i>
+									Settings </a
+								>.
+							</div>
 						</div>
 					</div>
 					<div class="row mb-3">
