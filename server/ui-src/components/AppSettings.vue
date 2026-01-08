@@ -50,11 +50,10 @@ export default {
 		this.setTheme();
 		this.$nextTick(() => {
 			Tags.init("select.tz");
+			Tags.init("select.default-release-addresses");
 		});
 
 		mailbox.skipConfirmations = localStorage.getItem("skip-confirmations");
-
-		Tags.init("select.default-release-addresses");
 	},
 
 	methods: {
