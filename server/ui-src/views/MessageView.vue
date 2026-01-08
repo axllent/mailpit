@@ -442,7 +442,11 @@ export default {
 				if (pagination.limit !== pagination.defaultLimit) {
 					p.limit = pagination.limit.toString();
 				}
-				this.$router.push("/?" + new URLSearchParams(p).toString());
+				if (p.start || p.limit) {
+					this.$router.push("/?" + new URLSearchParams(p).toString());
+				} else {
+					this.$router.push("/");
+				}
 			}
 		},
 
