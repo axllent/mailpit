@@ -269,10 +269,10 @@ export default {
 							<div class="my-3 mb-5">
 								<label class="form-label">Default release address(es)</label>
 								<div class="form-text mb-2">
-									You can specify the default release "send to" addresses here, which will
-									automatically fill the field in the message release dialog. This setting is
-									applicable only to your browser. If left blank, it will default to the original
-									recipients of the message.
+									You can designate the default "send to" addresses here, which will automatically
+									populate the field in the message release dialog. This setting applies only to your
+									browser. If this field is left empty, it will revert to the original recipients of
+									the message.
 								</div>
 								<select
 									v-model="mailbox.defaultReleaseAddresses"
