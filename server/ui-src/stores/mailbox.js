@@ -20,6 +20,9 @@ export const mailbox = reactive({
 	appInfo: {}, // application information
 	uiConfig: {}, // configuration for UI
 	lastMessage: false, // return scrolling
+	defaultReleaseAddresses: localStorage.getItem("defaultReleaseAddresses")
+		? JSON.parse(localStorage.getItem("defaultReleaseAddresses"))
+		: [], // default release addresses for released messages
 
 	// settings
 	showTagColors: !localStorage.getItem("hideTagColors"),
@@ -78,6 +81,17 @@ watch(
 			localStorage.removeItem("hideSpamCheck");
 		} else {
 			localStorage.setItem("hideSpamCheck", "1");
+		}
+	},
+);
+
+watch(
+	() => mailbox.defaultReleaseAddresses,
+	(v) => {
+		if (v.length) {
+			localStorage.setItem("defaultReleaseAddresses", JSON.stringify(v));
+		} else {
+			localStorage.removeItem("defaultReleaseAddresses");
 		}
 	},
 );

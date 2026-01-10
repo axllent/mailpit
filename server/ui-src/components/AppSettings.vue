@@ -14,6 +14,9 @@ export default {
 			timezones,
 			chaosConfig: false,
 			chaosUpdated: false,
+			defaultReleaseAddressesOptions: localStorage.getItem("defaultReleaseAddresses")
+				? JSON.parse(localStorage.getItem("defaultReleaseAddresses"))
+				: [], // set with default release addresses
 		};
 	},
 
@@ -45,11 +48,13 @@ export default {
 
 	mounted() {
 		this.setTheme();
-		this.$nextTick(() => {
-			Tags.init("select.tz");
-		});
 
-		mailbox.skipConfirmations = !!localStorage.getItem("skip-confirmations");
+		mailbox.skipConfirmations = localStorage.getItem("skip-confirmations");
+
+		window.setTimeout(() => {
+			Tags.init("select.tz");
+			Tags.init("select.default-release-addresses");
+		}, 500);
 	},
 
 	methods: {
@@ -98,7 +103,7 @@ export default {
 					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 				</div>
 				<div class="modal-body">
-					<ul v-if="mailbox.uiConfig.ChaosEnabled" id="myTab" class="nav nav-tabs" role="tablist">
+					<ul id="myTab" class="nav nav-tabs" role="tablist">
 						<li class="nav-item" role="presentation">
 							<button
 								id="ui-tab"
@@ -113,7 +118,25 @@ export default {
 								Web UI
 							</button>
 						</li>
-						<li class="nav-item" role="presentation">
+						<li
+							v-if="mailbox.uiConfig.MessageRelay && mailbox.uiConfig.MessageRelay.Enabled"
+							class="nav-item"
+							role="presentation"
+						>
+							<button
+								id="relay-tab"
+								class="nav-link"
+								data-bs-toggle="tab"
+								data-bs-target="#relay-tab-pane"
+								type="button"
+								role="tab"
+								aria-controls="relay-tab-pane"
+								aria-selected="false"
+							>
+								Message release
+							</button>
+						</li>
+						<li v-if="mailbox.uiConfig.ChaosEnabled" class="nav-item" role="presentation">
 							<button
 								id="chaos-tab"
 								class="nav-link"
@@ -231,6 +254,50 @@ export default {
 										<code>Mark all read</code> confirmation dialogs
 									</label>
 								</div>
+							</div>
+						</div>
+
+						<!-- Default relay addresses -->
+						<div
+							v-if="mailbox.uiConfig.MessageRelay && mailbox.uiConfig.MessageRelay.Enabled"
+							id="relay-tab-pane"
+							class="tab-pane fade"
+							role="tabpanel"
+							aria-labelledby="relay-tab"
+							tabindex="0"
+						>
+							<div class="my-3 mb-5">
+								<label class="form-label">Default release address(es)</label>
+								<div class="form-text mb-2">
+									You can designate the default "send to" addresses here, which will automatically
+									populate the field in the message release dialog. This setting applies only to your
+									browser. If this field is left empty, it will revert to the original recipients of
+									the message.
+								</div>
+								<select
+									v-model="mailbox.defaultReleaseAddresses"
+									class="form-select tag-selector default-release-addresses"
+									multiple
+									data-allow-new="true"
+									data-clear-end="true"
+									data-allow-clear="true"
+									data-placeholder="Enter email addresses..."
+									data-add-on-blur="true"
+									data-badge-style="primary"
+									data-regex='^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$'
+									data-separator="|,|"
+								>
+									<option value="">Enter email addresses...</option>
+									<!-- you need at least one option with the placeholder -->
+									<option
+										v-for="t in defaultReleaseAddressesOptions"
+										:key="'address+' + t"
+										:value="t"
+									>
+										{{ t }}
+									</option>
+								</select>
+								<div class="invalid-feedback">Invalid email address</div>
 							</div>
 						</div>
 
