@@ -48,12 +48,13 @@ export default {
 
 	mounted() {
 		this.setTheme();
-		this.$nextTick(() => {
-			Tags.init("select.tz");
-			Tags.init("select.default-release-addresses");
-		});
 
 		mailbox.skipConfirmations = localStorage.getItem("skip-confirmations");
+
+		window.setTimeout(() => {
+			Tags.init("select.tz");
+			Tags.init("select.default-release-addresses");
+		}, 500);
 	},
 
 	methods: {
