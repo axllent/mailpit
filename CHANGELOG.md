@@ -2,6 +2,19 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.28.2]
+
+### Security
+- Prevent Cross-Site WebSocket Hijacking (CSWSH) allowing unauthenticated access to message data [CVE-2026-22689](https://github.com/axllent/mailpit/security/advisories/GHSA-524m-q5m7-79mm)
+
+### Feature
+- Allow default mail addresses to be set when releasing message ([#594](https://github.com/axllent/mailpit/issues/594))
+
+### Chore
+- Remove webkit warnings about missing template / render functions
+- Avoid empty URL query parameter when returning to inbox from message view
+
+
 ## [v1.28.1]
 
 ### Security
