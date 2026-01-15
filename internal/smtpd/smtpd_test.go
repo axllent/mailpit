@@ -106,6 +106,10 @@ func TestCmdEHLO(t *testing.T) {
 	cmdCode(t, conn, "RCPT TO:<recipient@example.com>", "250")
 
 	// test invalid addresses & header injection
+	cmdCode(t, conn, "RCPT TO: <recipientrecipientrecipientrecipientrecipientrecipientrecipientrecipientrecipientrecipientrecipientrecipient@exampleexampleexampleexampleexampleexampleexample.com>", "501") // too long
+	cmdCode(t, conn, "RCPT TO: <recipientrecipientrecipientreciprecipientrecipientrecipientrecipt@exaample.com>", "501")
+	cmdCode(t, conn, "RCPT TO: <recipient@examplexampleexampleexampleexampleexampleexampleexamplexampleexampleexampleexampleexampleexampleexampleexampleexampleexampleexampleexampleexampleexamplexampleexampleexampleexampleexampleexampleexamplexampleexampleexampleexampleexampleexampleexample.com>", "501")
+	cmdCode(t, conn, "RCPT TO: <r@examplexampleexampleexampleexampleexampleexampleexamplexampleexampleexampleexampleexampleexampleexampleexampleexampleexampleexampleexampleexampleexamplexampleexampleexampleexampleexampleexampleexamplexampleexampleexampleexampleexampleexampleexample.com>", "250") // valid
 	cmdCode(t, conn, "RCPT TO:<recipientexample.com>", "501")
 	cmdCode(t, conn, "RCPT TO: <recipientexample.com>", "501")
 	cmdCode(t, conn, "RCPT TO:  <recipientexample.com>", "501")
@@ -156,6 +160,10 @@ func TestCmdMAIL(t *testing.T) {
 	cmdCode(t, conn, "MAIL FROM:  <sender@example.com>", "501")
 
 	// test invalid addresses & header injection
+	cmdCode(t, conn, "MAIL FROM: <sendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersender@exampleexampleexampleexampleexampleexampleexample.com>", "501") // too long
+	cmdCode(t, conn, "MAIL FROM: <sendersendersendersendersendersendersendersendersendersendersender@exaample.com>", "501")
+	cmdCode(t, conn, "MAIL FROM: <sender@examplexampleexampleexampleexampleexampleexampleexamplexampleexampleexampleexampleexampleexampleexampleexampleexampleexampleexampleexampleexampleexamplexampleexampleexampleexampleexampleexampleexamplexampleexampleexampleexampleexampleexampleexample.com>", "501")
+	cmdCode(t, conn, "MAIL FROM: <s@examplexampleexampleexampleexampleexampleexampleexamplexampleexampleexampleexampleexampleexampleexampleexampleexampleexampleexampleexampleexampleexamplexampleexampleexampleexampleexampleexampleexamplexampleexampleexampleexampleexampleexampleexample.com>", "250") // valid
 	cmdCode(t, conn, "MAIL FROM:<sender\rexample.com>", "501")
 	cmdCode(t, conn, "MAIL FROM: <sender\rexample.com>", "501")
 	cmdCode(t, conn, "MAIL FROM:  <sender\rexample.com>", "501")
