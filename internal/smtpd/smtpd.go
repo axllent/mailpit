@@ -1026,9 +1026,19 @@ func extractAndValidateAddress(re *regexp.Regexp, args string) []string {
 
 	// first argument will be the email address, validate it if not empty
 	if match[1] != "" {
-		// fmt.Println("Validating email address:", match[1])
-		_, err := mail.ParseAddress(match[1])
+		a, err := mail.ParseAddress(match[1])
 		if err != nil {
+			return nil
+		}
+
+		parts := strings.SplitN(a.Address, "@", 2)
+
+		if len(parts) != 2 {
+			return nil
+		}
+
+		// https://datatracker.ietf.org/doc/html/rfc5321#section-4.5.3.1
+		if len(parts[0]) > 64 || len(parts[1]) > 255 || len(a.Address) > 256 {
 			return nil
 		}
 	}
