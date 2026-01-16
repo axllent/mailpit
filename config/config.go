@@ -131,7 +131,7 @@ var (
 	CLITagsArg string
 
 	// ValidTagRegexp represents a valid tag
-	ValidTagRegexp = regexp.MustCompile(`^([a-zA-Z0-9\-\ \_\.]){1,}$`)
+	ValidTagRegexp = regexp.MustCompile(`^([a-zA-Z0-9\-\ \_\.@]){1,100}$`)
 
 	// TagsConfig is a yaml file to pre-load tags
 	TagsConfig string

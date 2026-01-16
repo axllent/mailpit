@@ -9,7 +9,7 @@ export default {
 		return {
 			mailbox,
 			editableTags: [],
-			validTagRe: /^([a-zA-Z0-9\- ._]){1,}$/,
+			validTagRe: /^([a-zA-Z0-9\- ._@]){1,100}$/,
 			tagToDelete: false,
 		};
 	},
@@ -28,7 +28,7 @@ export default {
 
 	methods: {
 		validTag(t) {
-			if (!t.after.match(/^([a-zA-Z0-9\- _.]){1,}$/)) {
+			if (!t.after.match(/^([a-zA-Z0-9\- ._@]){1,100}$/)) {
 				return false;
 			}
 

@@ -467,7 +467,7 @@ export default {
 									data-allow-clear="true"
 									data-placeholder="Add tags..."
 									data-badge-style="secondary"
-									data-regex="^([a-zA-Z0-9\-\ \_\.]){1,}$"
+									data-regex="^([a-zA-Z0-9\-\ \_\.@]){1,100}$"
 									data-separator="|,|"
 								>
 									<option value="">Type a tag...</option>
