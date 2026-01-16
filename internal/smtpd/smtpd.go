@@ -975,6 +975,12 @@ func (s *session) handleAuthPlain(arg string) (bool, error) {
 
 	// Validate credentials.
 	authenticated, err := s.srv.AuthHandler(s.conn.RemoteAddr(), "PLAIN", parts[1], parts[2], nil)
+	if authenticated {
+		uname := string(parts[1])
+		s.username = &uname
+	} else {
+		s.username = nil
+	}
 
 	return authenticated, err
 }
