@@ -1,8 +1,11 @@
 package htmlcheck
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"strings"
@@ -141,19 +144,20 @@ func inlineRemoteCSS(h string) (string, error) {
 		attributes := link.Attr
 		for _, a := range attributes {
 			if a.Key == "href" {
-				if !isURL(a.Val) {
-					// skip invalid URL
-					continue
-				}
-
 				if config.BlockRemoteCSSAndFonts {
 					logger.Log().Debugf("[html-check] skip testing remote CSS content: %s (--block-remote-css-and-fonts)", a.Val)
 					return h, nil
 				}
 
-				resp, err := downloadToBytes(a.Val)
+				if !isValidURL(a.Val) {
+					// skip invalid URL
+					logger.Log().Warnf("[html-check] ignoring unsupported stylesheet URL: %s", a.Val)
+					continue
+				}
+
+				resp, err := downloadCSSToBytes(a.Val)
 				if err != nil {
-					logger.Log().Warnf("[html-check] failed to download %s", a.Val)
+					logger.Log().Warnf("[html-check] %s", err.Error())
 					continue
 				}
 
@@ -182,14 +186,20 @@ func inlineRemoteCSS(h string) (string, error) {
 	return newDoc, nil
 }
 
-// DownloadToBytes returns a []byte slice from a URL
-func downloadToBytes(url string) ([]byte, error) {
-	client := http.Client{
-		Timeout: 5 * time.Second,
+// DownloadCSSToBytes returns a []byte slice from a URL.
+// It requires the HTTP response code to be 200 and the content-type to be text/css.
+// It will download a maximum of 5MB.
+func downloadCSSToBytes(url string) ([]byte, error) {
+	client := newSafeHTTPClient()
+	req, err := http.NewRequestWithContext(context.TODO(), http.MethodGet, url, nil)
+	if err != nil {
+		return nil, err
 	}
 
+	req.Header.Set("User-Agent", "Mailpit HTML Checker/"+config.Version)
+
 	// Get the link response data
-	resp, err := client.Get(url)
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -200,7 +210,17 @@ func downloadToBytes(url string) ([]byte, error) {
 		return nil, err
 	}
 
-	body, err := io.ReadAll(resp.Body)
+	ct := strings.ToLower(resp.Header.Get("content-type"))
+	if !strings.Contains(ct, "text/css") {
+		err := fmt.Errorf("invalid CSS content-type from %s: \"%s\" (expected \"text/css\")", url, ct)
+		return nil, err
+	}
+
+	// set a limit on the number of bytes to read - max 5MB
+	limit := int64(5242880)
+	limitedReader := &io.LimitedReader{R: resp.Body, N: limit}
+
+	body, err := io.ReadAll(limitedReader)
 	if err != nil {
 		return nil, err
 	}
@@ -208,10 +228,12 @@ func downloadToBytes(url string) ([]byte, error) {
 	return body, nil
 }
 
-// Test if str is a URL
-func isURL(str string) bool {
+// Test if the string is a supported URL.
+// The URL must have the "http" or "https" scheme, and must not contain any login info (http://user:pass@<host>).
+func isValidURL(str string) bool {
 	u, err := url.Parse(str)
-	return err == nil && (u.Scheme == "http" || u.Scheme == "https") && u.Host != ""
+
+	return err == nil && (u.Scheme == "http" || u.Scheme == "https") && u.Hostname() != "" && u.User.String() == ""
 }
 
 // Test the HTML for inline CSS styles and styling attributes
@@ -248,4 +270,41 @@ func testInlineStyles(doc *goquery.Document) map[string]int {
 	}
 
 	return matches
+}
+
+func newSafeHTTPClient() *http.Client {
+	dialer := &net.Dialer{
+		Timeout:   5 * time.Second,
+		KeepAlive: 30 * time.Second,
+	}
+
+	tr := &http.Transport{
+		Proxy: nil, // avoid env proxy surprises unless you explicitly want it
+		DialContext: func(ctx context.Context, network, address string) (net.Conn, error) {
+			return dialer.DialContext(ctx, network, address)
+		},
+		TLSHandshakeTimeout:   5 * time.Second,
+		ResponseHeaderTimeout: 10 * time.Second,
+		ExpectContinueTimeout: 1 * time.Second,
+		IdleConnTimeout:       30 * time.Second,
+		MaxIdleConns:          50,
+	}
+
+	client := &http.Client{
+		Transport: tr,
+		Timeout:   15 * time.Second,
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			// re-validate every redirect hop.
+			if len(via) >= 3 {
+				return errors.New("too many redirects")
+			}
+			if !isValidURL(req.URL.String()) {
+				return errors.New("invalid redirect URL")
+			}
+
+			return nil
+		},
+	}
+
+	return client
 }
