@@ -28,6 +28,7 @@ export default {
 			mailbox,
 			pagination,
 			message: false,
+			loadReleaseModal: false,
 			errorMessage: false,
 			apiSideNavURI: false,
 			apiSideNavParams: URLSearchParams,
@@ -455,11 +456,18 @@ export default {
 		},
 
 		initReleaseModal() {
-			this.modal("ReleaseModal").show();
-			window.setTimeout(() => {
-				// delay to allow elements to load / focus
-				this.$refs.ReleaseRef.initTags();
-			}, 500);
+			// reset releaseMessage to force re-render so default release addresses can be included
+			this.loadReleaseModal = false;
+			this.$nextTick(() => {
+				this.loadReleaseModal = true;
+				this.$nextTick(() => {
+					this.modal("ReleaseModal").show();
+					window.setTimeout(() => {
+						// delay to allow elements to load / focus
+						this.$refs.ReleaseRef.initTags();
+					}, 250);
+				});
+			});
 		},
 	},
 };
@@ -710,7 +718,7 @@ export default {
 	<AboutMailpit modals />
 	<AjaxLoader :loading="loading" />
 	<Release
-		v-if="mailbox.uiConfig.MessageRelay && message"
+		v-if="mailbox.uiConfig.MessageRelay && loadReleaseModal"
 		ref="ReleaseRef"
 		:message="message"
 		@delete="deleteMessage"

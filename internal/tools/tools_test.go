@@ -33,7 +33,8 @@ func TestCleanTag(t *testing.T) {
 	tests["thiS IS a Test :-)"] = "thiS IS a Test -"
 	tests["  thiS 99     IS a Test :-)"] = "thiS 99 IS a Test -"
 	tests["this_is-a test "] = "this_is-a test"
-	tests["this_is-a&^%%(*)@ test"] = "this_is-a test"
+	tests["this_is-a&^%%(*)@ test"] = "this_is-a @ test"
+	tests["this is a long tag title with more than 100 characters, which should get automatically truncated to 100 characters"] = "this is a long tag title with more than 100 characters which should get automatically truncated to 1"
 
 	for search, expected := range tests {
 		res := CleanTag(search)

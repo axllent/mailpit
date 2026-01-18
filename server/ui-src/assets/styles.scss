@@ -314,6 +314,11 @@ body.blur {
 	display: none;
 }
 
+// dropdown doesn't always appear in correct position inside modals
+.dropdown.form-select {
+	position: relative !important;
+}
+
 .message {
 	&.read {
 		> div {

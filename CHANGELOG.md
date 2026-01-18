@@ -2,6 +2,30 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.28.3]
+
+### Security
+- Ensure SMTP TO & FROM addresses are RFC 5322 compliant and prevent header injection ([GHSA-54wq-72mp-cq7c](https://github.com/axllent/mailpit/security/advisories/GHSA-54wq-72mp-cq7c))
+- Prevent Server-Side Request Forgery (SSRF) via HTML Check API ([GHSA-6jxm-fv7w-rw5j](https://github.com/axllent/mailpit/security/advisories/GHSA-6jxm-fv7w-rw5j))
+
+### Chore
+- Fix formatting and update reporting instructions in SECURITY.md ([#614](https://github.com/axllent/mailpit/issues/614))
+- Allow `@` character in message tags & set max length to 100 characters per tag
+- Update Go dependencies
+- Update node dependencies
+
+### Fix
+- Correctly render default addresses in release modal after settings change ([#594](https://github.com/axllent/mailpit/issues/594))
+- Correctly detect macOS group in install.sh ([#619](https://github.com/axllent/mailpit/issues/619))
+- Auto-tagging using SMTP username using plain auth ([#617](https://github.com/axllent/mailpit/issues/617))
+- Validate maximum lengths of email addresses - RFC5321 (section 4.5.3.1)
+
+### Test
+- Update tag tests with length limits and `@` character
+- Add SMTP tests for address compliancy (RFC 5322) and header injection
+- Add maximum email length validation tests - RFC5321 (section 4.5.3.1)
+
+
 ## [v1.28.2]
 
 ### Security

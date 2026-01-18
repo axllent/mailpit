@@ -104,6 +104,20 @@ func TestCmdEHLO(t *testing.T) {
 	// See RFC 2821 section 4.1.4 for more detail.
 	cmdCode(t, conn, "MAIL FROM:<sender@example.com>", "250")
 	cmdCode(t, conn, "RCPT TO:<recipient@example.com>", "250")
+
+	// test invalid addresses & header injection
+	cmdCode(t, conn, "RCPT TO: <recipientrecipientrecipientrecipientrecipientrecipientrecipientrecipientrecipientrecipientrecipientrecipient@exampleexampleexampleexampleexampleexampleexample.com>", "501") // too long
+	cmdCode(t, conn, "RCPT TO: <recipientrecipientrecipientreciprecipientrecipientrecipientrecipt@exaample.com>", "501")
+	cmdCode(t, conn, "RCPT TO: <recipient@examplexampleexampleexampleexampleexampleexampleexamplexampleexampleexampleexampleexampleexampleexampleexampleexampleexampleexampleexampleexampleexamplexampleexampleexampleexampleexampleexampleexamplexampleexampleexampleexampleexampleexampleexample.com>", "501")
+	cmdCode(t, conn, "RCPT TO: <r@examplexampleexampleexampleexampleexampleexampleexamplexampleexampleexampleexampleexampleexampleexampleexampleexampleexampleexampleexampleexampleexamplexampleexampleexampleexampleexampleexampleexamplexampleexampleexampleexampleexampleexampleexample.com>", "250") // valid
+	cmdCode(t, conn, "RCPT TO:<recipientexample.com>", "501")
+	cmdCode(t, conn, "RCPT TO: <recipientexample.com>", "501")
+	cmdCode(t, conn, "RCPT TO:  <recipientexample.com>", "501")
+	cmdCode(t, conn, "RCPT TO:<recipient\rexample.com>", "501")
+	cmdCode(t, conn, "RCPT TO: <recipient\rexample.com>", "501")
+	cmdCode(t, conn, "RCPT TO:  <recipient\rexample.com>", "501")
+	cmdCode(t, conn, "RCPT TO: <>", "501") // empty address not allowed here
+
 	cmdCode(t, conn, "EHLO host.example.com", "250")
 	cmdCode(t, conn, "DATA", "503")
 
@@ -144,6 +158,21 @@ func TestCmdMAIL(t *testing.T) {
 	cmdCode(t, conn, "MAIL FROM: <sender@example.com>", "250")
 	// MAIL with seemingly valid but noncompliant FROM arg (double space after the colon) should return 501 syntax error
 	cmdCode(t, conn, "MAIL FROM:  <sender@example.com>", "501")
+
+	// test invalid addresses & header injection
+	cmdCode(t, conn, "MAIL FROM: <sendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersender@exampleexampleexampleexampleexampleexampleexample.com>", "501") // too long
+	cmdCode(t, conn, "MAIL FROM: <sendersendersendersendersendersendersendersendersendersendersender@exaample.com>", "501")
+	cmdCode(t, conn, "MAIL FROM: <sender@examplexampleexampleexampleexampleexampleexampleexamplexampleexampleexampleexampleexampleexampleexampleexampleexampleexampleexampleexampleexampleexamplexampleexampleexampleexampleexampleexampleexamplexampleexampleexampleexampleexampleexampleexample.com>", "501")
+	cmdCode(t, conn, "MAIL FROM: <s@examplexampleexampleexampleexampleexampleexampleexamplexampleexampleexampleexampleexampleexampleexampleexampleexampleexampleexampleexampleexampleexamplexampleexampleexampleexampleexampleexampleexamplexampleexampleexampleexampleexampleexampleexample.com>", "250") // valid
+	cmdCode(t, conn, "MAIL FROM:<sender\rexample.com>", "501")
+	cmdCode(t, conn, "MAIL FROM: <sender\rexample.com>", "501")
+	cmdCode(t, conn, "MAIL FROM:  <sender\rexample.com>", "501")
+	cmdCode(t, conn, "MAIL FROM:<senderexample.com>", "501")
+	cmdCode(t, conn, "MAIL FROM: <senderexample.com>", "501")
+	cmdCode(t, conn, "MAIL FROM:  <senderexample.com>", "501")
+	cmdCode(t, conn, "MAIL FROM: < sender@example.com >", "501")
+	cmdCode(t, conn, "MAIL FROM: < sender@example.com>", "501")
+	cmdCode(t, conn, "MAIL FROM: <sender@example.com >", "501")
 
 	// MAIL with valid SIZE parameter should return 250 Ok
 	cmdCode(t, conn, "MAIL FROM:<sender@example.com> SIZE=1000", "250")

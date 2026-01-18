@@ -10,7 +10,7 @@ import (
 
 var (
 	// Invalid tag characters regex
-	tagsInvalidChars = regexp.MustCompile(`[^a-zA-Z0-9\-\ \_\.]`)
+	tagsInvalidChars = regexp.MustCompile(`[^a-zA-Z0-9\-\ \_\.@]`)
 
 	// Regex to catch multiple spaces
 	multiSpaceRe = regexp.MustCompile(`(\s+)`)
@@ -19,14 +19,21 @@ var (
 	TagsTitleCase bool
 )
 
-// CleanTag returns a clean tag, trimming whitespace and replacing invalid characters
+// CleanTag returns a clean tag, trimming whitespace and replacing invalid characters.
+// If the tag is longer than 100 characters, it is truncated.
 func CleanTag(s string) string {
-	return strings.TrimSpace(
+	t := strings.TrimSpace(
 		multiSpaceRe.ReplaceAllString(
 			tagsInvalidChars.ReplaceAllString(s, " "),
 			" ",
 		),
 	)
+
+	if len(t) > 100 {
+		return t[:100]
+	}
+
+	return t
 }
 
 // SetTagCasing returns the slice of tags, title-casing if set

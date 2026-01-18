@@ -15,7 +15,7 @@ done
 OS=
 case "$(uname -s)" in
 Linux) OS="linux" ;;
-Darwin) OS="Darwin" ;;
+Darwin) OS="darwin" ;;
 *)
     echo "OS not supported."
     exit 2

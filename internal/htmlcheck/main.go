@@ -163,9 +163,9 @@ func (c CanIEmail) getTest(k string) (Warning, error) {
 					p++
 					s.Support = "partial"
 
-					noteIDS := noteMatch.FindStringSubmatch(fmt.Sprintf("%s", support))
+					noteIDs := noteMatch.FindStringSubmatch(fmt.Sprintf("%s", support))
 
-					for _, id := range noteIDS {
+					for _, id := range noteIDs {
 						s.NoteNumber = id
 					}
 				}
