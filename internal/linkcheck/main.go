@@ -94,6 +94,13 @@ func extractHTMLLinks(msg *storage.Message) []string {
 	return links
 }
 
+// ExtractLinks extracts all unique links from a message (without checking HTTP status)
+func ExtractLinks(msg *storage.Message) []string {
+	allLinks := extractHTMLLinks(msg)
+	allLinks = strUnique(append(allLinks, extractTextLinks(msg)...))
+	return allLinks
+}
+
 // strUnique return a slice of unique strings from a slice
 func strUnique(strSlice []string) []string {
 	keys := make(map[string]bool)

@@ -175,6 +175,8 @@ func apiRoutes() *mux.Router {
 	r.HandleFunc(config.Webroot+"api/v1/message/{id}/raw", middleWareFunc(apiv1.DownloadRaw)).Methods("GET")
 	r.HandleFunc(config.Webroot+"api/v1/message/{id}/release", middleWareFunc(apiv1.ReleaseMessage)).Methods("POST")
 	r.HandleFunc(config.Webroot+"api/v1/message/{id}/html-check", middleWareFunc(apiv1.HTMLCheck)).Methods("GET")
+	r.HandleFunc(config.Webroot+"api/v1/message/{id}/links", middleWareFunc(apiv1.GetLinks)).Methods("GET")
+	r.HandleFunc(config.Webroot+"api/v1/message/{id}/attachments", middleWareFunc(apiv1.GetAttachmentDetails)).Methods("GET")
 	r.HandleFunc(config.Webroot+"api/v1/message/{id}/link-check", middleWareFunc(apiv1.LinkCheck)).Methods("GET")
 	if config.EnableSpamAssassin != "" {
 		r.HandleFunc(config.Webroot+"api/v1/message/{id}/sa-check", middleWareFunc(apiv1.SpamAssassinCheck)).Methods("GET")

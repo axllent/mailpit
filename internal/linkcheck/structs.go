@@ -19,3 +19,13 @@ type Link struct {
 	// HTTP status definition
 	Status string `json:"Status"`
 }
+
+// LinksResponse represents the extracted links response
+//
+// swagger:model LinksResponse
+type LinksResponse struct {
+	// Total number of links
+	Total int `json:"Total"`
+	// Extracted links
+	Links []string `json:"Links"`
+}

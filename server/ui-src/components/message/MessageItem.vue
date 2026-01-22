@@ -1,7 +1,9 @@
 <script>
 import Attachments from "./MessageAttachments.vue";
+import AttachmentDetails from "./AttachmentDetails.vue";
 import Headers from "./MessageHeaders.vue";
 import HTMLCheck from "./HTMLCheck.vue";
+import MessageLinks from "./MessageLinks.vue";
 import LinkCheck from "./LinkCheck.vue";
 import SpamAssassin from "./SpamAssassin.vue";
 import Tags from "bootstrap5-tags";
@@ -17,8 +19,10 @@ hljs.registerLanguage("html", xml);
 export default {
 	components: {
 		Attachments,
+		AttachmentDetails,
 		Headers,
 		HTMLCheck,
+		MessageLinks,
 		LinkCheck,
 		SpamAssassin,
 	},
@@ -655,6 +659,34 @@ export default {
 							</span>
 						</button>
 					</li>
+					<li>
+						<button
+							id="nav-attachments-tab"
+							class="dropdown-item"
+							data-bs-toggle="tab"
+							data-bs-target="#nav-attachments"
+							type="button"
+							role="tab"
+							aria-controls="nav-attachments"
+							aria-selected="false"
+						>
+							Attachments
+						</button>
+					</li>
+					<li>
+						<button
+							id="nav-links-tab"
+							class="dropdown-item"
+							data-bs-toggle="tab"
+							data-bs-target="#nav-links"
+							type="button"
+							role="tab"
+							aria-controls="nav-links"
+							aria-selected="false"
+						>
+							Links
+						</button>
+					</li>
 					<li v-if="mailbox.showLinkCheck">
 						<button
 							id="nav-link-check-tab"
@@ -713,6 +745,30 @@ export default {
 				<span v-if="htmlScore !== false" class="badge rounded-pill p-1" :class="htmlScoreColor">
 					<small>{{ Math.floor(htmlScore) }}%</small>
 				</span>
+			</button>
+			<button
+				id="nav-attachments-tab"
+				class="d-none d-xl-inline-block nav-link"
+				data-bs-toggle="tab"
+				data-bs-target="#nav-attachments"
+				type="button"
+				role="tab"
+				aria-controls="nav-attachments"
+				aria-selected="false"
+			>
+				Attachments
+			</button>
+			<button
+				id="nav-links-tab"
+				class="d-none d-xl-inline-block nav-link"
+				data-bs-toggle="tab"
+				data-bs-target="#nav-links"
+				type="button"
+				role="tab"
+				aria-controls="nav-links"
+				aria-selected="false"
+			>
+				Links
 			</button>
 			<button
 				v-if="mailbox.showLinkCheck"
@@ -857,6 +913,18 @@ export default {
 					@set-spam-score="(n) => (spamScore = n)"
 					@set-badge-style="(v) => (spamScoreColor = v)"
 				/>
+			</div>
+			<div
+				id="nav-attachments"
+				class="tab-pane fade"
+				role="tabpanel"
+				aria-labelledby="nav-attachments-tab"
+				tabindex="0"
+			>
+				<AttachmentDetails :message="message" />
+			</div>
+			<div id="nav-links" class="tab-pane fade" role="tabpanel" aria-labelledby="nav-links-tab" tabindex="0">
+				<MessageLinks :message="message" />
 			</div>
 			<div
 				v-if="mailbox.showLinkCheck"
