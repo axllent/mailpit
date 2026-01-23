@@ -160,6 +160,7 @@ func init() {
 	// Webhook
 	rootCmd.Flags().StringVar(&config.WebhookURL, "webhook-url", config.WebhookURL, "Send a webhook request for new messages")
 	rootCmd.Flags().IntVar(&webhook.RateLimit, "webhook-limit", webhook.RateLimit, "Limit webhook requests per second")
+	rootCmd.Flags().IntVar(&webhook.Delay, "webhook-delay", webhook.Delay, "Delay in seconds before sending webhook requests (0 = no delay)")
 
 	// DEPRECATED FLAG 2024/04/12 - but will not be removed to maintain backwards compatibility
 	rootCmd.Flags().StringVar(&config.Database, "db-file", config.Database, "Database file to store persistent data")
@@ -386,6 +387,9 @@ func initConfigFromEnv() {
 	}
 	if len(os.Getenv("MP_WEBHOOK_LIMIT")) > 0 {
 		webhook.RateLimit, _ = strconv.Atoi(os.Getenv("MP_WEBHOOK_LIMIT"))
+	}
+	if len(os.Getenv("MP_WEBHOOK_DELAY")) > 0 {
+		webhook.Delay, _ = strconv.Atoi(os.Getenv("MP_WEBHOOK_DELAY"))
 	}
 
 	// Demo mode

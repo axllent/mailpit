@@ -16,6 +16,10 @@ var (
 	// RateLimit is the minimum number of seconds between requests
 	RateLimit = 1
 
+	// Delay is the number of seconds to wait before sending each webhook request
+	// This can  allow for other processing to complete before the webhook is triggered.
+	Delay = 0
+
 	rl rate.Sometimes
 
 	rateLimiterSet bool
@@ -38,6 +42,11 @@ func Send(msg any) {
 	}
 
 	go func() {
+		// Apply delay if configured
+		if Delay > 0 {
+			time.Sleep(time.Duration(Delay) * time.Second)
+		}
+
 		rl.Do(func() {
 			b, err := json.Marshal(msg)
 			if err != nil {
