@@ -134,6 +134,31 @@ func TestCmdMAILBeforeEHLO(t *testing.T) {
 	_ = conn.Close()
 }
 
+func TestCmdMAILAfterRCPT(t *testing.T) {
+	conn := newConn(t, &Server{})
+
+	// Send EHLO, expect greeting
+	cmdCode(t, conn, "EHLO host.example.com", "250")
+
+	// Send MAIL FROM
+	cmdCode(t, conn, "MAIL FROM:<sender@example.com>", "250")
+
+	// Send RCPT TO
+	cmdCode(t, conn, "RCPT TO:<recipient@example.com>", "250")
+
+	// MAIL FROM must not come after RCPT TO in the same transaction
+	cmdCode(t, conn, "MAIL FROM:<sender2@example.com>", "503")
+
+	// RSET to clear the transaction
+	cmdCode(t, conn, "RSET", "250")
+
+	// Now the MAIL FROM should be accepted
+	cmdCode(t, conn, "MAIL FROM:<sender2@example.com>", "250")
+
+	cmdCode(t, conn, "QUIT", "221")
+	_ = conn.Close()
+}
+
 func TestCmdRSET(t *testing.T) {
 	conn := newConn(t, &Server{})
 	cmdCode(t, conn, "EHLO host.example.com", "250")

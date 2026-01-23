@@ -428,6 +428,10 @@ loop:
 				s.writef("503 5.5.1 Bad sequence of commands (HELO/EHLO required before MAIL)")
 				break
 			}
+			if to != nil {
+				s.writef("503 5.5.1 Bad sequence of commands (RSET/HELO/EHLO required before MAIL)")
+				break
+			}
 
 			match, err := extractAndValidateAddress(mailFromRE, args)
 			if match == nil {
