@@ -124,6 +124,16 @@ func TestCmdEHLO(t *testing.T) {
 	_ = conn.Close()
 }
 
+func TestCmdMAILBeforeEHLO(t *testing.T) {
+	conn := newConn(t, &Server{})
+	// RFC 5321 §4.1.4 — Order of Commands states (emphasis added):
+	// “The SMTP client MUST issue HELO or EHLO before any other SMTP commands.”
+	cmdCode(t, conn, "MAIL FROM:<sender@example.com>", "503")
+
+	cmdCode(t, conn, "QUIT", "221")
+	_ = conn.Close()
+}
+
 func TestCmdRSET(t *testing.T) {
 	conn := newConn(t, &Server{})
 	cmdCode(t, conn, "EHLO host.example.com", "250")

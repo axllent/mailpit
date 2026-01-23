@@ -362,8 +362,9 @@ func (s *session) serve() {
 	// otherwise results in a 5s timeout for each connection
 	defer func(c net.Conn) { _ = c.Close() }(s.conn)
 
+	var gotEHLO bool
 	var from string
-	var gotFrom bool
+	var gotFROM bool
 	var to []string
 	var hasRejectedRecipients bool
 	var buffer bytes.Buffer
@@ -397,8 +398,9 @@ loop:
 			s.writef("250 %s greets %s", s.srv.Hostname, s.remoteName)
 
 			// RFC 2821 section 4.1.4 specifies that EHLO has the same effect as RSET, so reset for HELO too.
+			gotEHLO = true
 			from = ""
-			gotFrom = false
+			gotFROM = false
 			to = nil
 			hasRejectedRecipients = false
 			buffer.Reset()
@@ -407,8 +409,9 @@ loop:
 			s.writef("%s", s.makeEHLOResponse())
 
 			// RFC 2821 section 4.1.4 specifies that EHLO has the same effect as RSET.
+			gotEHLO = true
 			from = ""
-			gotFrom = false
+			gotFROM = false
 			to = nil
 			hasRejectedRecipients = false
 			buffer.Reset()
@@ -419,6 +422,10 @@ loop:
 			}
 			if s.srv.AuthHandler != nil && s.srv.AuthRequired && !s.authenticated {
 				s.writef("530 5.7.0 Authentication required")
+				break
+			}
+			if !gotEHLO {
+				s.writef("503 5.5.1 Bad sequence of commands (HELO/EHLO required before MAIL)")
 				break
 			}
 
@@ -442,7 +449,7 @@ loop:
 					if sizeMatch == nil {
 						// ignore other parameter
 						from = match[1]
-						gotFrom = true
+						gotFROM = true
 						s.writef("250 2.1.0 Ok")
 					} else {
 						// Enforce the maximum message size if one is set.
@@ -454,13 +461,13 @@ loop:
 							s.writef("%s", err.Error())
 						} else { // SIZE ok
 							from = match[1]
-							gotFrom = true
+							gotFROM = true
 							s.writef("250 2.1.0 Ok")
 						}
 					}
 				} else { // No parameters after FROM
 					from = match[1]
-					gotFrom = true
+					gotFROM = true
 					s.writef("250 2.1.0 Ok")
 				}
 			}
@@ -477,7 +484,7 @@ loop:
 				s.writef("530 5.7.0 Authentication required")
 				break
 			}
-			if !gotFrom {
+			if !gotFROM {
 				s.writef("503 5.5.1 Bad sequence of commands (MAIL required before RCPT)")
 				break
 			}
@@ -524,7 +531,7 @@ loop:
 				break
 			}
 			hasRecipients := len(to) > 0 || hasRejectedRecipients
-			if !gotFrom || !hasRecipients {
+			if !gotFROM || !hasRecipients {
 				s.writef("503 5.5.1 Bad sequence of commands (MAIL & RCPT required before DATA)")
 				break
 			}
@@ -602,7 +609,7 @@ loop:
 
 			// Reset for next mail.
 			from = ""
-			gotFrom = false
+			gotFROM = false
 			to = nil
 			hasRejectedRecipients = false
 			buffer.Reset()
@@ -616,7 +623,7 @@ loop:
 			}
 			s.writef("250 2.0.0 Ok")
 			from = ""
-			gotFrom = false
+			gotFROM = false
 			to = nil
 			hasRejectedRecipients = false
 			buffer.Reset()
@@ -693,7 +700,7 @@ loop:
 			// RFC 3207 specifies that the server must discard any prior knowledge obtained from the client.
 			s.remoteName = ""
 			from = ""
-			gotFrom = false
+			gotFROM = false
 			to = nil
 			hasRejectedRecipients = false
 			buffer.Reset()
@@ -715,7 +722,7 @@ loop:
 			}
 
 			// RFC 4954 specifies that AUTH is not permitted during mail transactions.
-			if gotFrom || len(to) > 0 {
+			if gotFROM || len(to) > 0 {
 				s.writef("503 5.5.1 Bad sequence of commands (AUTH not permitted during mail transaction)")
 				break
 			}
