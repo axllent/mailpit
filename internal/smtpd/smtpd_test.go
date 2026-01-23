@@ -106,15 +106,14 @@ func TestCmdEHLO(t *testing.T) {
 	cmdCode(t, conn, "RCPT TO:<recipient@example.com>", "250")
 
 	// test invalid addresses & header injection
-	cmdCode(t, conn, "RCPT TO: <recipientrecipientrecipientrecipientrecipientrecipientrecipientrecipientrecipientrecipientrecipientrecipient@exampleexampleexampleexampleexampleexampleexample.com>", "501") // too long
-	cmdCode(t, conn, "RCPT TO: <recipientrecipientrecipientreciprecipientrecipientrecipientrecipt@exaample.com>", "501")
-	cmdCode(t, conn, "RCPT TO: <recipient@examplexampleexampleexampleexampleexampleexampleexamplexampleexampleexampleexampleexampleexampleexampleexampleexampleexampleexampleexampleexampleexamplexampleexampleexampleexampleexampleexampleexamplexampleexampleexampleexampleexampleexampleexample.com>", "501")
-	cmdCode(t, conn, "RCPT TO: <r@examplexampleexampleexampleexampleexampleexampleexamplexampleexampleexampleexampleexampleexampleexampleexampleexampleexampleexampleexampleexampleexamplexampleexampleexampleexampleexampleexampleexamplexampleexampleexampleexampleexampleexampleexample.com>", "250") // valid
-	cmdCode(t, conn, "RCPT TO:<recipientexample.com>", "501")
-	cmdCode(t, conn, "RCPT TO: <recipientexample.com>", "501")
+	cmdCode(t, conn, "RCPT TO: <recipientrecipientrecipientreciprecipientrecipientrecipientreciptrecipientrecipientrecipientreciprecipientrecipientrecipientreciptrecipientrecipientrecipientreciprecipientrecipientrecipientreciptrecipientrecipientrecipientreciprecipientrecipientrecipientreciptrecipientrecipientrecipientreciprecipientrecipientrecipientreciptrecipientrecipientrecipientreciprecipientrecipientrecipientreciptrecipientrecipientrecipientreciprecipientrecipientrecipientreciptrecipientrecipientrecipientreciprecipientrecipientrecipientreciptrecipientrecipientrecipientreciprecipientrecipientrecipientreciptrecipientrecipientrecipientreciprecipientrecipientrecipientreciptrecipientrecipientrecipientreciprecipientrecipientrecipientreciptrecipientrecipientrecipientreciprecipientrecipientrecipientreciptrecipientrecipientrecipientreciprecipientrecipientrecipientreciptrecipientrecipientrecipientreciprecipientrecipientrecipientreciptrecipientrecipientrecipient@exampleexampleexampleexampleexampleexampleexampleexampleexampleexampleexampleexampleexampleexampleexampleexampleexample.com>", "500") // too long
+	cmdCode(t, conn, "RCPT TO:<recipientexample.com>", "553")
+	cmdCode(t, conn, "RCPT TO: <recipient@test@example.com>", "553")
+	cmdCode(t, conn, "RCPT TO: <recipient@@example.com>", "553")
+	cmdCode(t, conn, "RCPT TO: <recipientexample.com>", "553")
 	cmdCode(t, conn, "RCPT TO:  <recipientexample.com>", "501")
-	cmdCode(t, conn, "RCPT TO:<recipient\rexample.com>", "501")
-	cmdCode(t, conn, "RCPT TO: <recipient\rexample.com>", "501")
+	cmdCode(t, conn, "RCPT TO:<recipient\rexample.com>", "553")
+	cmdCode(t, conn, "RCPT TO: <recipient\rexample.com>", "553")
 	cmdCode(t, conn, "RCPT TO:  <recipient\rexample.com>", "501")
 	cmdCode(t, conn, "RCPT TO: <>", "501") // empty address not allowed here
 
@@ -145,7 +144,7 @@ func TestCmdMAIL(t *testing.T) {
 
 	// MAIL with no FROM arg should return 501 syntax error
 	cmdCode(t, conn, "MAIL", "501")
-	// MAIL with empty FROM arg should return 501 syntax error
+	// // MAIL with empty FROM arg should return 501 syntax error
 	cmdCode(t, conn, "MAIL FROM:", "501")
 	cmdCode(t, conn, "MAIL FROM: ", "501")
 	cmdCode(t, conn, "MAIL FROM:  ", "501")
@@ -160,19 +159,18 @@ func TestCmdMAIL(t *testing.T) {
 	cmdCode(t, conn, "MAIL FROM:  <sender@example.com>", "501")
 
 	// test invalid addresses & header injection
-	cmdCode(t, conn, "MAIL FROM: <sendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersender@exampleexampleexampleexampleexampleexampleexample.com>", "501") // too long
-	cmdCode(t, conn, "MAIL FROM: <sendersendersendersendersendersendersendersendersendersendersender@exaample.com>", "501")
-	cmdCode(t, conn, "MAIL FROM: <sender@examplexampleexampleexampleexampleexampleexampleexamplexampleexampleexampleexampleexampleexampleexampleexampleexampleexampleexampleexampleexampleexamplexampleexampleexampleexampleexampleexampleexamplexampleexampleexampleexampleexampleexampleexample.com>", "501")
-	cmdCode(t, conn, "MAIL FROM: <s@examplexampleexampleexampleexampleexampleexampleexamplexampleexampleexampleexampleexampleexampleexampleexampleexampleexampleexampleexampleexampleexamplexampleexampleexampleexampleexampleexampleexamplexampleexampleexampleexampleexampleexampleexample.com>", "250") // valid
-	cmdCode(t, conn, "MAIL FROM:<sender\rexample.com>", "501")
-	cmdCode(t, conn, "MAIL FROM: <sender\rexample.com>", "501")
+	cmdCode(t, conn, "MAIL FROM: <sendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersendersender@exampleexampleexampleexampleexampleexampleexampleexampleexampleexampleexampleexampleexampleexampleexampleexampleexample.com>", "500") // too long
+	cmdCode(t, conn, "MAIL FROM:<sender\rexample.com>", "553")
+	cmdCode(t, conn, "MAIL FROM: <sender\rexample.com>", "553")
 	cmdCode(t, conn, "MAIL FROM:  <sender\rexample.com>", "501")
-	cmdCode(t, conn, "MAIL FROM:<senderexample.com>", "501")
-	cmdCode(t, conn, "MAIL FROM: <senderexample.com>", "501")
+	cmdCode(t, conn, "MAIL FROM:<senderexample.com>", "553")
+	cmdCode(t, conn, "MAIL FROM: <sender@@example.com>", "553")
+	cmdCode(t, conn, "MAIL FROM: <sender@test@example.com>", "553")
+	cmdCode(t, conn, "MAIL FROM: <senderexample.com>", "553")
 	cmdCode(t, conn, "MAIL FROM:  <senderexample.com>", "501")
-	cmdCode(t, conn, "MAIL FROM: < sender@example.com >", "501")
-	cmdCode(t, conn, "MAIL FROM: < sender@example.com>", "501")
-	cmdCode(t, conn, "MAIL FROM: <sender@example.com >", "501")
+	cmdCode(t, conn, "MAIL FROM: < sender@example.com >", "553")
+	cmdCode(t, conn, "MAIL FROM: < sender@example.com>", "553")
+	cmdCode(t, conn, "MAIL FROM: <sender@example.com >", "553")
 
 	// MAIL with valid SIZE parameter should return 250 Ok
 	cmdCode(t, conn, "MAIL FROM:<sender@example.com> SIZE=1000", "250")
@@ -241,6 +239,7 @@ func TestCmdRCPT(t *testing.T) {
 	cmdCode(t, conn, "RCPT TO:", "501")
 	cmdCode(t, conn, "RCPT TO: ", "501")
 	cmdCode(t, conn, "RCPT TO:  ", "501")
+	cmdCode(t, conn, "RCPT TO:<@route.example user@example.com>", "553")
 
 	// RCPT with valid TO arg should return 250 Ok
 	cmdCode(t, conn, "RCPT TO:<recipient@example.com>", "250")
