@@ -76,13 +76,14 @@ func Thumbnail(w http.ResponseWriter, r *http.Request) {
 	var b bytes.Buffer
 	foo := bufio.NewWriter(&b)
 
-	var dstImageFill *image.NRGBA
-
+	var temp image.Image
 	if img.Bounds().Dx() < thumbWidth || img.Bounds().Dy() < thumbHeight {
-		dstImageFill = imaging.Fit(img, thumbWidth, thumbHeight, imaging.Lanczos).(*image.NRGBA)
+		temp = imaging.Fit(img, thumbWidth, thumbHeight, imaging.Lanczos)
 	} else {
-		dstImageFill = imaging.Fill(img, thumbWidth, thumbHeight, imaging.Center, imaging.Lanczos).(*image.NRGBA)
+		temp = imaging.Fill(img, thumbWidth, thumbHeight, imaging.Center, imaging.Lanczos)
 	}
+	dstImageFill := imaging.Clone(temp)
+
 	// create white image and paste image over the top
 	// preventing black backgrounds for transparent GIF/PNG images
 	dst := imaging.New(thumbWidth, thumbHeight, color.White)
