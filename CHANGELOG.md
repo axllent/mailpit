@@ -2,6 +2,19 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.28.4]
+
+### Chore
+- Increase allowed SMTP email address length to 1024 chars & return clearer SMTP responses for failures ([#620](https://github.com/axllent/mailpit/issues/620))
+- Update Go dependencies
+- Update node dependencies
+
+### Fix
+- Ensure SMTP HELO/EHLO command is issued before MAIL FROM as per RFC 5321 ([#621](https://github.com/axllent/mailpit/issues/621))
+- Prevent nested MAIL command during an active SMTP transaction ([#623](https://github.com/axllent/mailpit/issues/623))
+- Avoid error on image type assertion in thumbnail generation
+
+
 ## [v1.28.3]
 
 ### Security
