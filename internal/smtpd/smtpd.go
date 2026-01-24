@@ -362,8 +362,9 @@ func (s *session) serve() {
 	// otherwise results in a 5s timeout for each connection
 	defer func(c net.Conn) { _ = c.Close() }(s.conn)
 
+	var gotEHLO bool
 	var from string
-	var gotFrom bool
+	var gotFROM bool
 	var to []string
 	var hasRejectedRecipients bool
 	var buffer bytes.Buffer
@@ -397,8 +398,9 @@ loop:
 			s.writef("250 %s greets %s", s.srv.Hostname, s.remoteName)
 
 			// RFC 2821 section 4.1.4 specifies that EHLO has the same effect as RSET, so reset for HELO too.
+			gotEHLO = true
 			from = ""
-			gotFrom = false
+			gotFROM = false
 			to = nil
 			hasRejectedRecipients = false
 			buffer.Reset()
@@ -407,8 +409,9 @@ loop:
 			s.writef("%s", s.makeEHLOResponse())
 
 			// RFC 2821 section 4.1.4 specifies that EHLO has the same effect as RSET.
+			gotEHLO = true
 			from = ""
-			gotFrom = false
+			gotFROM = false
 			to = nil
 			hasRejectedRecipients = false
 			buffer.Reset()
@@ -421,10 +424,22 @@ loop:
 				s.writef("530 5.7.0 Authentication required")
 				break
 			}
+			if !gotEHLO {
+				s.writef("503 5.5.1 Bad sequence of commands (HELO/EHLO required before MAIL)")
+				break
+			}
+			if to != nil {
+				s.writef("503 5.5.1 Bad sequence of commands (RSET/HELO/EHLO required before MAIL)")
+				break
+			}
 
-			match := extractAndValidateAddress(mailFromRE, args)
+			match, err := extractAndValidateAddress(mailFromRE, args)
 			if match == nil {
-				s.writef("501 5.5.4 Syntax error in parameters or arguments (invalid FROM parameter)")
+				if err != nil {
+					s.writef("%s", err.Error())
+				} else {
+					s.writef("501 5.5.4 Syntax error in parameters or arguments (invalid FROM parameter)")
+				}
 			} else {
 				// Mailpit Chaos
 				if fail, code := chaos.Config.Sender.Trigger(); fail {
@@ -438,7 +453,7 @@ loop:
 					if sizeMatch == nil {
 						// ignore other parameter
 						from = match[1]
-						gotFrom = true
+						gotFROM = true
 						s.writef("250 2.1.0 Ok")
 					} else {
 						// Enforce the maximum message size if one is set.
@@ -450,13 +465,13 @@ loop:
 							s.writef("%s", err.Error())
 						} else { // SIZE ok
 							from = match[1]
-							gotFrom = true
+							gotFROM = true
 							s.writef("250 2.1.0 Ok")
 						}
 					}
 				} else { // No parameters after FROM
 					from = match[1]
-					gotFrom = true
+					gotFROM = true
 					s.writef("250 2.1.0 Ok")
 				}
 			}
@@ -473,14 +488,18 @@ loop:
 				s.writef("530 5.7.0 Authentication required")
 				break
 			}
-			if !gotFrom {
+			if !gotFROM {
 				s.writef("503 5.5.1 Bad sequence of commands (MAIL required before RCPT)")
 				break
 			}
 
-			match := extractAndValidateAddress(rcptToRE, args)
+			match, err := extractAndValidateAddress(rcptToRE, args)
 			if match == nil {
-				s.writef("501 5.5.4 Syntax error in parameters or arguments (invalid TO parameter)")
+				if err != nil {
+					s.writef("%s", err.Error())
+				} else {
+					s.writef("501 5.5.4 Syntax error in parameters or arguments (invalid TO parameter)")
+				}
 			} else {
 				// Mailpit Chaos
 				if fail, code := chaos.Config.Recipient.Trigger(); fail {
@@ -516,7 +535,7 @@ loop:
 				break
 			}
 			hasRecipients := len(to) > 0 || hasRejectedRecipients
-			if !gotFrom || !hasRecipients {
+			if !gotFROM || !hasRecipients {
 				s.writef("503 5.5.1 Bad sequence of commands (MAIL & RCPT required before DATA)")
 				break
 			}
@@ -594,7 +613,7 @@ loop:
 
 			// Reset for next mail.
 			from = ""
-			gotFrom = false
+			gotFROM = false
 			to = nil
 			hasRejectedRecipients = false
 			buffer.Reset()
@@ -608,7 +627,7 @@ loop:
 			}
 			s.writef("250 2.0.0 Ok")
 			from = ""
-			gotFrom = false
+			gotFROM = false
 			to = nil
 			hasRejectedRecipients = false
 			buffer.Reset()
@@ -685,7 +704,7 @@ loop:
 			// RFC 3207 specifies that the server must discard any prior knowledge obtained from the client.
 			s.remoteName = ""
 			from = ""
-			gotFrom = false
+			gotFROM = false
 			to = nil
 			hasRejectedRecipients = false
 			buffer.Reset()
@@ -707,7 +726,7 @@ loop:
 			}
 
 			// RFC 4954 specifies that AUTH is not permitted during mail transactions.
-			if gotFrom || len(to) > 0 {
+			if gotFROM || len(to) > 0 {
 				s.writef("503 5.5.1 Bad sequence of commands (AUTH not permitted during mail transaction)")
 				break
 			}
@@ -1017,31 +1036,33 @@ func (s *session) handleAuthCramMD5() (bool, error) {
 }
 
 // Extract and validate email address from a regex match.
-// This ensures that only RFC 5322 email addresses are accepted (if set).
-func extractAndValidateAddress(re *regexp.Regexp, args string) []string {
+// This ensures that only RFC 5322 compliant email addresses are accepted (if set).
+func extractAndValidateAddress(re *regexp.Regexp, args string) ([]string, error) {
 	match := re.FindStringSubmatch(args)
-	if match == nil || strings.Contains(match[1], " ") {
-		return nil
+	if match == nil {
+		return nil, nil
+	}
+
+	if strings.Contains(match[1], " ") {
+		return nil, errors.New("553 5.1.3 The address is not a valid RFC 5321 address")
 	}
 
 	// first argument will be the email address, validate it if not empty
 	if match[1] != "" {
 		a, err := mail.ParseAddress(match[1])
 		if err != nil {
-			return nil
-		}
-
-		parts := strings.SplitN(a.Address, "@", 2)
-
-		if len(parts) != 2 {
-			return nil
+			return nil, errors.New("553 5.1.3 The address is not a valid RFC 5321 address")
 		}
 
 		// https://datatracker.ietf.org/doc/html/rfc5321#section-4.5.3.1
-		if len(parts[0]) > 64 || len(parts[1]) > 255 || len(a.Address) > 256 {
-			return nil
+		// RFC states that the local part of an email address SHOULD not exceed 64 characters
+		// and the domain part SHOULD not exceed 255 characters, however as per https://github.com/axllent/mailpit/issues/620
+		// it appears that investigated mail servers do not actually implement this limit, but rather enforce
+		// a much larger limit (ie: 1024 characters).
+		if len(a.Address) > 1024 {
+			return nil, errors.New("500 The address is too long")
 		}
 	}
 
-	return match
+	return match, nil
 }
