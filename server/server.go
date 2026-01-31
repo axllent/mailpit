@@ -32,20 +32,22 @@ import (
 )
 
 var (
-	// AccessControlAllowOrigin CORS policy
-	AccessControlAllowOrigin string
-
 	// htmlPreviewRouteRe is a regexp to match the HTML preview route
 	htmlPreviewRouteRe *regexp.Regexp
 )
 
 // Listen will start the httpd
 func Listen() {
+	setCORSOrigins()
+
 	isReady := &atomic.Value{}
 	isReady.Store(false)
 	stats.Track()
 
 	websockets.MessageHub = websockets.NewHub()
+
+	// set allowed websocket origins from configuration
+	// websockets.SetAllowedOrigins(AccessControlAllowWSOrigins)
 
 	go websockets.MessageHub.Run()
 
@@ -287,9 +289,12 @@ func middleWareFunc(fn http.HandlerFunc) http.HandlerFunc {
 			htmlPreviewRouteRe = regexp.MustCompile(`^` + regexp.QuoteMeta(config.Webroot) + `view/[a-zA-Z0-9]+\.html$`)
 		}
 
-		if AccessControlAllowOrigin != "" &&
-			(strings.HasPrefix(r.RequestURI, config.Webroot+"api/") || htmlPreviewRouteRe.MatchString(r.RequestURI)) {
-			w.Header().Set("Access-Control-Allow-Origin", AccessControlAllowOrigin)
+		if strings.HasPrefix(r.RequestURI, config.Webroot+"api/") || htmlPreviewRouteRe.MatchString(r.RequestURI) {
+			if allowed := corsOriginAccessControl(r); !allowed {
+				http.Error(w, "Unauthorised.", http.StatusForbidden)
+				return
+			}
+			w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
 			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT, OPTIONS")
 			w.Header().Set("Access-Control-Allow-Headers", "*")
 		}
@@ -331,6 +336,12 @@ func addSlashToWebroot(w http.ResponseWriter, r *http.Request) {
 
 // Websocket to broadcast changes
 func apiWebsocket(w http.ResponseWriter, r *http.Request) {
+	if allowed := corsOriginAccessControl(r); !allowed {
+		http.Error(w, "Unauthorised.", http.StatusForbidden)
+		return
+	}
+	w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
+	w.Header().Set("Access-Control-Allow-Headers", "*")
 	websockets.ServeWs(websockets.MessageHub, w, r)
 	storage.BroadcastMailboxStats()
 }
