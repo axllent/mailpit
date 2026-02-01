@@ -24,6 +24,12 @@ export default {
 		};
 	},
 
+	computed: {
+		copyToClipboardSupported() {
+			return !!navigator.clipboard;
+		},
+	},
+
 	methods: {
 		resolve(u) {
 			return this.$router.resolve(u).href;

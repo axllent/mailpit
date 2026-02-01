@@ -150,6 +150,7 @@ export default {
 					<p class="m-0 small">
 						<strong>MD5</strong>:
 						<button
+							v-if="copyToClipboardSupported"
 							class="btn btn-sm btn-link p-0"
 							title="Click to copy to clipboard"
 							@click="copyToClipboard(part.Checksums.MD5, $event)"
@@ -158,10 +159,12 @@ export default {
 							<i v-if="!copiedText[part.Checksums.MD5]" class="bi bi-clipboard ms-1"></i>
 							<i v-else class="bi bi-check2-square ms-1 text-success"></i>
 						</button>
+						<code v-else>{{ part.Checksums.MD5 }}</code>
 					</p>
 					<p class="m-0 small">
 						<strong>SHA1</strong>:
 						<button
+							v-if="copyToClipboardSupported"
 							class="btn btn-link p-0"
 							title="Click to copy to clipboard"
 							@click="copyToClipboard(part.Checksums.SHA1, $event)"
@@ -170,10 +173,12 @@ export default {
 							<i v-if="!copiedText[part.Checksums.SHA1]" class="bi bi-clipboard ms-1"></i>
 							<i v-else class="bi bi-check2-square ms-1 text-success"></i>
 						</button>
+						<code v-else>{{ part.Checksums.SHA1 }}</code>
 					</p>
 					<p class="m-0 small">
 						<strong>SHA256</strong>:
 						<button
+							v-if="copyToClipboardSupported"
 							class="btn btn-sm btn-link p-0"
 							title="Click to copy to clipboard"
 							@click="copyToClipboard(part.Checksums.SHA256, $event)"
@@ -182,6 +187,7 @@ export default {
 							<i v-if="!copiedText[part.Checksums.SHA256]" class="bi bi-clipboard ms-1"></i>
 							<i v-else class="bi bi-check2-square ms-1 text-success"></i>
 						</button>
+						<code v-else>{{ part.Checksums.SHA256 }}</code>
 					</p>
 				</div>
 			</div>
