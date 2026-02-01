@@ -1345,9 +1345,27 @@
       "x-go-package": "github.com/axllent/mailpit/internal/stats"
     },
     "Attachment": {
-      "description": "Attachment struct for inline and attachments",
+      "description": "Attachment struct for inline images and attachments",
       "type": "object",
       "properties": {
+        "Checksums": {
+          "description": "File checksums",
+          "type": "object",
+          "properties": {
+            "MD5": {
+              "description": "MD5 checksum hash of file",
+              "type": "string"
+            },
+            "SHA1": {
+              "description": "SHA1 checksum hash of file",
+              "type": "string"
+            },
+            "SHA256": {
+              "description": "SHA256 checksum hash of file",
+              "type": "string"
+            }
+          }
+        },
         "ContentID": {
           "description": "Content ID",
           "type": "string"

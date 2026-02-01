@@ -15,7 +15,7 @@ func SettingGet(k string) string {
 		Select("Value").To(&result).
 		Where("Key = ?", k).
 		Limit(1).
-		QueryAndClose(context.TODO(), db, func(row *sql.Rows) {})
+		QueryAndClose(context.TODO(), db, func(_ *sql.Rows) {})
 	if err != nil {
 		logger.Log().Errorf("[db] %s", err.Error())
 		return ""
@@ -41,7 +41,7 @@ func getDeletedSize() uint64 {
 		Select("Value").To(&result).
 		Where("Key = ?", "DeletedSize").
 		Limit(1).
-		QueryAndClose(context.TODO(), db, func(row *sql.Rows) {})
+		QueryAndClose(context.TODO(), db, func(_ *sql.Rows) {})
 	if err != nil {
 		logger.Log().Errorf("[db] %s", err.Error())
 		return 0
@@ -55,7 +55,7 @@ func totalMessagesSize() uint64 {
 	var result sql.NullFloat64
 	err := sqlf.From(tenant("mailbox")).
 		Select("SUM(Size)").To(&result).
-		QueryAndClose(context.TODO(), db, func(row *sql.Rows) {})
+		QueryAndClose(context.TODO(), db, func(_ *sql.Rows) {})
 	if err != nil {
 		logger.Log().Errorf("[db] %s", err.Error())
 		return 0

@@ -147,7 +147,7 @@ func GetAllTags() []string {
 		Select(`DISTINCT Name`).
 		From(tenant("tags")).To(&name).
 		OrderBy("Name").
-		QueryAndClose(context.TODO(), db, func(row *sql.Rows) {
+		QueryAndClose(context.TODO(), db, func(_ *sql.Rows) {
 			tags = append(tags, name)
 		}); err != nil {
 		logger.Log().Errorf("[db] %s", err.Error())
@@ -169,7 +169,7 @@ func GetAllTagsCount() map[string]int64 {
 		LeftJoin(tenant("message_tags"), tenant("tags.ID")+" = "+tenant("message_tags.TagID")).
 		GroupBy(tenant("message_tags.TagID")).
 		OrderBy("Name").
-		QueryAndClose(context.TODO(), db, func(row *sql.Rows) {
+		QueryAndClose(context.TODO(), db, func(_ *sql.Rows) {
 			tags[name] = int64(total)
 		}); err != nil {
 		logger.Log().Errorf("[db] %s", err.Error())
@@ -352,7 +352,7 @@ func getMessageTags(id string) []string {
 		LeftJoin(tenant("message_tags"), tenant("Tags.ID")+"="+tenant("message_tags.TagID")).
 		Where(tenant("message_tags.ID")+` = ?`, id).
 		OrderBy("Name").
-		QueryAndClose(context.TODO(), db, func(row *sql.Rows) {
+		QueryAndClose(context.TODO(), db, func(_ *sql.Rows) {
 			tags = append(tags, name)
 		}); err != nil {
 		logger.Log().Errorf("[tags] %s", err.Error())

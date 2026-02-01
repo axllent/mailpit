@@ -20,7 +20,14 @@ export default {
 		return {
 			loading: 0,
 			tagColorCache: {},
+			copiedText: {}, // used for clipboard copy feedback
 		};
+	},
+
+	computed: {
+		copyToClipboardSupported() {
+			return !!navigator.clipboard;
+		},
 	},
 
 	methods: {
@@ -222,12 +229,15 @@ export default {
 		allAttachments(message) {
 			const a = [];
 			for (const i in message.Attachments) {
+				message.Attachments[i].ContentDisposition = "Attachment";
 				a.push(message.Attachments[i]);
 			}
 			for (const i in message.OtherParts) {
+				message.OtherParts[i].ContentDisposition = "Other";
 				a.push(message.OtherParts[i]);
 			}
 			for (const i in message.Inline) {
+				message.Inline[i].ContentDisposition = "Inline";
 				a.push(message.Inline[i]);
 			}
 
@@ -287,6 +297,22 @@ export default {
 			this.tagColorCache[s] = colorHash.hex(s);
 
 			return this.tagColorCache[s];
+		},
+
+		// Copy to clipboard functionality
+		copyToClipboard(text) {
+			navigator.clipboard.writeText(text).then(
+				() => {
+					this.copiedText[text] = true;
+					setTimeout(() => {
+						delete this.copiedText[text];
+					}, 2000);
+				},
+				() => {
+					// failure
+					alert("Failed to copy to clipboard");
+				},
+			);
 		},
 	},
 };

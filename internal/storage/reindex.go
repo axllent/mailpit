@@ -27,7 +27,7 @@ func ReindexAll() {
 	err := sqlf.Select("ID").To(&i).
 		From(tenant("mailbox")).
 		OrderBy("Created DESC").
-		QueryAndClose(context.TODO(), db, func(row *sql.Rows) {
+		QueryAndClose(context.TODO(), db, func(_ *sql.Rows) {
 			ids = append(ids, i)
 		})
 
