@@ -263,6 +263,11 @@ func TestRegularAttachmentHandling(t *testing.T) {
 	if msg.Attachments[0].ContentID != "" {
 		t.Errorf("Test case 3: Expected empty ContentID, got '%s'", msg.Attachments[0].ContentID)
 	}
+
+	// Checksum tests
+	assertEqual(t, msg.Attachments[0].Checksums.MD5, "b04930eb1ba0c62066adfa87e5d262c4", "Attachment MD5 checksum does not match")
+	assertEqual(t, msg.Attachments[0].Checksums.SHA1, "15605d6a2fca44e966209d1701f16ecf816df880", "Attachment SHA1 checksum does not match")
+	assertEqual(t, msg.Attachments[0].Checksums.SHA256, "92c4ccff376003381bd9054d3da7b32a3c5661905b55e3b0728c17aba6d223ec", "Attachment SHA256 checksum does not match")
 }
 
 func TestMixedAttachmentHandling(t *testing.T) {
