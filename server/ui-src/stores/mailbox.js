@@ -32,6 +32,7 @@ export const mailbox = reactive({
 	timeZone: localStorage.getItem("timeZone")
 		? localStorage.getItem("timeZone")
 		: Intl.DateTimeFormat().resolvedOptions().timeZone,
+	showAttachmentDetails: localStorage.getItem("showAttachmentDetails"), // show attachment details
 });
 
 watch(
@@ -103,6 +104,17 @@ watch(
 			localStorage.removeItem("timeZone");
 		} else {
 			localStorage.setItem("timeZone", v);
+		}
+	},
+);
+
+watch(
+	() => mailbox.showAttachmentDetails,
+	(v) => {
+		if (v) {
+			localStorage.setItem("showAttachmentDetails", "1");
+		} else {
+			localStorage.removeItem("showAttachmentDetails");
 		}
 	},
 );
