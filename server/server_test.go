@@ -130,14 +130,14 @@ func TestAPIv1ToggleReadStatus(t *testing.T) {
 
 	// read first 10 IDs
 	t.Log("Get first 10 IDs")
-	putIDS := []string{}
+	putIDs := []string{}
 	for idx, msg := range m.Messages {
 		if idx == 10 {
 			break
 		}
 
 		// store for later
-		putIDS = append(putIDS, msg.ID)
+		putIDs = append(putIDs, msg.ID)
 	}
 	assertStatsEqual(t, ts.URL+"/api/v1/messages", 100, 100)
 
@@ -145,7 +145,7 @@ func TestAPIv1ToggleReadStatus(t *testing.T) {
 	t.Log("Mark first 10 as read")
 	putData := putDataStruct
 	putData.Read = true
-	putData.IDs = putIDS
+	putData.IDs = putIDs
 	j, err := json.Marshal(putData)
 	if err != nil {
 		t.Error(err.Error())
