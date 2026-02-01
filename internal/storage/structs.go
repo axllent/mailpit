@@ -48,7 +48,7 @@ type Message struct {
 	Attachments []Attachment
 }
 
-// Attachment struct for inline and attachments
+// Attachment struct for inline images and attachments
 //
 // swagger:model Attachment
 type Attachment struct {
@@ -62,6 +62,15 @@ type Attachment struct {
 	ContentID string
 	// Size in bytes
 	Size uint64
+	// File checksums
+	Checksums struct {
+		// MD5 checksum hash of file
+		MD5 string
+		// SHA1 checksum hash of file
+		SHA1 string
+		// SHA256 checksum hash of file
+		SHA256 string
+	}
 }
 
 // MessageSummary struct for frontend messages

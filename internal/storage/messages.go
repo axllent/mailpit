@@ -3,6 +3,9 @@ package storage
 import (
 	"bytes"
 	"context"
+	"crypto/md5"  // #nosec
+	"crypto/sha1" // #nosec
+	"crypto/sha256"
 	"database/sql"
 	"encoding/base64"
 	"encoding/hex"
@@ -504,6 +507,14 @@ func AttachmentSummary(a *enmime.Part) Attachment {
 	o.ContentType = a.ContentType
 	o.ContentID = a.ContentID
 	o.Size = uint64(len(a.Content))
+
+	md5Hash := md5.Sum(a.Content)   // #nosec
+	sha1Hash := sha1.Sum(a.Content) // #nosec
+	sha256Hash := sha256.Sum256(a.Content)
+
+	o.Checksums.MD5 = hex.EncodeToString(md5Hash[:])
+	o.Checksums.SHA1 = hex.EncodeToString(sha1Hash[:])
+	o.Checksums.SHA256 = hex.EncodeToString(sha256Hash[:])
 
 	return o
 }
