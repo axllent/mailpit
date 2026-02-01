@@ -86,7 +86,7 @@ export default {
 		{{ mailbox.showAttachmentDetails ? "Hide" : "Show" }} attachment details
 	</button>
 
-	<div class="row mb-3 gx-1">
+	<div class="row gx-1 w-100">
 		<div
 			v-for="part in attachments"
 			:key="part.PartID"
