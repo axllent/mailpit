@@ -52,6 +52,7 @@ easily handling tens of thousands of emails, with automatic email pruning (by de
 - [Chaos](https://mailpit.axllent.org/docs/integration/chaos/) feature to enable configurable SMTP errors to test application resilience
 - `List-Unsubscribe` syntax validation
 - Optional [webhook](https://mailpit.axllent.org/docs/integration/webhook/) for received messages
+- [MCP server](#mcp-server-for-ai-assistants) for AI assistant integration (Claude, Cursor, VS Code Copilot)
 
 
 ## Installation
@@ -115,6 +116,71 @@ Please refer to [the documentation](https://mailpit.axllent.org/docs/install/tes
 Mailpit's SMTP server (default on port 1025), so you will likely need to configure your sending application to deliver mail via that port. 
 A common MTA (Mail Transfer Agent) that delivers system emails to an SMTP server is `sendmail`, used by many applications, including PHP. 
 Mailpit can also act as substitute for sendmail. For instructions on how to set this up, please refer to the [sendmail documentation](https://mailpit.axllent.org/docs/install/sendmail/).
+
+## MCP Server for AI Assistants
+
+Mailpit includes an optional [MCP (Model Context Protocol)](https://modelcontextprotocol.io/) server that enables AI assistants like **Claude**, **Cursor**, and **VS Code with Copilot** to interact with your email testing environment.
+
+### What can AI assistants do with Mailpit?
+
+- Browse, search, and analyze emails using natural language
+- Check HTML compatibility across email clients
+- Validate links and detect broken images
+- Run spam analysis on messages
+- Send test emails and manage tags
+- Debug email delivery issues
+
+### Quick Start
+
+**Option 1: Docker (recommended for HTTP mode)**
+
+```bash
+docker run -d \
+  --name mailpit-mcp \
+  -e MAILPIT_URL=http://your-mailpit:8025 \
+  -p 3000:3000 \
+  ghcr.io/axllent/mailpit-mcp:latest
+```
+
+**Option 2: Build from source**
+
+```bash
+cd mcp
+go build -o mailpit-mcp-server ./cmd/mailpit-mcp-server
+```
+
+### Connect to Claude Desktop
+
+Add to your Claude Desktop config (`claude_desktop_config.json`):
+
+```json
+{
+  "mcpServers": {
+    "mailpit": {
+      "command": "/path/to/mailpit-mcp-server",
+      "env": {
+        "MAILPIT_URL": "http://localhost:8025"
+      }
+    }
+  }
+}
+```
+
+### Connect to Cursor / VS Code
+
+For IDE integration, run the MCP server in HTTP mode and connect:
+
+```json
+{
+  "mcp.servers": {
+    "mailpit": {
+      "url": "http://localhost:3000/mcp"
+    }
+  }
+}
+```
+
+For full documentation, see [mcp/README.md](mcp/README.md).
 
 ---
 
