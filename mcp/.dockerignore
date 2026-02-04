@@ -1,0 +1,26 @@
+# Git
+.git
+.gitignore
+
+# Documentation
+*.md
+!README.md
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Test artifacts
+*_test.go
+coverage.out
+coverage.html
+
+# Build artifacts
+*.exe
+mailpit-mcp-server
+
+# Misc
+.DS_Store
+Thumbs.db

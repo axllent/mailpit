@@ -1,0 +1,44 @@
+name: MCP Server Tests
+on:
+  pull_request:
+    branches: [develop, 'feature/**']
+    paths:
+      - 'mcp/**'
+  push:
+    branches: [develop, 'feature/**']
+    paths:
+      - 'mcp/**'
+jobs:
+  test:
+    strategy:
+      matrix:
+        go-version: [stable]
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: ./mcp
+    steps:
+    - uses: actions/setup-go@v6
+      with:
+        go-version: ${{ matrix.go-version }}
+        cache: false
+    - uses: actions/checkout@v6
+    - name: Set up Go environment
+      uses: actions/cache@v5
+      with:
+        path: |
+          ~/.cache/go-build
+          ~/go
+        key: ${{ runner.os }}-go-mcp-${{ hashFiles('mcp/**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-mcp-
+    - name: Test Go linting (gofmt)
+      if: startsWith(matrix.os, 'ubuntu') == true
+      run: gofmt -s -w . && git diff --exit-code
+    - name: Verify Go module
+      run: go mod verify
+    - name: Build
+      run: go build -v ./...
+    - name: Run Go tests
+      run: go test -v ./...
