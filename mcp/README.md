@@ -17,11 +17,22 @@ This MCP server provides AI-powered tools and agents (like Claude, Cursor, or VS
 ### Docker
 
 ```bash
+# Replace <owner> with the Docker Hub username (e.g., axllent)
 docker run -d \
   --name mailpit-mcp \
   -e MAILPIT_URL=http://mailpit:8025 \
   -p 3000:3000 \
-  amirhmoradi/mailpit-mcp:latest
+  <owner>/mailpit-mcp:latest
+```
+
+Or use GitHub Container Registry:
+
+```bash
+docker run -d \
+  --name mailpit-mcp \
+  -e MAILPIT_URL=http://mailpit:8025 \
+  -p 3000:3000 \
+  ghcr.io/axllent/mailpit-mcp:latest
 ```
 
 ### Docker Compose
@@ -35,7 +46,7 @@ services:
       - "1025:1025"
 
   mailpit-mcp:
-    image: amirhmoradi/mailpit-mcp:latest
+    image: ghcr.io/axllent/mailpit-mcp:latest
     environment:
       MAILPIT_URL: http://mailpit:8025
       MCP_TRANSPORT: http

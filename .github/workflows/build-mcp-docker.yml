@@ -44,9 +44,9 @@ jobs:
         platforms: linux/amd64,linux/arm64
         push: true
         tags: |
-          amirhmoradi/mailpit-mcp:latest
-          amirhmoradi/mailpit-mcp:${{ github.ref_name }}
-          amirhmoradi/mailpit-mcp:v${{ steps.semver_parser.outputs.major }}.${{ steps.semver_parser.outputs.minor }}
+          ${{ github.repository_owner }}/mailpit-mcp:latest
+          ${{ github.repository_owner }}/mailpit-mcp:${{ github.ref_name }}
+          ${{ github.repository_owner }}/mailpit-mcp:v${{ steps.semver_parser.outputs.major }}.${{ steps.semver_parser.outputs.minor }}
           ghcr.io/${{ github.repository }}-mcp:${{ github.ref_name }}
           ghcr.io/${{ github.repository }}-mcp:v${{ steps.semver_parser.outputs.major }}.${{ steps.semver_parser.outputs.minor }}
           ghcr.io/${{ github.repository }}-mcp:latest
