@@ -210,7 +210,7 @@ func apiRoutes() *mux.Router {
 func basicAuthResponse(w http.ResponseWriter) {
 	w.Header().Set("WWW-Authenticate", `Basic realm="Login"`)
 	w.WriteHeader(http.StatusUnauthorized)
-	_, _ = w.Write([]byte("Unauthorised.\n"))
+	_, _ = w.Write([]byte("Unauthorized.\n"))
 }
 
 // sendAPIAuthMiddleware handles authentication specifically for the send API endpoint
