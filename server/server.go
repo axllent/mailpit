@@ -291,7 +291,7 @@ func middleWareFunc(fn http.HandlerFunc) http.HandlerFunc {
 
 		if strings.HasPrefix(r.RequestURI, config.Webroot+"api/") || htmlPreviewRouteRe.MatchString(r.RequestURI) {
 			if allowed := corsOriginAccessControl(r); !allowed {
-				http.Error(w, "Unauthorised.", http.StatusForbidden)
+				http.Error(w, "Blocked to to CORS violation", http.StatusForbidden)
 				return
 			}
 			w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
@@ -337,7 +337,7 @@ func addSlashToWebroot(w http.ResponseWriter, r *http.Request) {
 // Websocket to broadcast changes
 func apiWebsocket(w http.ResponseWriter, r *http.Request) {
 	if allowed := corsOriginAccessControl(r); !allowed {
-		http.Error(w, "Unauthorised.", http.StatusForbidden)
+		http.Error(w, "Blocked to to CORS violation", http.StatusForbidden)
 		return
 	}
 	w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
