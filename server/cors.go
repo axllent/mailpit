@@ -43,7 +43,7 @@ func corsOriginAccessControl(r *http.Request) bool {
 	if len(origin) != 0 {
 		u, err := url.Parse(origin[0])
 		if err != nil {
-			logger.Log().Errorf("CORS origin parse error: %v", err)
+			logger.Log().Errorf("[cors] origin parse error: %v", err)
 			return false
 		}
 
@@ -57,6 +57,9 @@ func corsOriginAccessControl(r *http.Request) bool {
 		if corsAllowOrigins[originHostFold] {
 			return true
 		}
+
+		logger.Log().Warnf("[cors] blocking request from unauthorized origin: %s", u.Hostname())
+
 		return false
 	}
 

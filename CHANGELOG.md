@@ -9,11 +9,20 @@ Notable changes to Mailpit will be documented in this file.
 - Option to display/hide attachment information in message view in web UI including checksums, content type & disposition
 
 ### Chore
-- Increase allowed SMTP email address length to 1024 chars & return clearer SMTP responses for failures ([#620](https://github.com/axllent/mailpit/issues/620))
-- Update Go dependencies
-- Update node dependencies
 - Add support for multi-origin CORS settings and apply to events websocket ([#630](https://github.com/axllent/mailpit/issues/630))
 - Add support for webhook delay ([#627](https://github.com/axllent/mailpit/issues/627))
+- Update Go dependencies
+- Update node dependencies
+
+### Test
+- Add CORS tests
+- Add message summary attachment checksum tests
+
+
+## [v1.28.4]
+
+### Chore
+- Increase allowed SMTP email address length to 1024 chars & return clearer SMTP responses for failures ([#620](https://github.com/axllent/mailpit/issues/620))
 - Update Go dependencies
 - Update node dependencies
 
@@ -21,10 +30,6 @@ Notable changes to Mailpit will be documented in this file.
 - Ensure SMTP HELO/EHLO command is issued before MAIL FROM as per RFC 5321 ([#621](https://github.com/axllent/mailpit/issues/621))
 - Prevent nested MAIL command during an active SMTP transaction ([#623](https://github.com/axllent/mailpit/issues/623))
 - Avoid error on image type assertion in thumbnail generation
-
-### Test
-- Add CORS tests
-- Add message summary attachment checksum tests
 
 
 ## [v1.28.3]
