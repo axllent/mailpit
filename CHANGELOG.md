@@ -2,6 +2,18 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.29.1]
+
+### Chore
+- Add CORS error logging and update error messages for failed CORS requests
+- Bump axios from 1.13.4 to 1.13.5
+- Update Go dependencies
+- Update node dependencies
+
+### Fix
+- Enable "Mark all read" button (Inbox) when new message is received
+
+
 ## [v1.29.0]
 
 ### Feature
