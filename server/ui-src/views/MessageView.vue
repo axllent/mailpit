@@ -8,6 +8,7 @@ import Screenshot from "../components/message/MessageScreenshot.vue";
 import { mailbox } from "../stores/mailbox";
 import { pagination } from "../stores/pagination";
 import dayjs from "dayjs";
+import { useMessageViewKeyboardNav } from "../composables/useMessageViewKeyboardNav";
 
 export default {
 	components: {
@@ -22,6 +23,10 @@ export default {
 
 	// global event bus to handle message status changes
 	inject: ["eventBus"],
+
+	setup() {
+		useMessageViewKeyboardNav();
+	},
 
 	data() {
 		return {
