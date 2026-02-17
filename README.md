@@ -79,7 +79,7 @@ sudo sh < <(curl -sL https://raw.githubusercontent.com/axllent/mailpit/develop/i
 You can also change the install path to something else by setting the `INSTALL_PATH` environment, for example:
 
 ```shell
-INSTALL_PATH=/usr/bin sudo sh < <(curl -sL https://raw.githubusercontent.com/axllent/mailpit/develop/install.sh)
+sudo INSTALL_PATH=/usr/bin sh < <(curl -sL https://raw.githubusercontent.com/axllent/mailpit/develop/install.sh)
 ```
 
 
