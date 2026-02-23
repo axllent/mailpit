@@ -928,6 +928,10 @@ func (s *session) makeEHLOResponse() (response string) {
 	}
 
 	response += "250-ENHANCEDSTATUSCODES\r\n"
+	// RFC 6531 specifies that the presence of SMTPUTF8 should include 8BITMIME
+	// "Servers offering this extension MUST provide support for, and announce, the 8BITMIME extension"
+	// https://www.rfc-editor.org/rfc/rfc6531#section-3.1:
+	response += "250-8BITMIME\r\n"
 	response += "250 SMTPUTF8" // last entry must use a space instead of a dash
 	return
 }
