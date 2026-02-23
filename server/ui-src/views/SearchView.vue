@@ -10,6 +10,7 @@ import Pagination from "../components/NavPagination.vue";
 import SearchForm from "../components/SearchForm.vue";
 import { mailbox } from "../stores/mailbox";
 import { pagination } from "../stores/pagination";
+import { useMessageListKeyboardNav } from "../composables/useMessageListKeyboardNav";
 
 export default {
 	components: {
@@ -26,6 +27,10 @@ export default {
 
 	// global event bus to handle message status changes
 	inject: ["eventBus"],
+
+	setup() {
+		useMessageListKeyboardNav();
+	},
 
 	data() {
 		return {
