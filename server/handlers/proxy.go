@@ -2,10 +2,13 @@
 package handlers
 
 import (
+	"context"
 	"crypto/tls"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -96,21 +99,37 @@ func ProxyHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !linkRe.MatchString(uri) {
-		logger.Log().Warnf("[proxy] invalid request %s", uri)
-		httpError(w, "Error: invalid request")
+	if !linkRe.MatchString(uri) || !tools.IsValidLinkURL(uri) {
+		logger.Log().Warnf("[proxy] invalid URL %s", uri)
+		httpError(w, "Error: invalid URL")
 		return
 	}
 
-	tr := &http.Transport{}
+	dialer := &net.Dialer{
+		Timeout:   10 * time.Second,
+		KeepAlive: 30 * time.Second,
+	}
+
+	tr := &http.Transport{
+		DialContext: safeDialContext(dialer),
+	}
 
 	if config.AllowUntrustedTLS {
 		tr.TLSClientConfig = &tls.Config{InsecureSkipVerify: true} // #nosec
 	}
 
 	client := &http.Client{
-		Transport: tr,
 		Timeout:   10 * time.Second,
+		Transport: tr,
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			if len(via) >= 3 {
+				return errors.New("too many redirects")
+			}
+			if !tools.IsValidLinkURL(req.URL.String()) {
+				return fmt.Errorf("blocked redirect to invalid URL: %s", req.URL)
+			}
+			return nil
+		},
 	}
 
 	req, err := http.NewRequest("GET", uri, nil)
@@ -356,4 +375,29 @@ func supportedProxyContentType(ct string) bool {
 	}
 
 	return false
+}
+
+// SafeDialContext is a custom dialer that checks if the resolved IP addresses are internal before allowing the connection.
+func safeDialContext(dialer *net.Dialer) func(ctx context.Context, network, address string) (net.Conn, error) {
+	return func(ctx context.Context, network, address string) (net.Conn, error) {
+		host, port, err := net.SplitHostPort(address)
+		if err != nil {
+			return nil, err
+		}
+
+		ips, err := net.DefaultResolver.LookupIPAddr(ctx, host)
+		if err != nil {
+			return nil, err
+		}
+
+		if !config.AllowInternalHTTPRequests {
+			for _, ip := range ips {
+				if tools.IsInternalIP(ip.IP) {
+					return nil, fmt.Errorf("blocked request to %s (%s): private/reserved address", host, ip)
+				}
+			}
+		}
+
+		return dialer.DialContext(ctx, network, net.JoinHostPort(ips[0].IP.String(), port))
+	}
 }
