@@ -127,6 +127,10 @@ var (
 	// BlockRemoteCSSAndFonts used to disable remote CSS & fonts
 	BlockRemoteCSSAndFonts = false
 
+	// AllowInternalHTTPRequests will allow HTTP requests to internal IP addresses (e.g., loopback, private, link-local, or multicast) when set to true.
+	// This policy applies to both link checking and screenshot generation (proxy) features and is disabled by default for security reasons.
+	AllowInternalHTTPRequests = false
+
 	// CLITagsArg is used to map the CLI args
 	CLITagsArg string
 

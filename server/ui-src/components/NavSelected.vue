@@ -51,8 +51,7 @@ export default {
 
 		// universal handler to delete current or selected messages
 		deleteMessages() {
-			let ids = [];
-			ids = JSON.parse(JSON.stringify(mailbox.selected));
+			const ids = JSON.parse(JSON.stringify(mailbox.selected));
 			if (!ids.length) {
 				return false;
 			}

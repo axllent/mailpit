@@ -215,10 +215,10 @@ func TestCmdMAIL(t *testing.T) {
 	cmdCode(t, conn, "MAIL FROM:<sender@example.com> SIZE= ", "501")
 	cmdCode(t, conn, "MAIL FROM:<sender@example.com> SIZE=foo", "501")
 
-	// MAIL with options should be ignored except for SIZE
-	cmdCode(t, conn, "MAIL FROM:<sender@example.com> BODY=8BITMIME", "250")           // ignored
-	cmdCode(t, conn, "MAIL FROM:<sender@example.com> BODY=8BITMIME,SIZE=1000", "250") // size detected
-	cmdCode(t, conn, "MAIL FROM:<sender@example.com> BODY=8BITMIME,SIZE=foo", "501")  // ignored
+	// MAIL with BODY parameter should be accepted (8BITMIME support)
+	cmdCode(t, conn, "MAIL FROM:<sender@example.com> BODY=8BITMIME", "250")
+	cmdCode(t, conn, "MAIL FROM:<sender@example.com> BODY=8BITMIME,SIZE=1000", "250")
+	cmdCode(t, conn, "MAIL FROM:<sender@example.com> BODY=8BITMIME,SIZE=foo", "501") // SIZE validation error
 
 	// TODO: MAIL with valid AUTH parameter should return 250 Ok
 
@@ -884,6 +884,105 @@ func TestMakeEHLOResponse(t *testing.T) {
 	if !rePlain.MatchString(extensions["AUTH"]) {
 		t.Errorf("AUTH mechanism PLAIN does not appear in the extension list when an AuthHandler is specified and TLS is in use")
 	}
+
+	// 8BITMIME should always be advertised
+	s.srv = &Server{}
+	s.tls = false
+	extensions = parseExtensions(t, s.makeEHLOResponse())
+	if _, ok := extensions["8BITMIME"]; !ok {
+		t.Errorf("8BITMIME does not appear in the extension list")
+	}
+
+	// SMTPUTF8 should always be advertised
+	if _, ok := extensions["SMTPUTF8"]; !ok {
+		t.Errorf("SMTPUTF8 does not appear in the extension list")
+	}
+
+	// ENHANCEDSTATUSCODES should always be advertised
+	if _, ok := extensions["ENHANCEDSTATUSCODES"]; !ok {
+		t.Errorf("ENHANCEDSTATUSCODES does not appear in the extension list")
+	}
+}
+
+// Test 8BITMIME BODY parameter parsing in MAIL FROM command
+func TestCmd8BITMIME(t *testing.T) {
+	srv := &Server{}
+	conn := newConn(t, srv)
+	cmdCode(t, conn, "EHLO host.example.com", "250")
+
+	// Create a session to check internal state
+	clientConn, serverConn := net.Pipe()
+	session := srv.newSession(serverConn)
+	go session.serve()
+
+	// Read and discard banner
+	_, _ = bufio.NewReader(clientConn).ReadString('\n')
+
+	// Send EHLO
+	_, _ = fmt.Fprintf(clientConn, "EHLO test.example.com\r\n")
+	reader := bufio.NewReader(clientConn)
+	for {
+		line, _ := reader.ReadString('\n')
+		if strings.HasPrefix(line, "250 ") {
+			break
+		}
+	}
+
+	// Test BODY=8BITMIME parameter
+	_, _ = fmt.Fprintf(clientConn, "MAIL FROM:<sender@example.com> BODY=8BITMIME\r\n")
+	resp, _ := reader.ReadString('\n')
+	if !strings.HasPrefix(resp, "250") {
+		t.Errorf("MAIL FROM with BODY=8BITMIME failed: %s", resp)
+	}
+
+	// Verify bodyEncoding was set (we can't directly access it, but we can test the behavior)
+	// Reset and test BODY=7BIT
+	_, _ = fmt.Fprintf(clientConn, "RSET\r\n")
+	_, _ = reader.ReadString('\n')
+
+	_, _ = fmt.Fprintf(clientConn, "MAIL FROM:<sender@example.com> BODY=7BIT\r\n")
+	resp, _ = reader.ReadString('\n')
+	if !strings.HasPrefix(resp, "250") {
+		t.Errorf("MAIL FROM with BODY=7BIT failed: %s", resp)
+	}
+
+	// Test BODY parameter with SIZE parameter
+	_, _ = fmt.Fprintf(clientConn, "RSET\r\n")
+	_, _ = reader.ReadString('\n')
+
+	_, _ = fmt.Fprintf(clientConn, "MAIL FROM:<sender@example.com> SIZE=1000 BODY=8BITMIME\r\n")
+	resp, _ = reader.ReadString('\n')
+	if !strings.HasPrefix(resp, "250") {
+		t.Errorf("MAIL FROM with SIZE and BODY parameters failed: %s", resp)
+	}
+
+	// Test case insensitivity
+	_, _ = fmt.Fprintf(clientConn, "RSET\r\n")
+	_, _ = reader.ReadString('\n')
+
+	_, _ = fmt.Fprintf(clientConn, "MAIL FROM:<sender@example.com> body=8bitmime\r\n")
+	resp, _ = reader.ReadString('\n')
+	if !strings.HasPrefix(resp, "250") {
+		t.Errorf("MAIL FROM with lowercase body parameter failed: %s", resp)
+	}
+
+	// Clean up
+	_, _ = fmt.Fprintf(clientConn, "QUIT\r\n")
+	_, _ = reader.ReadString('\n')
+	_ = clientConn.Close()
+
+	// Also test via the original connection
+	cmdCode(t, conn, "MAIL FROM:<sender@example.com> BODY=8BITMIME", "250")
+	cmdCode(t, conn, "RCPT TO:<recipient@example.com>", "250")
+
+	cmdCode(t, conn, "RSET", "250")
+	cmdCode(t, conn, "MAIL FROM:<sender@example.com> BODY=7BIT", "250")
+
+	cmdCode(t, conn, "RSET", "250")
+	cmdCode(t, conn, "MAIL FROM:<sender@example.com> BODY=8BITMIME SIZE=5000", "250")
+
+	cmdCode(t, conn, "QUIT", "221")
+	_ = conn.Close()
 }
 
 // func createTmpFile(content string) (file *os.File, err error) {
