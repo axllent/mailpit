@@ -2,6 +2,22 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.29.2]
+
+### Security
+- Prevent Server-Side Request Forgery (SSRF) via Link Check API ([GHSA-mpf7-p9x7-96r3](https://github.com/axllent/mailpit/security/advisories/GHSA-mpf7-p9x7-96r3))
+
+### Chore
+- Upgrade eslint JavaScript linting
+- Update Go dependencies
+- Update node dependencies
+- Update caniemail test database
+
+### Fix
+- Update install instructions when setting INSTALL_PATH
+- Include 8BITMIME in SMTPD EHLO response ([#648](https://github.com/axllent/mailpit/issues/648))
+
+
 ## [v1.29.1]
 
 ### Chore
