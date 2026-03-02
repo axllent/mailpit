@@ -16,7 +16,7 @@ func TestTextEmailInserts(t *testing.T) {
 
 	start := time.Now()
 
-	for i := 0; i < testRuns; i++ {
+	for range testRuns {
 		if _, err := Store(&testTextEmail, nil); err != nil {
 			t.Log("error ", err)
 			t.Fail()
@@ -54,7 +54,7 @@ func TestMimeEmailInserts(t *testing.T) {
 
 		start := time.Now()
 
-		for i := 0; i < testRuns; i++ {
+		for range testRuns {
 			if _, err := Store(&testMimeEmail, nil); err != nil {
 				t.Log("error ", err)
 				t.Fail()

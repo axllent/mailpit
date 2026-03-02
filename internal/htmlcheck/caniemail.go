@@ -42,19 +42,19 @@ type CanIEmail struct {
 
 // JSONResult struct for CanIEmail Data
 type JSONResult struct {
-	Slug           string                 `json:"slug"`
-	Title          string                 `json:"title"`
-	Description    string                 `json:"description"`
-	URL            string                 `json:"url"`
-	Category       string                 `json:"category"`
-	Tags           []string               `json:"tags"`
-	Keywords       string                 `json:"keywords"`
-	LastTestDate   string                 `json:"last_test_date"`
-	TestURL        string                 `json:"test_url"`
-	TestResultsURL string                 `json:"test_results_url"`
-	Stats          map[string]interface{} `json:"stats"`
-	Notes          string                 `json:"notes"`
-	NotesByNumber  map[string]string      `json:"notes_by_num"`
+	Slug           string            `json:"slug"`
+	Title          string            `json:"title"`
+	Description    string            `json:"description"`
+	URL            string            `json:"url"`
+	Category       string            `json:"category"`
+	Tags           []string          `json:"tags"`
+	Keywords       string            `json:"keywords"`
+	LastTestDate   string            `json:"last_test_date"`
+	TestURL        string            `json:"test_url"`
+	TestResultsURL string            `json:"test_results_url"`
+	Stats          map[string]any    `json:"stats"`
+	Notes          string            `json:"notes"`
+	NotesByNumber  map[string]string `json:"notes_by_num"`
 }
 
 // Load the JSON data

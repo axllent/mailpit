@@ -80,10 +80,7 @@ func Search(search, timezone string, start int, beforeTS int64, limit int) ([]Me
 	nrResults = len(allResults)
 
 	if nrResults > start {
-		end := nrResults
-		if nrResults >= start+limit {
-			end = start + limit
-		}
+		end := min(nrResults, start+limit)
 
 		results = allResults[start:end]
 	}
@@ -196,7 +193,7 @@ func DeleteSearch(search, timezone string) error {
 		defer func() { _ = tx.Rollback() }()
 
 		for _, ids := range chunks {
-			delIDs := make([]interface{}, len(ids))
+			delIDs := make([]any, len(ids))
 			for i, id := range ids {
 				delIDs[i] = id
 			}

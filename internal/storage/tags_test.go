@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"fmt"
+	"slices"
 	"strings"
 	"testing"
 
@@ -25,7 +26,7 @@ func TestTags(t *testing.T) {
 
 		ids := []string{}
 
-		for i := 0; i < 10; i++ {
+		for range 10 {
 			id, err := Store(&testMimeEmail, nil)
 			if err != nil {
 				t.Log("error ", err)
@@ -34,14 +35,14 @@ func TestTags(t *testing.T) {
 			ids = append(ids, id)
 		}
 
-		for i := 0; i < 10; i++ {
+		for i := range 10 {
 			if _, err := SetMessageTags(ids[i], []string{fmt.Sprintf("Tag-%d", i)}); err != nil {
 				t.Log("error ", err)
 				t.Fail()
 			}
 		}
 
-		for i := 0; i < 10; i++ {
+		for i := range 10 {
 			message, err := GetMessage(ids[i])
 			if err != nil {
 				t.Log("error ", err)
@@ -65,7 +66,7 @@ func TestTags(t *testing.T) {
 			t.Fail()
 		}
 		newTags := []string{}
-		for i := 0; i < 20; i++ {
+		for i := range 20 {
 			// pad number with 0 to ensure they are returned alphabetically
 			newTags = append(newTags, fmt.Sprintf("AnotherTag %02d", i))
 		}
@@ -159,13 +160,7 @@ func TestUsernameAutoTagging(t *testing.T) {
 		if err != nil {
 			t.Fatalf("GetMessage failed: %v", err)
 		}
-		found := false
-		for _, tag := range msg.Tags {
-			if tag == username {
-				found = true
-				break
-			}
-		}
+		found := slices.Contains(msg.Tags, username)
 		if !found {
 			t.Errorf("Expected username '%s' in tags, got %v", username, msg.Tags)
 		}

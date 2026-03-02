@@ -128,7 +128,7 @@ func pruneMessages() {
 		return
 	}
 
-	args := make([]interface{}, len(ids))
+	args := make([]any, len(ids))
 	for i, id := range ids {
 		args[i] = id
 	}

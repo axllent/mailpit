@@ -337,7 +337,7 @@ func (srv *Server) Shutdown(ctx context.Context) error {
 	timer := time.NewTimer(100 * time.Millisecond)
 	defer timer.Stop()
 
-	for i := 0; i < 300; i++ {
+	for range 300 {
 		// wait for open sessions to close
 		if atomic.LoadInt32(&srv.openSessions) == 0 {
 			break
@@ -636,8 +636,8 @@ loop:
 		case "XCLIENT":
 			s.xClient = args
 			if s.xClientTrust {
-				xCArgs := strings.Split(args, " ")
-				for _, xCArg := range xCArgs {
+				xCArgs := strings.SplitSeq(args, " ")
+				for xCArg := range xCArgs {
 					xCParse := strings.Split(strings.TrimSpace(xCArg), "=")
 					if strings.ToUpper(xCParse[0]) == "ADDR" && (net.ParseIP(xCParse[1]) != nil) {
 						s.xClientADDR = xCParse[1]
@@ -786,7 +786,7 @@ loop:
 }
 
 // Wrapper function for writing a complete line to the socket.
-func (s *session) writef(format string, args ...interface{}) {
+func (s *session) writef(format string, args ...any) {
 	if s.srv.Timeout > 0 {
 		_ = s.conn.SetWriteDeadline(time.Now().Add(s.srv.Timeout))
 	}
@@ -831,9 +831,9 @@ func (s *session) readLine() (string, error) {
 
 // Parse a line read from the socket.
 func (s *session) parseLine(line string) (verb string, args string) {
-	if idx := strings.Index(line, " "); idx != -1 {
-		verb = strings.ToUpper(line[:idx])
-		args = strings.TrimSpace(line[idx+1:])
+	if before, after, ok := strings.Cut(line, " "); ok {
+		verb = strings.ToUpper(before)
+		args = strings.TrimSpace(after)
 	} else {
 		verb = strings.ToUpper(line)
 		args = ""

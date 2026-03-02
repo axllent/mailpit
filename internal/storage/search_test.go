@@ -22,13 +22,13 @@ func TestSearch(t *testing.T) {
 			t.Logf("Testing search (tenant %s)", tenantID)
 		}
 
-		for i := 0; i < testRuns; i++ {
+		for i := range testRuns {
 			msg := enmime.Builder().
 				From(fmt.Sprintf("From %d", i), fmt.Sprintf("from-%d@example.com", i)).
 				CC(fmt.Sprintf("CC %d", i), fmt.Sprintf("cc-%d@example.com", i)).
 				CC(fmt.Sprintf("CC2 %d", i), fmt.Sprintf("cc2-%d@example.com", i)).
 				Subject(fmt.Sprintf("Subject line %d end", i)).
-				Text([]byte(fmt.Sprintf("This is the email body %d <jdsauk;dwqmdqw;>.", i))).
+				Text(fmt.Appendf(nil, "This is the email body %d <jdsauk;dwqmdqw;>.", i)).
 				To(fmt.Sprintf("To %d", i), fmt.Sprintf("to-%d@example.com", i)).
 				To(fmt.Sprintf("To2 %d", i), fmt.Sprintf("to2-%d@example.com", i)).
 				ReplyTo(fmt.Sprintf("Reply To %d", i), fmt.Sprintf("reply-to-%d@example.com", i))
@@ -116,7 +116,7 @@ func TestSearchDelete100(t *testing.T) {
 			t.Logf("Testing search delete of 100 messages (tenant %s)", tenantID)
 		}
 
-		for i := 0; i < 100; i++ {
+		for range 100 {
 			if _, err := Store(&testTextEmail, nil); err != nil {
 				t.Log("error ", err)
 				t.Fail()
@@ -157,7 +157,7 @@ func TestSearchDelete1100(t *testing.T) {
 	defer Close()
 
 	t.Log("Testing search delete of 1100 messages")
-	for i := 0; i < 1100; i++ {
+	for range 1100 {
 		if _, err := Store(&testTextEmail, nil); err != nil {
 			t.Log("error ", err)
 			t.Fail()

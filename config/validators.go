@@ -26,8 +26,8 @@ func parseMaxAge() error {
 		return fmt.Errorf("max-age must be either <int>h for hours or <int>d for days: %s", MaxAge)
 	}
 
-	if strings.HasSuffix(MaxAge, "h") {
-		hours, err := strconv.Atoi(strings.TrimSuffix(MaxAge, "h"))
+	if before, ok := strings.CutSuffix(MaxAge, "h"); ok {
+		hours, err := strconv.Atoi(before)
 		if err != nil {
 			return err
 		}
@@ -221,8 +221,8 @@ func validateForwardConfig() error {
 	}
 
 	to := []string{}
-	addresses := strings.Split(SMTPForwardConfig.To, ",")
-	for _, a := range addresses {
+	addresses := strings.SplitSeq(SMTPForwardConfig.To, ",")
+	for a := range addresses {
 		a = strings.TrimSpace(a)
 		m, err := mail.ParseAddress(a)
 		if err != nil {
@@ -263,8 +263,8 @@ func parseChaosTriggers() error {
 
 	re := regexp.MustCompile(`^([a-zA-Z0-0]+):(\d\d\d):(\d+(\.\d)?)$`)
 
-	parts := strings.Split(ChaosTriggers, ",")
-	for _, p := range parts {
+	parts := strings.SplitSeq(ChaosTriggers, ",")
+	for p := range parts {
 		p = strings.TrimSpace(p)
 		if !re.MatchString(p) {
 			return fmt.Errorf("invalid argument: %s", p)

@@ -61,7 +61,7 @@ func Log() *logrus.Logger {
 }
 
 // PrettyPrint for debugging
-func PrettyPrint(i interface{}) {
+func PrettyPrint(i any) {
 	s, _ := json.MarshalIndent(i, "", "\t")
 	fmt.Println(string(s))
 }
