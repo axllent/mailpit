@@ -656,7 +656,7 @@ func DeleteMessages(ids []string) error {
 
 	start := time.Now()
 
-	args := make([]interface{}, len(ids))
+	args := make([]any, len(ids))
 	for i, id := range ids {
 		args[i] = id
 	}
@@ -696,7 +696,7 @@ func DeleteMessages(ids []string) error {
 		return err
 	}
 
-	args = make([]interface{}, len(toDelete))
+	args = make([]any, len(toDelete))
 	for i, id := range toDelete {
 		args[i] = id
 	}

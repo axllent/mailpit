@@ -362,11 +362,11 @@ func randRange(min, max int) int {
 }
 
 func insertEmailData(t *testing.T) {
-	for i := 0; i < 50; i++ {
+	for i := range 50 {
 		msg := enmime.Builder().
 			From(fmt.Sprintf("From %d", i), fmt.Sprintf("from-%d@example.com", i)).
 			Subject(fmt.Sprintf("Subject line %d end", i)).
-			Text([]byte(fmt.Sprintf("This is the email body %d <jdsauk;dwqmdqw;>.", i))).
+			Text(fmt.Appendf(nil, "This is the email body %d <jdsauk;dwqmdqw;>.", i)).
 			To(fmt.Sprintf("To %d", i), fmt.Sprintf("to-%d@example.com", i))
 
 		env, err := msg.Build()
@@ -397,7 +397,7 @@ func insertEmailData(t *testing.T) {
 	}
 }
 
-func assertEqual(t *testing.T, a interface{}, b interface{}, message string) {
+func assertEqual(t *testing.T, a any, b any, message string) {
 	if a == b {
 		return
 	}

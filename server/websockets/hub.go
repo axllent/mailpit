@@ -27,7 +27,7 @@ type Hub struct {
 // WebsocketNotification struct for responses
 type WebsocketNotification struct {
 	Type string
-	Data interface{}
+	Data any
 }
 
 // NewHub returns a new hub configuration
@@ -69,7 +69,7 @@ func (h *Hub) Run() {
 }
 
 // Broadcast will spawn a broadcast message to all connected clients
-func Broadcast(t string, msg interface{}) {
+func Broadcast(t string, msg any) {
 	if MessageHub == nil || len(MessageHub.Clients) == 0 {
 		return
 	}

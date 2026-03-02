@@ -141,11 +141,11 @@ func (c CanIEmail) getTest(k string) (Warning, error) {
 			continue
 		}
 
-		for platform, clients := range stats.(map[string]interface{}) {
+		for platform, clients := range stats.(map[string]any) {
 			if len(LimitPlatforms) != 0 && !tools.InArray(platform, LimitPlatforms) {
 				continue
 			}
-			for version, support := range clients.(map[string]interface{}) {
+			for version, support := range clients.(map[string]any) {
 				s := Result{}
 				s.Name = fmt.Sprintf("%s %s (%s)", c.NiceNames.Family[family], c.NiceNames.Platform[platform], version)
 				s.Family = family

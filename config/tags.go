@@ -94,9 +94,9 @@ func parseTagsDisable(s string) error {
 		return nil
 	}
 
-	parts := strings.Split(strings.ToLower(s), ",")
+	parts := strings.SplitSeq(strings.ToLower(s), ",")
 
-	for _, p := range parts {
+	for p := range parts {
 		switch strings.TrimSpace(p) {
 		case "x-tags", "xtags":
 			TagsDisableXTags = true

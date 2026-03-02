@@ -1,7 +1,7 @@
 package htmlcheck
 
 import (
-	"sort"
+	"slices"
 
 	"github.com/axllent/mailpit/internal/tools"
 )
@@ -18,7 +18,7 @@ func Platforms() (map[string][]string, error) {
 	for _, t := range cie.Data {
 		for family, stats := range t.Stats {
 			niceFamily := cie.NiceNames.Family[family]
-			for platform := range stats.(map[string]interface{}) {
+			for platform := range stats.(map[string]any) {
 				c, found := data[platform]
 				if !found {
 					data[platform] = []string{}
@@ -32,9 +32,7 @@ func Platforms() (map[string][]string, error) {
 	}
 
 	for group, clients := range data {
-		sort.Slice(clients, func(i, j int) bool {
-			return clients[i] < clients[j]
-		})
+		slices.Sort(clients)
 		data[group] = clients
 	}
 
