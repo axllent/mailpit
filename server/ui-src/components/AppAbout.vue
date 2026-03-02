@@ -25,6 +25,13 @@ export default {
 		};
 	},
 
+	computed: {
+		isEdgeBuild() {
+			const re = /^(v\d+.\d+.\d+-)/i;
+			return re.test(mailbox.appInfo.Version);
+		},
+	},
+
 	methods: {
 		loadInfo() {
 			this.get(this.resolve("/api/v1/info"), false, (response) => {
@@ -98,6 +105,7 @@ export default {
 						<h5 id="AppInfoModalLabel" class="modal-title">
 							Mailpit
 							<code>({{ mailbox.appInfo.Version }})</code>
+							<span v-if="isEdgeBuild" class="badge bg-info text-dark ms-2">edge build</span>
 						</h5>
 						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 					</div>
