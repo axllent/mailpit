@@ -8,7 +8,7 @@ WORKDIR /app
 
 RUN  apk upgrade && apk add git npm && \
 npm install && npm run package && \
-CGO_ENABLED=0 go build -ldflags "-s -w -X github.com/axllent/mailpit/config.Version=${VERSION}" -o /mailpit
+CGO_ENABLED=0 go build -ldflags "-s -w -X github.com/axllent/mailpit/config.Version=${VERSION}" -trimpath -o /mailpit
 
 FROM gcr.io/distroless/static-debian13:nonroot
 
