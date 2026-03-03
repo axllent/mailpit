@@ -3,7 +3,7 @@ package storage
 import (
 	"bytes"
 	"fmt"
-	"math/rand"
+	"math/rand/v2"
 	"testing"
 
 	"github.com/axllent/mailpit/config"
@@ -73,7 +73,7 @@ func TestSearch(t *testing.T) {
 				fmt.Sprintf("subject:\"Subject line %d end\"", i),
 				fmt.Sprintf("\"the email body %d jdsauk dwqmdqw\"", i),
 			}
-			searchIdx := rand.Intn(len(uniqueSearches))
+			searchIdx := rand.IntN(len(uniqueSearches))
 
 			search := uniqueSearches[searchIdx]
 
