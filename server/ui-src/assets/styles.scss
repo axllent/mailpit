@@ -432,3 +432,25 @@ pre[class*="language-"] {
 		box-shadow: none;
 	}
 }
+
+// Header highlighting for IPs, SPF, DKIM, DMARC
+.header-highlight {
+	background-color: rgba(200, 150, 100, 0.25);
+	border-radius: 2px;
+	padding: 0 2px;
+}
+
+// Alternating row colors for headers table
+.header-row-alt {
+	background-color: rgba(0, 0, 0, 0.02);
+}
+
+@include color-mode(dark) {
+	.header-highlight {
+		background-color: rgba(200, 150, 100, 0.35);
+	}
+
+	.header-row-alt {
+		background-color: rgba(255, 255, 255, 0.03);
+	}
+}
