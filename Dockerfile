@@ -8,9 +8,9 @@ WORKDIR /app
 
 RUN  apk upgrade && apk add git npm && \
 npm install && npm run package && \
-CGO_ENABLED=0 go build -ldflags "-s -w -X github.com/axllent/mailpit/config.Version=${VERSION}" -o /mailpit
+CGO_ENABLED=0 go build -ldflags "-s -w -X github.com/axllent/mailpit/config.Version=${VERSION}" -trimpath -o /mailpit
 
-FROM alpine:latest
+FROM gcr.io/distroless/static-debian13:nonroot
 
 LABEL org.opencontainers.image.title="Mailpit" \
   org.opencontainers.image.description="An email and SMTP testing tool with API for developers" \
@@ -20,8 +20,6 @@ LABEL org.opencontainers.image.title="Mailpit" \
   org.opencontainers.image.licenses="MIT"
 
 COPY --from=builder /mailpit /mailpit
-
-RUN apk upgrade --no-cache && apk add --no-cache tzdata
 
 EXPOSE 1025/tcp 1110/tcp 8025/tcp
 
