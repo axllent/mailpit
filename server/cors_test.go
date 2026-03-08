@@ -39,7 +39,7 @@ func TestExtractOrigins(t *testing.T) {
 		{
 			name:     "mixed protocols",
 			input:    "http://example.com,https://foo.com:8080",
-			expected: []string{"example.com", "foo.com"},
+			expected: []string{"example.com", "foo.com:8080"},
 		},
 		{
 
@@ -78,7 +78,10 @@ func TestCorsOriginAccessControl(t *testing.T) {
 		allow  bool
 	}{
 		{"no origin header", "", "example.com", true},
-		{"allowed origin", "http://example.com:1234", "mailpit.local", true},
+		// example.com:1234 must NOT be admitted by an allowlist entry for example.com (different port)
+		{"allowed origin", "http://example.com:1234", "mailpit.local", false},
+		{"allowed origin", "http://example.com:1234", "example.com", false},
+		{"allowed origin", "http://example.com:1234", "example.com:1234", true},
 		{"not allowed origin", "http://notallowed.com", "mailpit.local", false},
 		{"allowed by hostname", "http://foo.com", "mailpit.local", true},
 		{"ascii fold: allowed origin uppercase", "HTTP://EXAMPLE.COM", "mailpit.local", true},

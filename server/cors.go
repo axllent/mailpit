@@ -48,17 +48,19 @@ func corsOriginAccessControl(r *http.Request) bool {
 		}
 
 		_, allAllowed := corsAllowOrigins["*"]
-		// allow same origin || is "*" is defined as an origin
+		// allow same origin, or if "*" is defined as an origin
 		if asciiFoldString(u.Host) == asciiFoldString(r.Host) || allAllowed {
 			return true
 		}
 
-		originHostFold := asciiFoldString(u.Hostname())
+		// match on full host:port so that example.com:8080 is not admitted
+		// by an allowlist entry for example.com (standard port 80/443).
+		originHostFold := asciiFoldString(u.Host)
 		if corsAllowOrigins[originHostFold] {
 			return true
 		}
 
-		logger.Log().Warnf("[cors] blocking request from unauthorized origin: %s", u.Hostname())
+		logger.Log().Warnf("[cors] blocking request from unauthorized origin: %s", u.Host)
 
 		return false
 	}
@@ -67,7 +69,8 @@ func corsOriginAccessControl(r *http.Request) bool {
 }
 
 // SetCORSOrigins sets the allowed CORS origins from a comma-separated string.
-// It does not consider port or protocol, only the hostname.
+// Origins are matched on the full host:port, so example.com and example.com:8080
+// are treated as distinct origins.
 func setCORSOrigins() {
 	corsAllowOrigins = make(map[string]bool)
 
@@ -120,7 +123,9 @@ func extractOrigins(str string) []string {
 				continue
 			}
 
-			origins = append(origins, u.Hostname())
+			// Store host:port so port differences are respected.
+			// u.Host equals u.Hostname() when no port is present.
+			origins = append(origins, u.Host)
 		}
 	}
 
