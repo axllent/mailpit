@@ -41,7 +41,8 @@ settings to determine the HTTP bind interface & port.
 			IdleConnTimeout:       time.Second * 5,
 			ExpectContinueTimeout: time.Second * 5,
 			TLSHandshakeTimeout:   time.Second * 5,
-			// do not verify TLS in case this instance is using HTTPS
+			// do not verify TLS if this instance is using HTTPS as we connect using IP
+			// so won't be the same as the cert
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: true}, // #nosec
 		}
 		client := &http.Client{Transport: conf}
