@@ -206,7 +206,7 @@ func apiRoutes() *mux.Router {
 	}
 
 	// web UI websocket
-	r.HandleFunc(config.Webroot+"api/events", apiWebsocket).Methods("GET")
+	r.HandleFunc(config.Webroot+"api/events", middleWareFunc(apiWebsocket)).Methods("GET")
 
 	// return blank 200 response for OPTIONS requests for CORS
 	r.PathPrefix(config.Webroot + "api/v1/").Handler(middleWareFunc(apiv1.GetOptions)).Methods("OPTIONS")
@@ -323,7 +323,11 @@ func middleWareFunc(fn http.HandlerFunc) http.HandlerFunc {
 			}
 		}
 
-		if config.DisableHTTPCompression || !strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") {
+		// WebSocket upgrade requests must not be wrapped in a gzip writer:
+		// gzipResponseWriter does not implement http.Hijacker, which the
+		// WebSocket library requires to take over the raw TCP connection.
+		isWebSocketUpgrade := strings.EqualFold(r.Header.Get("Upgrade"), "websocket")
+		if isWebSocketUpgrade || config.DisableHTTPCompression || !strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") {
 			fn(w, r)
 			return
 		}
@@ -341,14 +345,9 @@ func addSlashToWebroot(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, config.Webroot, http.StatusFound)
 }
 
-// Websocket to broadcast changes
+// Websocket to broadcast changes.
+// Authentication and CORS are handled by middleWareFunc before this is reached.
 func apiWebsocket(w http.ResponseWriter, r *http.Request) {
-	if allowed := corsOriginAccessControl(r); !allowed {
-		http.Error(w, "Blocked to to CORS violation", http.StatusForbidden)
-		return
-	}
-	w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
-	w.Header().Set("Access-Control-Allow-Headers", "*")
 	websockets.ServeWs(websockets.MessageHub, w, r)
 	storage.BroadcastMailboxStats()
 }
