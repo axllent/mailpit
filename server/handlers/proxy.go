@@ -23,6 +23,12 @@ import (
 	"github.com/axllent/mailpit/internal/tools"
 )
 
+const (
+	// maxProxyBodySize is the maximum number of bytes read from a proxied
+	// response body (fonts, images, CSS). Prevents OOM on oversized responses.
+	maxProxyBodySize = 50 * 1024 * 1024 // 50 MB
+)
+
 var (
 	linkRe = regexp.MustCompile(`(?i)^https?:\/\/`)
 
@@ -164,10 +170,16 @@ func ProxyHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	body, err := io.ReadAll(resp.Body)
+	limitedBody := io.LimitReader(resp.Body, maxProxyBodySize+1)
+	body, err := io.ReadAll(limitedBody)
 	if err != nil {
 		logger.Log().Warnf("[proxy] %s", err.Error())
 		httpError(w, "Error: invalid request")
+		return
+	}
+	if int64(len(body)) > maxProxyBodySize {
+		logger.Log().Warnf("[proxy] response body for %s exceeds %d bytes, blocking", uri, maxProxyBodySize)
+		httpError(w, "Error: response too large")
 		return
 	}
 
