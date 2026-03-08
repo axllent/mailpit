@@ -4,6 +4,7 @@ package server
 import (
 	"bytes"
 	"compress/gzip"
+	"context"
 	"fmt"
 	"io"
 	"net"
@@ -35,6 +36,13 @@ var (
 	// htmlPreviewRouteRe is a regexp to match the HTML preview route
 	htmlPreviewRouteRe *regexp.Regexp
 )
+
+// skipUIAuthKey is a private context key used to signal that UI basic-auth
+// should be bypassed for a specific request. This avoids mutating the global
+// auth.UICredentials pointer (which is a data race under concurrent load).
+type contextKey int
+
+const skipUIAuthKey contextKey = iota
 
 // Listen will start the httpd
 func Listen() {
@@ -213,22 +221,20 @@ func basicAuthResponse(w http.ResponseWriter) {
 	_, _ = w.Write([]byte("Unauthorized.\n"))
 }
 
-// sendAPIAuthMiddleware handles authentication specifically for the send API endpoint
-// It can use dedicated send API authentication or accept any credentials based on configuration
+// sendAPIAuthMiddleware handles authentication specifically for the send API endpoint.
+// It can use dedicated send API authentication or accept any credentials based on configuration.
+// It communicates skip-UI-auth intent via request context rather than mutating the global
+// auth.UICredentials pointer, which would be a data race under concurrent load.
 func sendAPIAuthMiddleware(fn http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// If send API auth accept any is enabled, bypass all authentication
+		// If send API auth accept any is enabled, bypass all authentication.
 		if config.SendAPIAuthAcceptAny {
-			// Temporarily disable UI auth for this request
-			originalCredentials := auth.UICredentials
-			auth.UICredentials = nil
-			defer func() { auth.UICredentials = originalCredentials }()
-			// Call the standard middleware
-			middleWareFunc(fn)(w, r)
+			ctx := context.WithValue(r.Context(), skipUIAuthKey, true)
+			middleWareFunc(fn)(w, r.WithContext(ctx))
 			return
 		}
 
-		// If Send API credentials are configured, only accept those credentials
+		// If Send API credentials are configured, only accept those credentials.
 		if auth.SendAPICredentials != nil {
 			user, pass, ok := r.BasicAuth()
 
@@ -242,15 +248,13 @@ func sendAPIAuthMiddleware(fn http.HandlerFunc) http.HandlerFunc {
 				return
 			}
 
-			// Valid Send API credentials - bypass UI auth and call function directly
-			originalCredentials := auth.UICredentials
-			auth.UICredentials = nil
-			defer func() { auth.UICredentials = originalCredentials }()
-			middleWareFunc(fn)(w, r)
+			// Valid Send API credentials — bypass UI auth via context flag.
+			ctx := context.WithValue(r.Context(), skipUIAuthKey, true)
+			middleWareFunc(fn)(w, r.WithContext(ctx))
 			return
 		}
 
-		// No Send API credentials configured - fall back to UI auth
+		// No Send API credentials configured — fall back to UI auth.
 		middleWareFunc(fn)(w, r)
 	}
 }
@@ -301,8 +305,11 @@ func middleWareFunc(fn http.HandlerFunc) http.HandlerFunc {
 
 		// Check basic authentication headers if configured.
 		// OPTIONS requests are skipped if CORS is enabled, since browsers omit credentials for preflight checks.
+		// skipUIAuthKey in the request context allows sendAPIAuthMiddleware to bypass UI auth
+		// for a specific request without touching the global auth.UICredentials pointer.
+		skipUIAuth, _ := r.Context().Value(skipUIAuthKey).(bool)
 		isCORSOptionsRequest := AccessControlAllowOrigin != "" && r.Method == http.MethodOptions
-		if !isCORSOptionsRequest && auth.UICredentials != nil {
+		if !skipUIAuth && !isCORSOptionsRequest && auth.UICredentials != nil {
 			user, pass, ok := r.BasicAuth()
 
 			if !ok {
