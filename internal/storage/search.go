@@ -437,9 +437,9 @@ func searchQueryBuilder(searchString, timezone string) *sqlf.Stmt {
 			}
 		} else if lw == "is:tagged" {
 			if exclude {
-				q.Where(`m.ID NOT IN (SELECT DISTINCT mt.ID FROM ` + tenant("message_tags") + ` mt JOIN tags t ON mt.TagID = t.ID)`)
+				q.Where(`m.ID NOT IN (SELECT DISTINCT mt.ID FROM ` + tenant("message_tags") + ` mt JOIN ` + tenant("tags") + ` t ON mt.TagID = t.ID)`)
 			} else {
-				q.Where(`m.ID IN (SELECT DISTINCT mt.ID FROM ` + tenant("message_tags") + ` mt JOIN tags t ON mt.TagID = t.ID)`)
+				q.Where(`m.ID IN (SELECT DISTINCT mt.ID FROM ` + tenant("message_tags") + ` mt JOIN ` + tenant("tags") + ` t ON mt.TagID = t.ID)`)
 			}
 		} else if lw == "has:inline" || lw == "has:inlines" {
 			if exclude {
