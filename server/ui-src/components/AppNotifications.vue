@@ -77,7 +77,8 @@ export default {
 					if (!this.pauseNotifications) {
 						this.pauseNotifications = true;
 						const from = response.Data.From !== null ? response.Data.From.Address : "[unknown]";
-						this.browserNotify("New mail from: " + from, response.Data.Subject);
+						const subject = String(response.Data.Subject ?? "").substring(0, 100);
+						this.browserNotify("New mail from: " + from, subject);
 						this.setMessageToast(response.Data);
 						// delay notifications by 2s
 						window.setTimeout(() => {
