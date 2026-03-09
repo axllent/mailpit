@@ -14,9 +14,7 @@ export default {
 			timezones,
 			chaosConfig: false,
 			chaosUpdated: false,
-			defaultReleaseAddressesOptions: localStorage.getItem("defaultReleaseAddresses")
-				? JSON.parse(localStorage.getItem("defaultReleaseAddresses"))
-				: [], // set with default release addresses
+			defaultReleaseAddressesOptions: mailbox.defaultReleaseAddresses.slice(), // set with default release addresses
 		};
 	},
 
