@@ -2,6 +2,7 @@
 import AjaxLoader from "../AjaxLoader.vue";
 import CommonMixins from "../../mixins/CommonMixins";
 import { domToPng } from "modern-screenshot";
+import DOMPurify from "dompurify";
 
 export default {
 	components: {
@@ -41,17 +42,37 @@ export default {
 			h = h.replace(/<o:/gm, "<"); // replace `<o:p>` tags with `<p>`
 			h = h.replace(/<\/o:/gm, "</"); // replace `</o:p>` tags with `</p>`
 
+			// Sanitize HTML before writing to the temporary document.
+			// This removes <script>, <noscript>, inline event handlers (on*),
+			// SVG <animate>/<set> with xlink:href and other active content
+			// that manual tag removal would miss.
+			h = DOMPurify.sanitize(h, {
+				WHOLE_DOCUMENT: true,
+				FORCE_BODY: false,
+				ADD_TAGS: ["link", "meta", "o:p", "style"],
+				ADD_ATTR: [
+					"bordercolor",
+					"charset",
+					"content",
+					"hspace",
+					"http-equiv",
+					"itemprop",
+					"itemscope",
+					"itemtype",
+					"vertical-align",
+					"vlink",
+					"vspace",
+					"xml:lang",
+					"background", // needed for background= URL replacement below
+				],
+				FORBID_TAGS: ["script", "noscript"],
+			});
+
 			// create temporary document to manipulate
 			const doc = document.implementation.createHTMLDocument();
 			doc.open();
 			doc.writeln(h);
 			doc.close();
-
-			// remove any <script> tags
-			const scripts = doc.getElementsByTagName("script");
-			for (const i of scripts) {
-				i.parentNode.removeChild(i);
-			}
 
 			// replace any url(...) links in <style> blocks
 			const styles = doc.getElementsByTagName("style");
