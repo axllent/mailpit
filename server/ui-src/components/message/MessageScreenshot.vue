@@ -117,11 +117,7 @@ export default {
 
 		// HTML decode function
 		decodeEntities(s) {
-			const e = document.createElement("div");
-			e.innerHTML = s;
-			const str = e.textContent;
-			e.textContent = "";
-			return str;
+			return new DOMParser().parseFromString(s, "text/html").body.textContent;
 		},
 
 		doScreenshot() {
