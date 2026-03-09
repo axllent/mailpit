@@ -160,11 +160,18 @@ export default {
 
 			const body = i.contentWindow.document.querySelector("body");
 
+			// Add body padding to prevent content touching edge of screenshot.
+			body.style.padding = "20px";
+
 			// take screenshot of iframe
 			domToPng(body, {
 				backgroundColor: "#ffffff",
-				height: i.contentWindow.document.body.scrollHeight + 20,
+				height: i.contentWindow.document.body.scrollHeight,
 				width,
+				// remove the transparent 8px top and left gap from html object (default browser margins).
+				style: {
+					margin: "0",
+				},
 			}).then((dataUrl) => {
 				const link = document.createElement("a");
 				link.download = this.message.ID + ".png";
