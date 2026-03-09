@@ -110,7 +110,7 @@ func InitDB() error {
 			logger.Log().Infof("[db] reconnecting in 5 seconds (attempt %d/5)", i)
 			time.Sleep(5 * time.Second)
 		} else {
-			continue
+			break
 		}
 	}
 

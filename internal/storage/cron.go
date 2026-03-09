@@ -128,6 +128,9 @@ func pruneMessages() {
 		return
 	}
 
+	// roll back if it fails
+	defer func() { _ = tx.Rollback() }()
+
 	args := make([]any, len(ids))
 	for i, id := range ids {
 		args[i] = id
@@ -151,13 +154,8 @@ func pruneMessages() {
 		return
 	}
 
-	err = tx.Commit()
-
-	if err != nil {
+	if err = tx.Commit(); err != nil {
 		logger.Log().Errorf("[db] %s", err.Error())
-		if err := tx.Rollback(); err != nil {
-			logger.Log().Errorf("[db] %s", err.Error())
-		}
 	}
 
 	if err := pruneUnusedTags(); err != nil {
