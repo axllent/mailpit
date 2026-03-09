@@ -300,12 +300,12 @@ func searchQueryBuilder(searchString, timezone string) *sqlf.Stmt {
 	// group strings with quotes as a single argument and remove quotes
 	args := tools.ArgsParser(searchString)
 
+	loc := time.Local
 	if timezone != "" {
-		loc, err := time.LoadLocation(timezone)
-		if err != nil {
+		if l, err := time.LoadLocation(timezone); err != nil {
 			logger.Log().Warnf("ignoring invalid timezone:\"%s\"", timezone)
 		} else {
-			time.Local = loc
+			loc = l
 		}
 	}
 
@@ -456,7 +456,7 @@ func searchQueryBuilder(searchString, timezone string) *sqlf.Stmt {
 		} else if strings.HasPrefix(lw, "after:") {
 			w = cleanString(w[6:])
 			if w != "" {
-				t, err := dateparse.ParseLocal(w)
+				t, err := dateparse.ParseIn(w, loc)
 				if err != nil {
 					logger.Log().Warnf("ignoring invalid after: date \"%s\"", w)
 				} else {
@@ -471,7 +471,7 @@ func searchQueryBuilder(searchString, timezone string) *sqlf.Stmt {
 		} else if strings.HasPrefix(lw, "before:") {
 			w = cleanString(w[7:])
 			if w != "" {
-				t, err := dateparse.ParseLocal(w)
+				t, err := dateparse.ParseIn(w, loc)
 				if err != nil {
 					logger.Log().Warnf("ignoring invalid before: date \"%s\"", w)
 				} else {
