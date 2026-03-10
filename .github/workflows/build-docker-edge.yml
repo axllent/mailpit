@@ -9,6 +9,8 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v6
+      with:
+          fetch-depth: 0 # required for github-action-get-previous-tag
 
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v3
@@ -29,7 +31,12 @@ jobs:
         username: ${{ github.repository_owner }}
         password: ${{ github.token }}
 
-    - uses: benjlevesque/short-sha@v3.0
+    - name: Get previous git tag
+      uses: WyriHaximus/github-action-get-previous-tag@v2
+      id: previous-tag
+
+    - name: Get short SHA
+      uses: benjlevesque/short-sha@v3.0
       id: short-sha
 
     - name: Build and push
@@ -38,7 +45,7 @@ jobs:
         context: .
         platforms: linux/386,linux/amd64,linux/arm64
         build-args: |
-          "VERSION=edge-${{ steps.short-sha.outputs.sha }}"
+          "VERSION=${{ steps.previous-tag.outputs.tag }}-${{ steps.short-sha.outputs.sha }}"
         push: true
         tags: |
           axllent/mailpit:edge

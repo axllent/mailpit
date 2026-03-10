@@ -2,6 +2,38 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.29.3]
+
+### Security
+- Enhance CORS origin handling to respect host:port distinctions
+- Limit proxy requests to 50MB to prevent OOM attacks
+- Enhance HTML sanitization in message view
+- Enhance HTML sanitization in screenshot generation
+- Escape ContentID in HTML replacement to prevent regex injection
+
+### Chore
+- Use last release + git hash in Docker edge versions
+- Bump minimatch from 10.2.2 to 10.2.4
+- Refactor code with go fix
+- Switch to math/rand/v2
+- Refactor API send authentication logic
+- Refactor events websocket middleware
+- Set timeout for HTTP client in webhook Send function
+- Use local hostname for EHLO/HELO in SMTP communication
+- Simplify HTML decoding function in screenshot generation using DOMParser
+- Set margin & padding to HTML screenshot to prevent transparent top/left border
+- Replace localStorage retrieval with a dedicated function for default release addresses
+- Limit subject length to 100 characters in browser notifications
+- Improve transaction handling in pruneMessages and fix loop continuation in InitDB
+- Update Content-Disposition header to use inline display and escape filename
+- Refactor timezone handling in searchQueryBuilder
+- Update Go dependencies
+- Update node dependencies
+
+### Fix
+- Update SQL query to use tenant when using is:tagged filter
+
+
 ## [v1.29.2]
 
 ### Security

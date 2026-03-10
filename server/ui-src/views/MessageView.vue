@@ -151,8 +151,9 @@ export default {
 						for (const i in d.Inline) {
 							const a = d.Inline[i];
 							if (a.ContentID !== "") {
+								const escapedCID = a.ContentID.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 								d.HTML = d.HTML.replace(
-									new RegExp("(=[\"']?)(cid:" + a.ContentID + ")([\"|'|\\s|\\/|>|;])", "g"),
+									new RegExp("(=[\"']?)(cid:" + escapedCID + ")([\"'|\\s|\\/|>|;])", "g"),
 									"$1" + this.resolve("/api/v1/message/" + d.ID + "/part/" + a.PartID) + "$3",
 								);
 							}
@@ -171,8 +172,9 @@ export default {
 						for (const i in d.Attachments) {
 							const a = d.Attachments[i];
 							if (a.ContentID !== "") {
+								const escapedCID = a.ContentID.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 								d.HTML = d.HTML.replace(
-									new RegExp("(=[\"']?)(cid:" + a.ContentID + ")([\"|'|\\s|\\/|>|;])", "g"),
+									new RegExp("(=[\"']?)(cid:" + escapedCID + ")([\"'|\\s|\\/|>|;])", "g"),
 									"$1" + this.resolve("/api/v1/message/" + d.ID + "/part/" + a.PartID) + "$3",
 								);
 							}

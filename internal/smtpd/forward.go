@@ -108,9 +108,9 @@ func forward(from string, msg []byte) error {
 		return fmt.Errorf("error response to MAIL command: %s", err.Error())
 	}
 
-	to := strings.Split(config.SMTPForwardConfig.To, ",")
+	to := strings.SplitSeq(config.SMTPForwardConfig.To, ",")
 
-	for _, addr := range to {
+	for addr := range to {
 		if err = c.Rcpt(addr); err != nil {
 			logger.Log().Warnf("error response to RCPT command for %s: %s", addr, err.Error())
 			if config.SMTPForwardConfig.ForwardSMTPErrors {

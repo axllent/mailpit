@@ -779,8 +779,8 @@ func parseExtensions(t *testing.T, greeting string) map[string]string {
 
 			// Add line as extension.
 			line = strings.TrimSpace(line[4:]) // Strip code prefix and trailing \r\n
-			if idx := strings.Index(line, " "); idx != -1 {
-				extensions[line[:idx]] = line[idx+1:]
+			if before, after, ok := strings.Cut(line, " "); ok {
+				extensions[before] = after
 			} else {
 				extensions[line] = ""
 			}

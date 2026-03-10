@@ -107,7 +107,7 @@ export default {
 					"vspace",
 					"xml:lang",
 				],
-				FORBID_ATTR: ["script"], // all JavaScript should be removed
+				FORBID_TAGS: ["script", "form"], // all JavaScript should be removed
 				ALLOW_UNKNOWN_PROTOCOLS: true, // allow link href protocols like myapp:// etc
 			});
 
@@ -288,9 +288,12 @@ export default {
 			});
 		},
 
-		// Convert plain text to HTML including anchor links
+		// Convert plain text to HTML including anchor links.
+		// Only <a> tags are permitted in the output (enforced by DOMPurify).
 		textToHTML(s) {
-			let html = s;
+			// Strip the Unicode placeholder characters used below so that attacker-
+			// controlled input cannot pre-inject fake HTML tags via those chars.
+			let html = s.replace(/(˱˱˱|ˠˠˠ|˲˲˲)/gu, "");
 
 			// RFC2396 appendix E states angle brackets are recommended for text/plain emails to
 			// recognize potential spaces in between the URL
@@ -320,7 +323,10 @@ export default {
 				.replace(/˲˲˲/g, ">")
 				.replace(/ˠˠˠ/g, '"');
 
-			return html;
+			return DOMPurify.sanitize(html, {
+				ALLOWED_TAGS: ["a"],
+				ALLOWED_ATTR: ["href", "target", "rel"],
+			});
 		},
 	},
 };

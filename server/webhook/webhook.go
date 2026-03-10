@@ -67,19 +67,18 @@ func Send(msg any) {
 				req.Header.Set("Mailpit-Label", config.Label)
 			}
 
-			client := &http.Client{}
+			client := &http.Client{Timeout: 5 * time.Second}
 			resp, err := client.Do(req)
 			if err != nil {
 				logger.Log().Errorf("[webhook] error sending data: %s", err.Error())
 				return
 			}
+			defer func() { _ = resp.Body.Close() }()
 
 			if resp.StatusCode < 200 || resp.StatusCode > 299 {
 				logger.Log().Warnf("[webhook] %s returned a %d status", config.WebhookURL, resp.StatusCode)
 				return
 			}
-
-			_ = resp.Body.Close()
 		})
 	}()
 }

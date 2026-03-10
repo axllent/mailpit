@@ -2,6 +2,7 @@
 import AjaxLoader from "../AjaxLoader.vue";
 import CommonMixins from "../../mixins/CommonMixins";
 import { domToPng } from "modern-screenshot";
+import DOMPurify from "dompurify";
 
 export default {
 	components: {
@@ -41,17 +42,37 @@ export default {
 			h = h.replace(/<o:/gm, "<"); // replace `<o:p>` tags with `<p>`
 			h = h.replace(/<\/o:/gm, "</"); // replace `</o:p>` tags with `</p>`
 
+			// Sanitize HTML before writing to the temporary document.
+			// This removes <script>, <noscript>, inline event handlers (on*),
+			// SVG <animate>/<set> with xlink:href and other active content
+			// that manual tag removal would miss.
+			h = DOMPurify.sanitize(h, {
+				WHOLE_DOCUMENT: true,
+				FORCE_BODY: false,
+				ADD_TAGS: ["link", "meta", "o:p", "style"],
+				ADD_ATTR: [
+					"bordercolor",
+					"charset",
+					"content",
+					"hspace",
+					"http-equiv",
+					"itemprop",
+					"itemscope",
+					"itemtype",
+					"vertical-align",
+					"vlink",
+					"vspace",
+					"xml:lang",
+					"background", // needed for background= URL replacement below
+				],
+				FORBID_TAGS: ["script", "noscript"],
+			});
+
 			// create temporary document to manipulate
 			const doc = document.implementation.createHTMLDocument();
 			doc.open();
 			doc.writeln(h);
 			doc.close();
-
-			// remove any <script> tags
-			const scripts = doc.getElementsByTagName("script");
-			for (const i of scripts) {
-				i.parentNode.removeChild(i);
-			}
 
 			// replace any url(...) links in <style> blocks
 			const styles = doc.getElementsByTagName("style");
@@ -117,11 +138,7 @@ export default {
 
 		// HTML decode function
 		decodeEntities(s) {
-			const e = document.createElement("div");
-			e.innerHTML = s;
-			const str = e.textContent;
-			e.textContent = "";
-			return str;
+			return new DOMParser().parseFromString(s, "text/html").body.textContent;
 		},
 
 		doScreenshot() {
@@ -143,11 +160,18 @@ export default {
 
 			const body = i.contentWindow.document.querySelector("body");
 
+			// Add body padding to prevent content touching edge of screenshot.
+			body.style.padding = "20px";
+
 			// take screenshot of iframe
 			domToPng(body, {
 				backgroundColor: "#ffffff",
-				height: i.contentWindow.document.body.scrollHeight + 20,
+				height: i.contentWindow.document.body.scrollHeight,
 				width,
+				// remove the transparent 8px top and left gap from html object (default browser margins).
+				style: {
+					margin: "0",
+				},
 			}).then((dataUrl) => {
 				const link = document.createElement("a");
 				link.download = this.message.ID + ".png";

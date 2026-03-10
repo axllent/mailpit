@@ -81,6 +81,7 @@ func doHead(link string, followRedirects bool) (int, error) {
 	}
 
 	if config.AllowUntrustedTLS {
+		// user has explicitly allowed untrusted TLS, so we will not verify it for link checks
 		tr.TLSClientConfig = &tls.Config{InsecureSkipVerify: true} // #nosec
 	}
 

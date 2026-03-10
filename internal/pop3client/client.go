@@ -138,7 +138,7 @@ func (c *Conn) Send(b string) error {
 // in case of single line responses, or a help message followed by multiple lines of actual response
 // data in case of multiline responses.
 // See https://www.shellhacks.com/retrieve-email-pop3-server-command-line/ for examples.
-func (c *Conn) Cmd(cmd string, isMulti bool, args ...interface{}) (*bytes.Buffer, error) {
+func (c *Conn) Cmd(cmd string, isMulti bool, args ...any) (*bytes.Buffer, error) {
 	var cmdLine string
 
 	// Repeat a %v to format each arg.
@@ -441,12 +441,12 @@ func parseResp(b []byte) ([]byte, error) {
 
 	if bytes.Equal(b, respOK) {
 		return nil, nil
-	} else if bytes.HasPrefix(b, respOKInfo) {
-		return bytes.TrimPrefix(b, respOKInfo), nil
+	} else if after, ok := bytes.CutPrefix(b, respOKInfo); ok {
+		return after, nil
 	} else if bytes.Equal(b, respErr) {
 		return nil, errors.New("unknown error (no info specified in response)")
-	} else if bytes.HasPrefix(b, respErrInfo) {
-		return nil, errors.New(string(bytes.TrimPrefix(b, respErrInfo)))
+	} else if after, ok := bytes.CutPrefix(b, respErrInfo); ok {
+		return nil, errors.New(string(after))
 	}
 
 	return nil, fmt.Errorf("unknown response: %s. Neither -ERR, nor +OK", string(b))

@@ -49,7 +49,7 @@ func setup(tenantID string) {
 	}
 }
 
-func assertEqual(t *testing.T, a interface{}, b interface{}, message string) {
+func assertEqual(t *testing.T, a any, b any, message string) {
 	if a == b {
 		return
 	}

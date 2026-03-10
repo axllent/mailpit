@@ -2,6 +2,21 @@
 
 import { reactive, watch } from "vue";
 
+// Parse and validate a string[] from localStorage, returning [] on any invalid value.
+const storageToStringArray = (key) => {
+	try {
+		const raw = localStorage.getItem(key);
+		if (!raw) return [];
+		const parsed = JSON.parse(raw);
+		if (Array.isArray(parsed) && parsed.every((v) => typeof v === "string")) {
+			return parsed;
+		}
+	} catch {
+		// ignore malformed JSON
+	}
+	return [];
+};
+
 // global mailbox info
 export const mailbox = reactive({
 	total: 0, // total number of messages in database
@@ -20,9 +35,7 @@ export const mailbox = reactive({
 	appInfo: {}, // application information
 	uiConfig: {}, // configuration for UI
 	lastMessage: false, // return scrolling
-	defaultReleaseAddresses: localStorage.getItem("defaultReleaseAddresses")
-		? JSON.parse(localStorage.getItem("defaultReleaseAddresses"))
-		: [], // default release addresses for released messages
+	defaultReleaseAddresses: storageToStringArray("defaultReleaseAddresses"), // default release addresses for released messages
 
 	// settings
 	showTagColors: !localStorage.getItem("hideTagColors"),

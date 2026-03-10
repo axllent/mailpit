@@ -80,10 +80,7 @@ func Search(search, timezone string, start int, beforeTS int64, limit int) ([]Me
 	nrResults = len(allResults)
 
 	if nrResults > start {
-		end := nrResults
-		if nrResults >= start+limit {
-			end = start + limit
-		}
+		end := min(nrResults, start+limit)
 
 		results = allResults[start:end]
 	}
@@ -196,7 +193,7 @@ func DeleteSearch(search, timezone string) error {
 		defer func() { _ = tx.Rollback() }()
 
 		for _, ids := range chunks {
-			delIDs := make([]interface{}, len(ids))
+			delIDs := make([]any, len(ids))
 			for i, id := range ids {
 				delIDs[i] = id
 			}
@@ -303,12 +300,12 @@ func searchQueryBuilder(searchString, timezone string) *sqlf.Stmt {
 	// group strings with quotes as a single argument and remove quotes
 	args := tools.ArgsParser(searchString)
 
+	loc := time.Local
 	if timezone != "" {
-		loc, err := time.LoadLocation(timezone)
-		if err != nil {
+		if l, err := time.LoadLocation(timezone); err != nil {
 			logger.Log().Warnf("ignoring invalid timezone:\"%s\"", timezone)
 		} else {
-			time.Local = loc
+			loc = l
 		}
 	}
 
@@ -440,9 +437,9 @@ func searchQueryBuilder(searchString, timezone string) *sqlf.Stmt {
 			}
 		} else if lw == "is:tagged" {
 			if exclude {
-				q.Where(`m.ID NOT IN (SELECT DISTINCT mt.ID FROM ` + tenant("message_tags") + ` mt JOIN tags t ON mt.TagID = t.ID)`)
+				q.Where(`m.ID NOT IN (SELECT DISTINCT mt.ID FROM ` + tenant("message_tags") + ` mt JOIN ` + tenant("tags") + ` t ON mt.TagID = t.ID)`)
 			} else {
-				q.Where(`m.ID IN (SELECT DISTINCT mt.ID FROM ` + tenant("message_tags") + ` mt JOIN tags t ON mt.TagID = t.ID)`)
+				q.Where(`m.ID IN (SELECT DISTINCT mt.ID FROM ` + tenant("message_tags") + ` mt JOIN ` + tenant("tags") + ` t ON mt.TagID = t.ID)`)
 			}
 		} else if lw == "has:inline" || lw == "has:inlines" {
 			if exclude {
@@ -459,7 +456,7 @@ func searchQueryBuilder(searchString, timezone string) *sqlf.Stmt {
 		} else if strings.HasPrefix(lw, "after:") {
 			w = cleanString(w[6:])
 			if w != "" {
-				t, err := dateparse.ParseLocal(w)
+				t, err := dateparse.ParseIn(w, loc)
 				if err != nil {
 					logger.Log().Warnf("ignoring invalid after: date \"%s\"", w)
 				} else {
@@ -474,7 +471,7 @@ func searchQueryBuilder(searchString, timezone string) *sqlf.Stmt {
 		} else if strings.HasPrefix(lw, "before:") {
 			w = cleanString(w[7:])
 			if w != "" {
-				t, err := dateparse.ParseLocal(w)
+				t, err := dateparse.ParseIn(w, loc)
 				if err != nil {
 					logger.Log().Warnf("ignoring invalid before: date \"%s\"", w)
 				} else {

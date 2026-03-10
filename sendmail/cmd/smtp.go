@@ -90,7 +90,13 @@ func sendMail(addr string, a smtp.Auth, from string, to []string, msg []byte) er
 	}
 	defer func() { _ = c.Close() }()
 
-	if err = c.Hello(addr); err != nil {
+	// Use the local hostname for EHLO/HELO as required by RFC 5321.
+	// Fall back to "localhost" if the hostname cannot be determined.
+	localHostname, err := os.Hostname()
+	if err != nil {
+		localHostname = "localhost"
+	}
+	if err = c.Hello(localHostname); err != nil {
 		return err
 	}
 

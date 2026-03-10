@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/mail"
+	"net/url"
 
 	"github.com/axllent/mailpit/internal/storage"
 	"github.com/gorilla/mux"
@@ -158,7 +159,7 @@ func DownloadAttachment(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Add("Content-Type", a.ContentType)
-	w.Header().Set("Content-Disposition", "filename=\""+fileName+"\"")
+	w.Header().Set("Content-Disposition", "inline; filename=\""+url.PathEscape(fileName)+"\"")
 	_, _ = w.Write(a.Content)
 }
 
