@@ -3,8 +3,10 @@ package webhook
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/axllent/mailpit/config"
@@ -20,25 +22,27 @@ var (
 	// This can  allow for other processing to complete before the webhook is triggered.
 	Delay = 0
 
-	rl rate.Sometimes
+	limiter *rate.Limiter
 
-	rateLimiterSet bool
+	once sync.Once
 )
+
+func getLimiter() *rate.Limiter {
+	once.Do(func() {
+		if RateLimit > 0 {
+			limiter = rate.NewLimiter(rate.Every(time.Duration(RateLimit)*time.Second), 1)
+		} else {
+			limiter = rate.NewLimiter(rate.Inf, 1)
+		}
+	})
+
+	return limiter
+}
 
 // Send will post the MessageSummary to a webhook (if configured)
 func Send(msg any) {
 	if config.WebhookURL == "" {
 		return
-	}
-
-	if !rateLimiterSet {
-		if RateLimit > 0 {
-			rl = rate.Sometimes{Interval: time.Duration(RateLimit) * time.Second}
-		} else {
-			// run 1000 per second - ie: do not limit
-			rl = rate.Sometimes{First: 1000, Interval: time.Second}
-		}
-		rateLimiterSet = true
 	}
 
 	go func() {
@@ -47,38 +51,41 @@ func Send(msg any) {
 			time.Sleep(time.Duration(Delay) * time.Second)
 		}
 
-		rl.Do(func() {
-			b, err := json.Marshal(msg)
-			if err != nil {
-				logger.Log().Errorf("[webhook] invalid data: %s", err.Error())
-				return
-			}
+		if err := getLimiter().Wait(context.Background()); err != nil {
+			logger.Log().Errorf("[webhook] rate limiter error: %s", err.Error())
+			return
+		}
 
-			req, err := http.NewRequest("POST", config.WebhookURL, bytes.NewBuffer(b))
-			if err != nil {
-				logger.Log().Errorf("[webhook] error: %s", err.Error())
-				return
-			}
+		b, err := json.Marshal(msg)
+		if err != nil {
+			logger.Log().Errorf("[webhook] invalid data: %s", err.Error())
+			return
+		}
 
-			req.Header.Set("User-Agent", "Mailpit/"+config.Version)
-			req.Header.Set("Content-Type", "application/json")
+		req, err := http.NewRequest("POST", config.WebhookURL, bytes.NewBuffer(b))
+		if err != nil {
+			logger.Log().Errorf("[webhook] error: %s", err.Error())
+			return
+		}
 
-			if config.Label != "" {
-				req.Header.Set("Mailpit-Label", config.Label)
-			}
+		req.Header.Set("User-Agent", "Mailpit/"+config.Version)
+		req.Header.Set("Content-Type", "application/json")
 
-			client := &http.Client{Timeout: 5 * time.Second}
-			resp, err := client.Do(req)
-			if err != nil {
-				logger.Log().Errorf("[webhook] error sending data: %s", err.Error())
-				return
-			}
-			defer func() { _ = resp.Body.Close() }()
+		if config.Label != "" {
+			req.Header.Set("Mailpit-Label", config.Label)
+		}
 
-			if resp.StatusCode < 200 || resp.StatusCode > 299 {
-				logger.Log().Warnf("[webhook] %s returned a %d status", config.WebhookURL, resp.StatusCode)
-				return
-			}
-		})
+		client := &http.Client{Timeout: 5 * time.Second}
+		resp, err := client.Do(req)
+		if err != nil {
+			logger.Log().Errorf("[webhook] error sending data: %s", err.Error())
+			return
+		}
+		defer func() { _ = resp.Body.Close() }()
+
+		if resp.StatusCode < 200 || resp.StatusCode > 299 {
+			logger.Log().Warnf("[webhook] %s returned a %d status", config.WebhookURL, resp.StatusCode)
+			return
+		}
 	}()
 }
