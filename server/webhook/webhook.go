@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/axllent/mailpit/config"
@@ -13,16 +14,18 @@ import (
 )
 
 var (
-	// RateLimit is the minimum number of seconds between requests
+	// RateLimit is the minimum number of seconds between requests.
+	// Additional requests within this period will be ignored until
+	// the time has elapsed.
 	RateLimit = 1
 
 	// Delay is the number of seconds to wait before sending each webhook request
-	// This can  allow for other processing to complete before the webhook is triggered.
+	// This can allow for other processing to complete before the webhook is triggered.
 	Delay = 0
 
 	rl rate.Sometimes
 
-	rateLimiterSet bool
+	once sync.Once
 )
 
 // Send will post the MessageSummary to a webhook (if configured)
@@ -31,23 +34,22 @@ func Send(msg any) {
 		return
 	}
 
-	if !rateLimiterSet {
+	once.Do(func() {
 		if RateLimit > 0 {
 			rl = rate.Sometimes{Interval: time.Duration(RateLimit) * time.Second}
 		} else {
-			// run 1000 per second - ie: do not limit
-			rl = rate.Sometimes{First: 1000, Interval: time.Second}
+			// allow every request
+			rl = rate.Sometimes{Every: 1}
 		}
-		rateLimiterSet = true
-	}
+	})
 
-	go func() {
-		// Apply delay if configured
-		if Delay > 0 {
-			time.Sleep(time.Duration(Delay) * time.Second)
-		}
+	rl.Do(func() {
+		go func() {
+			// apply delay if configured
+			if Delay > 0 {
+				time.Sleep(time.Duration(Delay) * time.Second)
+			}
 
-		rl.Do(func() {
 			b, err := json.Marshal(msg)
 			if err != nil {
 				logger.Log().Errorf("[webhook] invalid data: %s", err.Error())
@@ -79,6 +81,6 @@ func Send(msg any) {
 				logger.Log().Warnf("[webhook] %s returned a %d status", config.WebhookURL, resp.StatusCode)
 				return
 			}
-		})
-	}()
+		}()
+	})
 }
