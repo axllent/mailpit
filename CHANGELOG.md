@@ -2,6 +2,19 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.29.4]
+
+### Feature
+- Add filter functionality to message headers tab
+
+### Chore
+- Update Go dependencies
+- Update node dependencies
+
+### Fix
+- Refactor webhook delay & rate limit logic to ignore endpoint response times & prevent hardcoded 1000 message limit when set to 0 ([#656](https://github.com/axllent/mailpit/issues/656))
+
+
 ## [v1.29.3]
 
 ### Security
