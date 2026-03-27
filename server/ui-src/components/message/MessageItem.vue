@@ -786,6 +786,7 @@ export default {
 						frameborder="0"
 						style="width: 100%; height: 100%; background: #fff"
 						@load="resizeIframe"
+						sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox"
 					>
 					</iframe>
 				</div>
