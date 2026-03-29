@@ -46,6 +46,10 @@ var (
 	// @see https://sqlite.org/wal.html
 	DisableWAL bool
 
+	// DisableAutoVACUUM will disable the auto-VACUUM of the local SQLite database when messages
+	// are deleted and a preconfigured threshold is reached.
+	DisableAutoVACUUM bool
+
 	// Compression is the compression level used to store raw messages in the database:
 	// 0 = off, 1 = fastest (default), 2 = standard, 3 = best compression
 	Compression = 1

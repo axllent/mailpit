@@ -2,10 +2,39 @@
 
 # This script will install the latest release of Mailpit.
 
+show_help() {
+    cat <<EOF
+Mailpit install script
+
+Usage:
+  $(basename "$0") [OPTIONS]
+
+Options:
+  -h, --help                            Show this help and exit
+  --install-path <path>                 Install location (default: /usr/local/bin)
+  --auth, --auth-token, 
+    --github-token, --token <token>     GitHub token for API authentication
+
+Environment:
+  INSTALL_PATH                          Default install path override
+  GITHUB_TOKEN                          GitHub API token
+EOF
+}
+
+# Show help if requested
+for arg in "$@"; do
+    case "$arg" in
+    -h|--help)
+        show_help
+        exit 0
+        ;;
+    esac
+done
+
 # Check dependencies is installed
 for cmd in curl tar; do
     if ! command -v "$cmd" >/dev/null 2>&1; then
-        echo "Then $cmd command is required but not installed."
+        echo "The $cmd command is required but not installed."
         echo "Please install $cmd and try again."
         exit 1
     fi
@@ -17,7 +46,7 @@ case "$(uname -s)" in
 Linux) OS="linux" ;;
 Darwin) OS="darwin" ;;
 *)
-    echo "OS not supported."
+    echo "Unsupported operating system: $(uname -s)"
     exit 2
     ;;
 esac
@@ -35,7 +64,7 @@ aarch64 | arm64)
     OS_ARCH="arm64"
     ;;
 *)
-    echo "OS architecture not supported."
+    echo "Unsupported architecture: $(uname -m)"
     exit 2
     ;;
 esac
@@ -47,7 +76,7 @@ TIMEOUT=90
 # Try the GITHUB_TOKEN environment variable is set globally.
 GITHUB_API_TOKEN="${GITHUB_TOKEN:-}"
 
-# Update the default values if the user has set.
+# Override defaults with any user-supplied arguments.
 while [ $# -gt 0 ]; do
     case $1 in
     --install-path)
@@ -65,6 +94,10 @@ while [ $# -gt 0 ]; do
         case "$1" in
         gh*)
             GITHUB_API_TOKEN="$1"
+            ;;
+        *)
+            echo "ERROR: Invalid GitHub token. Token must start with \"gh\"."
+            exit 1
             ;;
         esac
         ;;
@@ -106,11 +139,18 @@ fi
 case "$VERSION" in
 v[0-9][0-9\.]*) ;;
 *)
-    echo "There was an error trying to check what is the latest version of Mailpit."
+    echo "Unable to determine the latest version of Mailpit."
     echo "Please try again later."
+    if [ -z "$GITHUB_API_TOKEN" ]; then
+        echo "Tip: Set GITHUB_TOKEN to authenticate and avoid GitHub API rate limiting."
+    fi
     exit $EXIT_CODE
     ;;
 esac
+
+TEMP_DIR=""
+cleanup() { [ -n "$TEMP_DIR" ] && rm -rf "$TEMP_DIR"; }
+trap cleanup EXIT
 
 TEMP_DIR="$(mktemp -qd)"
 EXIT_CODE=$?
@@ -198,17 +238,15 @@ if [ $EXIT_CODE -eq 0 ]; then
         fi
     fi
 else
-    echo "ERROR: Changing to temporary directory."
+    echo "ERROR: Could not change to temporary directory."
     exit $EXIT_CODE
 fi
 
-# Cleanup the temporary directory.
-rm -rf "$TEMP_DIR"
 # Check the EXIT_CODE variable, and print the success or error message.
 if [ $EXIT_CODE -ne 0 ]; then
     echo "There was an error installing Mailpit."
     exit $EXIT_CODE
 fi
 
-echo "Installed successfully to \"$INSTALL_BIN_PATH\"."
+echo "Mailpit ${VERSION} installed successfully to \"$INSTALL_BIN_PATH\"."
 exit 0

@@ -295,7 +295,7 @@ func middleWareFunc(fn http.HandlerFunc) http.HandlerFunc {
 
 		if strings.HasPrefix(r.RequestURI, config.Webroot+"api/") || htmlPreviewRouteRe.MatchString(r.RequestURI) {
 			if allowed := corsOriginAccessControl(r); !allowed {
-				http.Error(w, "Blocked to to CORS violation", http.StatusForbidden)
+				http.Error(w, "Blocked due to CORS violation", http.StatusForbidden)
 				return
 			}
 			w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
