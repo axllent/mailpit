@@ -16,6 +16,14 @@ import (
 
 // Database cron runs every minute
 func dbCron() {
+	if config.DisableAutoVACUUM {
+		if sqlDriver == "rqlite" {
+			logger.Log().Warn("[db] disable-auto-vacuum has no effect as rqlite handles vacuuming automatically")
+		} else {
+			logger.Log().Infof("[db] auto-VACUUM is disabled")
+		}
+	}
+
 	for {
 		time.Sleep(60 * time.Second)
 
@@ -35,7 +43,7 @@ func dbCron() {
 					deletedPercent = float64(deletedSize * 100 / total)
 				}
 				// only vacuum the DB if at least 1% of mail storage size has been deleted
-				if deletedPercent >= 1 {
+				if !config.DisableAutoVACUUM && deletedPercent >= 1 {
 					logger.Log().Debugf("[db] deleted messages is %f%% of total size, reclaim space", deletedPercent)
 					vacuumDb()
 				}
