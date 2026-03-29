@@ -2,6 +2,19 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.29.5]
+
+### Security
+- Add sandbox attribute to message iframe for extra later of security (already protected via CSP headers)
+
+### Feature
+- Add option to disable auto-VACUUMing of the SQLite database ([#661](https://github.com/axllent/mailpit/issues/661))
+
+### Chore
+- Update Go dependencies
+- Update node dependencies
+
+
 ## [v1.29.4]
 
 ### Feature
