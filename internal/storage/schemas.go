@@ -84,7 +84,7 @@ func dbApplySchemas() error {
 			continue
 		}
 
-		schemaID := strings.TrimRight(s.Name(), ".sql")
+		schemaID := strings.TrimSuffix(s.Name(), ".sql")
 
 		if !semver.IsValid(schemaID) {
 			logger.Log().Warnf("[db] invalid schema name: %s", s.Name())
