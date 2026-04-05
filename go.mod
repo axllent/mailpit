@@ -5,7 +5,7 @@ go 1.25.0
 require (
 	github.com/PuerkitoBio/goquery v1.12.0
 	github.com/araddon/dateparse v0.0.0-20210429162001-6b43995a97de
-	github.com/axllent/ghru/v2 v2.2.0
+	github.com/axllent/ghru/v2 v2.2.3
 	github.com/axllent/semver v1.0.0
 	github.com/goccy/go-yaml v1.19.2
 	github.com/gomarkdown/markdown v0.0.0-20260217112301-37c66b85d6ab
@@ -13,7 +13,7 @@ require (
 	github.com/gorilla/websocket v1.5.3
 	github.com/jhillyerd/enmime/v2 v2.3.0
 	github.com/klauspost/compress v1.18.5
-	github.com/kovidgoyal/imaging v1.8.20
+	github.com/kovidgoyal/imaging v1.8.21
 	github.com/leporo/sqlf v1.4.0
 	github.com/lithammer/shortuuid/v4 v4.2.0
 	github.com/mneis/go-telnet v0.0.0-20221017141824-6f643e477c62
@@ -29,7 +29,7 @@ require (
 	golang.org/x/net v0.52.0
 	golang.org/x/text v0.35.0
 	golang.org/x/time v0.15.0
-	modernc.org/sqlite v1.48.0
+	modernc.org/sqlite v1.48.1
 )
 
 require (
@@ -52,7 +52,7 @@ require (
 	github.com/kovidgoyal/go-shm v1.0.0 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
-	github.com/mattn/go-runewidth v0.0.21 // indirect
+	github.com/mattn/go-runewidth v0.0.22 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/ncruces/go-strftime v1.0.0 // indirect
 	github.com/olekukonko/cat v0.0.0-20250911104152-50322a0618f6 // indirect
