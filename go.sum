@@ -6,8 +6,8 @@ github.com/andybalholm/cascadia v1.3.3 h1:AG2YHrzJIm4BZ19iwJ/DAua6Btl3IwJX+VI4kk
 github.com/andybalholm/cascadia v1.3.3/go.mod h1:xNd9bqTn98Ln4DwST8/nG+H0yuB8Hmgu1YHNnWw0GeA=
 github.com/araddon/dateparse v0.0.0-20210429162001-6b43995a97de h1:FxWPpzIjnTlhPwqqXc4/vE0f7GvRjuAsbW+HOIe8KnA=
 github.com/araddon/dateparse v0.0.0-20210429162001-6b43995a97de/go.mod h1:DCaWoUhZrYW9p1lxo/cm8EmUOOzAPSEZNGF2DK1dJgw=
-github.com/axllent/ghru/v2 v2.2.0 h1:DzWyWPJL+3qSwvR2S4tTetOhVgP9XjJixng1Aax8GGo=
-github.com/axllent/ghru/v2 v2.2.0/go.mod h1:tyH60pqmLCDHd3UMOZyiedrYMFVLwBQqPQ5y8WLvDzA=
+github.com/axllent/ghru/v2 v2.2.3 h1:nLzbq7jLiYQMxYPU4uBdgKL4jzAaMkBfAif3igpGaaE=
+github.com/axllent/ghru/v2 v2.2.3/go.mod h1:tyH60pqmLCDHd3UMOZyiedrYMFVLwBQqPQ5y8WLvDzA=
 github.com/axllent/semver v1.0.0 h1:FDekA0alnMed5bWVWjUwBS+6QouZZkmPXsGVmOfjWOg=
 github.com/axllent/semver v1.0.0/go.mod h1:ySHHYLyFX3vKAALmaO8TOOJkzGRsUNmzFiIWwPm8li8=
 github.com/beorn7/perks v1.0.1 h1:VlbKKnNfV8bJzeqoa4cOKqO6bYr3WgKZxO8Z16+hsOM=

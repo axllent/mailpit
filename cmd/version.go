@@ -40,8 +40,8 @@ var versionCmd = &cobra.Command{
 				os.Exit(1)
 			}
 
-			// The latest version is the same version
-			if release.Tag == config.Version {
+			// The latest version is not a newer version
+			if !release.IsNewerThan(config.Version) {
 				os.Exit(0)
 			}
 
