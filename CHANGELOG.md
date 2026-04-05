@@ -2,6 +2,21 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.29.6]
+
+### Chore
+- Bump docker/login-action from 3 to 4 ([#670](https://github.com/axllent/mailpit/issues/670))
+- Bump actions/stale from 10.1.1 to 10.2.0 ([#669](https://github.com/axllent/mailpit/issues/669))
+- Bump docker/setup-buildx-action from 3 to 4 ([#668](https://github.com/axllent/mailpit/issues/668))
+- Bump docker/setup-qemu-action from 3 to 4 ([#666](https://github.com/axllent/mailpit/issues/666))
+- Bump docker/build-push-action from 6 to 7 ([#665](https://github.com/axllent/mailpit/issues/665))
+- Update Go dependencies
+- Update node dependencies
+
+### Fix
+- Version check logic in version command and self updater ([#673](https://github.com/axllent/mailpit/issues/673))
+
+
 ## [v1.29.5]
 
 ### Security
