@@ -8,16 +8,16 @@ updates:
   - package-ecosystem: "gomod"
     directory: "/" # Location of package manifests
     schedule:
-      interval: "quarterly"
+      interval: "biannually"
   - package-ecosystem: "github-actions"
     directory: "/" # Location of package manifests
     schedule:
-      interval: "quarterly"
+      interval: "biannually"
   - package-ecosystem: "docker"
     directory: "/" # Location of package manifests
     schedule:
-      interval: "quarterly"
+      interval: "biannually"
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
-      interval: "quarterly"
+      interval: "biannually"
