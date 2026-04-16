@@ -2,6 +2,15 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.29.7]
+
+### Chore
+- Bump vue-router from 4.6.4 to 5.0.4
+- Bump axios version to 1.15.0
+- Update Go dependencies
+- Update node dependencies
+
+
 ## [v1.29.6]
 
 ### Chore
