@@ -24,9 +24,10 @@ import (
 	"regexp"
 	"strings"
 
+	"net"
+
 	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/internal/logger"
-	"github.com/mneis/go-telnet"
 	flag "github.com/spf13/pflag"
 )
 
@@ -119,21 +120,24 @@ func Run() {
 	socketAddr, isSocket := socketAddress(SMTPAddr)
 
 	// handles `sendmail -bs`
-	// telnet directly to SMTP
+	// relay stdin/stdout to SMTP connection
 	if UseB && UseS {
-		var caller = telnet.StandardCaller
-		switch isSocket {
-		case true:
-			if err := telnet.DialToAndCallUnix(socketAddr, caller); err != nil {
-				fmt.Println(err)
-				os.Exit(1)
-			}
-		default:
-			if err := telnet.DialToAndCall(SMTPAddr, caller); err != nil {
-				fmt.Println(err)
-				os.Exit(1)
-			}
+		network := "tcp"
+		addr := SMTPAddr
+		if isSocket {
+			network = "unix"
+			addr = socketAddr
 		}
+
+		conn, err := net.Dial(network, addr)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		defer func() { _ = conn.Close() }()
+
+		go func() { _, _ = io.Copy(os.Stdout, conn) }()
+		_, _ = io.Copy(conn, os.Stdin)
 
 		return
 	}

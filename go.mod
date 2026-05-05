@@ -15,7 +15,6 @@ require (
 	github.com/kovidgoyal/imaging v1.8.21
 	github.com/leporo/sqlf v1.4.0
 	github.com/lithammer/shortuuid/v4 v4.2.0
-	github.com/mneis/go-telnet v0.0.0-20221017141824-6f643e477c62
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.23.2
 	github.com/rqlite/gorqlite v0.0.0-20250609141355-ac86a4a1c9a8
@@ -60,7 +59,6 @@ require (
 	github.com/prometheus/client_model v0.6.2 // indirect
 	github.com/prometheus/common v0.67.5 // indirect
 	github.com/prometheus/procfs v0.20.1 // indirect
-	github.com/reiver/go-oi v1.0.0 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	github.com/rwcarlsen/goexif v0.0.0-20190401172101-9e8deecbddbd // indirect
 	github.com/ssor/bom v0.0.0-20170718123548-6386211fdfcf // indirect
