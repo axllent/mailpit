@@ -9,12 +9,12 @@ require (
 	github.com/axllent/semver v1.0.0
 	github.com/goccy/go-yaml v1.19.2
 	github.com/gomarkdown/markdown v0.0.0-20260412113850-134a5b2cce7f
+	github.com/google/uuid v1.6.0
 	github.com/gorilla/websocket v1.5.3
 	github.com/jhillyerd/enmime/v2 v2.3.0
 	github.com/klauspost/compress v1.18.5
 	github.com/kovidgoyal/imaging v1.8.21
 	github.com/leporo/sqlf v1.4.0
-	github.com/lithammer/shortuuid/v4 v4.2.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.23.2
 	github.com/rqlite/gorqlite v0.0.0-20250609141355-ac86a4a1c9a8
@@ -41,7 +41,6 @@ require (
 	github.com/fatih/color v1.19.0 // indirect
 	github.com/goccy/go-json v0.10.6 // indirect
 	github.com/gogs/chardet v0.0.0-20211120154057-b7413eaefb8f // indirect
-	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/css v1.0.1 // indirect
 	github.com/inbucket/html2text v1.0.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect

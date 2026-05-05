@@ -21,6 +21,7 @@ import (
 	"github.com/axllent/mailpit/internal/logger"
 	"github.com/axllent/mailpit/internal/pop3"
 	"github.com/axllent/mailpit/internal/prometheus"
+	"github.com/axllent/mailpit/internal/shortuuid"
 	"github.com/axllent/mailpit/internal/snakeoil"
 	"github.com/axllent/mailpit/internal/stats"
 	"github.com/axllent/mailpit/internal/storage"
@@ -28,7 +29,6 @@ import (
 	"github.com/axllent/mailpit/server/apiv1"
 	"github.com/axllent/mailpit/server/handlers"
 	"github.com/axllent/mailpit/server/websockets"
-	"github.com/lithammer/shortuuid/v4"
 )
 
 var (

@@ -31,7 +31,7 @@ jobs:
       # https://olegk.dev/github-actions-and-go
       run: gofmt -s -w . && git diff --exit-code
     - name: Run Go tests
-      run: go test -p 1 ./internal/storage ./server ./internal/smtpd ./internal/pop3 ./internal/tools ./internal/html2text ./internal/htmlcheck ./internal/linkcheck -v
+      run: go test -p 1 ./internal/storage ./server ./internal/smtpd ./internal/pop3 ./internal/tools ./internal/html2text ./internal/htmlcheck ./internal/linkcheck ./internal/shortuuid -v
     - name: Run Go benchmarking
       run: go test -p 1 ./internal/storage ./internal/html2text -bench=.
     

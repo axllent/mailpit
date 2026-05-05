@@ -19,12 +19,12 @@ import (
 
 	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/internal/logger"
+	"github.com/axllent/mailpit/internal/shortuuid"
 	"github.com/axllent/mailpit/internal/tools"
 	"github.com/axllent/mailpit/server/webhook"
 	"github.com/axllent/mailpit/server/websockets"
 	"github.com/jhillyerd/enmime/v2"
 	"github.com/leporo/sqlf"
-	"github.com/lithammer/shortuuid/v4"
 )
 
 // Store will save an email to the database tables.
