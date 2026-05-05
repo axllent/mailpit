@@ -11,7 +11,6 @@ import (
 	"github.com/axllent/mailpit/internal/logger"
 	"github.com/axllent/mailpit/internal/storage"
 	"github.com/axllent/mailpit/internal/tools"
-	"github.com/gorilla/mux"
 	"golang.org/x/net/html"
 	"golang.org/x/net/html/atom"
 )
@@ -38,9 +37,8 @@ func GetMessageHTML(w http.ResponseWriter, r *http.Request) {
 	//		400: ErrorResponse
 	//      404: NotFoundResponse
 
-	vars := mux.Vars(r)
-
-	id := vars["id"]
+	path := strings.TrimPrefix(r.URL.Path, config.Webroot+"view/")
+	id := strings.TrimSuffix(path, ".html")
 
 	if id == "latest" {
 		var err error
@@ -123,9 +121,8 @@ func GetMessageText(w http.ResponseWriter, r *http.Request) {
 	//		400: ErrorResponse
 	//      404: NotFoundResponse
 
-	vars := mux.Vars(r)
-
-	id := vars["id"]
+	path := strings.TrimPrefix(r.URL.Path, config.Webroot+"view/")
+	id := strings.TrimSuffix(path, ".txt")
 
 	if id == "latest" {
 		var err error
