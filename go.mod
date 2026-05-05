@@ -9,7 +9,6 @@ require (
 	github.com/axllent/semver v1.0.0
 	github.com/goccy/go-yaml v1.19.2
 	github.com/gomarkdown/markdown v0.0.0-20260412113850-134a5b2cce7f
-	github.com/gorilla/mux v1.8.1
 	github.com/gorilla/websocket v1.5.3
 	github.com/jhillyerd/enmime/v2 v2.3.0
 	github.com/klauspost/compress v1.18.5

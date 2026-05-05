@@ -12,7 +12,6 @@ import (
 
 	"github.com/axllent/mailpit/internal/logger"
 	"github.com/axllent/mailpit/internal/storage"
-	"github.com/gorilla/mux"
 	"github.com/jhillyerd/enmime/v2"
 	"github.com/kovidgoyal/imaging"
 )
@@ -42,10 +41,8 @@ func Thumbnail(w http.ResponseWriter, r *http.Request) {
 	//	  200: BinaryResponse
 	//    400: ErrorResponse
 
-	vars := mux.Vars(r)
-
-	id := vars["id"]
-	partID := vars["partID"]
+	id := r.PathValue("id")
+	partID := r.PathValue("partID")
 
 	a, err := storage.GetAttachmentPart(id, partID)
 	if err != nil {

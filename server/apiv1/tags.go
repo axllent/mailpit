@@ -6,7 +6,6 @@ import (
 
 	"github.com/axllent/mailpit/internal/storage"
 	"github.com/axllent/mailpit/server/websockets"
-	"github.com/gorilla/mux"
 )
 
 // GetAllTags (method: GET) will get all tags currently in use
@@ -97,9 +96,7 @@ func RenameTag(w http.ResponseWriter, r *http.Request) {
 	//	  200: OKResponse
 	//    400: ErrorResponse
 
-	vars := mux.Vars(r)
-
-	tag := vars["tag"]
+	tag := r.PathValue("tag")
 
 	decoder := json.NewDecoder(r.Body)
 
@@ -141,9 +138,7 @@ func DeleteTag(w http.ResponseWriter, r *http.Request) {
 	//	  200: OKResponse
 	//    400: ErrorResponse
 
-	vars := mux.Vars(r)
-
-	tag := vars["tag"]
+	tag := r.PathValue("tag")
 
 	if err := storage.DeleteTag(tag); err != nil {
 		httpError(w, err.Error())

@@ -13,7 +13,6 @@ import (
 	"github.com/axllent/mailpit/internal/smtpd"
 	"github.com/axllent/mailpit/internal/storage"
 	"github.com/axllent/mailpit/internal/tools"
-	"github.com/gorilla/mux"
 	"github.com/lithammer/shortuuid/v4"
 )
 
@@ -45,9 +44,7 @@ func ReleaseMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	vars := mux.Vars(r)
-
-	id := vars["id"]
+	id := r.PathValue("id")
 
 	msg, err := storage.GetMessageRaw(id)
 	if err != nil {
