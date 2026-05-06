@@ -44,7 +44,7 @@ jobs:
         cache: 'npm'
     - name: Install JavaScript dependencies
       if: startsWith(matrix.os, 'ubuntu') == true
-      run: npm install
+      run: npm ci
     - name: Run JavaScript linting
       if: startsWith(matrix.os, 'ubuntu') == true
       run: npm run lint
