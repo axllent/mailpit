@@ -194,7 +194,6 @@ export default {
 	watch: {
 		message: {
 			handler() {
-				this.$emit("setHtmlScore", false);
 				this.doCheck();
 			},
 			deep: true,

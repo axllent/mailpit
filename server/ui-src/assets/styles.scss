@@ -80,9 +80,9 @@
 	.loader-bar {
 		width: 35%;
 		height: 4px;
-		background: $primary;
+		background: $warning;
 		border-radius: 0 999px 999px 0;
-		box-shadow: 0 0 10px rgba($primary, 0.35);
+		box-shadow: 0 0 10px rgba($warning, 0.45);
 		animation: loader-slide 1.2s ease-in-out infinite;
 	}
 }
@@ -105,7 +105,7 @@
 @include color-mode(dark) {
 	.loader {
 		.loader-bar {
-			box-shadow: 0 0 12px rgba($primary, 0.5);
+			box-shadow: 0 0 12px rgba($warning, 0.55);
 		}
 	}
 

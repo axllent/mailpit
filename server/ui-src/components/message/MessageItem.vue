@@ -129,8 +129,6 @@ export default {
 		message() {
 			this.messageTags = this.message.Tags;
 			this.loadHeaders = false;
-			this.htmlScore = false;
-			this.htmlScoreColor = false;
 			this.linkCheckErrors = false;
 			this.spamScore = false;
 			this.spamScoreColor = false;
