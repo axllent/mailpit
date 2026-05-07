@@ -126,6 +126,28 @@ export default {
 			}
 		},
 
+		message() {
+			this.messageTags = this.message.Tags;
+			this.loadHeaders = false;
+			this.htmlScore = false;
+			this.htmlScoreColor = false;
+			this.linkCheckErrors = false;
+			this.spamScore = false;
+			this.spamScoreColor = false;
+
+			const rawTab = document.getElementById("nav-raw-tab");
+			if (rawTab?.classList.contains("active")) {
+				this.srcURI = this.resolve("/api/v1/message/" + this.message.ID + "/raw");
+			} else {
+				this.srcURI = false;
+			}
+
+			this.$nextTick(() => {
+				this.isHTMLTabSelected();
+				this.resizeIFrames();
+			});
+		},
+
 		scaleHTMLPreview(v) {
 			if (v === "display") {
 				window.setTimeout(() => {

@@ -134,7 +134,6 @@ export default {
 
 	methods: {
 		loadMessage() {
-			this.message = false;
 			const uri = this.resolve("/api/v1/message/" + this.$route.params.id);
 			this.get(
 				uri,
@@ -712,7 +711,7 @@ export default {
 						{{ errorMessage }}
 					</h3>
 				</template>
-				<Message v-else-if="message" :key="message.ID" :message="message" />
+				<Message v-else-if="message" :message="message" />
 			</div>
 		</div>
 	</div>
