@@ -52,7 +52,7 @@ func extract(node *html.Node, buff *bytes.Buffer, includeLinks bool) {
 		}
 	}
 	for c := node.FirstChild; c != nil; c = c.NextSibling {
-		if _, skip := skip[c.Data]; !skip {
+		if _, shouldSkip := skip[c.Data]; !shouldSkip {
 			if includeLinks && c.Data == "a" {
 				for _, a := range c.Attr {
 					if a.Key == "href" && strings.HasPrefix(strings.ToLower(a.Val), "http") {
