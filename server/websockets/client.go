@@ -25,8 +25,6 @@ const (
 )
 
 var (
-	newline = []byte{'\n'}
-
 	// MessageHub global
 	MessageHub *Hub
 )
@@ -92,20 +90,7 @@ func (c *Client) writePump() {
 				return
 			}
 
-			w, err := c.conn.NextWriter(websocket.TextMessage)
-			if err != nil {
-				return
-			}
-			_, _ = w.Write(message)
-
-			// Add queued chat messages to the current websocket message.
-			n := len(c.send)
-			for range n {
-				_, _ = w.Write(newline)
-				_, _ = w.Write(<-c.send)
-			}
-
-			if err := w.Close(); err != nil {
+			if err := c.conn.WriteMessage(websocket.TextMessage, message); err != nil {
 				return
 			}
 		case <-ticker.C:
