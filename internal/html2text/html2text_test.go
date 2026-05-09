@@ -20,7 +20,7 @@ func TestPlain(t *testing.T) {
 	tests[`<h1>Heading</h3><p>   <a href="https://github.com">linked text.`] = "Heading linked text."
 
 	for str, expected := range tests {
-		res := Strip(str, false)
+		res, _ := Strip(str, false)
 		if res != expected {
 			t.Log("error:", res, "!=", expected)
 			t.Fail()
@@ -42,12 +42,12 @@ func TestWithLinks(t *testing.T) {
 	tests["<h1>Heading</h1><p>Paragraph</p>"] = "Heading Paragraph"
 	tests[`<h1>Heading</h1>
 		<p>Paragraph</p>`] = "Heading Paragraph"
-	tests[`<h1>Heading</h1><p>   <a href="https://github.com">linked text</a></p>`] = "Heading https://github.com linked text"
+	tests[`<h1>Heading</h1><p>   <a href="https://github.com">linked text</a></p>`] = "Heading linked text https://github.com"
 	// broken html
-	tests[`<h1>Heading</h3><p>   <a href="https://github.com">linked text.`] = "Heading https://github.com linked text."
+	tests[`<h1>Heading</h3><p>   <a href="https://github.com">linked text.`] = "Heading linked text. https://github.com"
 
 	for str, expected := range tests {
-		res := Strip(str, true)
+		res, _ := Strip(str, true)
 		if res != expected {
 			t.Log("error:", res, "!=", expected)
 			t.Fail()
