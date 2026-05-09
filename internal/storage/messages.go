@@ -549,19 +549,62 @@ func LatestID(r *http.Request) (string, error) {
 // MarkRead will mark a message as read
 func MarkRead(ids []string) error {
 	for _, id := range ids {
-		_, err := sqlf.Update(tenant("mailbox")).
+		res, err := sqlf.Update(tenant("mailbox")).
 			Set("Read", 1).
 			Where("ID = ?", id).
+			Where("Read = ?", 0).
 			ExecAndClose(context.Background(), db)
 
-		if err == nil {
-			logger.Log().Debugf("[db] marked message %s as read", id)
+		if err != nil {
+			continue
 		}
+
+		affected, err := res.RowsAffected()
+		if err != nil || affected == 0 {
+			continue
+		}
+
+		logger.Log().Debugf("[db] marked message %s as read", id)
 
 		d := struct {
 			ID   string
 			Read bool
 		}{ID: id, Read: true}
+
+		websockets.Broadcast("update", d)
+	}
+
+	BroadcastMailboxStats()
+
+	return nil
+}
+
+// MarkUnread will mark a message as unread
+func MarkUnread(ids []string) error {
+	for _, id := range ids {
+		res, err := sqlf.Update(tenant("mailbox")).
+			Set("Read", 0).
+			Where("ID = ?", id).
+			Where("Read = ?", 1).
+			ExecAndClose(context.Background(), db)
+
+		if err != nil {
+			continue
+		}
+
+		affected, err := res.RowsAffected()
+		if err != nil || affected == 0 {
+			continue
+		}
+
+		logger.Log().Debugf("[db] marked message %s as unread", id)
+
+		dbLastAction = time.Now()
+
+		d := struct {
+			ID   string
+			Read bool
+		}{ID: id, Read: false}
 
 		websockets.Broadcast("update", d)
 	}
@@ -617,33 +660,6 @@ func MarkAllUnread() error {
 	BroadcastMailboxStats()
 
 	dbLastAction = time.Now()
-
-	return nil
-}
-
-// MarkUnread will mark a message as unread
-func MarkUnread(ids []string) error {
-	for _, id := range ids {
-		_, err := sqlf.Update(tenant("mailbox")).
-			Set("Read", 0).
-			Where("ID = ?", id).
-			ExecAndClose(context.Background(), db)
-
-		if err == nil {
-			logger.Log().Debugf("[db] marked message %s as unread", id)
-		}
-
-		dbLastAction = time.Now()
-
-		d := struct {
-			ID   string
-			Read bool
-		}{ID: id, Read: false}
-
-		websockets.Broadcast("update", d)
-	}
-
-	BroadcastMailboxStats()
 
 	return nil
 }
