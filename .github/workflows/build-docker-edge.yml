@@ -39,13 +39,22 @@ jobs:
       uses: benjlevesque/short-sha@v3.0
       id: short-sha
 
+    - name: Calculate next patch version
+      id: next-version
+      run: |
+        TAG="${{ steps.previous-tag.outputs.tag }}"
+        VERSION="${TAG#v}"
+        BASE="${VERSION%.*}"
+        PATCH="${VERSION##*.}"
+        echo "version=v${BASE}.$((PATCH + 1))-${{ steps.short-sha.outputs.sha }}" >> "$GITHUB_OUTPUT"
+
     - name: Build and push
       uses: docker/build-push-action@v7
       with:
         context: .
         platforms: linux/386,linux/amd64,linux/arm64
         build-args: |
-          "VERSION=${{ steps.previous-tag.outputs.tag }}-${{ steps.short-sha.outputs.sha }}"
+          "VERSION=${{ steps.next-version.outputs.version }}"
         push: true
         tags: |
           axllent/mailpit:edge
