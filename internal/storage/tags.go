@@ -24,40 +24,58 @@ var (
 
 // SetMessageTags will set the tags for a given database ID, removing any not in the array
 func SetMessageTags(id string, tags []string) ([]string, error) {
+	// Clean and deduplicate incoming tags (case-insensitive)
+	seen := make(map[string]struct{})
 	applyTags := []string{}
 	for _, t := range tags {
 		t = tools.CleanTag(t)
-		if t != "" && config.ValidTagRegexp.MatchString(t) && !tools.InArray(t, applyTags) {
-			applyTags = append(applyTags, t)
-		}
-	}
-
-	tagNames := []string{}
-	currentTags := getMessageTags(id)
-	origTagCount := len(currentTags)
-
-	for _, t := range applyTags {
-		if t == "" || !config.ValidTagRegexp.MatchString(t) || tools.InArray(t, currentTags) {
+		if t == "" || !config.ValidTagRegexp.MatchString(t) {
 			continue
 		}
+		lc := strings.ToLower(t)
+		if _, exists := seen[lc]; exists {
+			continue
+		}
+		seen[lc] = struct{}{}
+		applyTags = append(applyTags, t)
+	}
 
+	// Fetch existing tags once and index by lowercase name for O(1) lookup
+	currentTags := getMessageTags(id)
+	currentSet := make(map[string]struct{}, len(currentTags))
+	for _, t := range currentTags {
+		currentSet[strings.ToLower(t)] = struct{}{}
+	}
+
+	// Build apply set for O(1) lookup when computing deletions
+	applySet := make(map[string]struct{}, len(applyTags))
+	for _, t := range applyTags {
+		applySet[strings.ToLower(t)] = struct{}{}
+	}
+
+	// Add tags not already on the message
+	tagNames := []string{}
+	for _, t := range applyTags {
+		if _, exists := currentSet[strings.ToLower(t)]; exists {
+			continue
+		}
 		name, err := addMessageTag(id, t)
 		if err != nil {
 			return []string{}, err
 		}
-
 		tagNames = append(tagNames, name)
 	}
 
-	if origTagCount > 0 {
-		currentTags = getMessageTags(id)
-
-		for _, t := range currentTags {
-			if !tools.InArray(t, applyTags) {
-				if err := deleteMessageTag(id, t); err != nil {
-					return []string{}, err
-				}
-			}
+	// Delete tags removed from the message in a single batch query
+	toDelete := []string{}
+	for _, t := range currentTags {
+		if _, exists := applySet[strings.ToLower(t)]; !exists {
+			toDelete = append(toDelete, t)
+		}
+	}
+	if len(toDelete) > 0 {
+		if err := deleteMessageTags(id, toDelete); err != nil {
+			return []string{}, err
 		}
 	}
 
@@ -124,6 +142,26 @@ func addMessageTag(id, name string) (string, error) {
 
 	// add tag to the message
 	return addMessageTag(id, name)
+}
+
+// deleteMessageTags deletes multiple tags from a message in a single query
+func deleteMessageTags(id string, names []string) error {
+	args := make([]any, 1+len(names))
+	args[0] = id
+	for i, n := range names {
+		args[i+1] = n
+	}
+
+	query := fmt.Sprintf(
+		`DELETE FROM %s WHERE ID = ? AND TagID IN (SELECT ID FROM %s WHERE Name IN (?%s))`,
+		tenant("message_tags"), tenant("tags"), strings.Repeat(",?", len(names)-1),
+	) // #nosec
+
+	if _, err := db.Exec(query, args...); err != nil {
+		return err
+	}
+
+	return pruneUnusedTags()
 }
 
 // DeleteMessageTag deletes a tag from a message
