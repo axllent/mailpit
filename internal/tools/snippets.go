@@ -20,13 +20,14 @@ func CreateSnippet(text, html string) string {
 	}
 
 	if html != "" {
-		data := html2text.Strip(html, false)
+		data, err := html2text.Strip(html, false)
+		if err == nil {
+			if len(data) <= limit {
+				return data
+			}
 
-		if len(data) <= limit {
-			return data
+			return truncate(data, limit) + "..."
 		}
-
-		return truncate(data, limit) + "..."
 	}
 
 	if text != "" {

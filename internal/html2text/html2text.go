@@ -3,7 +3,7 @@ package html2text
 
 import (
 	"bytes"
-	"log"
+	"fmt"
 	"regexp"
 	"strings"
 	"unicode"
@@ -30,18 +30,18 @@ func init() {
 }
 
 // Strip will convert a HTML string to plain text
-func Strip(h string, includeLinks bool) string {
+func Strip(h string, includeLinks bool) (string, error) {
 	h = spaceRe.ReplaceAllString(h, "</$1> <")
 	h = brRe.ReplaceAllString(h, " ")
 	h = imgRe.ReplaceAllString(h, " <$1")
 	var buffer bytes.Buffer
 	doc, err := html.Parse(strings.NewReader(h))
 	if err != nil {
-		log.Fatal(err)
+		return "", fmt.Errorf("html2text: parsing HTML: %w", err)
 	}
 
 	extract(doc, &buffer, includeLinks)
-	return clean(buffer.String())
+	return clean(buffer.String()), nil
 }
 
 func extract(node *html.Node, buff *bytes.Buffer, includeLinks bool) {
