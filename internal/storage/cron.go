@@ -9,7 +9,6 @@ import (
 
 	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/internal/logger"
-	"github.com/axllent/mailpit/internal/tools"
 	"github.com/axllent/mailpit/server/websockets"
 	"github.com/leporo/sqlf"
 )
@@ -64,6 +63,7 @@ func pruneMessages() {
 	start := time.Now()
 
 	ids := []string{}
+	idsSeen := make(map[string]bool)
 	var prunedSize uint64
 	var size float64 // use float64 for rqlite compatibility
 
@@ -88,6 +88,7 @@ func pruneMessages() {
 					return
 				}
 				ids = append(ids, id)
+				idsSeen[id] = true
 				prunedSize = prunedSize + uint64(size)
 
 			},
@@ -115,8 +116,9 @@ func pruneMessages() {
 				return
 			}
 
-			if !tools.InArray(id, ids) {
+			if _, exists := idsSeen[id]; !exists {
 				ids = append(ids, id)
+				idsSeen[id] = true
 				prunedSize = prunedSize + uint64(size)
 			}
 
