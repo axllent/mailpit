@@ -53,6 +53,7 @@ func extract(node *html.Node, buff *bytes.Buffer, includeLinks bool) {
 	}
 	for c := node.FirstChild; c != nil; c = c.NextSibling {
 		if _, shouldSkip := skip[c.Data]; !shouldSkip {
+			extract(c, buff, includeLinks)
 			if includeLinks && c.Data == "a" {
 				for _, a := range c.Attr {
 					if a.Key == "href" && strings.HasPrefix(strings.ToLower(a.Val), "http") {
@@ -60,7 +61,6 @@ func extract(node *html.Node, buff *bytes.Buffer, includeLinks bool) {
 					}
 				}
 			}
-			extract(c, buff, includeLinks)
 		}
 	}
 }
