@@ -86,8 +86,19 @@ func Search(search, timezone string, start int, beforeTS int64, limit int) ([]Me
 	}
 
 	// set tags for listed messages only
-	for i, m := range results {
-		results[i].Tags = getMessageTags(m.ID)
+	if len(results) > 0 {
+		ids := make([]string, len(results))
+		for i, m := range results {
+			ids[i] = m.ID
+		}
+		tagMap := getTagsForIDs(ids)
+		for i, m := range results {
+			if tags, ok := tagMap[m.ID]; ok {
+				results[i].Tags = tags
+			} else {
+				results[i].Tags = []string{}
+			}
+		}
 	}
 
 	elapsed := time.Since(tsStart)
