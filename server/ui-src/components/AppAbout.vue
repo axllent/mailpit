@@ -132,8 +132,13 @@ export default {
 													mailbox.appInfo.LatestVersion
 												"
 											>
-												A new version of Mailpit ({{ mailbox.appInfo.LatestVersion }}) is
-												available.
+												<template v-if="isEdgeBuild || mailbox.appInfo.Version == 'dev'">
+													Latest stable Mailpit ({{ mailbox.appInfo.LatestVersion }}) release
+												</template>
+												<template v-else>
+													A new version of Mailpit ({{ mailbox.appInfo.LatestVersion }}) is
+													available
+												</template>
 											</a>
 										</div>
 									</div>
