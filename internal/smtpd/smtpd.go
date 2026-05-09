@@ -639,6 +639,9 @@ loop:
 				xCArgs := strings.SplitSeq(args, " ")
 				for xCArg := range xCArgs {
 					xCParse := strings.Split(strings.TrimSpace(xCArg), "=")
+					if len(xCParse) != 2 {
+						continue
+					}
 					if strings.ToUpper(xCParse[0]) == "ADDR" && (net.ParseIP(xCParse[1]) != nil) {
 						s.xClientADDR = xCParse[1]
 					}
