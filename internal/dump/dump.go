@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -18,8 +19,19 @@ import (
 	"github.com/axllent/mailpit/server/apiv1"
 )
 
+// maxRawSize caps the bytes read per remote message to prevent a hostile
+// server from exhausting local disk via an unbounded response body.
+const maxRawSize = 50 * 1024 * 1024 // 50 MiB
+
+// maxSummarySize caps the bytes read from the remote messages-summary endpoint
+// to prevent a hostile server from exhausting memory via an unbounded response.
+const maxSummarySize = 1000 * 1024 * 1024 // 1000 MiB
+
 var (
 	linkRe = regexp.MustCompile(`(?i)^https?:\/\/`)
+
+	// idRe matches a valid Mailpit message ID (alphanumeric or dash, 8–60 chars).
+	idRe = regexp.MustCompile(`^[a-zA-Z0-9-]{8,60}$`)
 
 	outDir string
 
@@ -35,7 +47,7 @@ var (
 // Sync will sync all messages from the specified database or API to the specified output directory
 func Sync(d string) error {
 
-	outDir = path.Clean(d)
+	outDir = filepath.Clean(d)
 
 	if URL != "" {
 		if !linkRe.MatchString(URL) {
@@ -77,10 +89,19 @@ func loadIDs() error {
 			return err
 		}
 
-		body, err := io.ReadAll(res.Body)
+		if res.StatusCode != http.StatusOK {
+			res.Body.Close()
+			return errors.New("error fetching messages summary: HTTP " + res.Status)
+		}
+
+		body, err := io.ReadAll(io.LimitReader(res.Body, maxSummarySize+1))
 
 		if err != nil {
 			return err
+		}
+
+		if int64(len(body)) > maxSummarySize {
+			return errors.New("messages summary exceeds size cap")
 		}
 
 		var data apiv1.MessagesSummary
@@ -117,6 +138,11 @@ func loadIDs() error {
 
 func saveMessages() error {
 	for _, m := range summary {
+		if !idRe.MatchString(m.ID) {
+			logger.Log().Errorf("skipping message with invalid ID: %q", m.ID)
+			continue
+		}
+
 		out := path.Join(outDir, m.ID+".eml")
 
 		// skip if message exists
@@ -134,10 +160,22 @@ func saveMessages() error {
 				continue
 			}
 
-			b, err = io.ReadAll(res.Body)
+			if res.StatusCode != http.StatusOK {
+				res.Body.Close()
+				logger.Log().Errorf("error fetching message %s: HTTP %d", m.ID, res.StatusCode)
+				continue
+			}
+
+			b, err = io.ReadAll(io.LimitReader(res.Body, maxRawSize+1))
+			res.Body.Close()
 
 			if err != nil {
 				logger.Log().Errorf("error fetching message %s: %s", m.ID, err.Error())
+				continue
+			}
+
+			if len(b) > maxRawSize {
+				logger.Log().Errorf("message %s exceeds size cap (%d bytes), skipping", m.ID, maxRawSize)
 				continue
 			}
 		} else {
