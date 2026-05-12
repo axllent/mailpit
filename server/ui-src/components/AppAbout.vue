@@ -1,5 +1,6 @@
 <script>
 import AjaxLoader from "./AjaxLoader.vue";
+import AppLogout from "./AppLogout.vue";
 import Settings from "./AppSettings.vue";
 import CommonMixins from "../mixins/CommonMixins";
 import { mailbox } from "../stores/mailbox";
@@ -7,6 +8,7 @@ import { mailbox } from "../stores/mailbox";
 export default {
 	components: {
 		AjaxLoader,
+		AppLogout,
 		Settings,
 	},
 
@@ -88,6 +90,7 @@ export default {
 				<i class="bi bi-bell"></i>
 			</button>
 		</div>
+		<AppLogout />
 	</template>
 
 	<template v-else>

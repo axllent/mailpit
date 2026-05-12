@@ -3,7 +3,7 @@ import CommonMixins from "../mixins/CommonMixins";
 import { Toast } from "bootstrap";
 import { mailbox } from "../stores/mailbox";
 import { pagination } from "../stores/pagination";
-import { getToken, oidcEnabled } from "../services/oidcAuth";
+import { configureOIDC, getToken, oidcEnabled } from "../services/oidcAuth";
 
 export default {
 	mixins: [CommonMixins],
@@ -51,6 +51,11 @@ export default {
 			const proto = location.protocol === "https:" ? "wss" : "ws";
 			let uri = proto + "://" + document.location.host + this.resolve("/api/events");
 			if (oidcEnabled()) {
+				// configureOIDC is idempotent: the first call sets up the
+				// UserManager, subsequent calls await the same promise.
+				// Awaiting here closes the race between component mount
+				// and the async OIDC init in router/index.js.
+				await configureOIDC();
 				const t = await getToken();
 				if (t) {
 					uri += "?access_token=" + encodeURIComponent(t);

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"net/url"
 	"os"
 	"path"
 	"path/filepath"
@@ -301,9 +302,18 @@ func VerifyConfig() error {
 	// The default Content Security Policy is updates on every application page load to replace script-src 'self'
 	// with a random nonce ID to prevent XSS. This applies to the Mailpit app & API.
 	// See server.middleWareFunc()
+	connectSrc := "'self' ws: wss:"
+	// When OIDC is enabled the SPA must be allowed to fetch the IdP's
+	// discovery doc / JWKS / token endpoint. Add the issuer's origin
+	// to connect-src.
+	if UIOIDCIssuer != "" {
+		if u, err := url.Parse(UIOIDCIssuer); err == nil && u.Scheme != "" && u.Host != "" {
+			connectSrc += " " + u.Scheme + "://" + u.Host
+		}
+	}
 	ContentSecurityPolicy = fmt.Sprintf(
-		"default-src 'self'; script-src 'self'; style-src %s 'unsafe-inline'; frame-src 'self'; img-src * data: blob:; font-src %s data:; media-src 'self'; connect-src 'self' ws: wss:; object-src 'none'; base-uri 'self';",
-		cssFontRestriction, cssFontRestriction,
+		"default-src 'self'; script-src 'self'; style-src %s 'unsafe-inline'; frame-src 'self'; img-src * data: blob:; font-src %s data:; media-src 'self'; connect-src %s; object-src 'none'; base-uri 'self';",
+		cssFontRestriction, cssFontRestriction, connectSrc,
 	)
 
 	if Database != "" && isDir(Database) {

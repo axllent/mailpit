@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/axllent/mailpit/internal/auth"
 	"github.com/axllent/mailpit/internal/logger"
 	"github.com/gorilla/websocket"
 )
@@ -103,21 +102,12 @@ func (c *Client) writePump() {
 }
 
 // ServeWs handles websocket requests from the peer.
+// ServeWs upgrades the connection to a WebSocket. Authentication is
+// the responsibility of the caller (the server middleware), which has
+// already validated the request — re-checking Basic Auth here would
+// reject browser WebSocket upgrades when the user authenticated via
+// OIDC (browsers cannot send `Authorization` headers on WS upgrades).
 func ServeWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
-	if auth.UICredentials != nil {
-		user, pass, ok := r.BasicAuth()
-
-		if !ok {
-			basicAuthResponse(w)
-			return
-		}
-
-		if !auth.UICredentials.Match(user, pass) {
-			basicAuthResponse(w)
-			return
-		}
-	}
-
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		logger.Log().Errorf("[websocket] %s", err.Error())
@@ -132,9 +122,3 @@ func ServeWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
 	go client.writePump()
 }
 
-// BasicAuthResponse returns an basic auth response to the browser
-func basicAuthResponse(w http.ResponseWriter) {
-	w.Header().Set("WWW-Authenticate", `Basic realm="Login"`)
-	w.WriteHeader(http.StatusUnauthorized)
-	_, _ = w.Write([]byte("Unauthorized.\n"))
-}

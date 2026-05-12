@@ -92,6 +92,8 @@ func Listen() {
 	r.HandleFunc("GET "+config.Webroot+"view/", middleWareFunc(viewHandler))
 
 	r.Handle("GET "+config.Webroot+"search", middleWareFunc(index))
+	// OIDC callback — served by the SPA (Vue Router handles the code+state).
+	r.Handle("GET "+config.Webroot+"auth/callback", middleWareFunc(index))
 	// Exact-match the webroot; stdlib "/" is always a subtree so we guard inside.
 	r.HandleFunc("GET "+config.Webroot, func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != config.Webroot {
@@ -228,6 +230,15 @@ func checkUIAuth(r *http.Request) bool {
 	if auth.UICredentials == nil && auth.OIDCVerifier == nil {
 		return true
 	}
+	// When OIDC is configured, the SPA shell (HTML + JS/CSS + SPA-served
+	// routes) must boot without an auth challenge so it can run the OIDC
+	// redirect itself. Otherwise the browser's native Basic Auth dialog
+	// would fire on first navigation and the SPA would never get a chance
+	// to redirect to the IdP. The API and direct message-preview routes
+	// remain gated.
+	if auth.OIDCVerifier != nil && isSPAShellRequest(r) {
+		return true
+	}
 	if auth.OIDCVerifier != nil {
 		authz := r.Header.Get("Authorization")
 		raw := strings.TrimPrefix(authz, "Bearer ")
@@ -247,15 +258,56 @@ func checkUIAuth(r *http.Request) bool {
 	return false
 }
 
+// isSPAShellRequest reports whether the request targets the SPA shell —
+// the HTML page, its bundled JS/CSS, favicons, and the client-side
+// routes that all serve the same index template. It deliberately
+// excludes /api/*, direct HTML/TXT message previews, and /view/latest
+// (which leaks the latest message ID via redirect).
+func isSPAShellRequest(r *http.Request) bool {
+	if r.Method != http.MethodGet && r.Method != http.MethodHead {
+		return false
+	}
+	p := r.URL.Path
+	wr := config.Webroot
+	wrTrim := strings.TrimRight(wr, "/")
+	if p == wr || p == wrTrim {
+		return true
+	}
+	if strings.HasPrefix(p, wr+"dist/") {
+		return true
+	}
+	switch p {
+	case wr + "favicon.ico",
+		wr + "favicon.svg",
+		wr + "mailpit.svg",
+		wr + "notification.png",
+		wr + "search",
+		wr + "auth/callback":
+		return true
+	}
+	if strings.HasPrefix(p, wr+"view/") && p != wr+"view/latest" {
+		if strings.HasSuffix(p, ".html") || strings.HasSuffix(p, ".txt") {
+			return false
+		}
+		return true
+	}
+	return false
+}
+
 // unauthorizedResponse writes a 401. When OIDC is enabled it adds the
 // X-Mp-Auth-Required header so the SPA's axios interceptor can trigger
 // signinRedirect. The Basic challenge is preserved when htpasswd is
 // configured so curl-based integrations keep working.
 func unauthorizedResponse(w http.ResponseWriter) {
+	// When OIDC is enabled, do NOT advertise a Basic challenge. The
+	// browser would otherwise pop its native Basic Auth dialog on every
+	// SPA-side 401 (e.g. a new tab with empty sessionStorage racing the
+	// OIDC redirect) — even when Basic Auth is also configured for API
+	// integrations. Basic Auth still works for clients that proactively
+	// send `Authorization: Basic …` (curl -u, automation scripts).
 	if auth.OIDCVerifier != nil {
 		w.Header().Set("X-Mp-Auth-Required", "oidc")
-	}
-	if auth.UICredentials != nil {
+	} else if auth.UICredentials != nil {
 		w.Header().Set("WWW-Authenticate", `Basic realm="Login"`)
 	}
 	w.WriteHeader(http.StatusUnauthorized)

@@ -920,11 +920,17 @@ func TestUIAuthOIDC(t *testing.T) {
 
 	t.Run("TamperedBearer_Returns401", func(t *testing.T) {
 		tok := idp.issue("mailpit", "alice", time.Now().Add(time.Hour))
-		// Flip the last char of the signature.
-		tampered := tok[:len(tok)-1] + "A"
-		if tampered == tok {
-			tampered = tok[:len(tok)-1] + "B"
+		// Flip a char in the middle of the signature segment so we are
+		// always changing real signature bytes (the last base64url char
+		// may encode unused padding bits and produce identical bytes).
+		dot := strings.LastIndex(tok, ".")
+		sigStart := dot + 1
+		mid := sigStart + (len(tok)-sigStart)/2
+		swap := byte('A')
+		if tok[mid] == 'A' {
+			swap = 'B'
 		}
+		tampered := tok[:mid] + string(swap) + tok[mid+1:]
 		resp, err := clientGetWithBearer(ts.URL+"/api/v1/messages", tampered)
 		if err != nil {
 			t.Fatalf("get: %v", err)
@@ -932,6 +938,71 @@ func TestUIAuthOIDC(t *testing.T) {
 		defer func() { _ = resp.Body.Close() }()
 		assertEqual(t, http.StatusUnauthorized, resp.StatusCode, "expected 401 for tampered token")
 	})
+
+	t.Run("SPAShell_ServesWithoutAuth_WhenOIDCEnabled", func(t *testing.T) {
+		// The SPA shell must load without an auth challenge so the SPA
+		// can run the OIDC redirect itself. Otherwise the browser pops
+		// up its native Basic Auth dialog and the SPA never boots.
+		for _, path := range []string{"/", "/search", "/view/abc", "/dist/app.js", "/favicon.svg"} {
+			resp, err := clientGetRaw(ts.URL + path)
+			if err != nil {
+				t.Fatalf("get %s: %v", path, err)
+			}
+			_ = resp.Body.Close()
+			if resp.StatusCode == http.StatusUnauthorized {
+				t.Errorf("%s: expected SPA shell to load without auth, got 401 (WWW-Authenticate=%q)",
+					path, resp.Header.Get("Www-Authenticate"))
+			}
+			if got := resp.Header.Get("Www-Authenticate"); got != "" {
+				t.Errorf("%s: SPA shell must not return WWW-Authenticate, got %q", path, got)
+			}
+		}
+	})
+
+}
+
+func TestIsSPAShellRequest(t *testing.T) {
+	// Webroot is "/" in tests by default.
+	cases := []struct {
+		method string
+		path   string
+		want   bool
+	}{
+		{"GET", "/", true},
+		{"GET", "/search", true},
+		{"GET", "/auth/callback", true},
+		{"GET", "/view/abc", true},
+		{"GET", "/view/abc123XYZ", true},
+		{"GET", "/dist/app.js", true},
+		{"GET", "/dist/app.css", true},
+		{"GET", "/favicon.ico", true},
+		{"GET", "/favicon.svg", true},
+		{"GET", "/mailpit.svg", true},
+		{"GET", "/notification.png", true},
+		// Must remain gated:
+		{"GET", "/view/abc.html", false},
+		{"GET", "/view/abc.txt", false},
+		{"GET", "/view/latest", false},
+		{"GET", "/api/v1/messages", false},
+		{"GET", "/api/v1/webui", false},
+		{"GET", "/api/events", false},
+		{"GET", "/proxy", false},
+		// HEAD also qualifies (browsers + curl -I).
+		{"HEAD", "/", true},
+		{"HEAD", "/dist/app.js", true},
+		// Non-GET/HEAD methods never qualify.
+		{"POST", "/", false},
+		{"PUT", "/dist/app.js", false},
+	}
+	for _, tc := range cases {
+		r, err := http.NewRequest(tc.method, tc.path, nil)
+		if err != nil {
+			t.Fatalf("NewRequest: %v", err)
+		}
+		if got := isSPAShellRequest(r); got != tc.want {
+			t.Errorf("isSPAShellRequest(%s %s) = %v, want %v", tc.method, tc.path, got, tc.want)
+		}
+	}
 }
 
 func TestUIAuthOIDCAndBasicCoexist(t *testing.T) {
@@ -976,7 +1047,11 @@ func TestUIAuthOIDCAndBasicCoexist(t *testing.T) {
 		}
 	})
 
-	t.Run("NoAuth_401_WithBothChallenges", func(t *testing.T) {
+	t.Run("NoAuth_401_OIDCHintOnly_NoBasicChallenge", func(t *testing.T) {
+		// When OIDC is enabled the server must NOT advertise a Basic
+		// challenge, even if htpasswd is also configured — otherwise
+		// the browser pops its native dialog on any SPA-side 401.
+		// Basic Auth still works for clients that proactively send it.
 		resp, err := clientGetRaw(ts.URL + "/api/v1/messages")
 		if err != nil {
 			t.Fatalf("get: %v", err)
@@ -984,9 +1059,7 @@ func TestUIAuthOIDCAndBasicCoexist(t *testing.T) {
 		defer func() { _ = resp.Body.Close() }()
 		assertEqual(t, http.StatusUnauthorized, resp.StatusCode, "expected 401")
 		assertEqual(t, "oidc", resp.Header.Get("X-Mp-Auth-Required"), "expected OIDC hint")
-		if resp.Header.Get("WWW-Authenticate") == "" {
-			t.Fatalf("expected WWW-Authenticate Basic challenge")
-		}
+		assertEqual(t, "", resp.Header.Get("WWW-Authenticate"), "Basic challenge must be suppressed when OIDC is enabled")
 	})
 }
 

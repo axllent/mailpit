@@ -8,7 +8,11 @@ export default {
 	async mounted() {
 		try {
 			const returnTo = await handleCallback();
-			this.$router.replace(returnTo || "/");
+			// Hard navigation: re-boot the SPA so the router guard sees
+			// the freshly stored user. router.replace can be canceled
+			// during the initial route resolution and leave us stuck
+			// here.
+			window.location.replace(returnTo || "/");
 		} catch (err) {
 			this.error = err && err.message ? err.message : String(err);
 		}
