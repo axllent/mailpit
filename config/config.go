@@ -125,6 +125,11 @@ var (
 	// however some servers accept more.
 	SMTPMaxRecipients = 100
 
+	// MaxMessageSize is the maximum size of an inbound message, in megabytes (MiB).
+	// Applies to both SMTP DATA payloads and the HTTP /api/v1/send body.
+	// 0 disables the limit (not recommended on network-reachable listeners).
+	MaxMessageSize = 50
+
 	// IgnoreDuplicateIDs will skip messages with the same ID
 	IgnoreDuplicateIDs bool
 
@@ -323,6 +328,10 @@ func VerifyConfig() error {
 	}
 	if _, _, isSocket := tools.UnixSocket(HTTPListen); !isSocket && !re.MatchString(HTTPListen) {
 		return errors.New("[ui] HTTP bind should be in the format of <ip>:<port>")
+	}
+
+	if MaxMessageSize == 0 {
+		logger.Log().Warnf("[smtpd] no message limit set, this is not recommended for network-reachable listeners")
 	}
 
 	// Web UI & API
