@@ -2,6 +2,9 @@ package server
 
 import (
 	"bytes"
+	"context"
+	"crypto/rand"
+	"crypto/rsa"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -11,12 +14,15 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/internal/auth"
 	"github.com/axllent/mailpit/internal/logger"
 	"github.com/axllent/mailpit/internal/storage"
 	"github.com/axllent/mailpit/server/apiv1"
+	jose "github.com/go-jose/go-jose/v4"
+	"github.com/go-jose/go-jose/v4/jwt"
 	"github.com/jhillyerd/enmime/v2"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -760,4 +766,288 @@ func assertEqual(t *testing.T, a any, b any, message string) {
 	}
 	message = fmt.Sprintf("%s: \"%v\" != \"%v\"", message, a, b)
 	t.Fatal(message)
+}
+
+// clientGetWithBearer issues an authenticated GET using a Bearer JWT.
+func clientGetWithBearer(url, token string) (*http.Response, error) {
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Authorization", "Bearer "+token)
+	return http.DefaultClient.Do(req)
+}
+
+// clientGetRaw returns the raw *http.Response so tests can assert on
+// status code and headers. The caller must close the body.
+func clientGetRaw(url string) (*http.Response, error) {
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+	return http.DefaultClient.Do(req)
+}
+
+// testIdP is a minimal OIDC provider used for integration tests of
+// the server's auth middleware. It mirrors the helper in
+// internal/auth/oidc_test.go (kept separate to avoid build-tag plumbing).
+type testIdP struct {
+	t      *testing.T
+	server *httptest.Server
+	signer jose.Signer
+	priv   *rsa.PrivateKey
+}
+
+func newTestIdP(t *testing.T) *testIdP {
+	t.Helper()
+	priv, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		t.Fatalf("rsa key: %v", err)
+	}
+	kid := "test-key-1"
+	signer, err := jose.NewSigner(
+		jose.SigningKey{Algorithm: jose.RS256, Key: priv},
+		(&jose.SignerOptions{}).WithType("JWT").WithHeader("kid", kid),
+	)
+	if err != nil {
+		t.Fatalf("signer: %v", err)
+	}
+	idp := &testIdP{t: t, signer: signer, priv: priv}
+	mux := http.NewServeMux()
+	mux.HandleFunc("/.well-known/openid-configuration", func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"issuer":                                idp.URL(),
+			"jwks_uri":                              idp.URL() + "/jwks",
+			"authorization_endpoint":                idp.URL() + "/authorize",
+			"token_endpoint":                        idp.URL() + "/token",
+			"id_token_signing_alg_values_supported": []string{"RS256"},
+			"response_types_supported":              []string{"code"},
+			"subject_types_supported":               []string{"public"},
+		})
+	})
+	mux.HandleFunc("/jwks", func(w http.ResponseWriter, _ *http.Request) {
+		jwk := jose.JSONWebKey{Key: &priv.PublicKey, KeyID: kid, Algorithm: "RS256", Use: "sig"}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(jose.JSONWebKeySet{Keys: []jose.JSONWebKey{jwk}})
+	})
+	idp.server = httptest.NewServer(mux)
+	return idp
+}
+
+func (i *testIdP) URL() string { return i.server.URL }
+func (i *testIdP) Close()      { i.server.Close() }
+
+func (i *testIdP) issue(clientID, sub string, exp time.Time) string {
+	i.t.Helper()
+	claims := map[string]any{
+		"iss": i.URL(),
+		"aud": clientID,
+		"sub": sub,
+		"exp": exp.Unix(),
+		"iat": time.Now().Unix(),
+	}
+	tok, err := jwt.Signed(i.signer).Claims(claims).Serialize()
+	if err != nil {
+		i.t.Fatalf("sign jwt: %v", err)
+	}
+	return tok
+}
+
+func TestUIAuthOIDC(t *testing.T) {
+	setup()
+	defer storage.Close()
+
+	idp := newTestIdP(t)
+	defer idp.Close()
+
+	origUI := auth.UICredentials
+	origVerifier := auth.OIDCVerifier
+	defer func() {
+		auth.UICredentials = origUI
+		auth.OIDCVerifier = origVerifier
+	}()
+
+	auth.UICredentials = nil // OIDC-only mode for this test
+	if err := auth.InitOIDC(context.Background(), idp.URL(), "mailpit"); err != nil {
+		t.Fatalf("init oidc: %v", err)
+	}
+
+	ts := httptest.NewServer(apiRoutes())
+	defer ts.Close()
+
+	t.Run("NoAuth_Returns401_WithOIDCHeader", func(t *testing.T) {
+		resp, err := clientGetRaw(ts.URL + "/api/v1/messages")
+		if err != nil {
+			t.Fatalf("get: %v", err)
+		}
+		defer func() { _ = resp.Body.Close() }()
+		assertEqual(t, http.StatusUnauthorized, resp.StatusCode, "expected 401")
+		assertEqual(t, "oidc", resp.Header.Get("X-Mp-Auth-Required"), "expected X-Mp-Auth-Required header")
+		// Basic challenge must NOT be present (no htpasswd configured).
+		assertEqual(t, "", resp.Header.Get("WWW-Authenticate"), "Basic challenge unexpected")
+	})
+
+	t.Run("ValidBearer_Returns200", func(t *testing.T) {
+		tok := idp.issue("mailpit", "alice", time.Now().Add(time.Hour))
+		resp, err := clientGetWithBearer(ts.URL+"/api/v1/messages", tok)
+		if err != nil {
+			t.Fatalf("get: %v", err)
+		}
+		defer func() { _ = resp.Body.Close() }()
+		assertEqual(t, http.StatusOK, resp.StatusCode, "expected 200 with valid Bearer")
+	})
+
+	t.Run("BearerInQueryParam_Returns200", func(t *testing.T) {
+		tok := idp.issue("mailpit", "alice", time.Now().Add(time.Hour))
+		resp, err := clientGetRaw(ts.URL + "/api/v1/messages?access_token=" + tok)
+		if err != nil {
+			t.Fatalf("get: %v", err)
+		}
+		defer func() { _ = resp.Body.Close() }()
+		assertEqual(t, http.StatusOK, resp.StatusCode, "expected 200 with ?access_token=")
+	})
+
+	t.Run("ExpiredBearer_Returns401", func(t *testing.T) {
+		tok := idp.issue("mailpit", "alice", time.Now().Add(-time.Hour))
+		resp, err := clientGetWithBearer(ts.URL+"/api/v1/messages", tok)
+		if err != nil {
+			t.Fatalf("get: %v", err)
+		}
+		defer func() { _ = resp.Body.Close() }()
+		assertEqual(t, http.StatusUnauthorized, resp.StatusCode, "expected 401 for expired token")
+	})
+
+	t.Run("TamperedBearer_Returns401", func(t *testing.T) {
+		tok := idp.issue("mailpit", "alice", time.Now().Add(time.Hour))
+		// Flip the last char of the signature.
+		tampered := tok[:len(tok)-1] + "A"
+		if tampered == tok {
+			tampered = tok[:len(tok)-1] + "B"
+		}
+		resp, err := clientGetWithBearer(ts.URL+"/api/v1/messages", tampered)
+		if err != nil {
+			t.Fatalf("get: %v", err)
+		}
+		defer func() { _ = resp.Body.Close() }()
+		assertEqual(t, http.StatusUnauthorized, resp.StatusCode, "expected 401 for tampered token")
+	})
+}
+
+func TestUIAuthOIDCAndBasicCoexist(t *testing.T) {
+	setup()
+	defer storage.Close()
+
+	idp := newTestIdP(t)
+	defer idp.Close()
+
+	origUI := auth.UICredentials
+	origVerifier := auth.OIDCVerifier
+	defer func() {
+		auth.UICredentials = origUI
+		auth.OIDCVerifier = origVerifier
+	}()
+
+	// Configure BOTH OIDC and Basic Auth.
+	testHash, _ := bcrypt.GenerateFromPassword([]byte("testpass"), bcrypt.DefaultCost)
+	if err := auth.SetUIAuth("testuser:" + string(testHash)); err != nil {
+		t.Fatalf("set ui auth: %v", err)
+	}
+	if err := auth.InitOIDC(context.Background(), idp.URL(), "mailpit"); err != nil {
+		t.Fatalf("init oidc: %v", err)
+	}
+
+	ts := httptest.NewServer(apiRoutes())
+	defer ts.Close()
+
+	t.Run("ValidBearer_Returns200", func(t *testing.T) {
+		tok := idp.issue("mailpit", "alice", time.Now().Add(time.Hour))
+		resp, err := clientGetWithBearer(ts.URL+"/api/v1/messages", tok)
+		if err != nil {
+			t.Fatalf("get: %v", err)
+		}
+		defer func() { _ = resp.Body.Close() }()
+		assertEqual(t, http.StatusOK, resp.StatusCode, "expected 200 with Bearer")
+	})
+
+	t.Run("ValidBasic_Returns200", func(t *testing.T) {
+		if _, err := clientGetWithAuth(ts.URL+"/api/v1/messages", "testuser", "testpass"); err != nil {
+			t.Fatalf("expected 200 with Basic, got %v", err)
+		}
+	})
+
+	t.Run("NoAuth_401_WithBothChallenges", func(t *testing.T) {
+		resp, err := clientGetRaw(ts.URL + "/api/v1/messages")
+		if err != nil {
+			t.Fatalf("get: %v", err)
+		}
+		defer func() { _ = resp.Body.Close() }()
+		assertEqual(t, http.StatusUnauthorized, resp.StatusCode, "expected 401")
+		assertEqual(t, "oidc", resp.Header.Get("X-Mp-Auth-Required"), "expected OIDC hint")
+		if resp.Header.Get("WWW-Authenticate") == "" {
+			t.Fatalf("expected WWW-Authenticate Basic challenge")
+		}
+	})
+}
+
+func TestUIAuthOIDCDisabled_BasicStillWorks(t *testing.T) {
+	setup()
+	defer storage.Close()
+
+	origUI := auth.UICredentials
+	origVerifier := auth.OIDCVerifier
+	defer func() {
+		auth.UICredentials = origUI
+		auth.OIDCVerifier = origVerifier
+	}()
+
+	auth.OIDCVerifier = nil
+	testHash, _ := bcrypt.GenerateFromPassword([]byte("testpass"), bcrypt.DefaultCost)
+	if err := auth.SetUIAuth("testuser:" + string(testHash)); err != nil {
+		t.Fatalf("set ui auth: %v", err)
+	}
+
+	ts := httptest.NewServer(apiRoutes())
+	defer ts.Close()
+
+	resp, err := clientGetRaw(ts.URL + "/api/v1/messages")
+	if err != nil {
+		t.Fatalf("get: %v", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+	assertEqual(t, http.StatusUnauthorized, resp.StatusCode, "expected 401")
+	// No OIDC, so no OIDC hint header.
+	assertEqual(t, "", resp.Header.Get("X-Mp-Auth-Required"), "X-Mp-Auth-Required must not be set when OIDC is disabled")
+	if resp.Header.Get("WWW-Authenticate") == "" {
+		t.Fatalf("expected WWW-Authenticate Basic challenge")
+	}
+
+	if _, err := clientGetWithAuth(ts.URL+"/api/v1/messages", "testuser", "testpass"); err != nil {
+		t.Fatalf("expected 200 with valid Basic creds, got %v", err)
+	}
+}
+
+func TestUIAuthBothNil_AllowsAnonymous(t *testing.T) {
+	setup()
+	defer storage.Close()
+
+	origUI := auth.UICredentials
+	origVerifier := auth.OIDCVerifier
+	defer func() {
+		auth.UICredentials = origUI
+		auth.OIDCVerifier = origVerifier
+	}()
+
+	auth.UICredentials = nil
+	auth.OIDCVerifier = nil
+
+	ts := httptest.NewServer(apiRoutes())
+	defer ts.Close()
+
+	resp, err := clientGetRaw(ts.URL + "/api/v1/messages")
+	if err != nil {
+		t.Fatalf("get: %v", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+	assertEqual(t, http.StatusOK, resp.StatusCode, "expected 200 with no auth configured")
 }

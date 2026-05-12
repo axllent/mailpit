@@ -2,6 +2,7 @@
 import CommonMixins from "./mixins/CommonMixins";
 import Favicon from "./components/AppFavicon.vue";
 import AppBadge from "./components/AppBadge.vue";
+import AppLogout from "./components/AppLogout.vue";
 import Notifications from "./components/AppNotifications.vue";
 import EditTags from "./components/EditTags.vue";
 import { mailbox } from "./stores/mailbox";
@@ -10,6 +11,7 @@ export default {
 	components: {
 		Favicon,
 		AppBadge,
+		AppLogout,
 		Notifications,
 		EditTags,
 	},
@@ -42,6 +44,7 @@ export default {
 	<RouterView />
 	<Favicon />
 	<AppBadge />
+	<AppLogout />
 	<Notifications />
 	<EditTags />
 </template>

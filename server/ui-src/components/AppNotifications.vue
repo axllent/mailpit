@@ -3,6 +3,7 @@ import CommonMixins from "../mixins/CommonMixins";
 import { Toast } from "bootstrap";
 import { mailbox } from "../stores/mailbox";
 import { pagination } from "../stores/pagination";
+import { getToken, oidcEnabled } from "../services/oidcAuth";
 
 export default {
 	mixins: [CommonMixins],
@@ -31,9 +32,6 @@ export default {
 			this.version = d.dataset.version;
 		}
 
-		const proto = location.protocol === "https:" ? "wss" : "ws";
-		this.socketURI = proto + "://" + document.location.host + this.resolve(`/api/events`);
-
 		this.socketBreakReset();
 		this.connect();
 
@@ -45,8 +43,25 @@ export default {
 	},
 
 	methods: {
+		// Build the WebSocket URL. When OIDC is enabled, append the current
+		// ID token as ?access_token= since browsers can't set headers on
+		// WebSocket upgrades. Recomputed on every connect so refresh-token
+		// rotation is picked up on reconnections.
+		async buildSocketURI() {
+			const proto = location.protocol === "https:" ? "wss" : "ws";
+			let uri = proto + "://" + document.location.host + this.resolve("/api/events");
+			if (oidcEnabled()) {
+				const t = await getToken();
+				if (t) {
+					uri += "?access_token=" + encodeURIComponent(t);
+				}
+			}
+			return uri;
+		},
+
 		// websocket connect
-		connect() {
+		async connect() {
+			this.socketURI = await this.buildSocketURI();
 			const ws = new WebSocket(this.socketURI);
 			ws.onmessage = (e) => {
 				let response;

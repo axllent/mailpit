@@ -220,8 +220,44 @@ func apiRoutes() *http.ServeMux {
 }
 
 // BasicAuthResponse returns an basic auth response to the browser
-func basicAuthResponse(w http.ResponseWriter) {
-	w.Header().Set("WWW-Authenticate", `Basic realm="Login"`)
+// checkUIAuth returns true when the request carries valid auth via either
+// the OIDC verifier (Bearer JWT in Authorization header or ?access_token=
+// query param) or Basic Auth against the htpasswd store. When neither
+// auth method is configured the request is allowed.
+func checkUIAuth(r *http.Request) bool {
+	if auth.UICredentials == nil && auth.OIDCVerifier == nil {
+		return true
+	}
+	if auth.OIDCVerifier != nil {
+		authz := r.Header.Get("Authorization")
+		raw := strings.TrimPrefix(authz, "Bearer ")
+		if raw == authz {
+			// Authorization header was not a Bearer token; fall back to query param.
+			raw = r.URL.Query().Get("access_token")
+		}
+		if _, ok := auth.VerifyBearer(r.Context(), raw); ok {
+			return true
+		}
+	}
+	if auth.UICredentials != nil {
+		if user, pass, ok := r.BasicAuth(); ok && auth.UICredentials.Match(user, pass) {
+			return true
+		}
+	}
+	return false
+}
+
+// unauthorizedResponse writes a 401. When OIDC is enabled it adds the
+// X-Mp-Auth-Required header so the SPA's axios interceptor can trigger
+// signinRedirect. The Basic challenge is preserved when htpasswd is
+// configured so curl-based integrations keep working.
+func unauthorizedResponse(w http.ResponseWriter) {
+	if auth.OIDCVerifier != nil {
+		w.Header().Set("X-Mp-Auth-Required", "oidc")
+	}
+	if auth.UICredentials != nil {
+		w.Header().Set("WWW-Authenticate", `Basic realm="Login"`)
+	}
 	w.WriteHeader(http.StatusUnauthorized)
 	_, _ = w.Write([]byte("Unauthorized.\n"))
 }
@@ -244,12 +280,12 @@ func sendAPIAuthMiddleware(fn http.HandlerFunc) http.HandlerFunc {
 			user, pass, ok := r.BasicAuth()
 
 			if !ok {
-				basicAuthResponse(w)
+				unauthorizedResponse(w)
 				return
 			}
 
 			if !auth.SendAPICredentials.Match(user, pass) {
-				basicAuthResponse(w)
+				unauthorizedResponse(w)
 				return
 			}
 
@@ -308,22 +344,16 @@ func middleWareFunc(fn http.HandlerFunc) http.HandlerFunc {
 			w.Header().Set("Access-Control-Allow-Headers", "*")
 		}
 
-		// Check basic authentication headers if configured.
-		// OPTIONS requests are skipped if CORS is enabled, since browsers omit credentials for preflight checks.
-		// skipUIAuthKey in the request context allows sendAPIAuthMiddleware to bypass UI auth
-		// for a specific request without touching the global auth.UICredentials pointer.
+		// Check UI authentication if configured. OPTIONS requests are skipped if CORS is
+		// enabled, since browsers omit credentials for preflight checks. skipUIAuthKey in
+		// the request context allows sendAPIAuthMiddleware to bypass UI auth for a specific
+		// request without touching the global auth state. checkUIAuth accepts either a
+		// valid OIDC Bearer token (when OIDC is configured) or matching Basic credentials.
 		skipUIAuth, _ := r.Context().Value(skipUIAuthKey).(bool)
 		isCORSOptionsRequest := AccessControlAllowOrigin != "" && r.Method == http.MethodOptions
-		if !skipUIAuth && !isCORSOptionsRequest && auth.UICredentials != nil {
-			user, pass, ok := r.BasicAuth()
-
-			if !ok {
-				basicAuthResponse(w)
-				return
-			}
-
-			if !auth.UICredentials.Match(user, pass) {
-				basicAuthResponse(w)
+		if !skipUIAuth && !isCORSOptionsRequest {
+			if !checkUIAuth(r) {
+				unauthorizedResponse(w)
 				return
 			}
 		}
@@ -407,12 +437,13 @@ func index(w http.ResponseWriter, r *http.Request) {
 </head>
 
 <body class="h-100">
-	<div class="container-fluid h-100 d-flex flex-column" id="app" data-webroot="{{ .Webroot }}" data-version="{{ .Version }}">
+	<div class="container-fluid h-100 d-flex flex-column" id="app" data-webroot="{{ .Webroot }}" data-version="{{ .Version }}" data-oidc-issuer="{{ .OIDCIssuer }}" data-oidc-client-id="{{ .OIDCClientID }}">
 		<noscript class="alert alert-warning position-absolute top-50 start-50 translate-middle">
 			You need a browser with JavaScript enabled to use Mailpit
 		</noscript>
 	</div>
 
+	{{ if .OIDCEnabled }}<script src="{{ .Webroot }}dist/oidc-entry.js?{{ .Version }}" nonce="{{ .Nonce }}"></script>{{ end }}
 	<script src="{{ .Webroot }}dist/app.js?{{ .Version }}" nonce="{{ .Nonce }}"></script>
 </body>
 
@@ -424,13 +455,19 @@ func index(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := struct {
-		Webroot string
-		Version string
-		Nonce   string
+		Webroot       string
+		Version       string
+		Nonce         string
+		OIDCEnabled   bool
+		OIDCIssuer    string
+		OIDCClientID  string
 	}{
-		Webroot: config.Webroot,
-		Version: config.Version,
-		Nonce:   r.Header.Get("mp-nonce"),
+		Webroot:      config.Webroot,
+		Version:      config.Version,
+		Nonce:        r.Header.Get("mp-nonce"),
+		OIDCEnabled:  config.UIOIDCIssuer != "",
+		OIDCIssuer:   config.UIOIDCIssuer,
+		OIDCClientID: config.UIOIDCClientID,
 	}
 
 	buff := new(bytes.Buffer)

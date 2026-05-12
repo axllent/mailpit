@@ -2,6 +2,7 @@
 package config
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net"
@@ -83,6 +84,13 @@ var (
 
 	// UIAuthFile for UI & API authentication
 	UIAuthFile string
+
+	// UIOIDCIssuer is the OIDC issuer URL (discovery endpoint) for web UI authentication.
+	// When empty, OIDC is disabled and the existing Basic Auth behaviour is unchanged.
+	UIOIDCIssuer string
+
+	// UIOIDCClientID is the OIDC client ID registered with the IdP for this Mailpit instance.
+	UIOIDCClientID string
 
 	// Webroot to define the base path for the UI and API
 	Webroot = "/"
@@ -340,6 +348,16 @@ func VerifyConfig() error {
 
 		if err := auth.SetUIAuth(string(b)); err != nil {
 			return err
+		}
+	}
+
+	// OIDC for the web UI. Disabled when issuer is empty.
+	if UIOIDCIssuer != "" {
+		if UIOIDCClientID == "" {
+			return errors.New("[ui] OIDC client ID is required when OIDC issuer is set")
+		}
+		if err := auth.InitOIDC(context.Background(), UIOIDCIssuer, UIOIDCClientID); err != nil {
+			return fmt.Errorf("[ui] OIDC: %w", err)
 		}
 	}
 
