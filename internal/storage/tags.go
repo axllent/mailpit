@@ -8,7 +8,6 @@ import (
 	"regexp"
 	"sort"
 	"strings"
-	"sync"
 
 	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/internal/logger"
@@ -19,45 +18,62 @@ import (
 
 var (
 	addressPlusRe = regexp.MustCompile(`(?U)^(.*){1,}\+(.*)@`)
-	addTagMutex   sync.RWMutex
 )
 
 // SetMessageTags will set the tags for a given database ID, removing any not in the array
 func SetMessageTags(id string, tags []string) ([]string, error) {
+	// Clean and deduplicate incoming tags (case-insensitive)
+	seen := make(map[string]struct{})
 	applyTags := []string{}
 	for _, t := range tags {
 		t = tools.CleanTag(t)
-		if t != "" && config.ValidTagRegexp.MatchString(t) && !tools.InArray(t, applyTags) {
-			applyTags = append(applyTags, t)
-		}
-	}
-
-	tagNames := []string{}
-	currentTags := getMessageTags(id)
-	origTagCount := len(currentTags)
-
-	for _, t := range applyTags {
-		if t == "" || !config.ValidTagRegexp.MatchString(t) || tools.InArray(t, currentTags) {
+		if t == "" || !config.ValidTagRegexp.MatchString(t) {
 			continue
 		}
+		lc := strings.ToLower(t)
+		if _, exists := seen[lc]; exists {
+			continue
+		}
+		seen[lc] = struct{}{}
+		applyTags = append(applyTags, t)
+	}
 
+	// Fetch existing tags once and index by lowercase name for O(1) lookup
+	currentTags := getMessageTags(id)
+	currentSet := make(map[string]struct{}, len(currentTags))
+	for _, t := range currentTags {
+		currentSet[strings.ToLower(t)] = struct{}{}
+	}
+
+	// Build apply set for O(1) lookup when computing deletions
+	applySet := make(map[string]struct{}, len(applyTags))
+	for _, t := range applyTags {
+		applySet[strings.ToLower(t)] = struct{}{}
+	}
+
+	// Add tags not already on the message
+	tagNames := []string{}
+	for _, t := range applyTags {
+		if _, exists := currentSet[strings.ToLower(t)]; exists {
+			continue
+		}
 		name, err := addMessageTag(id, t)
 		if err != nil {
 			return []string{}, err
 		}
-
 		tagNames = append(tagNames, name)
 	}
 
-	if origTagCount > 0 {
-		currentTags = getMessageTags(id)
-
-		for _, t := range currentTags {
-			if !tools.InArray(t, applyTags) {
-				if err := deleteMessageTag(id, t); err != nil {
-					return []string{}, err
-				}
-			}
+	// Delete tags removed from the message in a single batch query
+	toDelete := []string{}
+	for _, t := range currentTags {
+		if _, exists := applySet[strings.ToLower(t)]; !exists {
+			toDelete = append(toDelete, t)
+		}
+	}
+	if len(toDelete) > 0 {
+		if err := deleteMessageTags(id, toDelete); err != nil {
+			return []string{}, err
 		}
 	}
 
@@ -73,57 +89,63 @@ func SetMessageTags(id string, tags []string) ([]string, error) {
 
 // AddMessageTag adds a tag to a message
 func addMessageTag(id, name string) (string, error) {
-	// prevent two identical tags being added at the same time
-	addTagMutex.Lock()
-
-	var tagID int
-	var foundName sql.NullString
-
-	q := sqlf.From(tenant("tags")).
-		Select("ID").To(&tagID).
-		Select("Name").To(&foundName).
-		Where("Name = ?", name)
-
-	// if tag exists - add tag to message
-	if err := q.QueryRowAndClose(context.TODO(), db); err == nil {
-		addTagMutex.Unlock()
-		// check message does not already have this tag
-		var exists int
-
-		if err := sqlf.From(tenant("message_tags")).
-			Select("COUNT(ID)").To(&exists).
-			Where("ID = ?", id).
-			Where("TagID = ?", tagID).
-			QueryRowAndClose(context.Background(), db); err != nil {
-			return "", err
-		}
-		if exists > 0 {
-			// already exists
-			return foundName.String, nil
-		}
-
-		logger.Log().Debugf("[tags] adding tag \"%s\" to %s", name, id)
-
-		_, err := sqlf.InsertInto(tenant("message_tags")).
-			Set("ID", id).
-			Set("TagID", tagID).
-			ExecAndClose(context.TODO(), db)
-
-		return foundName.String, err
-	}
-
-	// new tag, add to the database
-	if _, err := sqlf.InsertInto(tenant("tags")).
-		Set("Name", name).
-		ExecAndClose(context.TODO(), db); err != nil {
-		addTagMutex.Unlock()
+	// Ensure the tag row exists; the UNIQUE index on Name makes concurrent inserts safe
+	if _, err := db.Exec(fmt.Sprintf(`INSERT OR IGNORE INTO %s (Name) VALUES (?)`, tenant("tags")), name); err != nil { // #nosec
 		return name, err
 	}
 
-	addTagMutex.Unlock()
+	var tagID int
+	var foundName string
 
-	// add tag to the message
-	return addMessageTag(id, name)
+	if err := sqlf.From(tenant("tags")).
+		Select("ID").To(&tagID).
+		Select("Name").To(&foundName).
+		Where("Name = ?", name).
+		QueryRowAndClose(context.TODO(), db); err != nil {
+		return name, err
+	}
+
+	// Check message does not already have this tag
+	var exists int
+	if err := sqlf.From(tenant("message_tags")).
+		Select("COUNT(ID)").To(&exists).
+		Where("ID = ?", id).
+		Where("TagID = ?", tagID).
+		QueryRowAndClose(context.Background(), db); err != nil {
+		return "", err
+	}
+	if exists > 0 {
+		return foundName, nil
+	}
+
+	logger.Log().Debugf("[tags] adding tag \"%s\" to %s", name, id)
+
+	_, err := sqlf.InsertInto(tenant("message_tags")).
+		Set("ID", id).
+		Set("TagID", tagID).
+		ExecAndClose(context.TODO(), db)
+
+	return foundName, err
+}
+
+// deleteMessageTags deletes multiple tags from a message in a single query
+func deleteMessageTags(id string, names []string) error {
+	args := make([]any, 1+len(names))
+	args[0] = id
+	for i, n := range names {
+		args[i+1] = n
+	}
+
+	query := fmt.Sprintf(
+		`DELETE FROM %s WHERE ID = ? AND TagID IN (SELECT ID FROM %s WHERE Name IN (?%s))`,
+		tenant("message_tags"), tenant("tags"), strings.Repeat(",?", len(names)-1),
+	) // #nosec
+
+	if _, err := db.Exec(query, args...); err != nil {
+		return err
+	}
+
+	return pruneUnusedTags()
 }
 
 // DeleteMessageTag deletes a tag from a message
@@ -338,6 +360,43 @@ func (d Metadata) tagsFromPlusAddresses() []string {
 	}
 
 	return tools.SetTagCasing(tags)
+}
+
+// getTagsForIDs fetches tags for a set of message IDs in a single query,
+// returning a map of message ID to tag names.
+func getTagsForIDs(ids []string) map[string][]string {
+	result := make(map[string][]string, len(ids))
+	if len(ids) == 0 {
+		return result
+	}
+
+	args := make([]any, len(ids))
+	for i, id := range ids {
+		args[i] = id
+	}
+
+	query := fmt.Sprintf(
+		`SELECT mt.ID, t.Name FROM %s t JOIN %s mt ON t.ID = mt.TagID WHERE mt.ID IN (?%s) ORDER BY mt.ID, t.Name`,
+		tenant("Tags"), tenant("message_tags"), strings.Repeat(",?", len(ids)-1),
+	) // #nosec
+
+	rows, err := db.Query(query, args...)
+	if err != nil {
+		logger.Log().Errorf("[tags] %s", err.Error())
+		return result
+	}
+	defer func() { _ = rows.Close() }()
+
+	for rows.Next() {
+		var id, name string
+		if err := rows.Scan(&id, &name); err != nil {
+			logger.Log().Errorf("[tags] %s", err.Error())
+			return result
+		}
+		result[id] = append(result[id], name)
+	}
+
+	return result
 }
 
 // Get message tags from the database for a given database ID

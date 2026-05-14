@@ -639,6 +639,9 @@ loop:
 				xCArgs := strings.SplitSeq(args, " ")
 				for xCArg := range xCArgs {
 					xCParse := strings.Split(strings.TrimSpace(xCArg), "=")
+					if len(xCParse) != 2 {
+						continue
+					}
 					if strings.ToUpper(xCParse[0]) == "ADDR" && (net.ParseIP(xCParse[1]) != nil) {
 						s.xClientADDR = xCParse[1]
 					}
@@ -879,10 +882,14 @@ func (s *session) readData() ([]byte, error) {
 // TODO: Work out what to do with multiple to addresses.
 func (s *session) makeHeaders(to []string) []byte {
 	var buffer bytes.Buffer
+	if len(to) == 0 {
+		return buffer.Bytes()
+	}
+
 	now := time.Now().Format("Mon, 2 Jan 2006 15:04:05 -0700 (MST)")
-	buffer.WriteString(fmt.Sprintf("Received: from %s (%s [%s])\r\n", s.remoteName, s.remoteHost, s.remoteIP))
-	buffer.WriteString(fmt.Sprintf("        by %s (%s) with SMTP\r\n", s.srv.Hostname, s.srv.AppName))
-	buffer.WriteString(fmt.Sprintf("        for <%s>; %s\r\n", to[0], now))
+	fmt.Fprintf(&buffer, "Received: from %s (%s [%s])\r\n", s.remoteName, s.remoteHost, s.remoteIP)
+	fmt.Fprintf(&buffer, "        by %s (%s) with SMTP\r\n", s.srv.Hostname, s.srv.AppName)
+	fmt.Fprintf(&buffer, "        for <%s>; %s\r\n", to[0], now)
 	return buffer.Bytes()
 }
 

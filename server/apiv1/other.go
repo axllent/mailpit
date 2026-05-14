@@ -11,7 +11,6 @@ import (
 	"github.com/axllent/mailpit/internal/linkcheck"
 	"github.com/axllent/mailpit/internal/spamassassin"
 	"github.com/axllent/mailpit/internal/storage"
-	"github.com/gorilla/mux"
 	"github.com/jhillyerd/enmime/v2"
 )
 
@@ -35,8 +34,7 @@ func HTMLCheck(w http.ResponseWriter, r *http.Request) {
 	//    400: ErrorResponse
 	//    404: NotFoundResponse
 
-	vars := mux.Vars(r)
-	id := vars["id"]
+	id := r.PathValue("id")
 
 	if id == "latest" {
 		var err error
@@ -105,8 +103,7 @@ func LinkCheck(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	vars := mux.Vars(r)
-	id := vars["id"]
+	id := r.PathValue("id")
 
 	if id == "latest" {
 		var err error
@@ -158,8 +155,7 @@ func SpamAssassinCheck(w http.ResponseWriter, r *http.Request) {
 	//    400: ErrorResponse
 	//    404: NotFoundResponse
 
-	vars := mux.Vars(r)
-	id := vars["id"]
+	id := r.PathValue("id")
 
 	if id == "latest" {
 		var err error

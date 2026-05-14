@@ -23,10 +23,12 @@ import (
 	"path"
 	"regexp"
 	"strings"
+	"time"
+
+	"net"
 
 	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/internal/logger"
-	"github.com/mneis/go-telnet"
 	flag "github.com/spf13/pflag"
 )
 
@@ -119,28 +121,47 @@ func Run() {
 	socketAddr, isSocket := socketAddress(SMTPAddr)
 
 	// handles `sendmail -bs`
-	// telnet directly to SMTP
+	// relay stdin/stdout to SMTP connection
 	if UseB && UseS {
-		var caller = telnet.StandardCaller
-		switch isSocket {
-		case true:
-			if err := telnet.DialToAndCallUnix(socketAddr, caller); err != nil {
-				fmt.Println(err)
-				os.Exit(1)
-			}
-		default:
-			if err := telnet.DialToAndCall(SMTPAddr, caller); err != nil {
-				fmt.Println(err)
-				os.Exit(1)
-			}
+		network := "tcp"
+		addr := SMTPAddr
+		if isSocket {
+			network = "unix"
+			addr = socketAddr
+		}
+
+		conn, err := net.Dial(network, addr)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		defer func() { _ = conn.Close() }()
+
+		done := make(chan struct{})
+		go func() {
+			_, _ = io.Copy(os.Stdout, conn)
+			close(done)
+		}()
+		_, _ = io.Copy(conn, os.Stdin)
+		if cw, ok := conn.(interface{ CloseWrite() error }); ok {
+			_ = cw.CloseWrite()
+		}
+		select {
+		case <-done:
+		case <-time.After(30 * time.Second):
 		}
 
 		return
 	}
 
-	body, err := io.ReadAll(os.Stdin)
+	const maxMessageSize = 1000 * 1024 * 1024
+	body, err := io.ReadAll(io.LimitReader(os.Stdin, maxMessageSize+1))
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "error reading stdin")
+		os.Exit(11)
+	}
+	if len(body) > maxMessageSize {
+		fmt.Fprintf(os.Stderr, "message exceeds %d MiB size cap\n", maxMessageSize/(1024*1024))
 		os.Exit(11)
 	}
 

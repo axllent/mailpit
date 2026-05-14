@@ -7,7 +7,7 @@ COPY . /app
 WORKDIR /app
 
 RUN  apk upgrade && apk add git npm && \
-npm install && npm run package && \
+npm ci && npm run package && \
 CGO_ENABLED=0 go build -ldflags "-s -w -X github.com/axllent/mailpit/config.Version=${VERSION}" -o /mailpit
 
 FROM alpine:latest

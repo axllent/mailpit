@@ -25,8 +25,6 @@ const (
 )
 
 var (
-	newline = []byte{'\n'}
-
 	// MessageHub global
 	MessageHub *Hub
 )
@@ -56,6 +54,7 @@ type Client struct {
 func (c *Client) readPump() {
 	defer func() {
 		c.hub.unregister <- c
+		c.conn.Close()
 	}()
 
 	for {
@@ -79,6 +78,7 @@ func (c *Client) writePump() {
 	defer func() {
 		ticker.Stop()
 		c.hub.unregister <- c
+		c.conn.Close()
 	}()
 	for {
 		select {
@@ -90,25 +90,14 @@ func (c *Client) writePump() {
 				return
 			}
 
-			w, err := c.conn.NextWriter(websocket.TextMessage)
-			if err != nil {
-				return
-			}
-			_, _ = w.Write(message)
-
-			// Add queued chat messages to the current websocket message.
-			n := len(c.send)
-			for range n {
-				_, _ = w.Write(newline)
-				_, _ = w.Write(<-c.send)
-			}
-
-			if err := w.Close(); err != nil {
+			if err := c.conn.WriteMessage(websocket.TextMessage, message); err != nil {
 				return
 			}
 		case <-ticker.C:
 			_ = c.conn.SetWriteDeadline(time.Now().Add(writeWait))
-			_ = c.conn.WriteMessage(websocket.PingMessage, []byte{})
+			if err := c.conn.WriteMessage(websocket.PingMessage, []byte{}); err != nil {
+				return
+			}
 		}
 	}
 }

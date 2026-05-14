@@ -9,7 +9,6 @@ import (
 	"net/url"
 
 	"github.com/axllent/mailpit/internal/storage"
-	"github.com/gorilla/mux"
 )
 
 // GetMessage (method: GET) returns the Message as JSON
@@ -32,9 +31,7 @@ func GetMessage(w http.ResponseWriter, r *http.Request) {
 	//    400: ErrorResponse
 	//    404: NotFoundResponse
 
-	vars := mux.Vars(r)
-
-	id := vars["id"]
+	id := r.PathValue("id")
 
 	if id == "latest" {
 		var err error
@@ -78,9 +75,7 @@ func GetHeaders(w http.ResponseWriter, r *http.Request) {
 	//    400: ErrorResponse
 	//    404: NotFoundResponse
 
-	vars := mux.Vars(r)
-
-	id := vars["id"]
+	id := r.PathValue("id")
 
 	if id == "latest" {
 		var err error
@@ -133,10 +128,8 @@ func DownloadAttachment(w http.ResponseWriter, r *http.Request) {
 	//    400: ErrorResponse
 	//    404: NotFoundResponse
 
-	vars := mux.Vars(r)
-
-	id := vars["id"]
-	partID := vars["partID"]
+	id := r.PathValue("id")
+	partID := r.PathValue("partID")
 
 	if id == "latest" {
 		var err error
@@ -183,9 +176,7 @@ func DownloadRaw(w http.ResponseWriter, r *http.Request) {
 	//    400: ErrorResponse
 	//    404: NotFoundResponse
 
-	vars := mux.Vars(r)
-
-	id := vars["id"]
+	id := r.PathValue("id")
 	dl := r.FormValue("dl")
 
 	if id == "latest" {

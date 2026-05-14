@@ -328,6 +328,53 @@ func TestAPIv1Send(t *testing.T) {
 	assertEqual(t, `This is a plain text attachment`, string(attachmentBytes), "wrong Attachment content")
 }
 
+func TestAPIv1SendMaxMessageSize(t *testing.T) {
+	setup()
+	defer storage.Close()
+
+	r := apiRoutes()
+
+	ts := httptest.NewServer(r)
+	defer ts.Close()
+
+	original := config.MaxMessageSize
+	defer func() { config.MaxMessageSize = original }()
+
+	config.MaxMessageSize = 1 // 1 MiB cap for the test
+
+	bigText := strings.Repeat("X", 2*1024*1024)
+	oversized := fmt.Sprintf(`{
+		"From": {"Email": "a@example.com"},
+		"To": [{"Email": "b@example.com"}],
+		"Subject": "oversize",
+		"Text": %q
+	}`, bigText)
+
+	t.Log("Sending oversize message via HTTP API (expect 413)")
+	req, err := http.NewRequest("POST", ts.URL+"/api/v1/send", strings.NewReader(oversized))
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatalf("unexpected transport error: %s", err)
+	}
+	_ = resp.Body.Close()
+	assertEqual(t, http.StatusRequestEntityTooLarge, resp.StatusCode, "expected 413 for oversize body")
+
+	t.Log("Sending normal-sized message via HTTP API (expect 200)")
+	jsonData, _ := json.Marshal(testSendMessage)
+	if _, err := clientPost(ts.URL+"/api/v1/send", string(jsonData)); err != nil {
+		t.Errorf("expected success for in-bound payload, got: %s", err)
+	}
+
+	t.Log("Setting MaxMessageSize=0 (unlimited), oversize should now succeed")
+	config.MaxMessageSize = 0
+	if _, err := clientPost(ts.URL+"/api/v1/send", oversized); err != nil {
+		t.Errorf("expected success when MaxMessageSize=0, got: %s", err)
+	}
+}
+
 func TestSendAPIAuthMiddleware(t *testing.T) {
 	setup()
 	defer storage.Close()

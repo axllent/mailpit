@@ -10,11 +10,7 @@ export default {
 </script>
 
 <template>
-	<div v-if="loading > 0" class="loader">
-		<div class="d-flex justify-content-center align-items-center h-100">
-			<div class="spinner-border text-muted" role="status">
-				<span class="visually-hidden">Loading...</span>
-			</div>
-		</div>
+	<div v-if="loading > 0" class="loader" role="status" aria-live="polite" aria-label="Loading">
+		<div class="loader-bar"></div>
 	</div>
 </template>

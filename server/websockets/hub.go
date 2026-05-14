@@ -3,7 +3,7 @@ package websockets
 
 import (
 	"encoding/json"
-	"time"
+	"sync/atomic"
 
 	"github.com/axllent/mailpit/internal/logger"
 )
@@ -22,6 +22,9 @@ type Hub struct {
 
 	// Unregister requests from clients.
 	unregister chan *Client
+
+	// clientCount is an atomic count of connected clients, safe for concurrent reads.
+	clientCount atomic.Int64
 }
 
 // WebsocketNotification struct for responses
@@ -48,12 +51,14 @@ func (h *Hub) Run() {
 			if _, ok := h.Clients[client]; !ok {
 				logger.Log().Debugf("[websocket] client %s connected", client.conn.RemoteAddr().String())
 				h.Clients[client] = true
+				h.clientCount.Add(1)
 			}
 		case client := <-h.unregister:
 			if _, ok := h.Clients[client]; ok {
 				logger.Log().Debugf("[websocket] client %s disconnected", client.conn.RemoteAddr().String())
 				delete(h.Clients, client)
 				close(client.send)
+				h.clientCount.Add(-1)
 			}
 		case message := <-h.Broadcast:
 			for client := range h.Clients {
@@ -62,6 +67,7 @@ func (h *Hub) Run() {
 				default:
 					close(client.send)
 					delete(h.Clients, client)
+					h.clientCount.Add(-1)
 				}
 			}
 		}
@@ -70,7 +76,7 @@ func (h *Hub) Run() {
 
 // Broadcast will spawn a broadcast message to all connected clients
 func Broadcast(t string, msg any) {
-	if MessageHub == nil || len(MessageHub.Clients) == 0 {
+	if MessageHub == nil || MessageHub.clientCount.Load() == 0 {
 		return
 	}
 
@@ -83,10 +89,6 @@ func Broadcast(t string, msg any) {
 		logger.Log().Errorf("[websocket] broadcast received invalid data: %s", err.Error())
 		return
 	}
-
-	// add a very small delay to prevent broadcasts from being interpreted
-	// as a multi-line messages (eg: storage.DeleteMessages() which can send a very quick series)
-	time.Sleep(time.Millisecond)
 
 	go func() { MessageHub.Broadcast <- b }()
 }

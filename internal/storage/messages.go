@@ -19,12 +19,12 @@ import (
 
 	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/internal/logger"
+	"github.com/axllent/mailpit/internal/shortuuid"
 	"github.com/axllent/mailpit/internal/tools"
 	"github.com/axllent/mailpit/server/webhook"
 	"github.com/axllent/mailpit/server/websockets"
 	"github.com/jhillyerd/enmime/v2"
 	"github.com/leporo/sqlf"
-	"github.com/lithammer/shortuuid/v4"
 )
 
 // Store will save an email to the database tables.
@@ -278,8 +278,19 @@ func List(start int, beforeTS int64, limit int) ([]MessageSummary, error) {
 	}
 
 	// set tags for listed messages only
-	for i, m := range results {
-		results[i].Tags = getMessageTags(m.ID)
+	if len(results) > 0 {
+		ids := make([]string, len(results))
+		for i, m := range results {
+			ids[i] = m.ID
+		}
+		tagMap := getTagsForIDs(ids)
+		for i, m := range results {
+			if tags, ok := tagMap[m.ID]; ok {
+				results[i].Tags = tags
+			} else {
+				results[i].Tags = []string{}
+			}
+		}
 	}
 
 	dbLastAction = time.Now()
@@ -548,22 +559,109 @@ func LatestID(r *http.Request) (string, error) {
 
 // MarkRead will mark a message as read
 func MarkRead(ids []string) error {
-	for _, id := range ids {
-		_, err := sqlf.Update(tenant("mailbox")).
-			Set("Read", 1).
-			Where("ID = ?", id).
-			ExecAndClose(context.Background(), db)
+	if len(ids) == 0 {
+		return nil
+	}
 
-		if err == nil {
-			logger.Log().Debugf("[db] marked message %s as read", id)
+	args := make([]any, len(ids))
+	for i, id := range ids {
+		args[i] = id
+	}
+	placeholder := `(?` + strings.Repeat(",?", len(ids)-1) + `)`
+
+	// Find which messages are actually unread (will change state)
+	toUpdate := []string{}
+	rows, err := db.Query(fmt.Sprintf(`SELECT ID FROM %s WHERE Read = 0 AND ID IN %s`, tenant("mailbox"), placeholder), args...) // #nosec
+	if err != nil {
+		return err
+	}
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			_ = rows.Close()
+			return err
 		}
+		toUpdate = append(toUpdate, id)
+	}
+	_ = rows.Close()
 
-		d := struct {
+	if len(toUpdate) == 0 {
+		return nil
+	}
+
+	updateArgs := make([]any, len(toUpdate))
+	for i, id := range toUpdate {
+		updateArgs[i] = id
+	}
+	updatePlaceholder := `(?` + strings.Repeat(",?", len(toUpdate)-1) + `)`
+
+	if _, err := db.Exec(fmt.Sprintf(`UPDATE %s SET Read = 1 WHERE ID IN %s`, tenant("mailbox"), updatePlaceholder), updateArgs...); err != nil { // #nosec
+		return err
+	}
+
+	for _, id := range toUpdate {
+		logger.Log().Debugf("[db] marked message %s as read", id)
+		websockets.Broadcast("update", struct {
 			ID   string
 			Read bool
-		}{ID: id, Read: true}
+		}{ID: id, Read: true})
+	}
 
-		websockets.Broadcast("update", d)
+	BroadcastMailboxStats()
+
+	return nil
+}
+
+// MarkUnread will mark a message as unread
+func MarkUnread(ids []string) error {
+	if len(ids) == 0 {
+		return nil
+	}
+
+	args := make([]any, len(ids))
+	for i, id := range ids {
+		args[i] = id
+	}
+	placeholder := `(?` + strings.Repeat(",?", len(ids)-1) + `)`
+
+	// Find which messages are actually read (will change state)
+	toUpdate := []string{}
+	rows, err := db.Query(fmt.Sprintf(`SELECT ID FROM %s WHERE Read = 1 AND ID IN %s`, tenant("mailbox"), placeholder), args...) // #nosec
+	if err != nil {
+		return err
+	}
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			_ = rows.Close()
+			return err
+		}
+		toUpdate = append(toUpdate, id)
+	}
+	_ = rows.Close()
+
+	if len(toUpdate) == 0 {
+		return nil
+	}
+
+	updateArgs := make([]any, len(toUpdate))
+	for i, id := range toUpdate {
+		updateArgs[i] = id
+	}
+	updatePlaceholder := `(?` + strings.Repeat(",?", len(toUpdate)-1) + `)`
+
+	if _, err := db.Exec(fmt.Sprintf(`UPDATE %s SET Read = 0 WHERE ID IN %s`, tenant("mailbox"), updatePlaceholder), updateArgs...); err != nil { // #nosec
+		return err
+	}
+
+	dbLastAction = time.Now()
+
+	for _, id := range toUpdate {
+		logger.Log().Debugf("[db] marked message %s as unread", id)
+		websockets.Broadcast("update", struct {
+			ID   string
+			Read bool
+		}{ID: id, Read: false})
 	}
 
 	BroadcastMailboxStats()
@@ -617,33 +715,6 @@ func MarkAllUnread() error {
 	BroadcastMailboxStats()
 
 	dbLastAction = time.Now()
-
-	return nil
-}
-
-// MarkUnread will mark a message as unread
-func MarkUnread(ids []string) error {
-	for _, id := range ids {
-		_, err := sqlf.Update(tenant("mailbox")).
-			Set("Read", 0).
-			Where("ID = ?", id).
-			ExecAndClose(context.Background(), db)
-
-		if err == nil {
-			logger.Log().Debugf("[db] marked message %s as unread", id)
-		}
-
-		dbLastAction = time.Now()
-
-		d := struct {
-			ID   string
-			Read bool
-		}{ID: id, Read: false}
-
-		websockets.Broadcast("update", d)
-	}
-
-	BroadcastMailboxStats()
 
 	return nil
 }

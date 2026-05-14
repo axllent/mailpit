@@ -190,7 +190,7 @@ func inlineRemoteCSS(h string) (string, error) {
 // It requires the HTTP response code to be 200 and the content-type to be text/css.
 // It will download a maximum of 5MB.
 func downloadCSSToBytes(url string) ([]byte, error) {
-	client := newSafeHTTPClient()
+	client := safeHTTPClient()
 	req, err := http.NewRequestWithContext(context.TODO(), http.MethodGet, url, nil)
 	if err != nil {
 		return nil, err
@@ -272,17 +272,15 @@ func testInlineStyles(doc *goquery.Document) map[string]int {
 	return matches
 }
 
-func newSafeHTTPClient() *http.Client {
+func safeHTTPClient() *http.Client {
 	dialer := &net.Dialer{
 		Timeout:   5 * time.Second,
 		KeepAlive: 30 * time.Second,
 	}
 
 	tr := &http.Transport{
-		Proxy: nil, // avoid env proxy surprises unless you explicitly want it
-		DialContext: func(ctx context.Context, network, address string) (net.Conn, error) {
-			return dialer.DialContext(ctx, network, address)
-		},
+		Proxy:                 nil, // avoid env proxy surprises unless you explicitly want it
+		DialContext:           safeDialContext(dialer),
 		TLSHandshakeTimeout:   5 * time.Second,
 		ResponseHeaderTimeout: 10 * time.Second,
 		ExpectContinueTimeout: 1 * time.Second,
@@ -307,4 +305,30 @@ func newSafeHTTPClient() *http.Client {
 	}
 
 	return client
+}
+
+// safeDialContext is the same pattern as linkcheck/status.go::safeDialContext
+// — copy the function (or factor a shared helper into internal/tools/net.go).
+func safeDialContext(dialer *net.Dialer) func(ctx context.Context, network, address string) (net.Conn, error) {
+	return func(ctx context.Context, network, address string) (net.Conn, error) {
+		host, port, err := net.SplitHostPort(address)
+		if err != nil {
+			return nil, err
+		}
+
+		ips, err := net.DefaultResolver.LookupIPAddr(ctx, host)
+		if err != nil {
+			return nil, err
+		}
+
+		if !config.AllowInternalHTTPRequests {
+			for _, ip := range ips {
+				if tools.IsInternalIP(ip.IP) {
+					return nil, fmt.Errorf("blocked request to %s (%s): private/reserved address", host, ip)
+				}
+			}
+		}
+
+		return dialer.DialContext(ctx, network, net.JoinHostPort(ips[0].IP.String(), port))
+	}
 }

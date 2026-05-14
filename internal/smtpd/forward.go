@@ -20,7 +20,7 @@ func autoForwardMessage(from string, data *[]byte) error {
 	}
 
 	if err := forward(from, *data); err != nil {
-		return errors.WithMessage(err, "[forward] error: %s")
+		return fmt.Errorf("[forward] error: %w", err)
 	}
 
 	logger.Log().Debugf(
@@ -59,6 +59,7 @@ func createForwardingSMTPClient(config config.SMTPForwardConfigStruct, addr stri
 	// Set the hostname for HELO/EHLO
 	if hostname, err := os.Hostname(); err == nil {
 		if err := client.Hello(hostname); err != nil {
+			_ = client.Close()
 			return nil, fmt.Errorf("error saying HELO/EHLO to %s: %v", addr, err)
 		}
 	}

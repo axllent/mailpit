@@ -57,7 +57,7 @@ func createSearchText(env *enmime.Envelope) string {
 	b.WriteString(env.GetHeader("Reply-To") + " ")
 	b.WriteString(env.GetHeader("Return-Path") + " ")
 
-	h := html2text.Strip(env.HTML, true)
+	h, _ := html2text.Strip(env.HTML, true)
 	if h != "" {
 		b.WriteString(h + " ")
 	} else {
