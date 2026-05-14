@@ -7,9 +7,9 @@ import (
 	"net/mail"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 
+	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/internal/logger"
 	sendmail "github.com/axllent/mailpit/sendmail/cmd"
 	"github.com/spf13/cobra"
@@ -34,6 +34,7 @@ The --recent flag will only consider files with a modification date within the l
 		var count int
 		var total int
 		var per100start = time.Now()
+		limit := int64(config.MaxMessageSize) * 1024 * 1024
 
 		for _, a := range args {
 			err := filepath.Walk(a,
@@ -42,11 +43,16 @@ The --recent flag will only consider files with a modification date within the l
 						logger.Log().Error(err)
 						return nil
 					}
-					if !isFile(path) {
+					if !info.Mode().IsRegular() {
 						return nil
 					}
 
 					if ingestRecent > 0 && time.Since(info.ModTime()) > time.Duration(ingestRecent)*24*time.Hour {
+						return nil
+					}
+
+					if config.MaxMessageSize > 0 && info.Size() > limit {
+						logger.Log().Warnf("%s exceeds %d MiB size cap, skipping", path, config.MaxMessageSize)
 						return nil
 					}
 
@@ -57,9 +63,17 @@ The --recent flag will only consider files with a modification date within the l
 					}
 					defer func() { _ = f.Close() }()
 
-					body, err := io.ReadAll(f)
+					var reader io.Reader = f
+					if config.MaxMessageSize > 0 {
+						reader = io.LimitReader(f, limit+1)
+					}
+					body, err := io.ReadAll(reader)
 					if err != nil {
 						logger.Log().Errorf("%s: %s", path, err.Error())
+						return nil
+					}
+					if config.MaxMessageSize > 0 && int64(len(body)) > limit {
+						logger.Log().Warnf("%s exceeds %d MiB size cap, skipping", path, config.MaxMessageSize)
 						return nil
 					}
 
@@ -87,22 +101,33 @@ The --recent flag will only consider files with a modification date within the l
 						}
 					}
 
-					if sendmail.FromAddr == "" {
-						if fromAddresses, err := msg.Header.AddressList("From"); err == nil {
-							sendmail.FromAddr = fromAddresses[0].Address
-						}
+					// Parse the message's From: header once for this iteration.
+					// Do NOT mutate the package-level sendmail.FromAddr — that
+					// is the CLI default and would leak across messages.
+					var msgFrom string
+					if fromAddresses, err := msg.Header.AddressList("From"); err == nil && len(fromAddresses) > 0 {
+						msgFrom = fromAddresses[0].Address
 					}
 
 					if len(recipients) == 0 {
-						// Bcc
-						recipients = []string{sendmail.FromAddr}
+						// Bcc — fall back to the message's own From, or the
+						// CLI-configured default if the message has none.
+						fallback := msgFrom
+						if fallback == "" {
+							fallback = sendmail.FromAddr
+						}
+						recipients = []string{fallback}
 					}
 
-					returnPath := strings.Trim(msg.Header.Get("Return-Path"), "<>")
+					// Return-Path per RFC 5321 is "<addr>" (or "<>" for null).
+					// Use mail.ParseAddress so we only strip the wrapping
+					// angle brackets, not stray "<"/">" inside the value.
+					var returnPath string
+					if rp, err := mail.ParseAddress(msg.Header.Get("Return-Path")); err == nil {
+						returnPath = rp.Address
+					}
 					if returnPath == "" {
-						if fromAddresses, err := msg.Header.AddressList("From"); err == nil {
-							returnPath = fromAddresses[0].Address
-						}
+						returnPath = msgFrom
 					}
 
 					err = sendmail.Send(sendmail.SMTPAddr, returnPath, recipients, body)
@@ -134,16 +159,7 @@ func init() {
 
 	ingestCmd.Flags().StringVarP(&sendmail.SMTPAddr, "smtp-addr", "S", sendmail.SMTPAddr, "SMTP server address")
 	ingestCmd.Flags().IntVarP(&ingestRecent, "recent", "r", 0, "Only ingest messages from the last X days (default all)")
-}
-
-// IsFile returns if a path is a file
-func isFile(path string) bool {
-	info, err := os.Stat(path)
-	if os.IsNotExist(err) || !info.Mode().IsRegular() {
-		return false
-	}
-
-	return true
+	ingestCmd.Flags().IntVar(&config.MaxMessageSize, "max-message-size", config.MaxMessageSize, "Maximum message size in MB (0 = unlimited)")
 }
 
 // Format a an integer 10000 => 10,000
