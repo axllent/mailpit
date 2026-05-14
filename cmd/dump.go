@@ -9,7 +9,7 @@ import (
 
 // dumpCmd represents the dump command
 var dumpCmd = &cobra.Command{
-	Use:   "dump <database> <output-dir>",
+	Use:   "dump <output-dir>",
 	Short: "Dump all messages from a database to a directory",
 	Long: `Dump all messages stored in Mailpit into a local directory as individual files.
 
