@@ -7,10 +7,10 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"path"
 	"path/filepath"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/internal/logger"
@@ -18,6 +18,11 @@ import (
 	"github.com/axllent/mailpit/internal/tools"
 	"github.com/axllent/mailpit/server/apiv1"
 )
+
+// httpClient bounds each remote request so a slow or hostile --http endpoint
+// cannot hang the dump indefinitely. Body size is independently capped by
+// maxRawSize / maxSummarySize via io.LimitReader.
+var httpClient = &http.Client{Timeout: time.Minute}
 
 // maxRawSize caps the bytes read per remote message to prevent a hostile
 // server from exhausting local disk via an unbounded response body.
@@ -83,7 +88,7 @@ func loadIDs() error {
 	if base != "" {
 		// remote
 		logger.Log().Debugf("Fetching messages summary from %s", base)
-		res, err := http.Get(base + "api/v1/messages?limit=0")
+		res, err := httpClient.Get(base + "api/v1/messages?limit=0")
 
 		if err != nil {
 			return err
@@ -143,7 +148,7 @@ func saveMessages() error {
 			continue
 		}
 
-		out := path.Join(outDir, m.ID+".eml")
+		out := filepath.Join(outDir, m.ID+".eml")
 
 		// skip if message exists
 		if tools.IsFile(out) {
@@ -153,7 +158,7 @@ func saveMessages() error {
 		var b []byte
 
 		if base != "" {
-			res, err := http.Get(base + "api/v1/message/" + m.ID + "/raw")
+			res, err := httpClient.Get(base + "api/v1/message/" + m.ID + "/raw")
 
 			if err != nil {
 				logger.Log().Errorf("error fetching message %s: %s", m.ID, err.Error())
