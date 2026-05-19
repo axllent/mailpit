@@ -10,8 +10,6 @@ import (
 	"net/smtp"
 	"os"
 	"strings"
-
-	"github.com/axllent/mailpit/internal/logger"
 )
 
 // Send is a wrapper for smtp.SendMail() which also supports sending via unix sockets.
@@ -29,6 +27,15 @@ func Send(addr string, from string, to []string, msg []byte) error {
 		return fmt.Errorf("no To addresses specified")
 	}
 
+	if err := validateLine(fromAddress.Address); err != nil {
+		return err
+	}
+	for _, recipient := range to {
+		if err := validateLine(recipient); err != nil {
+			return err
+		}
+	}
+
 	if !isSocket {
 		return sendMail(addr, nil, fromAddress.Address, to, msg)
 	}
@@ -40,16 +47,15 @@ func Send(addr string, from string, to []string, msg []byte) error {
 
 	client, err := smtp.NewClient(conn, "")
 	if err != nil {
+		_ = conn.Close()
 		return err
 	}
+	defer func() { _ = client.Close() }()
 
-	// Set the sender
 	if err := client.Mail(fromAddress.Address); err != nil {
-		fmt.Fprintln(os.Stderr, "error sending mail")
-		logger.Log().Fatal(err)
+		return fmt.Errorf("error setting sender: %w", err)
 	}
 
-	// Set the recipient
 	for _, a := range to {
 		if err := client.Rcpt(a); err != nil {
 			return err
@@ -61,29 +67,17 @@ func Send(addr string, from string, to []string, msg []byte) error {
 		return err
 	}
 
-	_, err = wc.Write(msg)
-	if err != nil {
+	if _, err := wc.Write(msg); err != nil {
 		return err
 	}
-	err = wc.Close()
-	if err != nil {
+	if err := wc.Close(); err != nil {
 		return err
 	}
 
-	return nil
+	return client.Quit()
 }
 
 func sendMail(addr string, a smtp.Auth, from string, to []string, msg []byte) error {
-	if err := validateLine(from); err != nil {
-		return err
-	}
-
-	for _, recipient := range to {
-		if err := validateLine(recipient); err != nil {
-			return err
-		}
-	}
-
 	c, err := smtp.Dial(addr)
 	if err != nil {
 		return err

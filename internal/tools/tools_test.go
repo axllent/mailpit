@@ -1,9 +1,70 @@
 package tools
 
 import (
+	"net"
 	"reflect"
 	"testing"
 )
+
+func TestIsInternalIP(t *testing.T) {
+	internal := []string{
+		"127.0.0.1",       // loopback
+		"::1",             // IPv6 loopback
+		"10.0.0.1",        // private
+		"172.16.0.1",      // private
+		"192.168.1.1",     // private
+		"169.254.1.1",     // link-local unicast
+		"fe80::1",         // IPv6 link-local
+		"0.0.0.0",         // unspecified
+		"224.0.0.1",       // multicast
+		"100.64.0.1",      // CGNAT start
+		"100.127.255.255", // CGNAT end
+	}
+	external := []string{
+		"8.8.8.8",
+		"1.1.1.1",
+		"100.128.0.1", // just outside CGNAT range
+	}
+
+	for _, s := range internal {
+		ip := net.ParseIP(s)
+		if !IsInternalIP(ip) {
+			t.Errorf("expected %s to be internal", s)
+		}
+	}
+	for _, s := range external {
+		ip := net.ParseIP(s)
+		if IsInternalIP(ip) {
+			t.Errorf("expected %s to be external", s)
+		}
+	}
+}
+
+func TestIsValidLinkURL(t *testing.T) {
+	valid := []string{
+		"http://example.com",
+		"https://example.com",
+		"https://example.com/path?q=1#anchor",
+	}
+	invalid := []string{
+		"",
+		"ftp://example.com",
+		"example.com",
+		"//example.com",
+		"https://",
+	}
+
+	for _, s := range valid {
+		if !IsValidLinkURL(s) {
+			t.Errorf("expected %q to be a valid link URL", s)
+		}
+	}
+	for _, s := range invalid {
+		if IsValidLinkURL(s) {
+			t.Errorf("expected %q to be an invalid link URL", s)
+		}
+	}
+}
 
 func TestArgsParser(t *testing.T) {
 	tests := map[string][]string{}

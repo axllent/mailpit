@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -42,11 +43,19 @@ func SendMessageHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if config.MaxMessageSize > 0 {
+		r.Body = http.MaxBytesReader(w, r.Body, int64(config.MaxMessageSize)*1024*1024)
+	}
+
 	decoder := json.NewDecoder(r.Body)
 
 	data := sendMessageParams{}
 
 	if err := decoder.Decode(&data.Body); err != nil {
+		var maxErr *http.MaxBytesError
+		if errors.As(err, &maxErr) {
+			w.WriteHeader(http.StatusRequestEntityTooLarge)
+		}
 		httpJSONError(w, err.Error())
 		return
 	}

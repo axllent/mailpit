@@ -247,6 +247,10 @@ func listenAndServe(addr string, handler MsgIDHandler, authHandler AuthHandler) 
 		},
 	}
 
+	if config.MaxMessageSize > 0 {
+		srv.MaxSize = config.MaxMessageSize * 1024 * 1024
+	}
+
 	if config.Label != "" {
 		srv.AppName = fmt.Sprintf("Mailpit (%s)", config.Label)
 	}

@@ -134,7 +134,6 @@ export default {
 
 	methods: {
 		loadMessage() {
-			this.message = false;
 			const uri = this.resolve("/api/v1/message/" + this.$route.params.id);
 			this.get(
 				uri,
@@ -605,8 +604,13 @@ export default {
 			>
 				<i class="bi bi-caret-left-fill"></i>
 			</RouterLink>
-			<RouterLink :to="'/view/' + nextID" class="btn btn-outline-light" :class="nextID ? '' : 'disabled'">
-				<i class="bi bi-caret-right-fill" title="View next message"></i>
+			<RouterLink
+				:to="'/view/' + nextID"
+				class="btn btn-outline-light"
+				:class="nextID ? '' : 'disabled'"
+				title="View next message"
+			>
+				<i class="bi bi-caret-right-fill"></i>
 			</RouterLink>
 		</div>
 	</div>

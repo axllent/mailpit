@@ -2,13 +2,51 @@
 
 Notable changes to Mailpit will be documented in this file.
 
-## [v1.29.7]
+## [v1.30.0]
+
+### Security
+- Set a default 50MB p/m limit to prevent DoS via unlimited SMTP DATA and /api/v1/send body sizes (GHSA-fpxj-m5q8-fphw)
+- Include CGNAT (Carrier-Grade NAT) in internal IP checks (GHSA-j3fj-qppj-fmmc)
+- Block internal IP access by default in HTML check (GHSA-j3fj-qppj-fmmc)
+- Fix for path traversal & arbitrary file write in mailpit dump --http via attacker-controlled message IDs (GHSA-qx5x-85p8-vg4j)
+- Fix concurrent map read & write in proxy CSS rewriter (GHSA-w4vj-r5pg-3722)
+
+### Feature
+- New loading indicator, reduce flash during message transitions ([#682](https://github.com/axllent/mailpit/issues/682))
 
 ### Chore
 - Bump vue-router from 4.6.4 to 5.0.4
 - Bump axios version to 1.15.0
 - Update Go dependencies
 - Update node dependencies
+- Remove gorilla/mux dependency and replace with stdlib routing
+- Remove logrus dependency and implement slog-based logging
+- Remove go-telnet dependency and implement TCP/Unix socket handling for SMTP
+- Replace lithammer/shortuuid with custom shortuuid implementation and update tests
+- Improve iframe height adjustment with optional chaining
+- Bump axios version to v1.16.0
+- Refactor Prometheus metrics implementation and remove unused dependencies
+- Refactor MarkRead and MarkUnread functions to only broadcast changes of modified messages
+- Optimize tag retrieval by batching message IDs in List and Search functions
+- Enhance SetMessageTags function to improve tag handling and batch deletions
+- Optimize MarkRead and MarkUnread functions to reduce database calls and improve performance
+- Refactor pruneMessages function to eliminate duplicate ID checks using a map
+- Refactor addMessageTag function to remove mutex and ensure safe concurrent inserts
+- Refactor Hub to use atomic clientCount for safe concurrent client tracking
+- Ensure websocket connection is closed on client unregistration
+- Simplify writePump by using WriteMessage and remove unnecessary newline handling
+- Add message dump max-message-size flag and refactor message handling
+- Add message ingest max-message-size flag and refactor message handling
+- Update Go dependencies
+- Update node dependencies
+- Update caniemail test database
+
+### Fix
+- Validate SMTP XCLIENT args before processing
+
+### Build
+- Update CI actions to use `npm ci`
+- Tag Docker edge build with next patch versions
 
 
 ## [v1.29.6]

@@ -213,14 +213,14 @@ func ProxyHandler(w http.ResponseWriter, r *http.Request) {
 			}
 
 			// store asset address against message ID
+			assetsMutex.Lock()
 			if result, ok := assets[id]; ok {
 				if !tools.InArray(address, result.Assets) {
-					assetsMutex.Lock()
 					result.Assets = append(result.Assets, address)
 					assets[id] = result
-					assetsMutex.Unlock()
 				}
 			}
+			assetsMutex.Unlock()
 
 			// encode with base64 to handle any special characters and group message ID with URL
 			encoded := base64.StdEncoding.EncodeToString([]byte(id + ":" + address))
