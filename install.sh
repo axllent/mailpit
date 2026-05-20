@@ -122,7 +122,7 @@ fi
 
 VERSION=""
 if [ $EXIT_CODE -eq 0 ]; then
-    # Extracts the latest version using jq, awk, or sed.
+    # Parse the GitHub API JSON response and extract the tag_name field to get the latest version.
     if command -v jq >/dev/null 2>&1; then
         # Use jq -n because the output is not a valid JSON in sh.
         VERSION=$(jq -n "$CURL_OUTPUT" | jq -r '.tag_name')
@@ -209,7 +209,7 @@ if [ $EXIT_CODE -eq 0 ]; then
         cp mailpit "$INSTALL_BIN_PATH"
         EXIT_CODE=$?
         if [ $EXIT_CODE -ne 0 ]; then
-            echo "ERROR: Copying mailpit to \"${INSTALL_PATH}\" directory."
+            echo "ERROR: Cannot copy mailpit to \"$INSTALL_BIN_PATH\"."
         fi
     fi
 
