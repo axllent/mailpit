@@ -2,9 +2,11 @@
 package config
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net"
+	"net/url"
 	"os"
 	"path"
 	"path/filepath"
@@ -83,6 +85,13 @@ var (
 
 	// UIAuthFile for UI & API authentication
 	UIAuthFile string
+
+	// UIOIDCIssuer is the OIDC issuer URL (discovery endpoint) for web UI authentication.
+	// When empty, OIDC is disabled and the existing Basic Auth behaviour is unchanged.
+	UIOIDCIssuer string
+
+	// UIOIDCClientID is the OIDC client ID registered with the IdP for this Mailpit instance.
+	UIOIDCClientID string
 
 	// Webroot to define the base path for the UI and API
 	Webroot = "/"
@@ -298,9 +307,18 @@ func VerifyConfig() error {
 	// The default Content Security Policy is updates on every application page load to replace script-src 'self'
 	// with a random nonce ID to prevent XSS. This applies to the Mailpit app & API.
 	// See server.middleWareFunc()
+	connectSrc := "'self' ws: wss:"
+	// When OIDC is enabled the SPA must be allowed to fetch the IdP's
+	// discovery doc / JWKS / token endpoint. Add the issuer's origin
+	// to connect-src.
+	if UIOIDCIssuer != "" {
+		if u, err := url.Parse(UIOIDCIssuer); err == nil && u.Scheme != "" && u.Host != "" {
+			connectSrc += " " + u.Scheme + "://" + u.Host
+		}
+	}
 	ContentSecurityPolicy = fmt.Sprintf(
-		"default-src 'self'; script-src 'self'; style-src %s 'unsafe-inline'; frame-src 'self'; img-src * data: blob:; font-src %s data:; media-src 'self'; connect-src 'self' ws: wss:; object-src 'none'; base-uri 'self';",
-		cssFontRestriction, cssFontRestriction,
+		"default-src 'self'; script-src 'self'; style-src %s 'unsafe-inline'; frame-src 'self'; img-src * data: blob:; font-src %s data:; media-src 'self'; connect-src %s; object-src 'none'; base-uri 'self';",
+		cssFontRestriction, cssFontRestriction, connectSrc,
 	)
 
 	if Database != "" && isDir(Database) {
@@ -349,6 +367,16 @@ func VerifyConfig() error {
 
 		if err := auth.SetUIAuth(string(b)); err != nil {
 			return err
+		}
+	}
+
+	// OIDC for the web UI. Disabled when issuer is empty.
+	if UIOIDCIssuer != "" {
+		if UIOIDCClientID == "" {
+			return errors.New("[ui] OIDC client ID is required when OIDC issuer is set")
+		}
+		if err := auth.InitOIDC(context.Background(), UIOIDCIssuer, UIOIDCClientID); err != nil {
+			return fmt.Errorf("[ui] OIDC: %w", err)
 		}
 	}
 

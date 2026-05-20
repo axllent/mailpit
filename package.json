@@ -23,6 +23,7 @@
     "ical.js": "^2.0.1",
     "mitt": "^3.0.1",
     "modern-screenshot": "^4.4.30",
+    "oidc-client-ts": "3.5.0",
     "rapidoc": "^9.3.4",
     "timezones-list": "^3.0.3",
     "vue": "^3.2.13",

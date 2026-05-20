@@ -103,6 +103,8 @@ func init() {
 	rootCmd.Flags().StringVarP(&config.HTTPListen, "listen", "l", config.HTTPListen, "HTTP bind interface & port for UI")
 	rootCmd.Flags().StringVar(&config.Webroot, "webroot", config.Webroot, "Set the webroot for web UI & API")
 	rootCmd.Flags().StringVar(&config.UIAuthFile, "ui-auth-file", config.UIAuthFile, "A password file for web UI & API authentication")
+	rootCmd.Flags().StringVar(&config.UIOIDCIssuer, "ui-oidc-issuer", config.UIOIDCIssuer, "OIDC issuer URL (discovery endpoint) for web UI authentication")
+	rootCmd.Flags().StringVar(&config.UIOIDCClientID, "ui-oidc-client-id", config.UIOIDCClientID, "OIDC client ID for web UI authentication")
 	rootCmd.Flags().StringVar(&config.UITLSCert, "ui-tls-cert", config.UITLSCert, "TLS certificate for web UI (HTTPS) - requires ui-tls-key")
 	rootCmd.Flags().StringVar(&config.UITLSKey, "ui-tls-key", config.UITLSKey, "TLS key for web UI (HTTPS) - requires ui-tls-cert")
 	rootCmd.Flags().StringVar(&server.AccessControlAllowOrigin, "api-cors", server.AccessControlAllowOrigin, "Set CORS origin(s) for the API, comma-separated (eg: example.com,foo.com)")
@@ -249,6 +251,12 @@ func initConfigFromEnv() {
 	config.UIAuthFile = os.Getenv("MP_UI_AUTH_FILE")
 	if err := auth.SetUIAuth(os.Getenv("MP_UI_AUTH")); err != nil {
 		logger.Log().Error(err.Error())
+	}
+	if v := os.Getenv("MP_UI_OIDC_ISSUER"); v != "" {
+		config.UIOIDCIssuer = v
+	}
+	if v := os.Getenv("MP_UI_OIDC_CLIENT_ID"); v != "" {
+		config.UIOIDCClientID = v
 	}
 	config.UITLSCert = os.Getenv("MP_UI_TLS_CERT")
 	config.UITLSKey = os.Getenv("MP_UI_TLS_KEY")

@@ -6,7 +6,7 @@ const doWatch = process.env.WATCH === "true";
 const doMinify = process.env.MINIFY === "true";
 
 const ctx = await esbuild.context({
-	entryPoints: ["server/ui-src/app.js", "server/ui-src/docs.js"],
+	entryPoints: ["server/ui-src/app.js", "server/ui-src/docs.js", "server/ui-src/oidc-entry.js"],
 	bundle: true,
 	minify: doMinify,
 	sourcemap: false,

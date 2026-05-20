@@ -3,6 +3,32 @@ import dayjs from "dayjs";
 import ColorHash from "color-hash";
 import { Modal, Offcanvas } from "bootstrap";
 import { limitOptions } from "../stores/pagination";
+import { getToken, login, oidcEnabled } from "../services/oidcAuth";
+
+// Attach the OIDC Bearer token on every request when OIDC is enabled.
+axios.interceptors.request.use(async (config) => {
+	if (oidcEnabled()) {
+		const t = await getToken();
+		if (t) {
+			config.headers = config.headers || {};
+			config.headers.Authorization = `Bearer ${t}`;
+		}
+	}
+	return config;
+});
+
+// On 401 from the server with X-Mp-Auth-Required: oidc, restart the OIDC flow.
+axios.interceptors.response.use(
+	(r) => r,
+	async (err) => {
+		const r = err && err.response;
+		if (r && r.status === 401 && r.headers && r.headers["x-mp-auth-required"] === "oidc") {
+			await login(window.location.pathname + window.location.search);
+			return new Promise(() => {}); // page is navigating; swallow the error
+		}
+		return Promise.reject(err);
+	},
+);
 
 // BootstrapElement is used to return a fake Bootstrap element
 // if the ID returns nothing to prevent errors.
