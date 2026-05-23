@@ -100,6 +100,13 @@ func dbApplySchemas() error {
 		return semver.Compare(scripts[j].Semver, scripts[i].Semver) == 1
 	})
 
+	// detect whether this is an existing database (has prior schema entries)
+	var existingSchemaCount int
+	if err := db.QueryRow(`SELECT COUNT(*) FROM ` + tenant("schemas")).Scan(&existingSchemaCount); err != nil {
+		return err
+	}
+	isExistingDB := existingSchemaCount > 0
+
 	for _, s := range scripts {
 		var complete int
 		err := db.QueryRow(`SELECT EXISTS(SELECT 1 FROM `+tenant("schemas")+` WHERE Version = ?)`, s.Semver).Scan(&complete)
@@ -111,6 +118,13 @@ func dbApplySchemas() error {
 			// already completed, ignore
 			continue
 		}
+
+		if isExistingDB {
+			logger.Log().Infof("[db] applying schema updates: %s", s.Name)
+		} else {
+			logger.Log().Debugf("[db] applying schema updates: %s", s.Name)
+		}
+
 		// use path.Join for Windows compatibility, see https://github.com/golang/go/issues/44305
 		b, err := schemaScripts.ReadFile(path.Join("schemas", s.Name))
 		if err != nil {
@@ -136,8 +150,6 @@ func dbApplySchemas() error {
 		if _, err := db.Exec(`INSERT INTO `+tenant("schemas")+` (Version) VALUES (?)`, s.Semver); err != nil {
 			return err
 		}
-
-		logger.Log().Debugf("[db] applied schema: %s", s.Name)
 	}
 
 	return nil
