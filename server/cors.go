@@ -79,6 +79,10 @@ func setCORSOrigins() {
 		corsAllowOrigins[asciiFoldString(host)] = true
 	}
 
+	if len(corsAllowOrigins) == 0 {
+		return
+	}
+
 	if _, wildCard := corsAllowOrigins["*"]; wildCard {
 		// reset to just wildcard
 		corsAllowOrigins = make(map[string]bool)
