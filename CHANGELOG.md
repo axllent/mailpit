@@ -2,6 +2,23 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.30.1]
+
+### Security
+- Extend request body size cap to all JSON API endpoints (GHSA-28pq-6qxg-wg5r)
+- Pin Github Actions workflow versions using full commit SHA
+- Do not use npm cache to prevent cache poisoning
+- Disable GitHub Actions credential persistence for checkout steps
+
+### Chore
+- Enhance schema application logging ([#688](https://github.com/axllent/mailpit/issues/688))
+- Change log level to Info for database vacuuming message ([#688](https://github.com/axllent/mailpit/issues/688))
+- Update Github Action workflows
+- Update Go dependencies
+- Update node dependencies
+- Update caniemail test database
+
+
 ## [v1.30.0]
 
 ### Security
@@ -15,10 +32,6 @@ Notable changes to Mailpit will be documented in this file.
 - New loading indicator, reduce flash during message transitions ([#682](https://github.com/axllent/mailpit/issues/682))
 
 ### Chore
-- Bump vue-router from 4.6.4 to 5.0.4
-- Bump axios version to 1.15.0
-- Update Go dependencies
-- Update node dependencies
 - Remove gorilla/mux dependency and replace with stdlib routing
 - Remove logrus dependency and implement slog-based logging
 - Remove go-telnet dependency and implement TCP/Unix socket handling for SMTP
@@ -47,6 +60,15 @@ Notable changes to Mailpit will be documented in this file.
 ### Build
 - Update CI actions to use `npm ci`
 - Tag Docker edge build with next patch versions
+
+
+## [v1.29.7]
+
+### Chore
+- Bump vue-router from 4.6.4 to 5.0.4
+- Bump axios version to 1.15.0
+- Update Go dependencies
+- Update node dependencies
 
 
 ## [v1.29.6]
