@@ -11,6 +11,7 @@ jobs:
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       with:
           fetch-depth: 0 # required for github-action-get-previous-tag
+          persist-credentials: false
 
     - name: Set up QEMU
       uses: docker/setup-qemu-action@06116385d9baf250c9f4dcb4858b16962ea869c3 # v4.1.0
@@ -42,11 +43,14 @@ jobs:
     - name: Calculate next patch version
       id: next-version
       run: |
-        TAG="${{ steps.previous-tag.outputs.tag }}"
+        TAG="${STEPS_PREVIOUS_TAG_OUTPUTS_TAG}"
         VERSION="${TAG#v}"
         BASE="${VERSION%.*}"
         PATCH="${VERSION##*.}"
-        echo "version=v${BASE}.$((PATCH + 1))-${{ steps.short-sha.outputs.sha }}" >> "$GITHUB_OUTPUT"
+        echo "version=v${BASE}.$((PATCH + 1))-${STEPS_SHORT_SHA_OUTPUTS_SHA}" >> "$GITHUB_OUTPUT"
+      env:
+        STEPS_PREVIOUS_TAG_OUTPUTS_TAG: ${{ steps.previous-tag.outputs.tag }}
+        STEPS_SHORT_SHA_OUTPUTS_SHA: ${{ steps.short-sha.outputs.sha }}
 
     - name: Build and push
       uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
