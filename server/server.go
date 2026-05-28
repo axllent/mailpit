@@ -41,7 +41,14 @@ var (
 // auth.UICredentials pointer (which is a data race under concurrent load).
 type contextKey int
 
-const skipUIAuthKey contextKey = iota
+const (
+	skipUIAuthKey contextKey = iota
+	// bodyLimitKey carries an optional request body size cap (in bytes) through the
+	// context. middleWareFunc reads it and applies it instead of the default 5 MB cap.
+	// A value of 0 means unlimited. Used by sendAPIAuthMiddleware to honour
+	// config.MaxMessageSize for the send endpoint.
+	bodyLimitKey
+)
 
 // Listen will start the httpd
 func Listen() {
@@ -232,6 +239,10 @@ func basicAuthResponse(w http.ResponseWriter) {
 // auth.UICredentials pointer, which would be a data race under concurrent load.
 func sendAPIAuthMiddleware(fn http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		// Override the default 5 MB body cap with the send-specific limit so that
+		// middleWareFunc applies config.MaxMessageSize (0 = unlimited) instead.
+		r = r.WithContext(context.WithValue(r.Context(), bodyLimitKey, int64(config.MaxMessageSize)*1024*1024))
+
 		// If send API auth accept any is enabled, bypass all authentication.
 		if config.SendAPIAuthAcceptAny {
 			ctx := context.WithValue(r.Context(), skipUIAuthKey, true)
@@ -277,6 +288,14 @@ func (w gzipResponseWriter) Write(b []byte) (int, error) {
 // and gzip compression.
 func middleWareFunc(fn http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		// Limit request body size to 5 MB to prevent memory-exhaustion DoS via large
+		// JSON bodies. sendAPIAuthMiddleware sets bodyLimitKey in the context to signal
+		// that the handler manages its own limit (send.go uses config.MaxMessageSize),
+		// so we skip the cap here for that route only.
+		if _, ok := r.Context().Value(bodyLimitKey).(int64); !ok {
+			r.Body = http.MaxBytesReader(w, r.Body, 5*1024*1024)
+		}
+
 		w.Header().Set("Referrer-Policy", "no-referrer")
 
 		// generate a new random nonce on every request

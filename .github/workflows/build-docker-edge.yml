@@ -8,48 +8,52 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v6
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       with:
           fetch-depth: 0 # required for github-action-get-previous-tag
+          persist-credentials: false
 
     - name: Set up QEMU
-      uses: docker/setup-qemu-action@v4
+      uses: docker/setup-qemu-action@06116385d9baf250c9f4dcb4858b16962ea869c3 # v4.1.0
 
     - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v4
+      uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # v4.1.0
 
     - name: Log into Docker Hub
-      uses: docker/login-action@v4
+      uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
       with:
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_ACCESS_TOKEN }}
 
     - name: Log into GitHub Container Registry
-      uses: docker/login-action@v4
+      uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
       with:
         registry: ghcr.io
         username: ${{ github.repository_owner }}
         password: ${{ github.token }}
 
     - name: Get previous git tag
-      uses: WyriHaximus/github-action-get-previous-tag@v2
+      uses: WyriHaximus/github-action-get-previous-tag@61819f33034117e6c686e6a31dba995a85afc9de # v2.0.0
       id: previous-tag
 
     - name: Get short SHA
-      uses: benjlevesque/short-sha@v3.0
+      uses: benjlevesque/short-sha@dbe07338b37c456ce06d23409b35a56a7815eef4 # v4.0
       id: short-sha
 
     - name: Calculate next patch version
       id: next-version
       run: |
-        TAG="${{ steps.previous-tag.outputs.tag }}"
+        TAG="${STEPS_PREVIOUS_TAG_OUTPUTS_TAG}"
         VERSION="${TAG#v}"
         BASE="${VERSION%.*}"
         PATCH="${VERSION##*.}"
-        echo "version=v${BASE}.$((PATCH + 1))-${{ steps.short-sha.outputs.sha }}" >> "$GITHUB_OUTPUT"
+        echo "version=v${BASE}.$((PATCH + 1))-${STEPS_SHORT_SHA_OUTPUTS_SHA}" >> "$GITHUB_OUTPUT"
+      env:
+        STEPS_PREVIOUS_TAG_OUTPUTS_TAG: ${{ steps.previous-tag.outputs.tag }}
+        STEPS_SHORT_SHA_OUTPUTS_SHA: ${{ steps.short-sha.outputs.sha }}
 
     - name: Build and push
-      uses: docker/build-push-action@v7
+      uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
       with:
         context: .
         platforms: linux/386,linux/amd64,linux/arm64

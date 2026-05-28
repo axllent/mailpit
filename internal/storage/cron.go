@@ -43,7 +43,7 @@ func dbCron() {
 				}
 				// only vacuum the DB if at least 1% of mail storage size has been deleted
 				if !config.DisableAutoVACUUM && deletedPercent >= 1 {
-					logger.Log().Debugf("[db] deleted messages is %f%% of total size, reclaim space", deletedPercent)
+					logger.Log().Info("[db] auto-vacuuming database to reclaim space from deleted messages")
 					vacuumDb()
 				}
 			}

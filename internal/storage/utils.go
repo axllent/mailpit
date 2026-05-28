@@ -49,23 +49,23 @@ func addressToSlice(env *enmime.Envelope, key string) []*mail.Address {
 func createSearchText(env *enmime.Envelope) string {
 	var b strings.Builder
 
-	b.WriteString(env.GetHeader("From") + " ")
-	b.WriteString(env.GetHeader("Subject") + " ")
-	b.WriteString(env.GetHeader("To") + " ")
-	b.WriteString(env.GetHeader("Cc") + " ")
-	b.WriteString(env.GetHeader("Bcc") + " ")
-	b.WriteString(env.GetHeader("Reply-To") + " ")
-	b.WriteString(env.GetHeader("Return-Path") + " ")
+	_, _ = b.WriteString(env.GetHeader("From") + " ")
+	_, _ = b.WriteString(env.GetHeader("Subject") + " ")
+	_, _ = b.WriteString(env.GetHeader("To") + " ")
+	_, _ = b.WriteString(env.GetHeader("Cc") + " ")
+	_, _ = b.WriteString(env.GetHeader("Bcc") + " ")
+	_, _ = b.WriteString(env.GetHeader("Reply-To") + " ")
+	_, _ = b.WriteString(env.GetHeader("Return-Path") + " ")
 
 	h, _ := html2text.Strip(env.HTML, true)
 	if h != "" {
-		b.WriteString(h + " ")
+		_, _ = b.WriteString(h + " ")
 	} else {
-		b.WriteString(env.Text + " ")
+		_, _ = b.WriteString(env.Text + " ")
 	}
 	// add attachment filenames
 	for _, a := range env.Attachments {
-		b.WriteString(a.FileName + " ")
+		_, _ = b.WriteString(a.FileName + " ")
 	}
 
 	d := cleanString(b.String())
