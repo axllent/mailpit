@@ -11,7 +11,7 @@ require (
 	github.com/gomarkdown/markdown v0.0.0-20260417124207-7d523f7318df
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/websocket v1.5.3
-	github.com/jhillyerd/enmime/v2 v2.3.0
+	github.com/jhillyerd/enmime/v2 v2.4.0
 	github.com/klauspost/compress v1.18.6
 	github.com/kovidgoyal/imaging v1.8.21
 	github.com/leporo/sqlf v1.4.0
@@ -21,11 +21,11 @@ require (
 	github.com/spf13/pflag v1.0.10
 	github.com/tg123/go-htpasswd v1.2.4
 	github.com/vanng822/go-premailer v1.33.0
-	golang.org/x/crypto v0.51.0
-	golang.org/x/net v0.54.0
+	golang.org/x/crypto v0.52.0
+	golang.org/x/net v0.55.0
 	golang.org/x/text v0.37.0
 	golang.org/x/time v0.15.0
-	modernc.org/sqlite v1.50.1
+	modernc.org/sqlite v1.51.0
 )
 
 require (
@@ -57,10 +57,10 @@ require (
 	github.com/ssor/bom v0.0.0-20170718123548-6386211fdfcf // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/vanng822/css v1.0.1 // indirect
-	golang.org/x/image v0.40.0 // indirect
+	golang.org/x/image v0.41.0 // indirect
 	golang.org/x/mod v0.36.0 // indirect
-	golang.org/x/sys v0.44.0 // indirect
-	modernc.org/libc v1.72.3 // indirect
+	golang.org/x/sys v0.45.0 // indirect
+	modernc.org/libc v1.72.5 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.11.0 // indirect
 )
