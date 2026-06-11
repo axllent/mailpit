@@ -14,7 +14,10 @@ import (
 )
 
 var (
-	useHTTPS bool
+	useHTTPS        bool
+	readyzWait      bool
+	readyzTimeout   time.Duration
+	readyzPollEvery = time.Second
 )
 
 // readyzCmd represents the healthcheck command
@@ -47,11 +50,49 @@ settings to determine the HTTP bind interface & port.
 		}
 		client := &http.Client{Transport: conf}
 
-		res, err := client.Get(uri)
-		if err != nil || res.StatusCode != 200 {
+		if readyzWait {
+			if err := waitForReady(client, uri, readyzTimeout); err != nil {
+				fmt.Fprintln(os.Stderr, err)
+				os.Exit(1)
+			}
+			return
+		}
+
+		if err := checkReady(client, uri); err != nil {
+			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
 		}
 	},
+}
+
+func checkReady(client *http.Client, uri string) error {
+	res, err := client.Get(uri)
+	if err != nil {
+		return err
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusOK {
+		return fmt.Errorf("unexpected status: %s", res.Status)
+	}
+
+	return nil
+}
+
+func waitForReady(client *http.Client, uri string, timeout time.Duration) error {
+	deadline := time.Now().Add(timeout)
+
+	for {
+		if err := checkReady(client, uri); err == nil {
+			return nil
+		}
+
+		if time.Now().After(deadline) {
+			return fmt.Errorf("timed out after %s waiting for Mailpit to become ready", timeout)
+		}
+
+		time.Sleep(readyzPollEvery)
+	}
 }
 
 func init() {
@@ -74,4 +115,6 @@ func init() {
 	readyzCmd.Flags().StringVarP(&config.HTTPListen, "listen", "l", config.HTTPListen, "Set the HTTP bind interface & port")
 	readyzCmd.Flags().StringVar(&config.Webroot, "webroot", config.Webroot, "Set the webroot for web UI & API")
 	readyzCmd.Flags().BoolVar(&useHTTPS, "https", useHTTPS, "Connect via HTTPS (ignores HTTPS validation)")
+	readyzCmd.Flags().BoolVar(&readyzWait, "wait", readyzWait, "Wait until Mailpit is ready instead of checking once")
+	readyzCmd.Flags().DurationVar(&readyzTimeout, "timeout", 30*time.Second, "Maximum time to wait when --wait is set")
 }
