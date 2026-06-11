@@ -47,7 +47,7 @@ type Client struct {
 	conn *websocket.Conn
 
 	// Buffered channel of outbound messages.
-	send chan []byte
+	send chan *websocket.PreparedMessage
 }
 
 // ReadPump is used here solely to monitor the connection, not to actually receive messages.
@@ -90,7 +90,7 @@ func (c *Client) writePump() {
 				return
 			}
 
-			if err := c.conn.WriteMessage(websocket.TextMessage, message); err != nil {
+			if err := c.conn.WritePreparedMessage(message); err != nil {
 				return
 			}
 		case <-ticker.C:
@@ -124,7 +124,7 @@ func ServeWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	client := &Client{hub: hub, conn: conn, send: make(chan []byte, 256)}
+	client := &Client{hub: hub, conn: conn, send: make(chan *websocket.PreparedMessage, 256)}
 	client.hub.register <- client
 
 	// Allow collection of memory referenced by the caller by doing all work in new goroutines.

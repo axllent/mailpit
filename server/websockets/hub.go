@@ -6,6 +6,7 @@ import (
 	"sync/atomic"
 
 	"github.com/axllent/mailpit/internal/logger"
+	"github.com/gorilla/websocket"
 )
 
 // Hub maintains the set of active clients and broadcasts messages to the
@@ -61,9 +62,14 @@ func (h *Hub) Run() {
 				h.clientCount.Add(-1)
 			}
 		case message := <-h.Broadcast:
+			prepared, err := websocket.NewPreparedMessage(websocket.TextMessage, message)
+			if err != nil {
+				logger.Log().Errorf("[websocket] error preparing message: %s", err.Error())
+				continue
+			}
 			for client := range h.Clients {
 				select {
-				case client.send <- message:
+				case client.send <- prepared:
 				default:
 					close(client.send)
 					delete(h.Clients, client)
