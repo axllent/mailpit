@@ -25,7 +25,7 @@ jobs:
         with:
           go-version: 'stable'
           cache-dependency-path: "**/*.sum"
-      - run: go test -p 1 ./internal/storage ./server ./internal/smtpd ./internal/pop3 ./internal/tools ./internal/html2text ./internal/htmlcheck ./internal/linkcheck -v
+      - run: go test -p 1 ./internal/storage ./server ./internal/smtpd ./internal/pop3 ./internal/tools ./internal/html2text ./internal/htmlcheck ./internal/linkcheck ./internal/healthcheck -v
         env:
           # set Mailpit to use the rqlite service container
           MP_DATABASE: "http://localhost:4001"
