@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/internal/auth"
 	"github.com/axllent/mailpit/internal/logger"
 	"github.com/gorilla/websocket"
@@ -32,7 +33,7 @@ var (
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:    1024,
 	WriteBufferSize:   1024,
-	EnableCompression: true,
+	EnableCompression: !config.DisableHTTPCompression,
 	CheckOrigin: func(_ *http.Request) bool {
 		// origin is checked via server.go's CORS settings
 		return true
