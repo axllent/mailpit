@@ -2,6 +2,28 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.30.2]
+
+### Security
+- Fix incomplete SSRF protection in IsInternalIP() detection for IPv6 transition mechanisms (GHSA-w4mc-hhc6-xp28)
+
+### Feature
+- Add wait support to readyz ([#697](https://github.com/axllent/mailpit/issues/697))
+
+### Chore
+- Compress websocket messages once per broadcast to improve performance ([#695](https://github.com/axllent/mailpit/issues/695))
+- Toggle websocket compression using HTTP compression setting
+- Update Github Actions  dependencies
+- Update Go dependencies
+- Update node dependencies
+
+### Fix
+- Adjust header setting order in error response functions ([#699](https://github.com/axllent/mailpit/issues/699))
+
+### Test
+- Add readyz tests
+
+
 ## [v1.30.1]
 
 ### Security
