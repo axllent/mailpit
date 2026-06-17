@@ -1,20 +1,19 @@
 package cmd
 
 import (
-	"crypto/tls"
 	"fmt"
-	"net/http"
 	"os"
-	"path"
-	"strings"
 	"time"
 
 	"github.com/axllent/mailpit/config"
+	"github.com/axllent/mailpit/internal/healthcheck"
 	"github.com/spf13/cobra"
 )
 
 var (
-	useHTTPS bool
+	useHTTPS      bool
+	readyzWait    bool
+	readyzTimeout time.Duration
 )
 
 // readyzCmd represents the healthcheck command
@@ -22,33 +21,25 @@ var readyzCmd = &cobra.Command{
 	Use:   "readyz",
 	Short: "Run a healthcheck to test if Mailpit is running",
 	Long: `This command connects to the /readyz endpoint of a running Mailpit server
-and exits with a status of 0 if the connection is successful, else with a 
+and exits with a status of 0 if the connection is successful, else with a
 status 1 if unhealthy.
 
 If running within Docker, it should automatically detect environment
 settings to determine the HTTP bind interface & port.
 `,
 	Run: func(_ *cobra.Command, _ []string) {
-		webroot := strings.TrimRight(path.Join("/", config.Webroot, "/"), "/") + "/"
-		proto := "http"
-		if useHTTPS {
-			proto = "https"
+		uri := healthcheck.URI(config.HTTPListen, config.Webroot, useHTTPS)
+		client := healthcheck.NewClient()
+
+		var err error
+		if readyzWait {
+			err = healthcheck.Wait(client, uri, readyzTimeout)
+		} else {
+			err = healthcheck.Check(client, uri)
 		}
 
-		uri := fmt.Sprintf("%s://%s%sreadyz", proto, config.HTTPListen, webroot)
-
-		conf := &http.Transport{
-			IdleConnTimeout:       time.Second * 5,
-			ExpectContinueTimeout: time.Second * 5,
-			TLSHandshakeTimeout:   time.Second * 5,
-			// do not verify TLS if this instance is using HTTPS as we connect using IP
-			// so won't be the same as the cert
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true}, // #nosec
-		}
-		client := &http.Client{Transport: conf}
-
-		res, err := client.Get(uri)
-		if err != nil || res.StatusCode != 200 {
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
 		}
 	},
@@ -74,4 +65,6 @@ func init() {
 	readyzCmd.Flags().StringVarP(&config.HTTPListen, "listen", "l", config.HTTPListen, "Set the HTTP bind interface & port")
 	readyzCmd.Flags().StringVar(&config.Webroot, "webroot", config.Webroot, "Set the webroot for web UI & API")
 	readyzCmd.Flags().BoolVar(&useHTTPS, "https", useHTTPS, "Connect via HTTPS (ignores HTTPS validation)")
+	readyzCmd.Flags().BoolVar(&readyzWait, "wait", readyzWait, "Wait until Mailpit is ready instead of checking once")
+	readyzCmd.Flags().DurationVar(&readyzTimeout, "timeout", 30*time.Second, "Maximum time to wait when --wait is set")
 }

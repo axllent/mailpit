@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/internal/auth"
 	"github.com/axllent/mailpit/internal/logger"
 	"github.com/gorilla/websocket"
@@ -32,7 +33,7 @@ var (
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:    1024,
 	WriteBufferSize:   1024,
-	EnableCompression: true,
+	EnableCompression: !config.DisableHTTPCompression,
 	CheckOrigin: func(_ *http.Request) bool {
 		// origin is checked via server.go's CORS settings
 		return true
@@ -47,7 +48,7 @@ type Client struct {
 	conn *websocket.Conn
 
 	// Buffered channel of outbound messages.
-	send chan []byte
+	send chan *websocket.PreparedMessage
 }
 
 // ReadPump is used here solely to monitor the connection, not to actually receive messages.
@@ -90,7 +91,7 @@ func (c *Client) writePump() {
 				return
 			}
 
-			if err := c.conn.WriteMessage(websocket.TextMessage, message); err != nil {
+			if err := c.conn.WritePreparedMessage(message); err != nil {
 				return
 			}
 		case <-ticker.C:
@@ -124,7 +125,7 @@ func ServeWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	client := &Client{hub: hub, conn: conn, send: make(chan []byte, 256)}
+	client := &Client{hub: hub, conn: conn, send: make(chan *websocket.PreparedMessage, 256)}
 	client.hub.register <- client
 
 	// Allow collection of memory referenced by the caller by doing all work in new goroutines.
