@@ -174,10 +174,7 @@
         ],
         "responses": {
           "200": {
-            "description": "MessageHeadersResponse",
-            "schema": {
-              "$ref": "#/definitions/MessageHeadersResponse"
-            }
+            "$ref": "#/responses/MessageHeadersResponse"
           },
           "400": {
             "$ref": "#/responses/ErrorResponse"
@@ -1774,18 +1771,6 @@
       },
       "x-go-package": "github.com/axllent/mailpit/internal/storage"
     },
-    "MessageHeadersResponse": {
-      "description": "Message headers",
-      "type": "object",
-      "additionalProperties": {
-        "type": "array",
-        "items": {
-          "type": "string"
-        }
-      },
-      "x-go-name": "messageHeadersResponse",
-      "x-go-package": "github.com/axllent/mailpit/server/apiv1"
-    },
     "MessageSummary": {
       "description": "MessageSummary struct for frontend messages",
       "type": "object",
@@ -1875,7 +1860,7 @@
       "type": "object",
       "properties": {
         "messages": {
-          "description": "Messages summary\nin: body",
+          "description": "Messages summary",
           "type": "array",
           "items": {
             "$ref": "#/definitions/MessageSummary"
@@ -2021,6 +2006,18 @@
             "description": "Error message",
             "type": "string",
             "example": "invalid format"
+          }
+        }
+      }
+    },
+    "MessageHeadersResponse": {
+      "description": "Message headers",
+      "schema": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "array",
+          "items": {
+            "type": "string"
           }
         }
       }

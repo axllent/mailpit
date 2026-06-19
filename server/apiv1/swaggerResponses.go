@@ -117,7 +117,7 @@ type chaosResponse struct {
 }
 
 // Message headers
-// swagger:model MessageHeadersResponse
+// swagger:response MessageHeadersResponse
 type messageHeadersResponse map[string][]string
 
 // Summary of messages
