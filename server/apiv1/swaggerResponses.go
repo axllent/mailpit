@@ -53,49 +53,53 @@ type jsonErrorResponse struct {
 	}
 }
 
+// Web UI configuration settings
+// swagger:model WebUIConfiguration
+type WebUIConfiguration struct {
+	// Optional label to identify this Mailpit instance
+	Label string
+	// Message Relay information
+	MessageRelay struct {
+		// Whether message relaying (release) is enabled
+		Enabled bool
+		// The configured SMTP server address
+		SMTPServer string
+		// Enforced Return-Path (if set) for relay bounces
+		ReturnPath string
+		// Only allow relaying to these recipients (regex)
+		AllowedRecipients string
+		// Block relaying to these recipients (regex)
+		BlockedRecipients string
+		// Overrides the "From" address for all relayed messages
+		OverrideFrom string
+		// Preserve the original Message-IDs when relaying messages
+		PreserveMessageIDs bool
+
+		// DEPRECATED 2024/03/12
+		// swagger:ignore
+		RecipientAllowlist string
+	}
+
+	// Whether SpamAssassin is enabled
+	SpamAssassin bool
+
+	// Whether Chaos support is enabled at runtime
+	ChaosEnabled bool
+
+	// Whether messages with duplicate IDs are ignored
+	DuplicatesIgnored bool
+
+	// Whether the delete button should be hidden
+	HideDeleteAllButton bool
+}
+
 // Web UI configuration response
 // swagger:response WebUIConfigurationResponse
 type webUIConfigurationResponse struct {
 	// Web UI configuration settings
 	//
 	// in: body
-	Body struct {
-		// Optional label to identify this Mailpit instance
-		Label string
-		// Message Relay information
-		MessageRelay struct {
-			// Whether message relaying (release) is enabled
-			Enabled bool
-			// The configured SMTP server address
-			SMTPServer string
-			// Enforced Return-Path (if set) for relay bounces
-			ReturnPath string
-			// Only allow relaying to these recipients (regex)
-			AllowedRecipients string
-			// Block relaying to these recipients (regex)
-			BlockedRecipients string
-			// Overrides the "From" address for all relayed messages
-			OverrideFrom string
-			// Preserve the original Message-IDs when relaying messages
-			PreserveMessageIDs bool
-
-			// DEPRECATED 2024/03/12
-			// swagger:ignore
-			RecipientAllowlist string
-		}
-
-		// Whether SpamAssassin is enabled
-		SpamAssassin bool
-
-		// Whether Chaos support is enabled at runtime
-		ChaosEnabled bool
-
-		// Whether messages with duplicate IDs are ignored
-		DuplicatesIgnored bool
-
-		// Whether the delete button should be hidden
-		HideDeleteAllButton bool
-	}
+	Body WebUIConfiguration
 }
 
 // Application information

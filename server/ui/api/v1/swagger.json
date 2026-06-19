@@ -1955,6 +1955,67 @@
       },
       "x-go-name": "Result",
       "x-go-package": "github.com/axllent/mailpit/internal/spamassassin"
+    },
+    "WebUIConfiguration": {
+      "description": "Web UI configuration settings",
+      "type": "object",
+      "properties": {
+        "ChaosEnabled": {
+          "description": "Whether Chaos support is enabled at runtime",
+          "type": "boolean"
+        },
+        "DuplicatesIgnored": {
+          "description": "Whether messages with duplicate IDs are ignored",
+          "type": "boolean"
+        },
+        "HideDeleteAllButton": {
+          "description": "Whether the delete button should be hidden",
+          "type": "boolean"
+        },
+        "Label": {
+          "description": "Optional label to identify this Mailpit instance",
+          "type": "string"
+        },
+        "MessageRelay": {
+          "description": "Message Relay information",
+          "type": "object",
+          "properties": {
+            "AllowedRecipients": {
+              "description": "Only allow relaying to these recipients (regex)",
+              "type": "string"
+            },
+            "BlockedRecipients": {
+              "description": "Block relaying to these recipients (regex)",
+              "type": "string"
+            },
+            "Enabled": {
+              "description": "Whether message relaying (release) is enabled",
+              "type": "boolean"
+            },
+            "OverrideFrom": {
+              "description": "Overrides the \"From\" address for all relayed messages",
+              "type": "string"
+            },
+            "PreserveMessageIDs": {
+              "description": "Preserve the original Message-IDs when relaying messages",
+              "type": "boolean"
+            },
+            "ReturnPath": {
+              "description": "Enforced Return-Path (if set) for relay bounces",
+              "type": "string"
+            },
+            "SMTPServer": {
+              "description": "The configured SMTP server address",
+              "type": "string"
+            }
+          }
+        },
+        "SpamAssassin": {
+          "description": "Whether SpamAssassin is enabled",
+          "type": "boolean"
+        }
+      },
+      "x-go-package": "github.com/axllent/mailpit/server/apiv1"
     }
   },
   "responses": {
@@ -2062,63 +2123,7 @@
     "WebUIConfigurationResponse": {
       "description": "Web UI configuration response",
       "schema": {
-        "type": "object",
-        "properties": {
-          "ChaosEnabled": {
-            "description": "Whether Chaos support is enabled at runtime",
-            "type": "boolean"
-          },
-          "DuplicatesIgnored": {
-            "description": "Whether messages with duplicate IDs are ignored",
-            "type": "boolean"
-          },
-          "HideDeleteAllButton": {
-            "description": "Whether the delete button should be hidden",
-            "type": "boolean"
-          },
-          "Label": {
-            "description": "Optional label to identify this Mailpit instance",
-            "type": "string"
-          },
-          "MessageRelay": {
-            "description": "Message Relay information",
-            "type": "object",
-            "properties": {
-              "AllowedRecipients": {
-                "description": "Only allow relaying to these recipients (regex)",
-                "type": "string"
-              },
-              "BlockedRecipients": {
-                "description": "Block relaying to these recipients (regex)",
-                "type": "string"
-              },
-              "Enabled": {
-                "description": "Whether message relaying (release) is enabled",
-                "type": "boolean"
-              },
-              "OverrideFrom": {
-                "description": "Overrides the \"From\" address for all relayed messages",
-                "type": "string"
-              },
-              "PreserveMessageIDs": {
-                "description": "Preserve the original Message-IDs when relaying messages",
-                "type": "boolean"
-              },
-              "ReturnPath": {
-                "description": "Enforced Return-Path (if set) for relay bounces",
-                "type": "string"
-              },
-              "SMTPServer": {
-                "description": "The configured SMTP server address",
-                "type": "string"
-              }
-            }
-          },
-          "SpamAssassin": {
-            "description": "Whether SpamAssassin is enabled",
-            "type": "boolean"
-          }
-        }
+        "$ref": "#/definitions/WebUIConfiguration"
       }
     }
   }
