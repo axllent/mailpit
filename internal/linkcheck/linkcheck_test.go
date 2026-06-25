@@ -1,7 +1,9 @@
 package linkcheck
 
 import (
+	"fmt"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/axllent/mailpit/internal/storage"
@@ -72,15 +74,47 @@ func TestLinkDetection(t *testing.T) {
 	m.Text = testTextLinks
 	m.HTML = testHTML
 
-	textLinks := extractTextLinks(&m)
+	textC := &linkCollector{seen: make(map[string]bool)}
+	extractTextLinks(&m, textC)
 
-	if !reflect.DeepEqual(textLinks, expectedTextLinks) {
+	if !reflect.DeepEqual(textC.links, expectedTextLinks) {
 		t.Fatalf("Failed to detect text links correctly")
 	}
 
-	htmlLinks := extractHTMLLinks(&m)
+	htmlC := &linkCollector{seen: make(map[string]bool)}
+	extractHTMLLinks(&m, htmlC)
 
-	if !reflect.DeepEqual(htmlLinks, expectedHTMLLinks) {
+	if !reflect.DeepEqual(htmlC.links, expectedHTMLLinks) {
 		t.Fatalf("Failed to detect HTML links correctly")
+	}
+}
+
+func TestLinkLimit(t *testing.T) {
+	var html strings.Builder
+	html.WriteString("<html><body>")
+	for i := range maxUniqueLinks + 50 {
+		fmt.Fprintf(&html, `<a href="http://example.com/%d">link</a>`, i)
+	}
+	html.WriteString("</body></html>")
+
+	var text strings.Builder
+	for i := range 100 {
+		fmt.Fprintf(&text, " http://text-example.com/%d ", i)
+	}
+
+	m := storage.Message{HTML: html.String(), Text: text.String()}
+
+	c := &linkCollector{seen: make(map[string]bool)}
+	extractHTMLLinks(&m, c)
+	extractTextLinks(&m, c)
+
+	if len(c.links) != maxUniqueLinks {
+		t.Fatalf("expected %d links, got %d", maxUniqueLinks, len(c.links))
+	}
+
+	for _, l := range c.links {
+		if strings.HasPrefix(l, "http://text-example.com/") {
+			t.Fatalf("text extractor should not have run once HTML filled the collector, got %q", l)
+		}
 	}
 }

@@ -17,26 +17,31 @@ import (
 	"github.com/axllent/mailpit/internal/tools"
 )
 
-func getHTTPStatuses(links []string, followRedirects bool) []Link {
-	// allow 5 threads
-	threads := make(chan int, 5)
-
-	results := make(map[string]Link, len(links))
-	resultsMutex := sync.RWMutex{}
-
-	output := []Link{}
-
+func getHTTPStatuses(ctx context.Context, links []string, followRedirects bool) []Link {
+	results := make([]Link, len(links))
 	var wg sync.WaitGroup
+	var warnedDomains sync.Map
 
-	for _, l := range links {
+	for i, l := range links {
+		if cached, ok := cachedLink(l); ok {
+			results[i] = cached
+			continue
+		}
+
 		wg.Add(1)
-		go func(link string, w *sync.WaitGroup) {
-			threads <- 1 // will block if MAX threads
-			defer w.Done()
+		go func(idx int, link string) {
+			defer wg.Done()
 
-			code, err := doHead(link, followRedirects)
-			l := Link{}
-			l.URL = link
+			domain := registeredDomain(link)
+			release, err := acquireDomainSlot(ctx, domain, &warnedDomains)
+			if err != nil {
+				results[idx] = Link{URL: link, StatusCode: 0, Status: httpErrorSummary(err)}
+				return
+			}
+			defer release()
+
+			code, err := doHead(ctx, link, followRedirects)
+			l := Link{URL: link}
 			if err != nil {
 				l.StatusCode = 0
 				l.Status = httpErrorSummary(err)
@@ -48,25 +53,17 @@ func getHTTPStatuses(links []string, followRedirects bool) []Link {
 				l.StatusCode = code
 				l.Status = http.StatusText(code)
 			}
-			resultsMutex.Lock()
-			results[link] = l
-			resultsMutex.Unlock()
-
-			<-threads // remove from threads
-		}(l, &wg)
+			results[idx] = l
+			storeLink(link, l)
+		}(i, l)
 	}
 
 	wg.Wait()
-
-	for _, l := range results {
-		output = append(output, l)
-	}
-
-	return output
+	return results
 }
 
 // Do a HEAD request to return HTTP status code
-func doHead(link string, followRedirects bool) (int, error) {
+func doHead(ctx context.Context, link string, followRedirects bool) (int, error) {
 	if !tools.IsValidLinkURL(link) {
 		return 0, fmt.Errorf("invalid URL: %s", link)
 	}
@@ -102,7 +99,7 @@ func doHead(link string, followRedirects bool) (int, error) {
 		},
 	}
 
-	req, err := http.NewRequest("HEAD", link, nil)
+	req, err := http.NewRequestWithContext(ctx, "HEAD", link, nil)
 	if err != nil {
 		logger.Log().Errorf("[link-check] %s", err.Error())
 		return 0, err

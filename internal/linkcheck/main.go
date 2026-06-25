@@ -2,6 +2,7 @@
 package linkcheck
 
 import (
+	"context"
 	"regexp"
 	"strings"
 
@@ -12,13 +13,17 @@ import (
 
 var linkRe = regexp.MustCompile(`(?im)\b(http|https):\/\/([\-\w@:%_\+'!.~#?,&\/\/=;]+)`)
 
+// maxUniqueLinks caps how many unique links will be tested per message.
+const maxUniqueLinks = 100
+
 // RunTests will run all tests on an HTML string
-func RunTests(msg *storage.Message, followRedirects bool) (Response, error) {
+func RunTests(ctx context.Context, msg *storage.Message, followRedirects bool) (Response, error) {
 	s := Response{}
 
-	allLinks := extractHTMLLinks(msg)
-	allLinks = strUnique(append(allLinks, extractTextLinks(msg)...))
-	s.Links = getHTTPStatuses(allLinks, followRedirects)
+	c := &linkCollector{seen: make(map[string]bool)}
+	extractHTMLLinks(msg, c)
+	extractTextLinks(msg, c)
+	s.Links = getHTTPStatuses(ctx, c.links, followRedirects)
 
 	for _, l := range s.Links {
 		if l.StatusCode >= 400 || l.StatusCode == 0 {
@@ -29,81 +34,91 @@ func RunTests(msg *storage.Message, followRedirects bool) (Response, error) {
 	return s, nil
 }
 
-func extractTextLinks(msg *storage.Message) []string {
+// linkCollector accumulates unique links up to maxUniqueLinks.
+type linkCollector struct {
+	seen  map[string]bool
+	links []string
+}
+
+// full reports whether the collector has reached maxUniqueLinks.
+func (c *linkCollector) full() bool {
+	return len(c.links) >= maxUniqueLinks
+}
+
+// add appends link if new and within capacity, returning false when the
+// collector is full and the caller should stop producing more links.
+func (c *linkCollector) add(link string) bool {
+	if c.full() {
+		return false
+	}
+	if !c.seen[link] {
+		c.seen[link] = true
+		c.links = append(c.links, link)
+	}
+	return !c.full()
+}
+
+func extractTextLinks(msg *storage.Message, c *linkCollector) {
+	if c.full() {
+		return
+	}
+
 	testLinkRe := regexp.MustCompile(`(?im)([^<]\b)((http|https):\/\/([\-\w@:%_\+'!.~#?,&\/\/=;]+))`)
 	// RFC2396 appendix E states angle brackets are recommended for text/plain emails to
 	// recognize potential spaces in between the URL
 	// @see https://www.rfc-editor.org/rfc/rfc2396#appendix-E
 	bracketLinkRe := regexp.MustCompile(`(?im)<((http|https):\/\/([\-\w@:%_\+'!.~#?,&\/\/=;][^>]+))>`)
 
-	links := []string{}
+	// Cap the regex match count to bound work on very large bodies; the
+	// 3x multiplier leaves headroom for duplicates the collector will drop.
+	matchLimit := maxUniqueLinks * 3
 
-	matches := testLinkRe.FindAllStringSubmatch(msg.Text, -1)
+	matches := testLinkRe.FindAllStringSubmatch(msg.Text, matchLimit)
 	for _, match := range matches {
 		if len(match) > 0 {
-			links = append(links, match[2])
+			if !c.add(match[2]) {
+				return
+			}
 		}
 	}
 
-	angleMatches := bracketLinkRe.FindAllStringSubmatch(msg.Text, -1)
+	angleMatches := bracketLinkRe.FindAllStringSubmatch(msg.Text, matchLimit)
 	for _, match := range angleMatches {
 		if len(match) > 0 {
 			link := strings.ReplaceAll(match[1], "\n", "")
-			links = append(links, link)
+			if !c.add(link) {
+				return
+			}
 		}
 	}
-
-	return links
 }
 
-func extractHTMLLinks(msg *storage.Message) []string {
-	links := []string{}
+func extractHTMLLinks(msg *storage.Message, c *linkCollector) {
+	if c.full() {
+		return
+	}
 
 	reader := strings.NewReader(msg.HTML)
 
 	// Load the HTML document
 	doc, err := goquery.NewDocumentFromReader(reader)
 	if err != nil {
-		return links
+		return
 	}
 
-	aLinks := doc.Find("a[href]").Nodes
-	for _, link := range aLinks {
-		l, err := tools.GetHTMLAttributeVal(link, "href")
-		if err == nil && linkRe.MatchString(l) {
-			links = append(links, l)
+	for _, sel := range []struct{ selector, attr string }{
+		{"a[href]", "href"},
+		{`link[rel="stylesheet"]`, "href"},
+		{"img[src]", "src"},
+	} {
+		for _, node := range doc.Find(sel.selector).Nodes {
+			l, err := tools.GetHTMLAttributeVal(node, sel.attr)
+			if err != nil || !linkRe.MatchString(l) {
+				continue
+			}
+			if !c.add(l) {
+				return
+			}
 		}
 	}
-
-	cssLinks := doc.Find("link[rel=\"stylesheet\"]").Nodes
-	for _, link := range cssLinks {
-		l, err := tools.GetHTMLAttributeVal(link, "href")
-		if err == nil && linkRe.MatchString(l) {
-			links = append(links, l)
-		}
-	}
-
-	imgLinks := doc.Find("img[src]").Nodes
-	for _, link := range imgLinks {
-		l, err := tools.GetHTMLAttributeVal(link, "src")
-		if err == nil && linkRe.MatchString(l) {
-			links = append(links, l)
-		}
-	}
-
-	return links
-}
-
-// strUnique return a slice of unique strings from a slice
-func strUnique(strSlice []string) []string {
-	keys := make(map[string]bool)
-	list := []string{}
-	for _, entry := range strSlice {
-		if _, value := keys[entry]; !value {
-			keys[entry] = true
-			list = append(list, entry)
-		}
-	}
-
-	return list
 }
