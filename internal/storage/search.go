@@ -465,7 +465,7 @@ func searchQueryBuilder(searchString, timezone string) *sqlf.Stmt {
 				q.Where("Attachments > 0")
 			}
 		} else if strings.HasPrefix(lw, "after:") {
-			w = cleanString(w[6:])
+			w = strings.ToUpper(cleanString(w[6:]))
 			if w != "" {
 				t, err := dateparse.ParseIn(w, loc)
 				if err != nil {
@@ -480,7 +480,7 @@ func searchQueryBuilder(searchString, timezone string) *sqlf.Stmt {
 				}
 			}
 		} else if strings.HasPrefix(lw, "before:") {
-			w = cleanString(w[7:])
+			w = strings.ToUpper(cleanString(w[7:]))
 			if w != "" {
 				t, err := dateparse.ParseIn(w, loc)
 				if err != nil {

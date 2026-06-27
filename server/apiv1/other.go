@@ -123,7 +123,7 @@ func LinkCheck(w http.ResponseWriter, r *http.Request) {
 	f := r.URL.Query().Get("follow")
 	followRedirects := f == "true" || f == "1"
 
-	summary, err := linkcheck.RunTests(msg, followRedirects)
+	summary, err := linkcheck.RunTests(r.Context(), msg, followRedirects)
 	if err != nil {
 		httpError(w, err.Error())
 		return

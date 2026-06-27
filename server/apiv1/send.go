@@ -54,7 +54,10 @@ func SendMessageHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		var maxErr *http.MaxBytesError
 		if errors.As(err, &maxErr) {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusRequestEntityTooLarge)
+			_ = json.NewEncoder(w).Encode(struct{ Error string }{Error: err.Error()})
+			return
 		}
 		httpJSONError(w, err.Error())
 		return

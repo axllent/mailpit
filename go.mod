@@ -13,7 +13,7 @@ require (
 	github.com/gorilla/websocket v1.5.3
 	github.com/jhillyerd/enmime/v2 v2.4.1
 	github.com/klauspost/compress v1.18.6
-	github.com/kovidgoyal/imaging v1.8.21
+	github.com/kovidgoyal/imaging v1.8.22
 	github.com/leporo/sqlf v1.4.0
 	github.com/pkg/errors v0.9.1
 	github.com/rqlite/gorqlite v0.0.0-20260504155303-50d445fd0ab9
@@ -25,7 +25,7 @@ require (
 	golang.org/x/net v0.56.0
 	golang.org/x/text v0.38.0
 	golang.org/x/time v0.15.0
-	modernc.org/sqlite v1.52.0
+	modernc.org/sqlite v1.53.0
 )
 
 require (
@@ -57,10 +57,10 @@ require (
 	github.com/ssor/bom v0.0.0-20170718123548-6386211fdfcf // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/vanng822/css v1.0.1 // indirect
-	golang.org/x/image v0.42.0 // indirect
+	golang.org/x/image v0.43.0 // indirect
 	golang.org/x/mod v0.37.0 // indirect
 	golang.org/x/sys v0.46.0 // indirect
-	modernc.org/libc v1.73.4 // indirect
+	modernc.org/libc v1.73.5 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.11.0 // indirect
 )

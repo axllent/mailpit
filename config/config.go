@@ -140,6 +140,11 @@ var (
 	// This policy applies to both link checking and screenshot generation (proxy) features and is disabled by default for security reasons.
 	AllowInternalHTTPRequests = false
 
+	// DisableLinkCheckRateLimit disables the per-domain rate limiter, concurrency
+	// cap, and result cache used by the link checker. Off by default; set when
+	// running in a trusted environment where the limiter's pacing is unwanted.
+	DisableLinkCheckRateLimit = false
+
 	// CLITagsArg is used to map the CLI args
 	CLITagsArg string
 

@@ -2,6 +2,22 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.30.3]
+
+### Feature
+- Add link check rate limiting and caching mechanism
+
+### Chore
+- Update Go dependencies
+- Update node dependencies
+
+### Fix
+- Correctly parse after/before datetimes with timestamp in search query ([#704](https://github.com/axllent/mailpit/issues/704))
+- Update Swagger response definitions for MessageHeadersResponse ([#703](https://github.com/axllent/mailpit/issues/703))
+- Refactor Web UI configuration definitions in Swagger documentation
+- Handle MaxBytesError in SendMessageHandler and return JSON error response
+
+
 ## [v1.30.2]
 
 ### Security
