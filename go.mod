@@ -12,7 +12,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/websocket v1.5.3
 	github.com/jhillyerd/enmime/v2 v2.4.1
-	github.com/klauspost/compress v1.18.6
+	github.com/klauspost/compress v1.18.7
 	github.com/kovidgoyal/imaging v1.8.22
 	github.com/leporo/sqlf v1.4.0
 	github.com/pkg/errors v0.9.1
