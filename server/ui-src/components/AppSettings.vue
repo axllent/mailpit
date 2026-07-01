@@ -10,7 +10,7 @@ export default {
 	data() {
 		return {
 			mailbox,
-			theme: localStorage.getItem("theme") ? localStorage.getItem("theme") : "auto",
+			theme: localStorage.getItem("mailpit-theme") ? localStorage.getItem("mailpit-theme") : "auto",
 			timezones,
 			chaosConfig: false,
 			chaosUpdated: false,
@@ -21,9 +21,9 @@ export default {
 	watch: {
 		theme(v) {
 			if (v === "auto") {
-				localStorage.removeItem("theme");
+				localStorage.removeItem("mailpit-theme");
 			} else {
-				localStorage.setItem("theme", v);
+				localStorage.setItem("mailpit-theme", v);
 			}
 			this.setTheme();
 		},
