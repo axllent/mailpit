@@ -54,6 +54,11 @@ type AuthHandler func(remoteAddr net.Addr, mechanism string, username []byte, pa
 // ErrServerClosed is the default message when a server closes a connection
 var ErrServerClosed = errors.New("Server has been closed")
 
+// errLineTooLong is returned by readLine when an SMTP command line exceeds the
+// maximum buffered length. Its text is a valid SMTP reply so callers may write
+// it directly to the client.
+var errLineTooLong = errors.New("500 5.5.2 Line too long")
+
 // ListenAndServe listens on the TCP network address addr
 // and then calls Serve with handler to handle requests
 // on incoming connections.
@@ -265,7 +270,7 @@ func (srv *Server) newSession(conn net.Conn) (s *session) {
 	s = &session{
 		srv:  srv,
 		conn: conn,
-		br:   bufio.NewReader(conn),
+		br:   bufio.NewReaderSize(conn, 2048),
 		bw:   bufio.NewWriter(conn),
 	}
 
@@ -384,6 +389,10 @@ loop:
 		// On error, assume the client has gone away i.e. return from serve().
 		line, err := s.readLine()
 		if err != nil {
+			if errors.Is(err, errLineTooLong) {
+				s.writef("%s", err.Error())
+				continue
+			}
 			if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
 				s.writef("421 4.4.2 %s %s ESMTP Service closing transmission channel after timeout exceeded", s.srv.Hostname, s.srv.AppName)
 			}
@@ -700,7 +709,7 @@ loop:
 
 			// TLS handshake succeeded, switch to using the TLS connection.
 			s.conn = tlsConn
-			s.br = bufio.NewReader(s.conn)
+			s.br = bufio.NewReaderSize(s.conn, 2048)
 			s.bw = bufio.NewWriter(s.conn)
 			s.tls = true
 
@@ -809,16 +818,30 @@ func (s *session) writef(format string, args ...any) {
 }
 
 // Read a complete line from the socket.
+// Lines longer than the reader buffer size are drained and rejected with errLineTooLong
+// so that oversized input never allocates an attacker-controlled amount of memory.
 func (s *session) readLine() (string, error) {
 	if s.srv.Timeout > 0 {
 		_ = s.conn.SetReadDeadline(time.Now().Add(s.srv.Timeout))
 	}
 
-	line, err := s.br.ReadString('\n')
+	lineBytes, isPrefix, err := s.br.ReadLine()
 	if err != nil {
 		return "", err
 	}
-	line = strings.TrimSpace(line) // Strip trailing \r\n
+
+	if isPrefix {
+		// The command line exceeds the reader buffer; drain the remainder then reject.
+		for isPrefix {
+			_, isPrefix, err = s.br.ReadLine()
+			if err != nil {
+				return "", err
+			}
+		}
+		return "", errLineTooLong
+	}
+
+	line := strings.TrimSpace(string(lineBytes))
 
 	if Debug {
 		verb := "READ"
@@ -829,7 +852,7 @@ func (s *session) readLine() (string, error) {
 		}
 	}
 
-	return line, err
+	return line, nil
 }
 
 // Parse a line read from the socket.
