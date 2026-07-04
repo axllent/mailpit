@@ -85,7 +85,7 @@ export default {
 					}
 				});
 				const total = y + p + n;
-				o.Results = results;
+				o.Results = results.filter((r) => r.Support !== "yes");
 				o.Score = {
 					Found: o.Score.Found,
 					Supported: (y / total) * 100,
