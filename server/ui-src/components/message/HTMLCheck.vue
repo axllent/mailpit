@@ -200,7 +200,7 @@ export default {
 			deep: true,
 		},
 		platforms(v) {
-			localStorage.setItem("html-check-platforms", JSON.stringify(v));
+			localStorage.setItem("mp-html-check-platforms", JSON.stringify(v));
 		},
 	},
 
@@ -253,7 +253,7 @@ export default {
 		},
 
 		loadConfig() {
-			const platforms = localStorage.getItem("html-check-platforms");
+			const platforms = localStorage.getItem("mp-html-check-platforms");
 			if (platforms) {
 				try {
 					this.platforms = JSON.parse(platforms);

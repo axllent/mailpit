@@ -10,7 +10,7 @@ export default {
 	data() {
 		return {
 			mailbox,
-			theme: localStorage.getItem("mailpit-theme") ? localStorage.getItem("mailpit-theme") : "auto",
+			theme: localStorage.getItem("mp-theme") ? localStorage.getItem("mp-theme") : "auto",
 			timezones,
 			chaosConfig: false,
 			chaosUpdated: false,
@@ -21,9 +21,9 @@ export default {
 	watch: {
 		theme(v) {
 			if (v === "auto") {
-				localStorage.removeItem("mailpit-theme");
+				localStorage.removeItem("mp-theme");
 			} else {
-				localStorage.setItem("mailpit-theme", v);
+				localStorage.setItem("mp-theme", v);
 			}
 			this.setTheme();
 		},
@@ -37,9 +37,9 @@ export default {
 
 		"mailbox.skipConfirmations"(v) {
 			if (v) {
-				localStorage.setItem("skip-confirmations", "true");
+				localStorage.setItem("mp-skip-confirmations", "true");
 			} else {
-				localStorage.removeItem("skip-confirmations");
+				localStorage.removeItem("mp-skip-confirmations");
 			}
 		},
 	},
@@ -47,7 +47,7 @@ export default {
 	mounted() {
 		this.setTheme();
 
-		mailbox.skipConfirmations = localStorage.getItem("skip-confirmations");
+		mailbox.skipConfirmations = localStorage.getItem("mp-skip-confirmations");
 
 		window.setTimeout(() => {
 			Tags.init("select.tz");
