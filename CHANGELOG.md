@@ -2,6 +2,24 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.30.4]
+
+### Security
+- Reject oversized image dimensions in thumbnail handler before full decode (GHSA-75mr-qw9x-3r39)
+- Enforce command line length limits in SMTP and POP3 handlers (GHSA-w878-pj84-3j5v)
+
+### Chore
+- Update Github Actions
+- Refactor browser storage settings for consistency ([#715](https://github.com/axllent/mailpit/issues/715))
+- Update Go dependencies
+- Update node dependencies
+- Update caniemail test database
+- Update Github Action requirements
+
+### Fix
+- Exclude supported clients in HTML check results ([#716](https://github.com/axllent/mailpit/issues/716))
+
+
 ## [v1.30.3]
 
 ### Feature

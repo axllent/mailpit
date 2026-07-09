@@ -21,6 +21,12 @@ var (
 	thumbHeight = 120
 )
 
+// maxDecodedPixels is the maximum number of decoded pixels (width * height)
+// allowed before thumbnail generation. This guards against compressed images
+// that declare large dimensions, which would allocate large rasters in memory
+// before scaling. At 4 bytes per RGBA pixel, 20 MP ≈ 80 MB per decode.
+const maxDecodedPixels int64 = 20_000_000
+
 // Thumbnail returns a thumbnail image for an attachment (images only)
 func Thumbnail(w http.ResponseWriter, r *http.Request) {
 	// swagger:route GET /api/v1/message/{ID}/part/{PartID}/thumb message ThumbnailParams
@@ -60,7 +66,18 @@ func Thumbnail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	buf := bytes.NewBuffer(a.Content)
+	// Peek at the image dimensions before full decode to guard against
+	// compressed images with large declared dimensions (pixel-budget exhaustion).
+	// image.DecodeConfig reads only the image header without allocating the raster.
+	if cfg, _, cfgErr := image.DecodeConfig(bytes.NewReader(a.Content)); cfgErr == nil {
+		if int64(cfg.Width)*int64(cfg.Height) > maxDecodedPixels {
+			logger.Log().Warnf("[image] rejected oversized image dimensions %dx%d (exceeds %d pixel limit)", cfg.Width, cfg.Height, maxDecodedPixels)
+			blankImage(a, w)
+			return
+		}
+	}
+
+	buf := bytes.NewReader(a.Content)
 
 	img, err := imaging.Decode(buf, imaging.AutoOrientation(true))
 	if err != nil {

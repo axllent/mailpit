@@ -80,12 +80,12 @@ export default {
 				return;
 			}
 			if (v) {
-				localStorage.setItem("LinkCheckAutoScan", true);
+				localStorage.setItem("mp-link-check-auto-scan", "true");
 				if (!this.check) {
 					this.doCheck();
 				}
 			} else {
-				localStorage.removeItem("LinkCheckAutoScan");
+				localStorage.removeItem("mp-link-check-auto-scan");
 			}
 		},
 		followRedirects(v) {
@@ -93,9 +93,9 @@ export default {
 				return;
 			}
 			if (v) {
-				localStorage.setItem("LinkCheckFollowRedirects", true);
+				localStorage.setItem("mp-link-check-follow-redirects", "true");
 			} else {
-				localStorage.removeItem("LinkCheckFollowRedirects");
+				localStorage.removeItem("mp-link-check-follow-redirects");
 			}
 			if (this.check) {
 				this.doCheck();
@@ -104,8 +104,8 @@ export default {
 	},
 
 	created() {
-		this.autoScan = localStorage.getItem("LinkCheckAutoScan");
-		this.followRedirects = localStorage.getItem("LinkCheckFollowRedirects");
+		this.autoScan = localStorage.getItem("mp-link-check-auto-scan");
+		this.followRedirects = localStorage.getItem("mp-link-check-follow-redirects");
 	},
 
 	mounted() {

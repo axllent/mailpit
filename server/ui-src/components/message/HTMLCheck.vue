@@ -85,7 +85,7 @@ export default {
 					}
 				});
 				const total = y + p + n;
-				o.Results = results;
+				o.Results = results.filter((r) => r.Support !== "yes");
 				o.Score = {
 					Found: o.Score.Found,
 					Supported: (y / total) * 100,
@@ -200,7 +200,7 @@ export default {
 			deep: true,
 		},
 		platforms(v) {
-			localStorage.setItem("html-check-platforms", JSON.stringify(v));
+			localStorage.setItem("mp-html-check-platforms", JSON.stringify(v));
 		},
 	},
 
@@ -253,7 +253,7 @@ export default {
 		},
 
 		loadConfig() {
-			const platforms = localStorage.getItem("html-check-platforms");
+			const platforms = localStorage.getItem("mp-html-check-platforms");
 			if (platforms) {
 				try {
 					this.platforms = JSON.parse(platforms);
@@ -478,8 +478,8 @@ export default {
 								<span v-if="warning.PseudoClassOrAtRule" class="d-block alert alert-warning mb-2">
 									<i class="bi bi-info-circle me-2"></i>
 									Detected {{ warning.Score.Found }} <code>{{ warning.Title }}</code>
-									<template v-if="warning.Score.Found === 1">property</template>
-									<template v-else>properties</template>
+									<template v-if="warning.Score.Found === 1"> property</template>
+									<template v-else> properties</template>
 									in the CSS styles, but unable to test if used or not.
 								</span>
 								<!-- eslint-disable vue/no-v-html -->
