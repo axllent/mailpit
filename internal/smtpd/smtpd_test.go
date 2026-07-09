@@ -1929,3 +1929,48 @@ func TestIgnoreRejectedRecipients(t *testing.T) {
 		})
 	}
 }
+
+// TestCommandLineLengthLimit verifies that oversized SMTP command lines are rejected
+// without buffering the full attacker-controlled input (GHSA-w878-pj84-3j5v).
+// RFC 5321 section 4.5.3.1.4 limits command lines to 512 octets including CRLF.
+func TestCommandLineLengthLimit(t *testing.T) {
+	// Normal command must pass through unchanged.
+	shortSession := session{srv: &Server{}, br: bufio.NewReaderSize(strings.NewReader("NOOP\r\n"), 2048)}
+	line, err := shortSession.readLine()
+	if err != nil {
+		t.Fatalf("short command readLine failed: %v", err)
+	}
+	if line != "NOOP" {
+		t.Fatalf("expected NOOP, got %q", line)
+	}
+
+	// An 8 MiB command line must be rejected before it is returned to the caller.
+	oversized := strings.Repeat("X", 8*1024*1024) + "\r\n"
+	oversizedSession := session{srv: &Server{}, br: bufio.NewReaderSize(bytes.NewBufferString(oversized), 2048)}
+	_, err = oversizedSession.readLine()
+	if err == nil {
+		t.Fatal("oversized command was accepted; expected errLineTooLong")
+	}
+	if err != errLineTooLong {
+		t.Fatalf("expected errLineTooLong, got %v", err)
+	}
+
+	// A command that exactly fills the buffer must pass through.
+	fits := strings.Repeat("X", 2047) + "\n"
+	fitsSession := session{srv: &Server{}, br: bufio.NewReaderSize(strings.NewReader(fits), 2048)}
+	_, err = fitsSession.readLine()
+	if err != nil {
+		t.Fatalf("command that fits buffer was rejected: %v", err)
+	}
+}
+
+// TestAuthContinuationLineLengthLimit verifies that oversized AUTH continuation
+// lines (handled via the same readLine path) are also rejected.
+func TestAuthContinuationLineLengthLimit(t *testing.T) {
+	oversized := strings.Repeat("A", 8*1024*1024) + "\r\n"
+	s := session{srv: &Server{}, br: bufio.NewReaderSize(bytes.NewBufferString(oversized), 2048)}
+	_, err := s.readLine()
+	if err != errLineTooLong {
+		t.Fatalf("expected errLineTooLong for oversized AUTH continuation, got %v", err)
+	}
+}

@@ -107,7 +107,7 @@ func handleClient(conn net.Conn) {
 		}
 	}()
 
-	reader := bufio.NewReader(conn)
+	reader := bufio.NewReaderSize(conn, 512)
 
 	logger.Log().Debugf("[pop3] connection opened by %s", conn.RemoteAddr().String())
 
@@ -129,7 +129,7 @@ func handleClient(conn net.Conn) {
 		}
 
 		// Reads a line from the client
-		rawLine, err := reader.ReadString('\n')
+		lineBytes, isPrefix, err := reader.ReadLine()
 		if err != nil {
 			if err == io.EOF {
 				logger.Log().Debugf("[pop3] client disconnected: %s", conn.RemoteAddr().String())
@@ -138,12 +138,24 @@ func handleClient(conn net.Conn) {
 			}
 			return
 		}
+		if isPrefix {
+			// Command line exceeds RFC 1939's 255-octet limit; drain and reject.
+			for isPrefix {
+				_, isPrefix, err = reader.ReadLine()
+				if err != nil {
+					return
+				}
+			}
+			sendResponse(conn, "-ERR line too long")
+			continue
+		}
+		rawLine := string(lineBytes)
 
 		// Parses the command
 		cmd, args := getCommand(rawLine)
 		cmd = strings.ToUpper(cmd) // Commands in the POP3 are case-insensitive
 
-		logger.Log().Debugf("[pop3] received: %s (%s)", strings.TrimSpace(rawLine), conn.RemoteAddr().String())
+		logger.Log().Debugf("[pop3] received: %s (%s)", rawLine, conn.RemoteAddr().String())
 
 		switch cmd {
 		case "CAPA":
