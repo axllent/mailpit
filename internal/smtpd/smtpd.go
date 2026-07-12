@@ -875,9 +875,24 @@ func (s *session) readData() ([]byte, error) {
 			_ = s.conn.SetReadDeadline(time.Now().Add(s.srv.Timeout))
 		}
 
-		line, err := s.br.ReadBytes('\n')
-		if err != nil {
-			return nil, err
+		// Read the line in buffer-sized chunks. On ErrBufferFull (no newline
+		// found yet) enforce MaxSize early so a single long line cannot force
+		// allocation of the whole over-limit payload before rejection.
+		var line []byte
+		for {
+			fragment, err := s.br.ReadSlice('\n')
+			line = append(line, fragment...)
+			if err == nil {
+				break // newline found, line is complete
+			}
+			if err != bufio.ErrBufferFull {
+				return nil, err
+			}
+			// Buffer filled without a newline - check now before reading more.
+			if s.srv.MaxSize > 0 && len(data)+len(line) > s.srv.MaxSize {
+				_, _ = s.br.Discard(s.br.Buffered())
+				return nil, maxSizeExceeded(s.srv.MaxSize)
+			}
 		}
 		// Handle end of data denoted by lone period (\r\n.\r\n)
 		if bytes.Equal(line, []byte(".\r\n")) {
@@ -887,13 +902,10 @@ func (s *session) readData() ([]byte, error) {
 		if line[0] == '.' {
 			line = line[1:]
 		}
-
-		// Enforce the maximum message size limit.
-		if s.srv.MaxSize > 0 {
-			if len(data)+len(line) > s.srv.MaxSize {
-				_, _ = s.br.Discard(s.br.Buffered()) // Discard the buffer remnants.
-				return nil, maxSizeExceeded(s.srv.MaxSize)
-			}
+		// Precise size check against the completed, dot-removed line.
+		if s.srv.MaxSize > 0 && len(data)+len(line) > s.srv.MaxSize {
+			_, _ = s.br.Discard(s.br.Buffered())
+			return nil, maxSizeExceeded(s.srv.MaxSize)
 		}
 
 		data = append(data, line...)
