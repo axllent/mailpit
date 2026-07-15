@@ -114,7 +114,8 @@ export default {
 				p.limit = pagination.limit.toString();
 			}
 			const params = new URLSearchParams(p);
-			return "/search?" + params.toString();
+			// stay inside the current username mailbox when one is selected
+			return (this.mailboxBasePath() || "/search") + "?" + params.toString();
 		},
 	},
 };

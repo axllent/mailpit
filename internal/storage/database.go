@@ -193,17 +193,19 @@ func Ping() error {
 // StatsGet returns the total/unread statistics for a mailbox
 func StatsGet() MailboxStats {
 	var (
-		total  = CountTotal()
-		unread = CountUnread()
-		tags   = GetAllTags()
+		total     = CountTotal()
+		unread    = CountUnread()
+		tags      = GetAllTags()
+		usernames = GetAllUsernames()
 	)
 
 	dbLastAction = time.Now()
 
 	return MailboxStats{
-		Total:  total,
-		Unread: unread,
-		Tags:   tags,
+		Total:     total,
+		Unread:    unread,
+		Tags:      tags,
+		Usernames: usernames,
 	}
 }
 

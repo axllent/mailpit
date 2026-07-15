@@ -6,6 +6,7 @@ import ListMessages from "../components/ListMessages.vue";
 import MessagesMixins from "../mixins/MessagesMixins";
 import NavMailbox from "../components/NavMailbox.vue";
 import NavTags from "../components/NavTags.vue";
+import NavUsernames from "../components/NavUsernames.vue";
 import Pagination from "../components/NavPagination.vue";
 import SearchForm from "../components/SearchForm.vue";
 import { mailbox } from "../stores/mailbox";
@@ -18,6 +19,7 @@ export default {
 		ListMessages,
 		NavMailbox,
 		NavTags,
+		NavUsernames,
 		Pagination,
 		SearchForm,
 	},
@@ -43,6 +45,8 @@ export default {
 
 	mounted() {
 		mailbox.searching = false;
+		mailbox.mailboxUser = "";
+		mailbox.mailboxSearch = "";
 		this.apiURI = this.resolve(`/api/v1/messages`);
 		this.loadMailbox();
 
@@ -223,6 +227,7 @@ export default {
 			<div class="d-flex flex-column h-100">
 				<div class="flex-grow-1 overflow-y-auto me-n3 pe-3">
 					<NavMailbox @load-messages="loadMessages" />
+					<NavUsernames />
 					<NavTags />
 				</div>
 				<About />
@@ -234,6 +239,7 @@ export default {
 		<div class="d-none d-md-flex h-100 col-xl-2 col-md-3 flex-column">
 			<div class="flex-grow-1 overflow-y-auto me-n3 pe-3">
 				<NavMailbox @load-messages="loadMessages" />
+				<NavUsernames />
 				<NavTags />
 			</div>
 			<About />

@@ -54,6 +54,7 @@ export default {
 				mailbox.total = response.data.total; // all messages
 				mailbox.unread = response.data.unread; // all unread messages
 				mailbox.tags = response.data.tags; // all tags
+				mailbox.usernames = response.data.usernames; // all authentication usernames (mailboxes)
 				mailbox.messages = response.data.messages; // current messages
 				mailbox.count = response.data.messages_count; // total results for this mailbox/search
 				mailbox.messages_unread = response.data.messages_unread; // total unread results for this mailbox/search

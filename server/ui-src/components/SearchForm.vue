@@ -31,8 +31,10 @@ export default {
 
 		doSearch(e) {
 			pagination.start = 0;
+			// when scoped to a username mailbox, keep searches inside that mailbox
+			const base = this.mailboxBasePath();
 			if (this.search === "") {
-				this.$router.push("/");
+				this.$router.push(base || "/");
 			} else {
 				const urlParams = new URLSearchParams(window.location.search);
 				const curr = urlParams.get("q");
@@ -51,7 +53,7 @@ export default {
 				}
 
 				const params = new URLSearchParams(p);
-				this.$router.push("/search?" + params.toString());
+				this.$router.push((base || "/search") + "?" + params.toString());
 			}
 
 			e.preventDefault();
@@ -59,7 +61,8 @@ export default {
 
 		resetSearch() {
 			this.search = "";
-			this.$router.push("/");
+			// clearing a search inside a mailbox keeps you in that mailbox
+			this.$router.push(this.mailboxBasePath() || "/");
 		},
 	},
 };

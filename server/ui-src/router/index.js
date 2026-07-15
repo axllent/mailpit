@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from "vue-router";
+import MailboxUserView from "../views/MailboxUserView.vue";
 import MailboxView from "../views/MailboxView.vue";
 import MessageView from "../views/MessageView.vue";
 import NotFoundView from "../views/NotFoundView.vue";
@@ -21,6 +22,11 @@ const router = createRouter({
 		{
 			path: "/search",
 			component: SearchView,
+		},
+		{
+			path: "/mailbox/:username",
+			name: "mailbox",
+			component: MailboxUserView,
 		},
 		{
 			path: "/view/:id",

@@ -434,6 +434,15 @@ func searchQueryBuilder(searchString, timezone string) *sqlf.Stmt {
 					q.Where(`m.ID IN (SELECT mt.ID FROM `+tenant("message_tags")+` mt JOIN `+tenant("tags")+` t ON mt.TagID = t.ID WHERE t.Name = ?)`, w)
 				}
 			}
+		} else if strings.HasPrefix(lw, "username:") {
+			w = cleanString(w[9:])
+			if w != "" {
+				if exclude {
+					q.Where(`IFNULL(json_extract(m.Metadata, '$.Username'), '') != ?`, w)
+				} else {
+					q.Where(`json_extract(m.Metadata, '$.Username') = ?`, w)
+				}
+			}
 		} else if lw == "is:read" {
 			if exclude {
 				q.Where("Read = 0")

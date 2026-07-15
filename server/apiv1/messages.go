@@ -34,6 +34,9 @@ type MessagesSummary struct {
 	// All current tags
 	Tags []string `json:"tags"`
 
+	// All current authentication usernames (SMTP / Send API) in use
+	Usernames []string `json:"usernames"`
+
 	// Messages summary
 	// in: body
 	Messages []storage.MessageSummary `json:"messages"`
@@ -74,6 +77,7 @@ func GetMessages(w http.ResponseWriter, r *http.Request) {
 	res.Total = stats.Total
 	res.Unread = stats.Unread
 	res.Tags = stats.Tags
+	res.Usernames = stats.Usernames
 	res.MessagesCount = stats.Total
 	res.MessagesUnreadCount = stats.Unread
 
@@ -247,6 +251,7 @@ func Search(w http.ResponseWriter, r *http.Request) {
 	res.MessagesCount = tools.SafeUint64(results)
 	res.Unread = stats.Unread
 	res.Tags = stats.Tags
+	res.Usernames = stats.Usernames
 
 	unread, err := storage.SearchUnreadCount(search, r.URL.Query().Get("tz"), beforeTS)
 	if err != nil {
