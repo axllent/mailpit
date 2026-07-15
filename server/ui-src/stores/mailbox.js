@@ -24,9 +24,12 @@ export const mailbox = reactive({
 	count: 0, // total in mailbox or search
 	messages: [], // current messages
 	tags: [], // all tags
+	usernames: [], // all authentication usernames (mailboxes) in use
 	selected: [], // currently selected
 	connected: false, // websocket connection
 	searching: false, // current search, false for none
+	mailboxUser: "", // current dedicated username mailbox being viewed, "" for none
+	mailboxSearch: "", // active search/tag filter applied *within* the current username mailbox
 	refresh: false, // to listen from MessagesMixin
 	autoPaginating: true, // allows temporary bypass of loadMessages() via auto-pagination
 	notificationsSupported: false, // browser supports notifications

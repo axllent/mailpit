@@ -222,8 +222,8 @@ export default {
 
 		// handler for websocket new messages
 		handleWSNew(data) {
-			// do not add when searching or >= 100 new messages have been received
-			if (this.mailbox.searching || this.liveLoaded >= 100) {
+			// do not add when searching, viewing a username mailbox, or >= 100 new messages have been received
+			if (this.mailbox.searching || this.mailbox.mailboxUser || this.liveLoaded >= 100) {
 				return;
 			}
 
@@ -327,7 +327,12 @@ export default {
 			let apiURI = this.resolve(`/api/v1/messages`);
 			const p = {};
 
-			if (mailbox.searching) {
+			if (mailbox.mailboxUser) {
+				apiURI = this.resolve(`/api/v1/search`);
+				const scope =
+					"username:" + (/\s/.test(mailbox.mailboxUser) ? `"${mailbox.mailboxUser}"` : mailbox.mailboxUser);
+				p.query = mailbox.mailboxSearch ? scope + " " + mailbox.mailboxSearch : scope;
+			} else if (mailbox.searching) {
 				apiURI = this.resolve(`/api/v1/search`);
 				p.query = mailbox.searching;
 			}
@@ -425,7 +430,20 @@ export default {
 		goBack() {
 			mailbox.lastMessage = this.$route.params.id;
 
-			if (mailbox.searching) {
+			if (mailbox.mailboxUser) {
+				const p = {};
+				if (mailbox.mailboxSearch) {
+					p.q = mailbox.mailboxSearch;
+				}
+				if (pagination.start > 0) {
+					p.start = pagination.start.toString();
+				}
+				if (pagination.limit !== pagination.defaultLimit) {
+					p.limit = pagination.limit.toString();
+				}
+				const qs = new URLSearchParams(p).toString();
+				this.$router.push("/mailbox/" + encodeURIComponent(mailbox.mailboxUser) + (qs ? "?" + qs : ""));
+			} else if (mailbox.searching) {
 				const p = {
 					q: mailbox.searching,
 				};
@@ -628,7 +646,8 @@ export default {
 					<i class="bi bi-arrow-return-left me-1"></i>
 					<span class="ms-1">
 						Return to
-						<template v-if="mailbox.searching">search</template>
+						<template v-if="mailbox.mailboxUser">{{ mailbox.mailboxUser }}</template>
+						<template v-else-if="mailbox.searching">search</template>
 						<template v-else>inbox</template>
 					</span>
 					<span
