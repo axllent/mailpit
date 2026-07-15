@@ -45,7 +45,7 @@ including image thumbnails), including optional [HTTPS](https://mailpit.axllent.
 - [Create screenshots](https://mailpit.axllent.org/docs/usage/html-screenshots/) of HTML messages via web UI
 - Mobile and tablet HTML preview toggle in desktop mode
 - [Message tagging](https://mailpit.axllent.org/docs/usage/tagging/) including manual tagging or automated tagging using filtering and "plus addressing"
-- [Separate mailboxes](#separate-mailboxes-per-smtp-user) - when SMTP authentication is enabled, each authenticated username becomes its own switchable mailbox in the web UI
+- [Separate mailboxes](https://mailpit.axllent.org/docs/usage/mailboxes/) - when SMTP authentication is enabled, each authenticated username becomes its own switchable mailbox in the web UI
 - [SMTP relaying](https://mailpit.axllent.org/docs/configuration/smtp-relay/) (message release) - relay messages via a different SMTP server including an optional allowlist of accepted recipients
 - [SMTP forwarding](https://mailpit.axllent.org/docs/configuration/smtp-forward/) - automatically forward messages via a different SMTP server to predefined email addresses
 - Fast message [storing & processing](https://mailpit.axllent.org/docs/configuration/email-storage/) - ingesting 200-300 emails per second over SMTP depending on CPU, network speed & email size,
@@ -116,52 +116,6 @@ Please refer to [the documentation](https://mailpit.axllent.org/docs/install/tes
 Mailpit's SMTP server (default on port 1025), so you will likely need to configure your sending application to deliver mail via that port. 
 A common MTA (Mail Transfer Agent) that delivers system emails to an SMTP server is `sendmail`, used by many applications, including PHP. 
 Mailpit can also act as substitute for sendmail. For instructions on how to set this up, please refer to the [sendmail documentation](https://mailpit.axllent.org/docs/install/sendmail/).
-
-
-### Separate mailboxes per SMTP user
-
-Mailpit stores all received mail in a single database, but when **SMTP authentication** is enabled it records the authenticated username on every message. Each distinct username then appears as its own **mailbox** in the web UI, so you can point several services at the same Mailpit instance and view each one's mail separately.
-
-#### 1. Create SMTP credentials (one per service)
-
-Credentials use the [htpasswd](https://httpd.apache.org/docs/current/programs/htpasswd.html) format — one `username:password` pair per line. Give each service its own username:
-
-```
-service-a:$2y$...bcrypt-hash...
-service-b:$2y$...bcrypt-hash...
-```
-
-Generate a bcrypt entry for each user with `htpasswd`:
-
-```shell
-htpasswd -bnBC 10 service-a "s3cret-a" >> smtp-auth.txt
-htpasswd -bnBC 10 service-b "s3cret-b" >> smtp-auth.txt
-```
-
-#### 2. Start Mailpit with the credentials
-
-```shell
-mailpit --smtp-auth-file ./smtp-auth.txt
-```
-
-The equivalent environment variables are `MP_SMTP_AUTH_FILE` (a file path) or `MP_SMTP_AUTH` (the credentials inline).
-
-> For local testing you can use plaintext `username:password` credentials by also passing `--smtp-auth-allow-insecure` (or `MP_SMTP_AUTH_ALLOW_INSECURE=true`). Do not use plaintext credentials in production.
-
-#### 3. Point each service at its own username
-
-Configure each application to authenticate with its own credentials, for example:
-
-```
-MAIL_HOST=<mailpit-host>
-MAIL_PORT=1025
-MAIL_USERNAME=service-a
-MAIL_PASSWORD=s3cret-a
-```
-
-Once each service has sent mail, use the **Mailbox** dropdown in the web UI sidebar to switch between `All mail` and each service.
-
-> Enabling SMTP authentication means **all** senders must authenticate — unauthenticated mail is rejected. With `--smtp-auth-accept-any`, any username is accepted **without a password check**, so mail is filed under whatever mailbox name the sender claims — convenient for local testing, but the mailbox label can't be trusted.
 
 ---
 
