@@ -99,6 +99,8 @@ func Listen() {
 	r.HandleFunc("GET "+config.Webroot+"view/", middleWareFunc(viewHandler))
 
 	r.Handle("GET "+config.Webroot+"search", middleWareFunc(index))
+	// per-username mailbox view (client-side route) served via the same virtual index
+	r.Handle("GET "+config.Webroot+"mailbox/{username}", middleWareFunc(index))
 	// Exact-match the webroot; stdlib "/" is always a subtree so we guard inside.
 	r.HandleFunc("GET "+config.Webroot, func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != config.Webroot {

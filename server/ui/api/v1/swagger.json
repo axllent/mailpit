@@ -1904,6 +1904,14 @@
           "type": "integer",
           "format": "uint64",
           "x-go-name": "Unread"
+        },
+        "usernames": {
+          "description": "All current authentication usernames (SMTP / Send API) in use",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "Usernames"
         }
       },
       "x-go-package": "github.com/axllent/mailpit/server/apiv1"

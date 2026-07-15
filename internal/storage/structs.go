@@ -111,9 +111,10 @@ type MessageSummary struct {
 
 // MailboxStats struct for quick mailbox total/read lookups
 type MailboxStats struct {
-	Total  uint64
-	Unread uint64
-	Tags   []string
+	Total     uint64
+	Unread    uint64
+	Tags      []string
+	Usernames []string
 }
 
 // Metadata struct for storing message metadata

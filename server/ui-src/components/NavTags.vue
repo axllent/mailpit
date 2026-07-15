@@ -48,15 +48,18 @@ export default {
 
 			query = query.trim();
 
+			// stay inside the current username mailbox when one is selected
+			const base = this.mailboxBasePath();
+
 			if (query === "") {
-				this.$router.push("/");
+				this.$router.push(base || "/");
 			} else {
 				const params = new URLSearchParams({
 					q: query,
 					start: pagination.start.toString(),
 					limit: pagination.limit.toString(),
 				});
-				this.$router.push("/search?" + params.toString());
+				this.$router.push((base || "/search") + "?" + params.toString());
 			}
 		},
 
@@ -71,7 +74,8 @@ export default {
 				p.limit = pagination.limit.toString();
 			}
 			const params = new URLSearchParams(p);
-			return "/search?" + params.toString();
+			// stay inside the current username mailbox when one is selected
+			return (this.mailboxBasePath() || "/search") + "?" + params.toString();
 		},
 	},
 };

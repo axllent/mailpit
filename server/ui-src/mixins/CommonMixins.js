@@ -67,7 +67,28 @@ export default {
 			return encodeURIComponent(`tag:${tag}`);
 		},
 
+		// base router path for searches/tags in the current context:
+		// a /mailbox/:username scope keeps you inside that mailbox, otherwise null (global)
+		mailboxBasePath() {
+			if (this.$route?.name === "mailbox" && this.$route.params.username) {
+				return "/mailbox/" + encodeURIComponent(this.$route.params.username);
+			}
+			return null;
+		},
+
 		getSearch() {
+			// a dedicated /mailbox/:username view behaves as an implicit
+			// `username:<name>` search so scoped actions (delete/mark read) apply
+			// only to that mailbox, composed with any within-mailbox tag/search (?q=)
+			if (this.$route?.name === "mailbox" && this.$route.params.username) {
+				let u = this.$route.params.username;
+				if (/\s/.test(u)) {
+					u = `"${u}"`;
+				}
+				const within = this.$route.query.q ? " " + this.$route.query.q : "";
+				return "username:" + u + within;
+			}
+
 			if (!window.location.search) {
 				return false;
 			}

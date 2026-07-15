@@ -45,6 +45,7 @@ including image thumbnails), including optional [HTTPS](https://mailpit.axllent.
 - [Create screenshots](https://mailpit.axllent.org/docs/usage/html-screenshots/) of HTML messages via web UI
 - Mobile and tablet HTML preview toggle in desktop mode
 - [Message tagging](https://mailpit.axllent.org/docs/usage/tagging/) including manual tagging or automated tagging using filtering and "plus addressing"
+- [Separate mailboxes](https://mailpit.axllent.org/docs/usage/mailboxes/) - when SMTP authentication is enabled, each authenticated username becomes its own switchable mailbox in the web UI
 - [SMTP relaying](https://mailpit.axllent.org/docs/configuration/smtp-relay/) (message release) - relay messages via a different SMTP server including an optional allowlist of accepted recipients
 - [SMTP forwarding](https://mailpit.axllent.org/docs/configuration/smtp-forward/) - automatically forward messages via a different SMTP server to predefined email addresses
 - Fast message [storing & processing](https://mailpit.axllent.org/docs/configuration/email-storage/) - ingesting 200-300 emails per second over SMTP depending on CPU, network speed & email size,

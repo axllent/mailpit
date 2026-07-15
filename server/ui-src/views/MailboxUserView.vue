@@ -34,51 +34,139 @@ export default {
 			mailbox,
 			pagination,
 			delayedRefresh: false,
+			paginationDelayed: false, // for delayed pagination URL changes
 		};
+	},
+
+	computed: {
+		username() {
+			return this.$route.params.username;
+		},
 	},
 
 	watch: {
 		$route() {
-			this.doSearch();
+			this.setupMailbox();
 		},
 	},
 
 	mounted() {
-		mailbox.searching = this.getSearch();
-		this.doSearch();
+		this.setupMailbox();
 
 		// subscribe to events
+		this.eventBus.on("new", this.handleWSNew);
 		this.eventBus.on("update", this.handleWSUpdate);
 		this.eventBus.on("delete", this.handleWSDelete);
 		this.eventBus.on("truncate", this.handleWSTruncate);
 	},
 
 	unmounted() {
+		// note: mailbox.mailboxUser is intentionally NOT cleared here so that
+		// opening a message and returning navigates back to this mailbox. It is
+		// reset when the Inbox or Search views are entered.
+
 		// unsubscribe from events
+		this.eventBus.off("new", this.handleWSNew);
 		this.eventBus.off("update", this.handleWSUpdate);
 		this.eventBus.off("delete", this.handleWSDelete);
 		this.eventBus.off("truncate", this.handleWSTruncate);
 	},
 
 	methods: {
-		doSearch() {
-			const s = this.getSearch();
+		// build the (search-backed) API URI to fetch only this mailbox's messages,
+		// composed with any within-mailbox tag/search filter (?q=)
+		setupMailbox() {
+			mailbox.searching = false;
+			mailbox.mailboxUser = this.username;
 
-			if (!s) {
-				mailbox.searching = false;
-				this.$router.push("/");
+			const within = this.$route.query.q ? this.$route.query.q.trim() : "";
+			mailbox.mailboxSearch = within;
+
+			const scope = "username:" + (/\s/.test(this.username) ? `"${this.username}"` : this.username);
+			const q = within ? scope + " " + within : scope;
+			this.apiURI = this.resolve(`/api/v1/search`) + "?query=" + encodeURIComponent(q);
+			if (mailbox.timeZone !== "" && (within.indexOf("after:") !== -1 || within.indexOf("before:") !== -1)) {
+				this.apiURI += "&tz=" + encodeURIComponent(mailbox.timeZone);
+			}
+
+			this.loadMailbox();
+		},
+
+		loadMailbox() {
+			const paginationParams = this.getPaginationParams();
+			if (paginationParams?.start) {
+				pagination.start = paginationParams.start;
+			} else {
+				pagination.start = 0;
+			}
+			if (paginationParams?.limit) {
+				pagination.limit = paginationParams.limit;
+			}
+
+			this.loadMessages();
+		},
+
+		// This will only update the pagination offset at a maximum of 2x per second
+		// when viewing the mailbox on > page 1, while receiving an influx of new messages.
+		delayedPaginationUpdate() {
+			if (this.paginationDelayed) {
 				return;
 			}
 
-			mailbox.searching = s;
-			mailbox.mailboxUser = "";
-			mailbox.mailboxSearch = "";
+			this.paginationDelayed = true;
 
-			this.apiURI = this.resolve(`/api/v1/search`) + "?query=" + encodeURIComponent(s);
-			if (mailbox.timeZone !== "" && (s.indexOf("after:") !== -1 || s.indexOf("before:") !== -1)) {
-				this.apiURI += "&tz=" + encodeURIComponent(mailbox.timeZone);
+			window.setTimeout(() => {
+				const path = this.$route.path;
+				const p = {
+					...this.$route.query,
+				};
+				if (pagination.start > 0) {
+					p.start = pagination.start.toString();
+				} else {
+					delete p.start;
+				}
+				if (pagination.limit !== pagination.defaultLimit) {
+					p.limit = pagination.limit.toString();
+				} else {
+					delete p.limit;
+				}
+
+				mailbox.autoPaginating = false; // prevent reload of messages when URL changes
+				const params = new URLSearchParams(p);
+				const qs = params.toString();
+				this.$router.replace(path + (qs ? "?" + qs : ""));
+
+				this.paginationDelayed = false;
+			}, 500);
+		},
+
+		// handler for websocket new messages
+		handleWSNew(data) {
+			// only messages authenticated as this mailbox's username belong here
+			if (data.Username !== this.username) {
+				return;
 			}
-			this.loadMessages();
+
+			// when a tag/search filter is applied within the mailbox we cannot
+			// reliably tell client-side whether a new message matches it, so skip
+			// live-prepending (consistent with the search view) and let the next
+			// manual reload / navigation pick it up
+			if (mailbox.mailboxSearch) {
+				return;
+			}
+
+			if (pagination.start < 1) {
+				// push results directly into first page
+				mailbox.messages.unshift(data);
+				if (mailbox.messages.length > pagination.limit) {
+					mailbox.messages.pop();
+				}
+			} else {
+				// update pagination offset
+				pagination.start++;
+				// prevent "Too many calls to Location or History APIs within a short time frame"
+				this.delayedPaginationUpdate();
+			}
 		},
 
 		// handler for websocket message updates
@@ -86,7 +174,10 @@ export default {
 			for (let x = 0; x < this.mailbox.messages.length; x++) {
 				if (this.mailbox.messages[x].ID === data.ID) {
 					// update message
-					this.mailbox.messages[x] = { ...this.mailbox.messages[x], ...data };
+					this.mailbox.messages[x] = {
+						...this.mailbox.messages[x],
+						...data,
+					};
 					return;
 				}
 			}
@@ -105,7 +196,8 @@ export default {
 			}
 
 			if (!removed || this.delayedRefresh) {
-				// nothing changed on this screen, or a refresh is queued, don't refresh
+				// nothing changed on this screen, or a refresh is queued,
+				// don't refresh
 				return;
 			}
 
@@ -120,8 +212,8 @@ export default {
 
 		// handler for websocket message truncation
 		handleWSTruncate() {
-			// all messages deleted, go back to inbox
-			this.$router.push("/");
+			// all messages gone, reload
+			this.loadMessages();
 		},
 	},
 };
@@ -136,9 +228,9 @@ export default {
 			</RouterLink>
 		</div>
 		<div class="col col-md-4k col-lg-5 col-xl-6">
-			<SearchForm @load-messages="loadMessages" />
+			<SearchForm />
 		</div>
-		<div class="col-12 col-md-auto col-lg-4 col-xl-4 text-end mt-2 mt-lg-0">
+		<div class="col-12 col-md-auto col-lg-4 col-xl-4 text-end mt-2 mt-md-0">
 			<div class="float-start d-md-none">
 				<button
 					class="btn btn-outline-light me-2"
@@ -194,6 +286,15 @@ export default {
 		</div>
 
 		<div class="col-xl-10 col-md-9 mh-100 ps-0 ps-md-2 pe-0">
+			<div class="d-flex align-items-center px-2 py-2 border-bottom small text-muted">
+				<i class="bi bi-inbox-fill me-2"></i>
+				<span>
+					Mailbox: <span class="fw-bold text-body">{{ username }}</span>
+					<template v-if="mailbox.mailboxSearch">
+						<span class="mx-1">·</span>filtered by <code>{{ mailbox.mailboxSearch }}</code>
+					</template>
+				</span>
+			</div>
 			<div id="message-page" class="mh-100" style="overflow-y: auto">
 				<ListMessages :loading-messages="loading" />
 			</div>
