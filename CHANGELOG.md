@@ -2,6 +2,16 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.30.5]
+
+### Security
+- Prevent SMTP DATA line exceeding MaxSize (GHSA-r553-m4fv-5v97)
+
+### Chore
+- Update Go dependencies
+- Update node dependencies
+
+
 ## [v1.30.4]
 
 ### Security
