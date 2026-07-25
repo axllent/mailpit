@@ -1,8 +1,13 @@
 package server
 
 import (
+	"context"
 	"net/http"
+	"net/http/httptest"
+	"net/url"
 	"testing"
+
+	"github.com/axllent/mailpit/config"
 )
 
 func TestExtractOrigins(t *testing.T) {
@@ -116,6 +121,162 @@ func TestCorsOriginAccessControl(t *testing.T) {
 			allowed := corsOriginAccessControl(req)
 			if allowed != tt.allow {
 				t.Errorf("expected allowed=%v, got %v for origin=%q host=%q", tt.allow, allowed, tt.origin, tt.host)
+			}
+		})
+	}
+}
+
+// TestCORSMiddlewarePathCheck verifies that middleWareFunc keys its CORS gate on
+// r.URL.Path (the percent-decoded value Go's ServeMux routes on) rather than
+// r.RequestURI (the raw wire bytes). The two diverge when the client sends a
+// percent-encoded path such as /%61pi/events: ServeMux decodes %61 to 'a' and
+// routes to /api/events, but r.RequestURI remains /%61pi/events. Using
+// r.RequestURI for the prefix check allowed an attacker to bypass the origin
+// gate while still reaching the WebSocket handler.
+//
+// The test runs the full case matrix for both the default webroot ("/") and a
+// non-default webroot ("/mailpit/") to confirm the fix holds regardless of
+// deployment path configuration.
+func TestCORSMiddlewarePathCheck(t *testing.T) {
+	// Save and restore global state.
+	origAllowOrigin := AccessControlAllowOrigin
+	origWebroot := config.Webroot
+	origRe := htmlPreviewRouteRe
+	defer func() {
+		AccessControlAllowOrigin = origAllowOrigin
+		config.Webroot = origWebroot
+		htmlPreviewRouteRe = origRe
+		setCORSOrigins()
+	}()
+
+	AccessControlAllowOrigin = "allowed.example"
+	setCORSOrigins()
+
+	// makeReq simulates what Go's HTTP server sets on the request after parsing
+	// a raw wire target. RequestURI is the unmodified wire value; URL.Path is
+	// the percent-decoded path that ServeMux uses for routing.
+	makeReq := func(rawURI, decodedPath, origin string) *http.Request {
+		req := &http.Request{
+			Method:     "GET",
+			RequestURI: rawURI,
+			URL:        &url.URL{Path: decodedPath},
+			Header:     http.Header{},
+			Host:       "localhost:8025",
+			Body:       http.NoBody,
+		}
+		if origin != "" {
+			req.Header.Set("Origin", origin)
+		}
+		return req.WithContext(context.Background())
+	}
+
+	type testCase struct {
+		name        string
+		rawURI      string // r.RequestURI — raw wire bytes
+		decodedPath string // r.URL.Path  — what ServeMux routes on
+		origin      string
+		wantStatus  int
+	}
+
+	// casesFor returns the test matrix for a given webroot (e.g. "/" or "/mailpit/").
+	// encodedWR is the same prefix with its first letter percent-encoded
+	// (e.g. "/%6dailpit/" for "/mailpit/"), used to exercise the case where the
+	// webroot segment itself is encoded.
+	casesFor := func(wr, encodedWR string) []testCase {
+		return []testCase{
+			{
+				// Control: canonical path, blocked origin.
+				name:        "canonical path blocks cross-origin",
+				rawURI:      wr + "api/events",
+				decodedPath: wr + "api/events",
+				origin:      "http://evil.example",
+				wantStatus:  http.StatusForbidden,
+			},
+			{
+				// Regression: api segment encoded as %61pi. rawURI does not match
+				// the prefix check but decodedPath does, so with the fix the CORS
+				// check fires and blocks the request. With the old r.RequestURI
+				// code this returned 200.
+				name:        "encoded api segment (%61pi) blocks cross-origin (regression)",
+				rawURI:      wr + "%61pi/events",
+				decodedPath: wr + "api/events",
+				origin:      "http://evil.example",
+				wantStatus:  http.StatusForbidden,
+			},
+			{
+				// Encoded webroot segment: ServeMux decodes and routes normally;
+				// CORS gate must still fire.
+				name:        "encoded webroot segment blocks cross-origin",
+				rawURI:      encodedWR + "api/events",
+				decodedPath: wr + "api/events",
+				origin:      "http://evil.example",
+				wantStatus:  http.StatusForbidden,
+			},
+			{
+				// Configured origin is allowed even via the encoded path.
+				name:        "encoded api segment allows configured origin",
+				rawURI:      wr + "%61pi/events",
+				decodedPath: wr + "api/events",
+				origin:      "http://allowed.example",
+				wantStatus:  http.StatusOK,
+			},
+			{
+				// No Origin header: not a cross-origin request, always allowed.
+				name:        "no origin header passes",
+				rawURI:      wr + "api/events",
+				decodedPath: wr + "api/events",
+				origin:      "",
+				wantStatus:  http.StatusOK,
+			},
+			{
+				// Same host as the server: always allowed.
+				name:        "same-host origin passes",
+				rawURI:      wr + "api/events",
+				decodedPath: wr + "api/events",
+				origin:      "http://localhost:8025",
+				wantStatus:  http.StatusOK,
+			},
+			{
+				// Non-API path: CORS gate does not apply, handler is always reached.
+				name:        "non-api path not subject to CORS gate",
+				rawURI:      wr + "view/index",
+				decodedPath: wr + "view/index",
+				origin:      "http://evil.example",
+				wantStatus:  http.StatusOK,
+			},
+		}
+	}
+
+	roots := []struct {
+		name      string
+		webroot   string
+		encodedWR string // same prefix with one letter of the first segment percent-encoded
+	}{
+		{name: "default webroot", webroot: "/", encodedWR: "/"},
+		// %70 = 'p'; /mail%70it/ decodes to /mailpit/
+		{name: "custom webroot", webroot: "/mailpit/", encodedWR: "/mail%70it/"},
+	}
+
+	for _, wr := range roots {
+		t.Run(wr.name, func(t *testing.T) {
+			config.Webroot = wr.webroot
+			htmlPreviewRouteRe = nil // force recompile for new webroot
+
+			for _, tt := range casesFor(wr.webroot, wr.encodedWR) {
+				t.Run(tt.name, func(t *testing.T) {
+					w := httptest.NewRecorder()
+					req := makeReq(tt.rawURI, tt.decodedPath, tt.origin)
+
+					handler := middleWareFunc(func(w http.ResponseWriter, _ *http.Request) {
+						w.WriteHeader(http.StatusOK)
+					})
+					handler(w, req)
+
+					if w.Code != tt.wantStatus {
+						t.Errorf("expected HTTP %d, got %d (rawURI=%q origin=%q)",
+							tt.wantStatus, w.Code, tt.rawURI, tt.origin)
+					}
+				})
 			}
 		})
 	}
