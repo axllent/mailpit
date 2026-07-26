@@ -274,6 +274,44 @@ func TestAuthentication(t *testing.T) {
 	}
 }
 
+func TestBruteForceDisconnect(t *testing.T) {
+	t.Log("Testing brute force login protection")
+	setup()
+	defer storage.Close()
+
+	c, err := connect()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for i := 1; i <= 5; i++ {
+		if err := c.Send("USER username"); err != nil {
+			t.Fatalf("attempt %d: USER send failed: %s", i, err)
+		}
+		if _, err := c.ReadOne(); err != nil {
+			t.Fatalf("attempt %d: USER read failed: %s", i, err)
+		}
+
+		if err := c.Send("PASS wrongpassword"); err != nil {
+			t.Fatalf("attempt %d: PASS send failed: %s", i, err)
+		}
+		_, passErr := c.ReadOne()
+		if passErr == nil {
+			t.Fatalf("attempt %d: PASS should have returned -ERR", i)
+		}
+	}
+
+	// The 5th failure should have disconnected us.
+	// Any further command should fail with a read error.
+	if err := c.Send("USER username"); err != nil {
+		// Write failed - connection already closed, that's fine
+		return
+	}
+	if _, err := c.ReadOne(); err == nil {
+		t.Error("connection should have been closed after 5 failed logins")
+	}
+}
+
 func setup() {
 	if err := auth.SetPOP3Auth("username:password"); err != nil {
 		panic(err)
