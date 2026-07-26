@@ -116,10 +116,11 @@ func Listen() {
 	isReady.Store(true)
 
 	server := &http.Server{
-		Addr:         config.HTTPListen,
-		ReadTimeout:  30 * time.Second,
-		WriteTimeout: 30 * time.Second,
-		Handler:      r,
+		Addr:              config.HTTPListen,
+		ReadTimeout:       30 * time.Second,
+		ReadHeaderTimeout: 5 * time.Second,
+		WriteTimeout:      30 * time.Second,
+		Handler:           r,
 	}
 
 	// add temporary self-signed certificates to get deleted afterwards
