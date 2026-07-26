@@ -8,6 +8,7 @@ import (
 	"image/draw"
 	"image/jpeg"
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/axllent/mailpit/internal/logger"
@@ -111,7 +112,7 @@ func Thumbnail(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Add("Content-Type", "image/jpeg")
-	w.Header().Set("Content-Disposition", "filename=\""+fileName+"\"")
+	w.Header().Set("Content-Disposition", "filename=\""+url.PathEscape(fileName)+"\"")
 	_, _ = w.Write(b.Bytes())
 }
 
@@ -135,6 +136,6 @@ func blankImage(a *enmime.Part, w http.ResponseWriter) {
 	}
 
 	w.Header().Add("Content-Type", "image/jpeg")
-	w.Header().Set("Content-Disposition", "filename=\""+fileName+"\"")
+	w.Header().Set("Content-Disposition", "filename=\""+url.PathEscape(fileName)+"\"")
 	_, _ = w.Write(b.Bytes())
 }
