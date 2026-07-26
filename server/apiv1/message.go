@@ -153,13 +153,16 @@ func DownloadAttachment(w http.ResponseWriter, r *http.Request) {
 	}
 
 	contentType := a.ContentType
-	switch strings.SplitN(strings.ToLower(contentType), ";", 2)[0] {
+	disposition := "inline"
+	mediaType := strings.SplitN(strings.ToLower(contentType), ";", 2)[0]
+	switch mediaType {
 	case "text/html", "text/xml", "application/xhtml+xml",
 		"image/svg+xml", "application/xml", "text/xsl":
 		contentType = "application/octet-stream"
+		disposition = "attachment"
 	}
 	w.Header().Set("Content-Type", contentType)
-	w.Header().Set("Content-Disposition", "attachment; filename=\""+url.PathEscape(fileName)+"\"")
+	w.Header().Set("Content-Disposition", disposition+"; filename=\""+url.PathEscape(fileName)+"\"")
 	_, _ = w.Write(a.Content)
 }
 
