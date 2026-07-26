@@ -157,7 +157,7 @@ func handleClient(conn net.Conn) {
 		cmd, args := getCommand(rawLine)
 		cmd = strings.ToUpper(cmd) // Commands in the POP3 are case-insensitive
 
-		logger.Log().Debugf("[pop3] received: %s (%s)", rawLine, conn.RemoteAddr().String())
+		logger.Log().Debugf("[pop3] received: %s (%s)", sanitizeLogLine(rawLine), conn.RemoteAddr().String())
 
 		switch cmd {
 		case "CAPA":
