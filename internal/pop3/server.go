@@ -185,12 +185,12 @@ func handleClient(conn net.Conn) {
 					sendResponse(conn, "-ERR must supply a user")
 					return
 				}
-				if len(args) != 1 {
+				if len(args) < 1 {
 					sendResponse(conn, "-ERR must supply a password")
 					return
 				}
 
-				pass := args[0]
+				pass := strings.Join(args, " ")
 				if authUser(user, pass) {
 					sendResponse(conn, "+OK signed in")
 					var err error
