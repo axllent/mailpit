@@ -222,32 +222,48 @@ func handleClient(conn net.Conn) {
 }
 
 func handleTransactionCommand(conn net.Conn, cmd string, args []string, messages []message, toDelete *[]string) {
+	// isDeleted reports whether the 1-based message number has been
+	// marked for deletion in this session. Per RFC 1939, deleted
+	// messages must be invisible to all commands until RSET.
+	isDeleted := func(nr int) bool {
+		return slices.Contains(*toDelete, messages[nr-1].ID)
+	}
+
 	switch cmd {
 	case "STAT":
+		count := 0
 		totalSize := uint64(0)
-		for _, m := range messages {
-			totalSize += m.Size
+		for i, m := range messages {
+			if !isDeleted(i + 1) {
+				count++
+				totalSize += m.Size
+			}
 		}
-		sendResponse(conn, fmt.Sprintf("+OK %d %d", len(messages), totalSize))
+		sendResponse(conn, fmt.Sprintf("+OK %d %d", count, totalSize))
 	case "LIST":
-		totalSize := uint64(0)
-		for _, m := range messages {
-			totalSize += m.Size
-		}
-
 		if len(args) > 0 {
 			arg, _ := getSafeArg(args, 0)
 			nr, err := strconv.Atoi(arg)
-			if err != nil || nr < 1 || nr > len(messages) {
+			if err != nil || nr < 1 || nr > len(messages) || isDeleted(nr) {
 				sendResponse(conn, "-ERR no such message")
 				return
 			}
 			sendResponse(conn, fmt.Sprintf("+OK %d %d", nr, messages[nr-1].Size))
 		} else {
-			sendResponse(conn, fmt.Sprintf("+OK %d messages (%d octets)", len(messages), totalSize))
+			count := 0
+			totalSize := uint64(0)
+			for i, m := range messages {
+				if !isDeleted(i + 1) {
+					count++
+					totalSize += m.Size
+				}
+			}
+			sendResponse(conn, fmt.Sprintf("+OK %d messages (%d octets)", count, totalSize))
 
 			for row, m := range messages {
-				sendResponse(conn, fmt.Sprintf("%d %d", row+1, m.Size))
+				if !isDeleted(row + 1) {
+					sendResponse(conn, fmt.Sprintf("%d %d", row+1, m.Size))
+				}
 			}
 			sendResponse(conn, ".")
 		}
@@ -261,7 +277,7 @@ func handleTransactionCommand(conn net.Conn, cmd string, args []string, messages
 				return
 			}
 
-			if nr < 1 || nr > len(messages) {
+			if nr < 1 || nr > len(messages) || isDeleted(nr) {
 				sendResponse(conn, "-ERR no such message")
 				return
 			}
@@ -272,7 +288,9 @@ func handleTransactionCommand(conn net.Conn, cmd string, args []string, messages
 		} else {
 			sendResponse(conn, "+OK unique-id listing follows")
 			for row, m := range messages {
-				sendResponse(conn, fmt.Sprintf("%d %s", row+1, m.ID))
+				if !isDeleted(row + 1) {
+					sendResponse(conn, fmt.Sprintf("%d %s", row+1, m.ID))
+				}
 			}
 			sendResponse(conn, ".")
 		}
@@ -284,7 +302,7 @@ func handleTransactionCommand(conn net.Conn, cmd string, args []string, messages
 		}
 
 		nr, err := strconv.Atoi(args[0])
-		if err != nil || nr < 1 || nr > len(messages) {
+		if err != nil || nr < 1 || nr > len(messages) || isDeleted(nr) {
 			sendResponse(conn, "-ERR no such message")
 			return
 		}
@@ -313,7 +331,7 @@ func handleTransactionCommand(conn net.Conn, cmd string, args []string, messages
 			return
 		}
 		nr, err := strconv.Atoi(arg)
-		if err != nil || nr < 1 || nr > len(messages) {
+		if err != nil || nr < 1 || nr > len(messages) || isDeleted(nr) {
 			sendResponse(conn, "-ERR no such message")
 			return
 		}
@@ -351,12 +369,11 @@ func handleTransactionCommand(conn net.Conn, cmd string, args []string, messages
 			return
 		}
 
-		m := messages[nr-1]
-		if slices.Contains(*toDelete, m.ID) {
+		if isDeleted(nr) {
 			sendResponse(conn, "-ERR message already deleted")
 			return
 		}
-		*toDelete = append(*toDelete, m.ID)
+		*toDelete = append(*toDelete, messages[nr-1].ID)
 		sendResponse(conn, "+OK message marked for deletion")
 	case "RSET":
 		*toDelete = []string{}
