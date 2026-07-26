@@ -890,7 +890,7 @@ func (s *session) readData() ([]byte, error) {
 			}
 			// Buffer filled without a newline - check now before reading more.
 			if s.srv.MaxSize > 0 && len(data)+len(line) > s.srv.MaxSize {
-				_, _ = s.br.Discard(s.br.Buffered())
+				s.drainData()
 				return nil, maxSizeExceeded(s.srv.MaxSize)
 			}
 		}
@@ -904,13 +904,32 @@ func (s *session) readData() ([]byte, error) {
 		}
 		// Precise size check against the completed, dot-removed line.
 		if s.srv.MaxSize > 0 && len(data)+len(line) > s.srv.MaxSize {
-			_, _ = s.br.Discard(s.br.Buffered())
+			s.drainData()
 			return nil, maxSizeExceeded(s.srv.MaxSize)
 		}
 
 		data = append(data, line...)
 	}
 	return data, nil
+}
+
+// drainData reads and discards the remainder of a DATA stream up to
+// the \r\n.\r\n terminator. This prevents protocol desynchronisation
+// when rejecting an oversized message: without draining, leftover body
+// lines would be misinterpreted as SMTP commands on the next read.
+func (s *session) drainData() {
+	for {
+		if s.srv.Timeout > 0 {
+			_ = s.conn.SetReadDeadline(time.Now().Add(s.srv.Timeout))
+		}
+		line, err := s.br.ReadSlice('\n')
+		if err != nil && err != bufio.ErrBufferFull {
+			return // connection error or EOF; caller will handle
+		}
+		if bytes.Equal(line, []byte(".\r\n")) {
+			return
+		}
+	}
 }
 
 // Create the Received header to comply with RFC 2821 section 3.8.2.
