@@ -237,8 +237,38 @@ func TestCORSMiddlewarePathCheck(t *testing.T) {
 				wantStatus:  http.StatusOK,
 			},
 			{
-				// Non-API path: CORS gate does not apply, handler is always reached.
-				name:        "non-api path not subject to CORS gate",
+				// HTML preview route: htmlPreviewRouteRe matches this path so the
+				// CORS gate must fire, using the decoded URL.Path and the webroot-
+				// anchored regex built from config.Webroot.
+				name:        "html preview route blocks cross-origin",
+				rawURI:      wr + "view/abc123.html",
+				decodedPath: wr + "view/abc123.html",
+				origin:      "http://evil.example",
+				wantStatus:  http.StatusForbidden,
+			},
+			{
+				// Encoded view segment: analogous to the %61pi API bypass but for
+				// the preview route. %76 = 'v'; decoded path is /view/abc123.html
+				// which matches htmlPreviewRouteRe, so CORS must fire.
+				name:        "encoded view segment in preview route blocks cross-origin",
+				rawURI:      wr + "%76iew/abc123.html",
+				decodedPath: wr + "view/abc123.html",
+				origin:      "http://evil.example",
+				wantStatus:  http.StatusForbidden,
+			},
+			{
+				// Encoded .html extension: %6c = 'l'; decoded path is
+				// /view/abc123.html which matches htmlPreviewRouteRe.
+				name:        "encoded html extension in preview route blocks cross-origin",
+				rawURI:      wr + "view/abc123.htm%6c",
+				decodedPath: wr + "view/abc123.html",
+				origin:      "http://evil.example",
+				wantStatus:  http.StatusForbidden,
+			},
+			{
+				// Non-preview /view/ path: does not match htmlPreviewRouteRe
+				// (no .html suffix), so the CORS gate does not apply.
+				name:        "non-preview view path not subject to CORS gate",
 				rawURI:      wr + "view/index",
 				decodedPath: wr + "view/index",
 				origin:      "http://evil.example",
