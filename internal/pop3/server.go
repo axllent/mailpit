@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -351,6 +352,10 @@ func handleTransactionCommand(conn net.Conn, cmd string, args []string, messages
 		}
 
 		m := messages[nr-1]
+		if slices.Contains(*toDelete, m.ID) {
+			sendResponse(conn, "-ERR message already deleted")
+			return
+		}
 		*toDelete = append(*toDelete, m.ID)
 		sendResponse(conn, "+OK message marked for deletion")
 	case "RSET":
