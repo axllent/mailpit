@@ -3,6 +3,7 @@ package pop3
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"math/rand/v2"
 	"net"
 	"os"
@@ -309,6 +310,85 @@ func TestBruteForceDisconnect(t *testing.T) {
 	}
 	if _, err := c.ReadOne(); err == nil {
 		t.Error("connection should have been closed after 5 failed logins")
+	}
+}
+
+func TestPOP3DotStuffing(t *testing.T) {
+	// Test that byte-stuffing is correctly applied to TOP and RETR commands
+	// RFC 1939 requires that lines beginning with "." be escaped as ".."
+	t.Log("Testing POP3 dot-stuffing for TOP and RETR commands")
+	setup()
+	defer storage.Close()
+
+	// Create a message with content that has lines starting with dots
+	textBody := []byte("Line 1\n.This line starts with a dot\n..This line starts with two dots\nNormal line")
+	msg := enmime.Builder().
+		From("Test", "test@example.com").
+		Subject("Dot-stuffing test").
+		Text(textBody).
+		To("Test", "test@example.com")
+
+	env, err := msg.Build()
+	if err != nil {
+		t.Fatal("error building message:", err)
+	}
+
+	buf := new(bytes.Buffer)
+	if err := env.Encode(buf); err != nil {
+		t.Fatal("error encoding message:", err)
+	}
+
+	bufBytes := buf.Bytes()
+	_, err = storage.Store(&bufBytes, nil)
+	if err != nil {
+		t.Fatal("error storing message:", err)
+	}
+
+	// Connect and authenticate
+	c, err := connectAuth()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer c.Quit()
+
+	// Test RETR command with dot-stuffing
+	t.Log("Testing RETR with dot-stuffing")
+	retrivedMsg, err := c.Retr(1)
+	if err != nil {
+		t.Fatal("RETR failed:", err)
+	}
+
+	retrivedBody, err := io.ReadAll(retrivedMsg.Body)
+	if err != nil {
+		t.Fatal("error reading RETR body:", err)
+	}
+
+	bodyStr := string(retrivedBody)
+	// The dot-stuffing should be transparent - the body should contain the original text
+	if !strings.Contains(bodyStr, ".This line starts with a dot") {
+		t.Errorf("RETR did not properly handle dot-stuffing: %s", bodyStr)
+	}
+
+	// Test TOP command with dot-stuffing
+	t.Log("Testing TOP with dot-stuffing")
+	topMsg, err := c.Top(1, 10)
+	if err != nil {
+		t.Fatal("TOP failed:", err)
+	}
+
+	topBody, err := io.ReadAll(topMsg.Body)
+	if err != nil {
+		t.Fatal("error reading TOP body:", err)
+	}
+
+	topBodyStr := string(topBody)
+	// The dot-stuffing should be transparent - the body should contain the original text
+	if !strings.Contains(topBodyStr, ".This line starts with a dot") {
+		t.Errorf("TOP did not properly handle dot-stuffing: %s", topBodyStr)
+	}
+
+	if !strings.Contains(topBodyStr, "..This line starts with two dots") {
+		t.Errorf("TOP did not properly handle double-dot-stuffing: %s", topBodyStr)
 	}
 }
 

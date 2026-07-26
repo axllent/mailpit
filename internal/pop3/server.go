@@ -362,8 +362,9 @@ func handleTransactionCommand(conn net.Conn, cmd string, args []string, messages
 		}
 
 		sendResponse(conn, "+OK top of message follows")
-		sendData(conn, headers+"\r\n")
-		sendData(conn, body)
+		sendData(conn, strings.ReplaceAll(headers, "\n.", "\n.."))
+		sendData(conn, "\r\n")
+		sendData(conn, strings.ReplaceAll(body, "\n.", "\n.."))
 		sendResponse(conn, ".")
 	case "NOOP":
 		sendResponse(conn, "+OK")
