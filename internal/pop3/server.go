@@ -86,10 +86,11 @@ type message struct {
 
 func handleClient(conn net.Conn) {
 	var (
-		user     = ""
-		state    = AUTHORIZATION // Start with AUTHORIZATION state
-		toDelete []string        // Track messages marked for deletion
-		messages []message
+		user         = ""
+		state        = AUTHORIZATION // Start with AUTHORIZATION state
+		toDelete     []string        // Track messages marked for deletion
+		messages     []message
+		failedLogins int
 	)
 
 	defer func() {
@@ -199,8 +200,13 @@ func handleClient(conn net.Conn) {
 					}
 					state = TRANSACTION
 				} else {
+					failedLogins++
 					sendResponse(conn, "-ERR invalid password")
 					logger.Log().Warnf("[pop3] failed login: %s", user)
+					if failedLogins >= 5 {
+						logger.Log().Warnf("[pop3] too many failed logins, disconnecting: %s", conn.RemoteAddr().String())
+						return
+					}
 				}
 			} else {
 				sendResponse(conn, "-ERR user not specified")
