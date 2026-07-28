@@ -2,6 +2,38 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.30.6]
+
+### Security
+- Implement POP3 failed login tracking and disconnect after multiple attempts
+- Redact POP3 password in debug logs to prevent credential exposure
+- Prevent WebSocket CORS origin check bypass via percent-encoded path (GHSA-8r62-w5wh-fc5m)
+
+### Chore
+- Add ReadHeaderTimeout to HTTP server configuration
+- Update node dependencies
+- Update Go dependencies
+- Update caniemail database
+- Update Github Actions dependencies
+
+### Fix
+- Prevent protocol desynchronization by draining oversized message data
+- Prevent marking already deleted POP messages for deletion
+- Ensure deleted POP3 messages are excluded from LIST and STAT commands
+- Update content type handling for attachments to ensure proper file downloads
+- Sanitise active Content-Type in attachment downloads
+- Escape file names in Content-Disposition header for thumbnail responses
+- Allow passwords with spaces in POP3 authentication
+- Implement dot-stuffing for TOP commands in POP3 server
+- Correct order of setting headers and writing HTTP error response
+- Handle client disconnection during DATA read with appropriate logging in SMTPD server ([#721](https://github.com/axllent/mailpit/issues/721))
+
+### Test
+- Add brute force POP3 login protection test
+- Add more WebSocket CORS tests
+- Enhance CORS middleware tests for HTML preview route handling
+
+
 ## [v1.30.5]
 
 ### Security
