@@ -12,6 +12,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"io"
 	"io/fs"
 	"log"
 	"net"
@@ -567,6 +568,22 @@ loop:
 					s.writef("%s", err.Error())
 					continue
 				default:
+					// io.EOF / io.ErrUnexpectedEOF mean the client disconnected mid-DATA.
+					// Treat as client-gone and bail rather than sending a 451 into a dead socket.
+					if errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF) {
+						if s.srv.LogRead != nil {
+							s.srv.LogRead(s.remoteIP, "READ", fmt.Sprintf("client disconnected during DATA: %s", err.Error()))
+						} else {
+							log.Printf("%s READ client disconnected during DATA: %s", s.remoteIP, err.Error())
+						}
+						break loop
+					}
+					// Surface the underlying error so operators can diagnose the 451.
+					if s.srv.LogWrite != nil {
+						s.srv.LogWrite(s.remoteIP, "ERROR", fmt.Sprintf("DATA read error: %s", err.Error()))
+					} else {
+						log.Printf("%s ERROR DATA read error: %s", s.remoteIP, err.Error())
+					}
 					s.writef("451 4.3.0 Requested action aborted: local error in processing")
 					continue
 				}
@@ -890,7 +907,7 @@ func (s *session) readData() ([]byte, error) {
 			}
 			// Buffer filled without a newline - check now before reading more.
 			if s.srv.MaxSize > 0 && len(data)+len(line) > s.srv.MaxSize {
-				_, _ = s.br.Discard(s.br.Buffered())
+				s.drainData()
 				return nil, maxSizeExceeded(s.srv.MaxSize)
 			}
 		}
@@ -904,13 +921,32 @@ func (s *session) readData() ([]byte, error) {
 		}
 		// Precise size check against the completed, dot-removed line.
 		if s.srv.MaxSize > 0 && len(data)+len(line) > s.srv.MaxSize {
-			_, _ = s.br.Discard(s.br.Buffered())
+			s.drainData()
 			return nil, maxSizeExceeded(s.srv.MaxSize)
 		}
 
 		data = append(data, line...)
 	}
 	return data, nil
+}
+
+// drainData reads and discards the remainder of a DATA stream up to
+// the \r\n.\r\n terminator. This prevents protocol desynchronisation
+// when rejecting an oversized message: without draining, leftover body
+// lines would be misinterpreted as SMTP commands on the next read.
+func (s *session) drainData() {
+	for {
+		if s.srv.Timeout > 0 {
+			_ = s.conn.SetReadDeadline(time.Now().Add(s.srv.Timeout))
+		}
+		line, err := s.br.ReadSlice('\n')
+		if err != nil && err != bufio.ErrBufferFull {
+			return // connection error or EOF; caller will handle
+		}
+		if bytes.Equal(line, []byte(".\r\n")) {
+			return
+		}
+	}
 }
 
 // Create the Received header to comply with RFC 2821 section 3.8.2.

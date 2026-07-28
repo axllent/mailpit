@@ -395,7 +395,7 @@ type mockHandler struct {
 }
 
 func (m *mockHandler) handler(err error) func(a net.Addr, f string, t []string, d []byte) error {
-	return func(a net.Addr, f string, t []string, d []byte) error {
+	return func(_ net.Addr, _ string, _ []string, _ []byte) error {
 		m.handlerCalled++
 		return err
 	}
@@ -1702,7 +1702,7 @@ func BenchmarkReceive(b *testing.B) {
 	b.ResetTimer()
 
 	// Benchmark a full mail transaction.
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		_, _ = fmt.Fprintf(clientConn, "%s\r\n", "HELO host.example.com")
 		_, _ = reader.ReadString('\n')
 		_, _ = fmt.Fprintf(clientConn, "%s\r\n", "MAIL FROM:<sender@example.com>")
@@ -1770,14 +1770,14 @@ type mockDropRejectedHandler struct {
 	lastMsgIDTo   []string
 }
 
-func (m *mockDropRejectedHandler) handler(remoteAddr net.Addr, from string, to []string, data []byte) error {
+func (m *mockDropRejectedHandler) handler(_ net.Addr, from string, to []string, _ []byte) error {
 	m.handlerCalled++
 	m.lastFrom = from
 	m.lastTo = append([]string{}, to...) // copy slice
 	return nil
 }
 
-func (m *mockDropRejectedHandler) msgIDHandler(remoteAddr net.Addr, from string, to []string, data []byte, username *string) (string, error) {
+func (m *mockDropRejectedHandler) msgIDHandler(_ net.Addr, from string, to []string, _ []byte, _ *string) (string, error) {
 	m.msgIDCalled++
 	m.lastMsgIDFrom = from
 	m.lastMsgIDTo = append([]string{}, to...) // copy slice
@@ -1798,7 +1798,7 @@ func TestIgnoreRejectedRecipients(t *testing.T) {
 		{
 			name:                     "Disabled_DefaultBehavior",
 			IgnoreRejectedRecipients: false,
-			handlerRcpt: func(remoteAddr net.Addr, from string, to string) bool {
+			handlerRcpt: func(_ net.Addr, _ string, to string) bool {
 				return !strings.HasSuffix(to, "@rejected.com")
 			},
 			rcptCommands: []struct{ addr, expectedCode string }{
@@ -1811,7 +1811,7 @@ func TestIgnoreRejectedRecipients(t *testing.T) {
 		{
 			name:                     "Enabled_MixedRecipients",
 			IgnoreRejectedRecipients: true,
-			handlerRcpt: func(remoteAddr net.Addr, from string, to string) bool {
+			handlerRcpt: func(_ net.Addr, _ string, to string) bool {
 				return !strings.HasSuffix(to, "@rejected.com")
 			},
 			rcptCommands: []struct{ addr, expectedCode string }{
@@ -1826,7 +1826,7 @@ func TestIgnoreRejectedRecipients(t *testing.T) {
 		{
 			name:                     "Enabled_AllRejected",
 			IgnoreRejectedRecipients: true,
-			handlerRcpt: func(remoteAddr net.Addr, from string, to string) bool {
+			handlerRcpt: func(_ net.Addr, _ string, _ string) bool {
 				return false // Reject all
 			},
 			rcptCommands: []struct{ addr, expectedCode string }{
@@ -1839,7 +1839,7 @@ func TestIgnoreRejectedRecipients(t *testing.T) {
 		{
 			name:                     "Enabled_OnlyValid",
 			IgnoreRejectedRecipients: true,
-			handlerRcpt: func(remoteAddr net.Addr, from string, to string) bool {
+			handlerRcpt: func(_ net.Addr, _ string, to string) bool {
 				return strings.HasSuffix(to, "@valid.com")
 			},
 			rcptCommands: []struct{ addr, expectedCode string }{
@@ -1853,7 +1853,7 @@ func TestIgnoreRejectedRecipients(t *testing.T) {
 		{
 			name:                     "Enabled_WithMsgIDHandler",
 			IgnoreRejectedRecipients: true,
-			handlerRcpt: func(remoteAddr net.Addr, from string, to string) bool {
+			handlerRcpt: func(_ net.Addr, _ string, to string) bool {
 				return !strings.HasSuffix(to, "@rejected.com")
 			},
 			rcptCommands: []struct{ addr, expectedCode string }{

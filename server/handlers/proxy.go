@@ -352,8 +352,8 @@ func absoluteURL(link, baseURL string) (string, error) {
 func httpError(w http.ResponseWriter, msg string) {
 	w.Header().Set("Referrer-Policy", "no-referrer")
 	w.Header().Set("Content-Security-Policy", config.ContentSecurityPolicy)
-	w.WriteHeader(http.StatusBadRequest)
 	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(http.StatusBadRequest)
 	_, _ = fmt.Fprint(w, msg)
 }
 
