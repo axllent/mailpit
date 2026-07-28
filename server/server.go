@@ -59,9 +59,7 @@ func Listen() {
 	stats.Track()
 
 	websockets.MessageHub = websockets.NewHub()
-
-	// set allowed websocket origins from configuration
-	// websockets.SetAllowedOrigins(AccessControlAllowWSOrigins)
+	websockets.SetCheckOriginFunc(corsOriginAccessControl)
 
 	go websockets.MessageHub.Run()
 
@@ -116,10 +114,11 @@ func Listen() {
 	isReady.Store(true)
 
 	server := &http.Server{
-		Addr:         config.HTTPListen,
-		ReadTimeout:  30 * time.Second,
-		WriteTimeout: 30 * time.Second,
-		Handler:      r,
+		Addr:              config.HTTPListen,
+		ReadTimeout:       30 * time.Second,
+		ReadHeaderTimeout: 5 * time.Second,
+		WriteTimeout:      30 * time.Second,
+		Handler:           r,
 	}
 
 	// add temporary self-signed certificates to get deleted afterwards
@@ -317,7 +316,7 @@ func middleWareFunc(fn http.HandlerFunc) http.HandlerFunc {
 			htmlPreviewRouteRe = regexp.MustCompile(`^` + regexp.QuoteMeta(config.Webroot) + `view/[a-zA-Z0-9]+\.html$`)
 		}
 
-		if strings.HasPrefix(r.RequestURI, config.Webroot+"api/") || htmlPreviewRouteRe.MatchString(r.RequestURI) {
+		if strings.HasPrefix(r.URL.Path, config.Webroot+"api/") || htmlPreviewRouteRe.MatchString(r.URL.Path) {
 			if allowed := corsOriginAccessControl(r); !allowed {
 				http.Error(w, "Blocked due to CORS violation", http.StatusForbidden)
 				return

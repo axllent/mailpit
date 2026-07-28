@@ -72,6 +72,7 @@ func getTop(id string, nr int) (string, string, error) {
 func getCommand(line string) (string, []string) {
 	line = strings.Trim(line, "\r \n")
 	cmd := strings.Split(line, " ")
+
 	return cmd[0], cmd[1:]
 }
 
@@ -81,4 +82,16 @@ func getSafeArg(args []string, nr int) (string, error) {
 	}
 
 	return "", errors.New("-ERR out of range")
+}
+
+// sanitizeLogLine redacts sensitive commands (like PASS) from logs
+// to prevent credentials from being logged in plaintext
+func sanitizeLogLine(line string) string {
+	cmd, _ := getCommand(line)
+	cmd = strings.ToUpper(cmd)
+	if cmd == "PASS" {
+		return "PASS [redacted]"
+	}
+
+	return line
 }

@@ -28,15 +28,27 @@ const (
 var (
 	// MessageHub global
 	MessageHub *Hub
+
+	// checkOriginFunc is set at startup by the server package via SetCheckOriginFunc.
+	checkOriginFunc func(*http.Request) bool
 )
+
+// SetCheckOriginFunc sets the origin validation function used by the WebSocket upgrader.
+// It must be called before any connections are accepted.
+func SetCheckOriginFunc(fn func(*http.Request) bool) {
+	checkOriginFunc = fn
+}
 
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:    1024,
 	WriteBufferSize:   1024,
 	EnableCompression: !config.DisableHTTPCompression,
-	CheckOrigin: func(_ *http.Request) bool {
-		// origin is checked via server.go's CORS settings
-		return true
+	CheckOrigin: func(r *http.Request) bool {
+		if checkOriginFunc != nil {
+			return checkOriginFunc(r)
+		}
+		// Fail closed if no check function has been registered.
+		return false
 	},
 }
 

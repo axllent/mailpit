@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/mail"
 	"net/url"
+	"strings"
 
 	"github.com/axllent/mailpit/internal/storage"
 )
@@ -151,8 +152,17 @@ func DownloadAttachment(w http.ResponseWriter, r *http.Request) {
 		fileName = a.ContentID
 	}
 
-	w.Header().Add("Content-Type", a.ContentType)
-	w.Header().Set("Content-Disposition", "inline; filename=\""+url.PathEscape(fileName)+"\"")
+	contentType := a.ContentType
+	disposition := "inline"
+	mediaType := strings.SplitN(strings.ToLower(contentType), ";", 2)[0]
+	switch mediaType {
+	case "text/html", "text/xml", "application/xhtml+xml",
+		"image/svg+xml", "application/xml", "text/xsl":
+		contentType = "application/octet-stream"
+		disposition = "attachment"
+	}
+	w.Header().Set("Content-Type", contentType)
+	w.Header().Set("Content-Disposition", disposition+"; filename=\""+url.PathEscape(fileName)+"\"")
 	_, _ = w.Write(a.Content)
 }
 
