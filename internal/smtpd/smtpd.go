@@ -12,6 +12,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"io"
 	"io/fs"
 	"log"
 	"net"
@@ -567,6 +568,22 @@ loop:
 					s.writef("%s", err.Error())
 					continue
 				default:
+					// io.EOF / io.ErrUnexpectedEOF mean the client disconnected mid-DATA.
+					// Treat as client-gone and bail rather than sending a 451 into a dead socket.
+					if errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF) {
+						if s.srv.LogRead != nil {
+							s.srv.LogRead(s.remoteIP, "READ", fmt.Sprintf("client disconnected during DATA: %s", err.Error()))
+						} else {
+							log.Printf("%s READ client disconnected during DATA: %s", s.remoteIP, err.Error())
+						}
+						break loop
+					}
+					// Surface the underlying error so operators can diagnose the 451.
+					if s.srv.LogWrite != nil {
+						s.srv.LogWrite(s.remoteIP, "ERROR", fmt.Sprintf("DATA read error: %s", err.Error()))
+					} else {
+						log.Printf("%s ERROR DATA read error: %s", s.remoteIP, err.Error())
+					}
 					s.writef("451 4.3.0 Requested action aborted: local error in processing")
 					continue
 				}
