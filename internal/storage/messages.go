@@ -766,6 +766,8 @@ func DeleteMessages(ids []string) error {
 	if err != nil {
 		return err
 	}
+	// roll back if it fails
+	defer func() { _ = tx.Rollback() }()
 
 	args = make([]any, len(toDelete))
 	for i, id := range toDelete {
@@ -775,7 +777,7 @@ func DeleteMessages(ids []string) error {
 	tables := []string{"mailbox", "mailbox_data", "message_tags"}
 
 	for _, t := range tables {
-		sql = fmt.Sprintf(`DELETE FROM %s WHERE ID IN (?%s)`, tenant(t), strings.Repeat(",?", len(ids)-1))
+		sql = fmt.Sprintf(`DELETE FROM %s WHERE ID IN (?%s)`, tenant(t), strings.Repeat(",?", len(toDelete)-1))
 
 		_, err = tx.Exec(sql, args...) // #nosec
 		if err != nil {
