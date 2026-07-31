@@ -92,8 +92,38 @@ func TestAPIv1Messages(t *testing.T) {
 	// 10 should be marked as read
 	assertStatsEqual(t, ts.URL+"/api/v1/messages", 90, 100)
 
-	// delete all
-	t.Log("Delete all messages")
+	// delete specific messages with duplicate IDs
+	t.Log("Delete messages with duplicate IDs")
+	firstID := m.Messages[0].ID
+	deleteData := struct {
+		IDs []string
+	}{
+		IDs: []string{firstID, firstID},
+	}
+	j, err := json.Marshal(deleteData)
+	if err != nil {
+		t.Error(err.Error())
+	}
+	_, err = clientDelete(ts.URL+"/api/v1/messages", string(j))
+	if err != nil {
+		t.Errorf("Expected nil, received %s", err.Error())
+	}
+	assertStatsEqual(t, ts.URL+"/api/v1/messages", 90, 99)
+
+	// delete with empty IDs should delete all
+	t.Log("Delete with empty IDs (delete all)")
+	_, err = clientDelete(ts.URL+"/api/v1/messages", `{"IDs":[]}`)
+	if err != nil {
+		t.Errorf("Expected nil, received %s", err.Error())
+	}
+	assertStatsEqual(t, ts.URL+"/api/v1/messages", 0, 0)
+
+	// re-insert and delete all with no body
+	t.Log("Re-insert 100 messages")
+	insertEmailData(t)
+	assertStatsEqual(t, ts.URL+"/api/v1/messages", 100, 100)
+
+	t.Log("Delete all messages with empty body")
 	_, err = clientDelete(ts.URL+"/api/v1/messages", "{}")
 	if err != nil {
 		t.Errorf("Expected nil, received %s", err.Error())
@@ -169,7 +199,35 @@ func TestAPIv1ToggleReadStatus(t *testing.T) {
 	}
 	assertStatsEqual(t, ts.URL+"/api/v1/messages", 100, 100)
 
-	// mark all as read
+	// mark read with duplicate IDs
+	t.Log("Mark read with duplicate IDs")
+	putData.Read = true
+	putData.IDs = []string{putIDs[0], putIDs[0]}
+	j, err = json.Marshal(putData)
+	if err != nil {
+		t.Error(err.Error())
+	}
+	_, err = clientPut(ts.URL+"/api/v1/messages", string(j))
+	if err != nil {
+		t.Error(err.Error())
+	}
+	assertStatsEqual(t, ts.URL+"/api/v1/messages", 99, 100)
+
+	// mark unread with duplicate IDs
+	t.Log("Mark unread with duplicate IDs")
+	putData.Read = false
+	putData.IDs = []string{putIDs[0], putIDs[0]}
+	j, err = json.Marshal(putData)
+	if err != nil {
+		t.Error(err.Error())
+	}
+	_, err = clientPut(ts.URL+"/api/v1/messages", string(j))
+	if err != nil {
+		t.Error(err.Error())
+	}
+	assertStatsEqual(t, ts.URL+"/api/v1/messages", 100, 100)
+
+	// mark all as read with empty IDs
 	putData.Read = true
 	putData.IDs = []string{}
 	j, err = json.Marshal(putData)
