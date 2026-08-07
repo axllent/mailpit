@@ -6,9 +6,11 @@ COPY . /app
 
 WORKDIR /app
 
-RUN  apk upgrade && apk add git npm && \
-npm ci && npm run package && \
-CGO_ENABLED=0 go build -ldflags "-s -w -X github.com/axllent/mailpit/config.Version=${VERSION}" -o /mailpit
+RUN apk upgrade && apk add git npm && \
+    npm ci && npm run package && \
+    go install github.com/google/go-licenses/v2@v2.0.1 && \
+    go-licenses report ./... --template .github/third-party-licenses.tpl --ignore github.com/axllent/mailpit > internal/licenses/third-party.txt && \
+    CGO_ENABLED=0 go build -ldflags "-s -w -X github.com/axllent/mailpit/config.Version=${VERSION}" -o /mailpit
 
 FROM alpine:latest
 

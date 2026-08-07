@@ -33,6 +33,15 @@ jobs:
     - run: npm ci
     - run: npm run package
 
+    # generate third-party licenses
+    - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+      with:
+        go-version: 'stable'
+    - name: Generate third-party licenses
+      run: |
+        go install github.com/google/go-licenses/v2@v2.0.1
+        go-licenses report ./... --template .github/third-party-licenses.tpl --ignore github.com/axllent/mailpit > internal/licenses/third-party.txt
+
     # build the binaries
     - uses: wangyoucao577/go-release-action@279495102627de7960cbc33434ab01a12bae144b # v1.55
       with:
