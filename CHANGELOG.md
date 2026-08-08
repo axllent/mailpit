@@ -2,6 +2,21 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.30.7]
+
+### Chore
+- Add software license information ([#724](https://github.com/axllent/mailpit/issues/724))
+- Update Go dependencies
+- Update node dependencies
+- Update GitHub Actions dependencies
+
+### Fix
+- Database lock when delete request contains duplicate IDs ([#723](https://github.com/axllent/mailpit/issues/723))
+
+### Test
+- Add tests for requests containing duplicate & invalid IDs
+
+
 ## [v1.30.6]
 
 ### Security
