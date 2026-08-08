@@ -1,1 +1,3 @@
-Third-party license information is not available in this build.
+## Third-party licenses (not available)
+
+Third-party license information is not included in this build.

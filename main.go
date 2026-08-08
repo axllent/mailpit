@@ -16,8 +16,7 @@ import (
 var mailpitLicense string
 
 func main() {
-	cmd.MailpitLicense = mailpitLicense
-	cmd.ThirdPartyLicenses = licenses.ThirdParty
+	licenses.Mailpit = mailpitLicense
 
 	// if the command executable contains "send" in the name (eg: sendmail), then run the sendmail command
 	if strings.Contains(strings.ToLower(filepath.Base(os.Args[0])), "send") {

@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net"
@@ -18,6 +19,7 @@ import (
 
 	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/internal/auth"
+	"github.com/axllent/mailpit/internal/licenses"
 	"github.com/axllent/mailpit/internal/logger"
 	"github.com/axllent/mailpit/internal/pop3"
 	"github.com/axllent/mailpit/internal/prometheus"
@@ -202,6 +204,7 @@ func apiRoutes() *http.ServeMux {
 	}
 	r.HandleFunc("GET "+config.Webroot+"api/v1/message/{id}", middleWareFunc(apiv1.GetMessage))
 	r.HandleFunc("GET "+config.Webroot+"api/v1/info", middleWareFunc(apiv1.AppInfo))
+	r.HandleFunc("GET "+config.Webroot+"api/licenses", middleWareFunc(licenseInfo))
 	r.HandleFunc("GET "+config.Webroot+"api/v1/webui", middleWareFunc(apiv1.WebUIConfig))
 	r.HandleFunc("GET "+config.Webroot+"api/v1/swagger.json", middleWareFunc(swaggerBasePath))
 
@@ -388,6 +391,14 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 func apiWebsocket(w http.ResponseWriter, r *http.Request) {
 	websockets.ServeWs(websockets.MessageHub, w, r)
 	storage.BroadcastMailboxStats()
+}
+
+// licenseInfo returns structured license information for Mailpit and its third-party dependencies.
+func licenseInfo(w http.ResponseWriter, _ *http.Request) {
+	w.Header().Add("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(licenses.All()); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+	}
 }
 
 // Wrapper to artificially inject a basePath to the swagger.json if a webroot has been specified
