@@ -57,8 +57,14 @@ export default {
 
 	methods: {
 		setTheme() {
+			document.documentElement.removeAttribute("data-mp-theme");
+
 			if (this.theme === "auto" && window.matchMedia("(prefers-color-scheme: dark)").matches) {
 				document.documentElement.setAttribute("data-bs-theme", "dark");
+			} else if (this.theme === "deep-dark") {
+				// deep-dark inherits all Bootstrap dark styles with deeper overrides
+				document.documentElement.setAttribute("data-bs-theme", "dark");
+				document.documentElement.setAttribute("data-mp-theme", "deep-dark");
 			} else {
 				document.documentElement.setAttribute("data-bs-theme", this.theme);
 			}
@@ -165,6 +171,7 @@ export default {
 									<option value="auto">Auto (detect from browser)</option>
 									<option value="light">Light theme</option>
 									<option value="dark">Dark theme</option>
+									<option value="deep-dark">Deep dark theme</option>
 								</select>
 							</div>
 							<div class="mb-3">
