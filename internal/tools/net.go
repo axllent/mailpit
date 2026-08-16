@@ -24,6 +24,15 @@ var (
 	// IPv4-mapped IPv6 (::ffff:0:0/96, RFC 4291 §2.5.5.2) is normalised by net.IP.To4,
 	// so the stdlib Is* checks above already see the embedded IPv4 - no decode needed.
 
+	// Direct IPv4 special-use ranges not covered by Go's stdlib Is* family.
+	// See https://www.iana.org/assignments/iana-ipv4-special-registry/
+	benchmarkRange    = mustCIDR("198.18.0.0/15")    // RFC 2544 — benchmarking, not globally reachable
+	ietfProtocol      = mustCIDR("192.0.0.0/24")     // RFC 6890 — IETF protocol assignments, not globally reachable
+	testNet1          = mustCIDR("192.0.2.0/24")      // RFC 5737 — documentation (TEST-NET-1), not globally reachable
+	testNet2          = mustCIDR("198.51.100.0/24")   // RFC 5737 — documentation (TEST-NET-2), not globally reachable
+	testNet3          = mustCIDR("203.0.113.0/24")    // RFC 5737 — documentation (TEST-NET-3), not globally reachable
+	reservedForFuture = mustCIDR("240.0.0.0/4")       // RFC 1112 — reserved for future use, not globally reachable
+
 	// Direct IPv6 prefixes outside the scope of Go's stdlib Is* family.
 	deprecatedSiteLocal = mustCIDR("fec0::/10")     // RFC 3879 / RFC 4291 §2.5.7 — deprecated, still routable on dual-stack hosts
 	documentationPrefix = mustCIDR("2001:db8::/32") // RFC 3849 — documentation only, must not appear in real traffic
@@ -44,6 +53,10 @@ func mustCIDR(s string) *net.IPNet {
 // IsUnspecified - 0.0.0.0, ::
 // IsMulticast - 224.0.0.0/4, ff00::/8
 // CGNAT - 100.64.0.0/10 (RFC 6598) (Carrier-Grade NAT)
+// Benchmarking - 198.18.0.0/15 (RFC 2544)
+// IETF Protocol Assignments - 192.0.0.0/24 (RFC 6890)
+// Documentation - 192.0.2.0/24, 198.51.100.0/24, 203.0.113.0/24 (RFC 5737)
+// Reserved for Future Use - 240.0.0.0/4 (RFC 1112)
 // IPv6 transition forms - NAT64 (RFC 6052/8215), 6to4 (RFC 3056), Teredo (RFC 4380),
 // IPv4-compatible (RFC 4291) - re-checked against their embedded IPv4.
 func IsInternalIP(ip net.IP) bool {
@@ -54,6 +67,12 @@ func IsInternalIP(ip net.IP) bool {
 		ip.IsUnspecified() ||
 		ip.IsMulticast() ||
 		cgnatRange.Contains(ip) ||
+		benchmarkRange.Contains(ip) ||
+		ietfProtocol.Contains(ip) ||
+		testNet1.Contains(ip) ||
+		testNet2.Contains(ip) ||
+		testNet3.Contains(ip) ||
+		reservedForFuture.Contains(ip) ||
 		deprecatedSiteLocal.Contains(ip) ||
 		documentationPrefix.Contains(ip) {
 		return true
