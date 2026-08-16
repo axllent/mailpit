@@ -29,7 +29,7 @@ export default {
 			this.loadMessages();
 		},
 
-		loadMessages() {
+		loadMessages(onComplete) {
 			if (!this.apiURI) {
 				alert("apiURL not set!");
 				return;
@@ -89,6 +89,10 @@ export default {
 				}
 
 				window.scrollInPlace = false;
+
+				if (typeof onComplete === "function") {
+					onComplete();
+				}
 			});
 		},
 	},

@@ -32,6 +32,8 @@ export default {
 			mailbox,
 			pagination,
 			delayedRefresh: false,
+			newMessageTimer: null,
+			newMessagesPending: false,
 		};
 	},
 
@@ -46,6 +48,7 @@ export default {
 		this.doSearch();
 
 		// subscribe to events
+		this.eventBus.on("new", this.handleWSNew);
 		this.eventBus.on("update", this.handleWSUpdate);
 		this.eventBus.on("delete", this.handleWSDelete);
 		this.eventBus.on("truncate", this.handleWSTruncate);
@@ -53,9 +56,13 @@ export default {
 
 	unmounted() {
 		// unsubscribe from events
+		this.eventBus.off("new", this.handleWSNew);
 		this.eventBus.off("update", this.handleWSUpdate);
 		this.eventBus.off("delete", this.handleWSDelete);
 		this.eventBus.off("truncate", this.handleWSTruncate);
+		if (this.newMessageTimer) {
+			clearTimeout(this.newMessageTimer);
+		}
 	},
 
 	methods: {
@@ -75,6 +82,34 @@ export default {
 				this.apiURI += "&tz=" + encodeURIComponent(mailbox.timeZone);
 			}
 			this.loadMessages();
+		},
+
+		// handler for websocket new messages - debounced search refresh
+		handleWSNew() {
+			if (pagination.start > 0) {
+				return;
+			}
+
+			// if a refresh is already in-flight or scheduled, just flag for another round
+			if (this.newMessageTimer) {
+				this.newMessagesPending = true;
+				return;
+			}
+
+			this.scheduleSearchRefresh();
+		},
+
+		scheduleSearchRefresh() {
+			this.newMessageTimer = setTimeout(() => {
+				this.newMessagesPending = false;
+				this.loadMessages(() => {
+					this.newMessageTimer = null;
+					if (this.newMessagesPending && pagination.start < 1) {
+						this.newMessagesPending = false;
+						this.scheduleSearchRefresh();
+					}
+				});
+			}, 3000);
 		},
 
 		// handler for websocket message updates
