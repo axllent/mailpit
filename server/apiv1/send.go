@@ -161,6 +161,10 @@ func (d sendMessageParams) Send(remoteAddr string, httpAuthUser *string) (string
 
 	if len(d.Body.Headers) > 0 {
 		for k, v := range d.Body.Headers {
+			// validate header key per RFC 5322: printable US-ASCII (33-126) excluding colon
+			if !validHeaderKey(k) {
+				return "", fmt.Errorf("invalid header key: %q", k)
+			}
 			// check header isn't in "restricted" headers
 			if tools.InArray(k, restrictedHeaders) {
 				return "", fmt.Errorf("cannot overwrite header: \"%s\"", k)
@@ -203,4 +207,20 @@ func (d sendMessageParams) Send(remoteAddr string, httpAuthUser *string) (string
 	}
 
 	return smtpd.SaveToDatabase(ipAddr, d.Body.From.Email, addresses, buff.Bytes(), httpAuthUser)
+}
+
+// validHeaderKey returns true if s is a valid RFC 5322 header field name.
+// Field names must be one or more printable US-ASCII characters (33-126),
+// excluding colon (58).
+func validHeaderKey(s string) bool {
+	if len(s) == 0 {
+		return false
+	}
+	for i := 0; i < len(s); i++ {
+		c := s[i]
+		if c < 33 || c > 126 || c == ':' {
+			return false
+		}
+	}
+	return true
 }

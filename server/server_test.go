@@ -386,6 +386,50 @@ func TestAPIv1Send(t *testing.T) {
 	assertEqual(t, `This is a plain text attachment`, string(attachmentBytes), "wrong Attachment content")
 }
 
+func TestAPIv1SendInvalidHeaders(t *testing.T) {
+	setup()
+	defer storage.Close()
+
+	r := apiRoutes()
+
+	ts := httptest.NewServer(r)
+	defer ts.Close()
+
+	sendWithHeader := func(key string) error {
+		payload := fmt.Sprintf(`{
+			"From": {"Email": "test@example.com"},
+			"To": [{"Email": "recipient@example.com"}],
+			"Subject": "Test",
+			"Text": "Body",
+			"Headers": {%q: "value"}
+		}`, key)
+		_, err := clientPost(ts.URL+"/api/v1/send", payload)
+		return err
+	}
+
+	// Valid header keys should be accepted
+	for _, key := range []string{"X-Custom", "X-IP", "X-My-Header-123"} {
+		if err := sendWithHeader(key); err != nil {
+			t.Errorf("Expected valid header key %q to be accepted, got: %s", key, err)
+		}
+	}
+
+	// Invalid header keys should be rejected
+	for _, key := range []string{
+		"X-Custom\r\nSender: evil@example.com\r\nX-End",               // CRLF injection
+		"X-Custom: custom-value\r\nSender: evil@example.com\r\nX-End", // CRLF injection
+		"X Custom",    // space (byte 32)
+		"X\tCustom",   // tab (byte 9)
+		"X:Custom",    // colon
+		"",            // empty
+		"X-Head\x00r", // null byte
+	} {
+		if err := sendWithHeader(key); err == nil {
+			t.Errorf("Expected invalid header key %q to be rejected", key)
+		}
+	}
+}
+
 func TestAPIv1SendMaxMessageSize(t *testing.T) {
 	setup()
 	defer storage.Close()
