@@ -935,6 +935,7 @@ func (s *session) readData() ([]byte, error) {
 // when rejecting an oversized message: without draining, leftover body
 // lines would be misinterpreted as SMTP commands on the next read.
 func (s *session) drainData() {
+	atLineStart := true
 	for {
 		if s.srv.Timeout > 0 {
 			_ = s.conn.SetReadDeadline(time.Now().Add(s.srv.Timeout))
@@ -943,9 +944,13 @@ func (s *session) drainData() {
 		if err != nil && err != bufio.ErrBufferFull {
 			return // connection error or EOF; caller will handle
 		}
-		if bytes.Equal(line, []byte(".\r\n")) {
+		if atLineStart && bytes.Equal(line, []byte(".\r\n")) {
 			return
 		}
+		// A fragment ending with \n completes the logical line;
+		// the next fragment will be the start of a new line.
+		// ErrBufferFull means we're still mid-line.
+		atLineStart = err == nil
 	}
 }
 
