@@ -2,6 +2,26 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.31.0]
+
+### Feature
+- Add deep dark theme ([#728](https://github.com/axllent/mailpit/issues/728))
+- Add debounced search refresh for filtered views on new messages
+
+### Chore
+- Make read/unread message state clearly distinguishable (WCAG AA)
+- Add accessible names to icon-only buttons and fix sender tag mismatch
+- Update Go dependencies
+- Update node dependencies
+- Update caniemail test database
+- Update GitHub Actions
+
+### Fix
+- Include all IANA special-use IPv4 ranges in IsInternalIP check
+- Prevent SMTP command injection via drainData fragment-boundary bypass
+- Validate Send API custom header keys per RFC 5322
+
+
 ## [v1.30.7]
 
 ### Chore
