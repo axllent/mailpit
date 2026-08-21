@@ -26,12 +26,12 @@ var (
 
 	// Direct IPv4 special-use ranges not covered by Go's stdlib Is* family.
 	// See https://www.iana.org/assignments/iana-ipv4-special-registry/
-	benchmarkRange    = mustCIDR("198.18.0.0/15")    // RFC 2544 — benchmarking, not globally reachable
-	ietfProtocol      = mustCIDR("192.0.0.0/24")     // RFC 6890 — IETF protocol assignments, not globally reachable
-	testNet1          = mustCIDR("192.0.2.0/24")      // RFC 5737 — documentation (TEST-NET-1), not globally reachable
-	testNet2          = mustCIDR("198.51.100.0/24")   // RFC 5737 — documentation (TEST-NET-2), not globally reachable
-	testNet3          = mustCIDR("203.0.113.0/24")    // RFC 5737 — documentation (TEST-NET-3), not globally reachable
-	reservedForFuture = mustCIDR("240.0.0.0/4")       // RFC 1112 — reserved for future use, not globally reachable
+	benchmarkRange    = mustCIDR("198.18.0.0/15")   // RFC 2544 — benchmarking, not globally reachable
+	ietfProtocol      = mustCIDR("192.0.0.0/24")    // RFC 6890 — IETF protocol assignments, not globally reachable
+	testNet1          = mustCIDR("192.0.2.0/24")    // RFC 5737 — documentation (TEST-NET-1), not globally reachable
+	testNet2          = mustCIDR("198.51.100.0/24") // RFC 5737 — documentation (TEST-NET-2), not globally reachable
+	testNet3          = mustCIDR("203.0.113.0/24")  // RFC 5737 — documentation (TEST-NET-3), not globally reachable
+	reservedForFuture = mustCIDR("240.0.0.0/4")     // RFC 1112 — reserved for future use, not globally reachable
 
 	// Direct IPv6 prefixes outside the scope of Go's stdlib Is* family.
 	deprecatedSiteLocal = mustCIDR("fec0::/10")     // RFC 3879 / RFC 4291 §2.5.7 — deprecated, still routable on dual-stack hosts
