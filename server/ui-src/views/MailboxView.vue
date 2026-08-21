@@ -194,6 +194,7 @@ export default {
 					data-bs-toggle="offcanvas"
 					data-bs-target="#offcanvas"
 					aria-controls="offcanvas"
+					aria-label="Toggle sidebar"
 				>
 					<i class="bi bi-list"></i>
 				</button>

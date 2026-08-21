@@ -19,6 +19,14 @@ func TestIsInternalIP(t *testing.T) {
 		"224.0.0.1",       // multicast
 		"100.64.0.1",      // CGNAT start
 		"100.127.255.255", // CGNAT end
+		"198.18.0.0",      // benchmarking start (RFC 2544)
+		"198.19.255.255",  // benchmarking end
+		"192.0.0.1",       // IETF protocol assignments (RFC 6890)
+		"192.0.2.1",       // TEST-NET-1 (RFC 5737)
+		"198.51.100.1",    // TEST-NET-2 (RFC 5737)
+		"203.0.113.1",     // TEST-NET-3 (RFC 5737)
+		"240.0.0.1",       // reserved for future use (RFC 1112)
+		"255.255.255.254", // reserved for future use end
 		// IPv6 transition forms embedding an internal IPv4 destination — golang/go#79925.
 		"64:ff9b::a9fe:a9fe",       // NAT64 well-known (RFC 6052) wrapping 169.254.169.254
 		"64:ff9b:1::a9fe:a9fe",     // NAT64 local-use (RFC 8215) wrapping 169.254.169.254
@@ -37,6 +45,11 @@ func TestIsInternalIP(t *testing.T) {
 		"8.8.8.8",
 		"1.1.1.1",
 		"100.128.0.1",          // just outside CGNAT range
+		"198.17.255.255",       // just before benchmarking range
+		"198.20.0.0",           // just after benchmarking range
+		"192.0.3.1",            // just after TEST-NET-1
+		"198.51.101.1",         // just after TEST-NET-2
+		"203.0.114.1",          // just after TEST-NET-3
 		"2001:4860:4860::8888", // Google public DNS over IPv6
 		"2002:0808:0808::",     // 6to4 wrapping 8.8.8.8 (public IPv4)
 		"64:ff9b::0808:0808",   // NAT64 wrapping 8.8.8.8 (public IPv4)

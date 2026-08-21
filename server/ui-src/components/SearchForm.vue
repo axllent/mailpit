@@ -76,11 +76,17 @@ export default {
 					aria-label="Search"
 					placeholder="Search mailbox"
 				/>
-				<span v-if="search != ''" class="btn btn-link position-absolute end-0 text-muted" @click="resetSearch"
-					><i class="bi bi-x-circle"></i
-				></span>
+				<button
+					v-if="search != ''"
+					type="button"
+					class="btn btn-link position-absolute end-0 text-muted"
+					aria-label="Clear search"
+					@click="resetSearch"
+				>
+					<i class="bi bi-x-circle"></i>
+				</button>
 			</div>
-			<button class="btn btn-outline-secondary" type="submit">
+			<button class="btn btn-outline-secondary" type="submit" aria-label="Search">
 				<i class="bi bi-search"></i>
 			</button>
 		</div>

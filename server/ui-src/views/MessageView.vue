@@ -512,6 +512,7 @@ export default {
 					class="btn btn-outline-light dropdown-toggle"
 					data-bs-toggle="dropdown"
 					aria-expanded="false"
+					aria-label="Download"
 				>
 					<i class="bi bi-file-arrow-down-fill"></i>
 					<span class="d-none d-md-inline ms-1">Download</span>
@@ -662,9 +663,9 @@ export default {
 						>
 							<div class="col overflow-x-hidden">
 								<div class="text-truncate privacy small">
-									<strong v-if="summary.From" :title="'From: ' + summary.From.Address">
+									<b v-if="summary.From" :title="'From: ' + summary.From.Address">
 										{{ summary.From.Name ? summary.From.Name : summary.From.Address }}
-									</strong>
+									</b>
 								</div>
 							</div>
 							<div class="col-auto small">

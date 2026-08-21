@@ -1,6 +1,6 @@
 {
 	"api_version":"1.0.4",
-	"last_update_date":"2026-07-20 09:56:37 +0000",
+	"last_update_date":"2026-08-10 15:16:24 +0000",
 	"nicenames":{"family":{"gmail":"Gmail","outlook":"Outlook","yahoo":"Yahoo! Mail","apple-mail":"Apple Mail","aol":"AOL","thunderbird":"Mozilla Thunderbird","microsoft":"Microsoft","samsung-email":"Samsung Email","sfr":"SFR","orange":"Orange","protonmail":"ProtonMail","hey":"HEY","mail-ru":"Mail.ru","fastmail":"Fastmail","laposte":"LaPoste.net","t-online-de":"T-online.de","free-fr":"Free.fr","gmx":"GMX","web-de":"WEB.DE","ionos-1and1":"1&1","rainloop":"RainLoop","wp-pl":"WP.pl"},"platform":{"desktop-app":"Desktop","desktop-webmail":"Desktop Webmail","mobile-webmail":"Mobile Webmail","webmail":"Webmail","ios":"iOS","android":"Android","windows":"Windows","macos":"macOS","windows-mail":"Windows Mail","outlook-com":"Outlook.com"},"support":{"supported":"Supported","mitigated":"Partially supported","unsupported":"Not supported","unknown":"Support unknown","mixed":"Mixed support"},"category":{"html":"HTML","css":"CSS","image":"Image formats","others":"Others"}},
 	"data":[
 		{
@@ -1230,9 +1230,9 @@
 			"last_test_date":"2024-05-29",
 			"test_url":"https://www.caniemail.com/tests/css-inset.html",
 			"test_results_url":"https://testi.at/proj/rlpdia3k18jytjx8c2",
-			"stats":{"apple-mail":{"macos":{"10.15":"n","11.7":"y"},"ios":{"14":"n","15":"y"}},"gmail":{"desktop-webmail":{"2024-05":"n"},"ios":{"2024-05":"n"},"android":{"2024-05":"n"},"mobile-webmail":{"2020-02":"n"}},"orange":{"desktop-webmail":{"2024-05":"u"},"ios":{"2024-05":"u"},"android":{"2024-05":"u"}},"outlook":{"windows":{"2024-05":"n"},"windows-mail":{"2024-05":"n"},"macos":{"2024-05":"n"},"outlook-com":{"2024-05":"n"},"ios":{"2024-05":"n"},"android":{"2024-05":"n"}},"yahoo":{"desktop-webmail":{"2024-05":"n"},"ios":{"2024-05":"n"},"android":{"2024-05":"n"}},"aol":{"desktop-webmail":{"2024-05":"n"},"ios":{"2024-05":"n"},"android":{"2024-05":"n"}},"samsung-email":{"android":{"2024-05":"n"}},"sfr":{"desktop-webmail":{"2024-05":"u"},"ios":{"2024-05":"u"},"android":{"2024-05":"u"}},"thunderbird":{"macos":{"2024-05":"y"}},"protonmail":{"desktop-webmail":{"2024-05":"u"},"ios":{"2024-05":"u"},"android":{"2024-05":"u"}},"hey":{"desktop-webmail":{"2024-05":"u"}},"mail-ru":{"desktop-webmail":{"2024-05":"n"}},"fastmail":{"desktop-webmail":{"2024-05":"u"}},"laposte":{"desktop-webmail":{"2021-08":"u"}},"gmx":{"desktop-webmail":{"2024-05":"n"},"ios":{"2024-05":"u"},"android":{"2024-05":"u"}},"web-de":{"desktop-webmail":{"2024-05":"n"},"ios":{"2024-05":"u"},"android":{"2024-05":"u"}},"ionos-1and1":{"desktop-webmail":{"2024-05":"u"},"android":{"2024-05":"u"}}},
+			"stats":{"apple-mail":{"macos":{"10.15":"n","11.7":"y"},"ios":{"14":"n","15":"y"}},"gmail":{"desktop-webmail":{"2024-05":"n"},"ios":{"2024-05":"n"},"android":{"2024-05":"n"},"mobile-webmail":{"2020-02":"n"}},"orange":{"desktop-webmail":{"2024-05":"u"},"ios":{"2024-05":"u"},"android":{"2024-05":"u"}},"outlook":{"windows":{"2024-05":"n"},"windows-mail":{"2024-05":"n"},"macos":{"2024-05":"n"},"outlook-com":{"2024-05":"n"},"ios":{"2024-05":"n"},"android":{"2024-05":"n"}},"yahoo":{"desktop-webmail":{"2024-05":"n"},"ios":{"2024-05":"n"},"android":{"2024-05":"n"}},"aol":{"desktop-webmail":{"2024-05":"n"},"ios":{"2024-05":"n"},"android":{"2024-05":"n"}},"samsung-email":{"android":{"2024-05":"n"}},"sfr":{"desktop-webmail":{"2024-05":"u"},"ios":{"2024-05":"u"},"android":{"2024-05":"u"}},"thunderbird":{"macos":{"2024-05":"y"}},"protonmail":{"desktop-webmail":{"2024-05":"n #1"},"ios":{"2024-05":"n"},"android":{"2024-05":"y"}},"hey":{"desktop-webmail":{"2024-05":"u"}},"mail-ru":{"desktop-webmail":{"2024-05":"n"}},"fastmail":{"desktop-webmail":{"2024-05":"u"}},"laposte":{"desktop-webmail":{"2021-08":"u"}},"gmx":{"desktop-webmail":{"2024-05":"n"},"ios":{"2024-05":"u"},"android":{"2024-05":"u"}},"web-de":{"desktop-webmail":{"2024-05":"n"},"ios":{"2024-05":"u"},"android":{"2024-05":"u"}},"ionos-1and1":{"desktop-webmail":{"2024-05":"u"},"android":{"2024-05":"u"}}},
 			"notes":null,
-			"notes_by_num":null
+			"notes_by_num":{"1":"Buggy. Almost all values are replaced by `unset`."}
 		},
 	
 		{
@@ -3812,6 +3812,22 @@
 		},
 	
 		{
+			"slug":"html-command-attribute",
+			"title":"command and commandfor attributes",
+			"description":"Attributes used to manage popover and dialog open states. Replacing popovertarget/popovertargetaction",
+			"url":"https://www.caniemail.com/features/html-command-attribute/",
+			"category":"html",
+			"tags":[],
+			"keywords":null,
+			"last_test_date":"2026-07-13",
+			"test_url":"https://www.caniemail.com",
+			"test_results_url":"",
+			"stats":{"apple-mail":{"macos":{"16":"y"},"ios":{"18.7":"n","26.9":"y"}},"gmail":{"desktop-webmail":{"2026-07":"n"},"ios":{"2026-07":"n"},"android":{"2026-07":"n"},"mobile-webmail":{"2026-07":"n"}},"orange":{"desktop-webmail":{"2026-07":"u"},"ios":{"2026-07":"u"},"android":{"2026-07":"u"}},"outlook":{"windows":{"2007":"n","2010":"n","2013":"n","2016":"n","2019":"n"},"windows-mail":{"2026-07":"n"},"macos":{"2026-07":"n"},"outlook-com":{"2026-07":"n"},"ios":{"2026-07":"u"},"android":{"2026-07":"n"}},"thunderbird":{"macos":{"152":"y"}},"yahoo":{"desktop-webmail":{"2026-07":"n"},"ios":{"2026-07":"n"},"android":{"2026-07":"n"}},"aol":{"desktop-webmail":{"2026-07":"n"},"ios":{"2026-07":"n"},"android":{"2026-07":"n"}},"samsung-email":{"android":{"6.2.13":"a #1"}},"sfr":{"desktop-webmail":{"2026-07":"u"},"ios":{"2026-07":"u"},"android":{"2026-07":"u"}},"protonmail":{"desktop-webmail":{"2026-07":"a #2"},"ios":{"2026-07":"n"},"android":{"2026-07":"n"}},"hey":{"desktop-webmail":{"2026-07":"u"}},"mail-ru":{"desktop-webmail":{"2026-07":"u"}},"fastmail":{"desktop-webmail":{"2026-07":"u"}},"laposte":{"desktop-webmail":{"2026-078":"u"}},"gmx":{"desktop-webmail":{"2026-07":"n"},"ios":{"2026-07":"u"},"android":{"2026-07":"n"}},"web-de":{"desktop-webmail":{"2026-07":"n"},"ios":{"2026-07":"u"},"android":{"2026-07":"n"}},"ionos-1and1":{"desktop-webmail":{"2026-07":"n"}}},
+			"notes":null,
+			"notes_by_num":{"1":"Partial. Not supported with Microsoft (Hotmail/Outlook) accounts.","2":"Buggy. Webmail styles set dialog to display:block so we need to revert with display:revert"}
+		},
+	
+		{
 			"slug":"html-comments",
 			"title":"HTML comments",
 			"description":"Adds explanatory notes to the code or to prevent the browser from interpreting specific parts of the style sheet",
@@ -4315,12 +4331,12 @@
 			"category":"html",
 			"tags":[],
 			"keywords":null,
-			"last_test_date":"2023-09-25",
+			"last_test_date":"2026-07-13",
 			"test_url":"https://www.caniemail.com/tests/html-popover.html",
 			"test_results_url":"",
-			"stats":{"apple-mail":{"macos":{"16":"y"},"ios":{"16":"y"}},"gmail":{"desktop-webmail":{"2023-09":"n"},"ios":{"2023-09":"n"},"android":{"2024-03":"n"},"mobile-webmail":{"2024-03":"n"}},"orange":{"desktop-webmail":{"2019-08":"u","2021-03":"u"},"ios":{"2019-08":"u"},"android":{"2019-08":"u"}},"outlook":{"windows":{"2007":"n","2010":"n","2013":"n","2016":"n","2019":"n"},"windows-mail":{"2023-09":"n"},"macos":{"2023-09":"n","16.80":"n"},"outlook-com":{"2023-09":"n","2024-01":"n"},"ios":{"2023-09":"n"},"android":{"2024-03":"n"}},"yahoo":{"desktop-webmail":{"2023-09":"n"},"ios":{"2023-09":"n"},"android":{"2024-03":"n"}},"aol":{"desktop-webmail":{"2023-09":"n"},"ios":{"2023-09":"n"},"android":{"2023-09":"u"}},"samsung-email":{"android":{"5.0.10.2":"u","6.1.90.16":"a #1"}},"sfr":{"desktop-webmail":{"2024-03":"y"},"ios":{"2024-03":"n"},"android":{"2024-03":"y"}},"thunderbird":{"macos":{"115.2":"n"}},"protonmail":{"desktop-webmail":{"2023-09":"n"},"ios":{"2023-09":"n"},"android":{"2023-09":"u"}},"hey":{"desktop-webmail":{"2023-09":"n"}},"mail-ru":{"desktop-webmail":{"2024-01":"a"}},"fastmail":{"desktop-webmail":{"2023-09":"n"}},"laposte":{"desktop-webmail":{"2021-08":"u"}},"gmx":{"desktop-webmail":{"2022-06":"u"},"ios":{"2022-06":"u"},"android":{"2022-06":"u"}},"web-de":{"desktop-webmail":{"2022-06":"u"},"ios":{"2022-06":"u"},"android":{"2022-06":"u"}},"ionos-1and1":{"desktop-webmail":{"2022-06":"u"},"android":{"2022-06":"u"}}},
+			"stats":{"apple-mail":{"macos":{"16":"y"},"ios":{"16":"y"}},"gmail":{"desktop-webmail":{"2023-09":"n"},"ios":{"2023-09":"n"},"android":{"2024-03":"n"},"mobile-webmail":{"2024-03":"n"}},"orange":{"desktop-webmail":{"2019-08":"u","2021-03":"u"},"ios":{"2019-08":"u"},"android":{"2019-08":"u"}},"outlook":{"windows":{"2007":"n","2010":"n","2013":"n","2016":"n","2019":"n"},"windows-mail":{"2023-09":"n"},"macos":{"2023-09":"n","16.80":"n"},"outlook-com":{"2023-09":"n","2024-01":"n"},"ios":{"2023-09":"n"},"android":{"2024-03":"n"}},"yahoo":{"desktop-webmail":{"2023-09":"n"},"ios":{"2023-09":"n"},"android":{"2024-03":"n"}},"aol":{"desktop-webmail":{"2023-09":"n"},"ios":{"2023-09":"n"},"android":{"2023-09":"u","2026-07":"n"}},"samsung-email":{"android":{"5.0.10.2":"u","6.1.90.16":"a #1"}},"sfr":{"desktop-webmail":{"2024-03":"y"},"ios":{"2024-03":"n"},"android":{"2024-03":"y"}},"thunderbird":{"macos":{"115.2":"n","152":"a #3"}},"protonmail":{"desktop-webmail":{"2023-09":"n","2026-07":"y"},"ios":{"2023-09":"n","2026-07":"y #4"},"android":{"2023-09":"u","2026-07":"y #4"}},"hey":{"desktop-webmail":{"2023-09":"n"}},"mail-ru":{"desktop-webmail":{"2024-01":"a"}},"fastmail":{"desktop-webmail":{"2023-09":"n"}},"laposte":{"desktop-webmail":{"2021-08":"u"}},"gmx":{"desktop-webmail":{"2022-06":"u","2026-07":"n"},"ios":{"2022-06":"u","2026-07":"y"},"android":{"2022-06":"u"}},"web-de":{"desktop-webmail":{"2022-06":"u","2026-07":"n"},"ios":{"2022-06":"u","2026-07":"y"},"android":{"2022-06":"u"}},"ionos-1and1":{"desktop-webmail":{"2022-06":"u","2026-07":"n"},"android":{"2022-06":"u"}}},
 			"notes":null,
-			"notes_by_num":{"1":"Partial. Not supported with Hotmail/Outlook accounts.","2":"Partial. The `popovertarget` attribute is supported, but the `popover` attribute and the `dialog` element are not."}
+			"notes_by_num":{"1":"Partial. Not supported with Hotmail/Outlook accounts.","2":"Partial. The `popovertarget` attribute is supported, but the `popover` attribute and the `dialog` element are not.","3":"Buggy. A button with just an image inside will trigger an image zoom rather than the popover.","4":"Partial. Does not work with command/commandfor attributes only with popovertarget/popovertargetaction"}
 		},
 	
 		{
