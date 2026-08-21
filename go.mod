@@ -8,7 +8,7 @@ require (
 	github.com/axllent/ghru/v2 v2.2.3
 	github.com/axllent/semver v1.0.0
 	github.com/goccy/go-yaml v1.19.2
-	github.com/gomarkdown/markdown v0.0.0-20260725000948-8435af3f5984
+	github.com/gomarkdown/markdown v0.0.0-20260818103853-6d1f24fc3a11
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/websocket v1.5.3
 	github.com/jhillyerd/enmime/v2 v2.4.1
@@ -21,11 +21,11 @@ require (
 	github.com/spf13/pflag v1.0.10
 	github.com/tg123/go-htpasswd v1.2.5
 	github.com/vanng822/go-premailer v1.35.0
-	golang.org/x/crypto v0.54.0
-	golang.org/x/net v0.57.0
-	golang.org/x/text v0.40.0
+	golang.org/x/crypto v0.55.0
+	golang.org/x/net v0.58.0
+	golang.org/x/text v0.41.0
 	golang.org/x/time v0.15.0
-	modernc.org/sqlite v1.56.0
+	modernc.org/sqlite v1.57.0
 )
 
 require (
@@ -46,7 +46,7 @@ require (
 	github.com/kovidgoyal/go-shm v1.0.0 // indirect
 	github.com/mattn/go-colorable v0.1.15 // indirect
 	github.com/mattn/go-isatty v0.0.24 // indirect
-	github.com/mattn/go-runewidth v0.0.27 // indirect
+	github.com/mattn/go-runewidth v0.0.28 // indirect
 	github.com/ncruces/go-strftime v1.0.0 // indirect
 	github.com/olekukonko/cat v0.0.0-20250911104152-50322a0618f6 // indirect
 	github.com/olekukonko/errors v1.3.0 // indirect
@@ -57,10 +57,10 @@ require (
 	github.com/ssor/bom v0.0.0-20170718123548-6386211fdfcf // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/vanng822/css v1.0.1 // indirect
-	golang.org/x/image v0.44.0 // indirect
-	golang.org/x/mod v0.38.0 // indirect
+	golang.org/x/image v0.45.0 // indirect
+	golang.org/x/mod v0.40.0 // indirect
 	golang.org/x/sys v0.47.0 // indirect
-	modernc.org/libc v1.75.1 // indirect
+	modernc.org/libc v1.75.4 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
-	modernc.org/memory v1.12.0 // indirect
+	modernc.org/memory v1.12.1 // indirect
 )
