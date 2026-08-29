@@ -907,7 +907,7 @@ func (s *session) readData() ([]byte, error) {
 			}
 			// Buffer filled without a newline - check now before reading more.
 			if s.srv.MaxSize > 0 && len(data)+len(line) > s.srv.MaxSize {
-				s.drainData()
+				s.drainData(false) // mid-line: buffer full without newline
 				return nil, maxSizeExceeded(s.srv.MaxSize)
 			}
 		}
@@ -921,7 +921,7 @@ func (s *session) readData() ([]byte, error) {
 		}
 		// Precise size check against the completed, dot-removed line.
 		if s.srv.MaxSize > 0 && len(data)+len(line) > s.srv.MaxSize {
-			s.drainData()
+			s.drainData(true) // line was complete (ended with \n)
 			return nil, maxSizeExceeded(s.srv.MaxSize)
 		}
 
@@ -934,8 +934,7 @@ func (s *session) readData() ([]byte, error) {
 // the \r\n.\r\n terminator. This prevents protocol desynchronisation
 // when rejecting an oversized message: without draining, leftover body
 // lines would be misinterpreted as SMTP commands on the next read.
-func (s *session) drainData() {
-	atLineStart := true
+func (s *session) drainData(atLineStart bool) {
 	for {
 		if s.srv.Timeout > 0 {
 			_ = s.conn.SetReadDeadline(time.Now().Add(s.srv.Timeout))
