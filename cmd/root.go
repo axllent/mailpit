@@ -101,6 +101,7 @@ func init() {
 
 	// Web UI / API
 	rootCmd.Flags().StringVarP(&config.HTTPListen, "listen", "l", config.HTTPListen, "HTTP bind interface & port for UI")
+	rootCmd.Flags().StringVar(&server.AllowedHosts, "allowed-hosts", server.AllowedHosts, "Allowlist of Host header values, comma-separated (mitigates DNS rebinding)")
 	rootCmd.Flags().StringVar(&config.Webroot, "webroot", config.Webroot, "Set the webroot for web UI & API")
 	rootCmd.Flags().StringVar(&config.UIAuthFile, "ui-auth-file", config.UIAuthFile, "A password file for web UI & API authentication")
 	rootCmd.Flags().StringVar(&config.UITLSCert, "ui-tls-cert", config.UITLSCert, "TLS certificate for web UI (HTTPS) - requires ui-tls-key")
@@ -243,6 +244,9 @@ func initConfigFromEnv() {
 	// Web UI & API
 	if len(os.Getenv("MP_UI_BIND_ADDR")) > 0 {
 		config.HTTPListen = os.Getenv("MP_UI_BIND_ADDR")
+	}
+	if len(os.Getenv("MP_ALLOWED_HOSTS")) > 0 {
+		server.AllowedHosts = os.Getenv("MP_ALLOWED_HOSTS")
 	}
 	if len(os.Getenv("MP_WEBROOT")) > 0 {
 		config.Webroot = os.Getenv("MP_WEBROOT")

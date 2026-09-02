@@ -311,3 +311,164 @@ func TestCORSMiddlewarePathCheck(t *testing.T) {
 		})
 	}
 }
+
+// TestHostAccessControl verifies the Host-header allowlist that gates the
+// middleware ahead of the CORS check. This is the anchor that a DNS-rebinding
+// attacker cannot satisfy: the same-origin branch of corsOriginAccessControl
+// compares two client-supplied values (Host and Origin), so it admits a
+// rebound request where Host and Origin both carry an attacker-controlled name;
+// hostAccessControl rejects such a request outright when an allowlist is set.
+func TestHostAccessControl(t *testing.T) {
+	origAllowedHosts := AllowedHosts
+	defer func() {
+		AllowedHosts = origAllowedHosts
+		setAllowedHosts()
+	}()
+
+	tests := []struct {
+		name         string
+		allowedHosts string
+		host         string
+		allow        bool
+	}{
+		// Unset: preserves prior behaviour, every Host is admitted so no
+		// existing deployment breaks after the upgrade.
+		{"unset admits any host", "", "attacker.example:8025", true},
+		{"unset admits empty host", "", "", true},
+
+		// Configured allowlist: exact host:port match.
+		{"exact match host:port", "mailpit.local:8025", "mailpit.local:8025", true},
+		{"exact match host:port wrong port", "mailpit.local:8025", "mailpit.local:9000", false},
+		{"exact match host:port different host", "mailpit.local:8025", "evil.example:8025", false},
+
+		// Configured allowlist entry without port: matches any port.
+		{"bare host matches with port", "mailpit.local", "mailpit.local:8025", true},
+		{"bare host matches without port", "mailpit.local", "mailpit.local", true},
+		{"bare host rejects other host", "mailpit.local", "evil.example:8025", false},
+
+		// Loopback is always admitted so local dev workflows still work when
+		// the operator scopes the allowlist to a hostname.
+		{"loopback admitted implicitly (localhost)", "mailpit.local", "localhost:8025", true},
+		{"loopback admitted implicitly (127.0.0.1)", "mailpit.local", "127.0.0.1:8025", true},
+		{"loopback admitted implicitly (IPv6)", "mailpit.local", "[::1]:8025", true},
+
+		// Raw IP literals in Host are always admitted regardless of the
+		// allowlist: DNS rebinding cannot produce an IP in the Host header
+		// (rebinding needs a DNS name, and the browser puts the URL host into
+		// the Host header, not the resolved address). Cross-origin fetches
+		// that target an IP directly are stopped by the CORS check.
+		{"LAN IPv4 admitted", "mailpit.local", "192.168.1.5:8025", true},
+		{"LAN IPv4 without port admitted", "mailpit.local", "192.168.1.5", true},
+		{"public IPv4 admitted", "mailpit.local", "203.0.113.5:8025", true},
+		{"IPv6 literal admitted", "mailpit.local", "[2001:db8::1]:8025", true},
+
+		// Case folding on both sides.
+		{"case-insensitive host match", "mailpit.local:8025", "MAILPIT.LOCAL:8025", true},
+		{"case-insensitive allowlist entry", "MAILPIT.LOCAL:8025", "mailpit.local:8025", true},
+
+		// The rebinding shape: attacker DNS name in Host does not match a
+		// hostname allowlist scoped to the operator's own deployment.
+		{"rebinding shape rejected", "mailpit.local", "attacker.example:8025", false},
+
+		// Multiple entries (comma-separated, mixed with/without port).
+		{"multiple entries first", "mail.a,mail.b:8025", "mail.a:1234", true},
+		{"multiple entries second", "mail.a,mail.b:8025", "mail.b:8025", true},
+		{"multiple entries reject", "mail.a,mail.b:8025", "mail.c:8025", false},
+
+		// Scheme in the entry is tolerated (users often paste URLs).
+		{"scheme in entry tolerated", "http://mailpit.local:8025", "mailpit.local:8025", true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			AllowedHosts = tt.allowedHosts
+			setAllowedHosts()
+			req := &http.Request{Host: tt.host}
+			got := hostAccessControl(req)
+			if got != tt.allow {
+				t.Errorf("hostAccessControl(host=%q, allowed=%q) = %v, want %v",
+					tt.host, tt.allowedHosts, got, tt.allow)
+			}
+		})
+	}
+}
+
+// TestMiddlewareRejectsRebindingHost verifies end-to-end that when
+// --allowed-hosts is set, middleWareFunc rejects a request carrying an
+// attacker-controlled Host header even if it satisfies the same-origin CORS
+// branch (Host and Origin matching each other). Without --allowed-hosts,
+// the same request continues to be admitted (no behaviour change for
+// existing deployments).
+func TestMiddlewareRejectsRebindingHost(t *testing.T) {
+	origAllowOrigin := AccessControlAllowOrigin
+	origAllowedHosts := AllowedHosts
+	origWebroot := config.Webroot
+	origRe := htmlPreviewRouteRe
+	defer func() {
+		AccessControlAllowOrigin = origAllowOrigin
+		AllowedHosts = origAllowedHosts
+		config.Webroot = origWebroot
+		htmlPreviewRouteRe = origRe
+		setCORSOrigins()
+		setAllowedHosts()
+	}()
+
+	AccessControlAllowOrigin = ""
+	config.Webroot = "/"
+	setCORSOrigins()
+
+	makeReq := func(host, origin string) *http.Request {
+		req := &http.Request{
+			Method:     "GET",
+			RequestURI: "/api/v1/messages",
+			URL:        &url.URL{Path: "/api/v1/messages"},
+			Header:     http.Header{},
+			Host:       host,
+			Body:       http.NoBody,
+		}
+		if origin != "" {
+			req.Header.Set("Origin", origin)
+		}
+		return req.WithContext(context.Background())
+	}
+
+	run := func(name string, req *http.Request, wantStatus int) {
+		t.Run(name, func(t *testing.T) {
+			w := httptest.NewRecorder()
+			handler := middleWareFunc(func(w http.ResponseWriter, _ *http.Request) {
+				w.WriteHeader(http.StatusOK)
+			})
+			handler(w, req)
+			if w.Code != wantStatus {
+				t.Errorf("expected HTTP %d, got %d", wantStatus, w.Code)
+			}
+		})
+	}
+
+	// Baseline: no allowlist configured, the rebinding shape is admitted by
+	// the same-origin branch of the CORS check. This is the deployment shape
+	// existing users rely on and must not regress when they don't opt in.
+	AllowedHosts = ""
+	setAllowedHosts()
+	run("no allowlist admits rebinding shape",
+		makeReq("attacker.example:8025", "http://attacker.example:8025"),
+		http.StatusOK)
+
+	// With allowlist configured to the operator's own deployment, the same
+	// rebinding shape is rejected at the Host gate.
+	AllowedHosts = "mailpit.local:8025"
+	setAllowedHosts()
+	run("allowlist rejects rebinding shape",
+		makeReq("attacker.example:8025", "http://attacker.example:8025"),
+		http.StatusForbidden)
+
+	// Legitimate access to the allowlisted host still works.
+	run("allowlist admits configured host",
+		makeReq("mailpit.local:8025", "http://mailpit.local:8025"),
+		http.StatusOK)
+
+	// Loopback access still works even when allowlist is scoped to a name.
+	run("allowlist admits loopback",
+		makeReq("localhost:8025", "http://localhost:8025"),
+		http.StatusOK)
+}
