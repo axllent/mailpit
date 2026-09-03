@@ -55,6 +55,8 @@ const (
 // Listen will start the httpd
 func Listen() {
 	setCORSOrigins()
+	setAllowedHosts()
+	warnIfExposedWithoutHostProtection()
 
 	isReady := &atomic.Value{}
 	isReady.Store(false)
@@ -178,6 +180,40 @@ func Listen() {
 	}
 }
 
+// warnIfExposedWithoutHostProtection logs a warning at startup when Mailpit
+// is listening on a non-loopback interface without any of the mitigations
+// against DNS-rebinding attacks in place (Host allowlist or UI auth). The
+// same class of attack technically applies to loopback listens too (the
+// browser can be tricked into resolving an attacker-controlled name to
+// 127.0.0.1 and issuing the request from that context), but browser-side
+// protections such as Chrome's Local Network Access materially reduce that
+// case, whereas a LAN-reachable listener is the shape most likely to be hit
+// in practice and is worth flagging explicitly.
+func warnIfExposedWithoutHostProtection() {
+	if AllowedHosts != "" || auth.UICredentials != nil {
+		return
+	}
+	if _, _, isSocket := tools.UnixSocket(config.HTTPListen); isSocket {
+		return
+	}
+	host, _, err := net.SplitHostPort(config.HTTPListen)
+	if err != nil {
+		return
+	}
+	host = strings.Trim(host, "[]")
+	if host == "" || host == "localhost" || host == "::1" {
+		return
+	}
+	if ip := net.ParseIP(host); ip != nil && ip.IsLoopback() {
+		return
+	}
+	logger.Log().Warnf(
+		"[http] listening on %s without --ui-auth-file or --allowed-hosts; "+
+			"the API is reachable from any host that can route to this interface",
+		config.HTTPListen,
+	)
+}
+
 func apiRoutes() *http.ServeMux {
 	r := http.NewServeMux()
 
@@ -290,6 +326,16 @@ func (w gzipResponseWriter) Write(b []byte) (int, error) {
 // and gzip compression.
 func middleWareFunc(fn http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		// Reject requests whose Host header falls outside --allowed-hosts before
+		// any other work. This runs ahead of the CORS check because the
+		// same-origin branch there compares two client-supplied values and
+		// cannot distinguish a DNS-rebound request on its own; anchoring on
+		// Host against an operator-declared allowlist is what distinguishes it.
+		if !hostAccessControl(r) {
+			http.Error(w, "Blocked due to disallowed Host header", http.StatusForbidden)
+			return
+		}
+
 		// Limit request body size to 5 MB to prevent memory-exhaustion DoS via large
 		// JSON bodies. sendAPIAuthMiddleware sets bodyLimitKey in the context to signal
 		// that the handler manages its own limit (send.go uses config.MaxMessageSize),

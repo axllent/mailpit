@@ -1,6 +1,7 @@
 package server
 
 import (
+	"net"
 	"net/http"
 	"net/url"
 	"sort"
@@ -13,8 +14,28 @@ var (
 	// AccessControlAllowOrigin CORS policy - set with flags/env
 	AccessControlAllowOrigin string
 
+	// AllowedHosts is an optional comma-separated allowlist of Host header
+	// values, set via flags/env. When non-empty, requests carrying a Host
+	// header outside the list are rejected before any other check runs.
+	// This is a defense-in-depth measure against DNS-rebinding attacks: an
+	// attacker who rebinds a name they control to Mailpit's listen address
+	// can otherwise satisfy the same-origin comparison in
+	// corsOriginAccessControl, because both the Origin and Host headers
+	// then come from the same attacker-controlled context.
+	AllowedHosts string
+
 	// CorsAllowOrigins are optional allowed origins by hostname, set via setCORSOrigins().
 	corsAllowOrigins = make(map[string]bool)
+
+	// allowedHostsExact holds entries from AllowedHosts that include a port.
+	// A Host header must match host:port exactly (case-folded) to be admitted.
+	allowedHostsExact = make(map[string]bool)
+
+	// allowedHostsBare holds entries from AllowedHosts that omit a port, plus
+	// the loopback names/addresses which are always trusted (an attacker
+	// cannot DNS-rebind onto loopback). Any Host header whose hostname
+	// portion matches (case-folded) is admitted regardless of port.
+	allowedHostsBare = make(map[string]bool)
 )
 
 // equalASCIIFold reports whether s and t, interpreted as UTF-8 strings, are equal
@@ -34,6 +55,51 @@ func toLowerASCIIFold(c byte) byte {
 		return c + 'a' - 'A'
 	}
 	return c
+}
+
+// hostAccessControl checks whether the request's Host header is admitted by
+// the configured allowlist. When AllowedHosts is unset the check is a no-op
+// (any Host is admitted, preserving existing behaviour). When configured, a
+// Host outside the allowlist is rejected before Origin is even inspected: the
+// same-origin branch in corsOriginAccessControl compares two client-supplied
+// values (Host and Origin), so an attacker who can DNS-rebind a name they
+// control could otherwise satisfy it. Gating on Host anchors the decision on
+// a value the operator has independently declared trustworthy.
+//
+// Match semantics: entries with a port match host:port exactly (case-folded);
+// entries without a port match any port. Loopback names/addresses are always
+// admitted because they cannot be reached from a rebinding attacker (no one
+// controls DNS for "localhost" / 127.0.0.1 / ::1 from outside the machine).
+// Requests whose Host header is a raw IP literal are also admitted: DNS
+// rebinding produces a Host containing the attacker's DNS name, never a raw
+// IP, and a cross-origin fetch that targets an IP directly is already stopped
+// by the CORS same-origin check on the Origin header.
+func hostAccessControl(r *http.Request) bool {
+	if len(allowedHostsExact) == 0 && len(allowedHostsBare) == 0 {
+		return true
+	}
+
+	hostFold := asciiFoldString(r.Host)
+	if allowedHostsExact[hostFold] {
+		return true
+	}
+
+	bare, _, err := net.SplitHostPort(r.Host)
+	if err != nil {
+		bare = r.Host
+	}
+	if allowedHostsBare[asciiFoldString(bare)] {
+		return true
+	}
+	// Raw IP literals in the Host header cannot originate from a DNS-rebinding
+	// attack, so they are admitted without needing an allowlist entry. Strip
+	// IPv6 brackets before parsing.
+	if ip := net.ParseIP(strings.Trim(bare, "[]")); ip != nil {
+		return true
+	}
+
+	logger.Log().Warnf("[host] blocking request with disallowed Host header: %s", r.Host)
+	return false
 }
 
 // CorsOriginAccessControl checks if the request origin is allowed based on the configured CORS origins.
@@ -66,6 +132,53 @@ func corsOriginAccessControl(r *http.Request) bool {
 	}
 
 	return true
+}
+
+// setAllowedHosts parses the AllowedHosts string into the maps consumed by
+// hostAccessControl. Loopback names/addresses are always seeded into the
+// bare-hostname set so that local development flows remain unaffected when
+// an operator opts into the strict check.
+func setAllowedHosts() {
+	allowedHostsExact = make(map[string]bool)
+	allowedHostsBare = make(map[string]bool)
+
+	entries := strings.FieldsFunc(strings.TrimSpace(AllowedHosts), func(r rune) bool {
+		return r == ',' || r == ' '
+	})
+
+	if len(entries) == 0 {
+		return
+	}
+
+	for _, loopback := range []string{"localhost", "127.0.0.1", "::1"} {
+		allowedHostsBare[asciiFoldString(loopback)] = true
+	}
+
+	for _, entry := range entries {
+		h := strings.TrimSpace(entry)
+		if h == "" {
+			continue
+		}
+
+		h = strings.TrimPrefix(h, "http://")
+		h = strings.TrimPrefix(h, "https://")
+
+		if _, _, err := net.SplitHostPort(h); err == nil {
+			allowedHostsExact[asciiFoldString(h)] = true
+		} else {
+			allowedHostsBare[asciiFoldString(h)] = true
+		}
+	}
+
+	keys := make([]string, 0, len(allowedHostsExact)+len(allowedHostsBare))
+	for k := range allowedHostsExact {
+		keys = append(keys, k)
+	}
+	for k := range allowedHostsBare {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	logger.Log().Infof("[host] allowed Host headers: %v", strings.Join(keys, ", "))
 }
 
 // SetCORSOrigins sets the allowed CORS origins from a comma-separated string.
