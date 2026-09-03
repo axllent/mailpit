@@ -1129,7 +1129,10 @@ func extractAndValidateAddress(re *regexp.Regexp, args string) ([]string, error)
 		return nil, nil
 	}
 
-	if strings.Contains(match[1], " ") {
+	// RFC 5321 §4.1.2 permits SP inside a quoted local-part, so reject only
+	// whitespace that appears outside a quoted-string. mail.ParseAddress
+	// below still rejects CR/LF/NUL (see GHSA-54wq-72mp-cq7c).
+	if hasUnquotedWhitespace(match[1]) {
 		return nil, errors.New("553 5.1.3 The address is not a valid RFC 5321 address")
 	}
 
@@ -1151,4 +1154,32 @@ func extractAndValidateAddress(re *regexp.Regexp, args string) ([]string, error)
 	}
 
 	return match, nil
+}
+
+// hasUnquotedWhitespace reports whether s contains a space or tab that is not
+// enclosed in a quoted-string. Backslash escapes inside a quoted-string are
+// honoured so that a quoted-pair does not prematurely close the quote.
+func hasUnquotedWhitespace(s string) bool {
+	inQuotes := false
+	escaped := false
+	for i := 0; i < len(s); i++ {
+		c := s[i]
+		if escaped {
+			escaped = false
+			continue
+		}
+		switch c {
+		case '\\':
+			if inQuotes {
+				escaped = true
+			}
+		case '"':
+			inQuotes = !inQuotes
+		case ' ', '\t':
+			if !inQuotes {
+				return true
+			}
+		}
+	}
+	return false
 }
