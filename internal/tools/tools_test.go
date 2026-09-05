@@ -27,6 +27,10 @@ func TestIsInternalIP(t *testing.T) {
 		"203.0.113.1",     // TEST-NET-3 (RFC 5737)
 		"240.0.0.1",       // reserved for future use (RFC 1112)
 		"255.255.255.254", // reserved for future use end
+		"0.1.2.3",         // this-network 0.0.0.0/8 (RFC 1122)
+		"168.63.129.16",   // Azure WireServer / platform metadata channel
+		"192.88.99.1",     // 6to4 relay anycast (RFC 7526, deprecated)
+		"192.88.99.254",   // 6to4 relay anycast end
 		// IPv6 transition forms embedding an internal IPv4 destination — golang/go#79925.
 		"64:ff9b::a9fe:a9fe",       // NAT64 well-known (RFC 6052) wrapping 169.254.169.254
 		"64:ff9b:1::a9fe:a9fe",     // NAT64 local-use (RFC 8215) wrapping 169.254.169.254
@@ -40,6 +44,9 @@ func TestIsInternalIP(t *testing.T) {
 		"fec0::1",                  // deprecated site-local (RFC 3879 / RFC 4291 §2.5.7)
 		"2001:db8::1",              // documentation prefix (RFC 3849)
 		"2001:db8::5efe:0808:0808", // documentation prefix (blocked regardless of embedded IPv4)
+		"::ffff:0:7f00:1",          // IPv4-translated (RFC 2765/6145) wrapping 127.0.0.1
+		"::ffff:0:a9fe:a9fe",       // IPv4-translated (RFC 2765/6145) wrapping 169.254.169.254
+		"::ffff:0:a00:1",           // IPv4-translated (RFC 2765/6145) wrapping 10.0.0.1
 	}
 	external := []string{
 		"8.8.8.8",
@@ -53,6 +60,12 @@ func TestIsInternalIP(t *testing.T) {
 		"2001:4860:4860::8888", // Google public DNS over IPv6
 		"2002:0808:0808::",     // 6to4 wrapping 8.8.8.8 (public IPv4)
 		"64:ff9b::0808:0808",   // NAT64 wrapping 8.8.8.8 (public IPv4)
+		"::ffff:0:0808:0808",   // IPv4-translated wrapping 8.8.8.8 (public IPv4)
+		"1.0.0.1",              // just outside this-network 0.0.0.0/8
+		"168.63.129.15",        // just before Azure WireServer
+		"168.63.129.17",        // just after Azure WireServer
+		"192.88.98.255",        // just before 6to4 relay anycast range
+		"192.89.0.0",           // just after 6to4 relay anycast range
 	}
 
 	for _, s := range internal {

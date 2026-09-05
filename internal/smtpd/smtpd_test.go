@@ -117,6 +117,15 @@ func TestCmdEHLO(t *testing.T) {
 	cmdCode(t, conn, "RCPT TO:  <recipient\rexample.com>", "501")
 	cmdCode(t, conn, "RCPT TO: <>", "501") // empty address not allowed here
 
+	// RFC 5321 §4.1.2: quoted local-parts may contain SP and other qtextSMTP chars (issue #731)
+	cmdCode(t, conn, `RCPT TO:<"odd user"@example.com>`, "250")
+	cmdCode(t, conn, `RCPT TO:<"odd"@example.com>`, "250")
+	cmdCode(t, conn, `RCPT TO:<"a@b"@example.com>`, "250")
+	cmdCode(t, conn, `RCPT TO:<"odd\user"@example.com>`, "250")
+	// but CR and NUL are still rejected inside a quoted-string (GHSA-54wq-72mp-cq7c)
+	cmdCode(t, conn, "RCPT TO:<\"odd\ruser\"@example.com>", "553")
+	cmdCode(t, conn, "RCPT TO:<\"odd\x00user\"@example.com>", "553")
+
 	cmdCode(t, conn, "EHLO host.example.com", "250")
 	cmdCode(t, conn, "DATA", "503")
 
@@ -206,6 +215,15 @@ func TestCmdMAIL(t *testing.T) {
 	cmdCode(t, conn, "MAIL FROM: < sender@example.com >", "553")
 	cmdCode(t, conn, "MAIL FROM: < sender@example.com>", "553")
 	cmdCode(t, conn, "MAIL FROM: <sender@example.com >", "553")
+
+	// RFC 5321 §4.1.2: quoted local-parts may contain SP and other qtextSMTP chars (issue #731)
+	cmdCode(t, conn, `MAIL FROM:<"odd user"@example.com>`, "250")
+	cmdCode(t, conn, `MAIL FROM:<"odd"@example.com>`, "250")
+	cmdCode(t, conn, `MAIL FROM:<"a@b"@example.com>`, "250")
+	cmdCode(t, conn, `MAIL FROM:<"odd\user"@example.com>`, "250")
+	// but CR and NUL are still rejected inside a quoted-string (GHSA-54wq-72mp-cq7c)
+	cmdCode(t, conn, "MAIL FROM:<\"odd\ruser\"@example.com>", "553")
+	cmdCode(t, conn, "MAIL FROM:<\"odd\x00user\"@example.com>", "553")
 
 	// MAIL with valid SIZE parameter should return 250 Ok
 	cmdCode(t, conn, "MAIL FROM:<sender@example.com> SIZE=1000", "250")
