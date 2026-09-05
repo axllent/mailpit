@@ -2,6 +2,24 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.31.1]
+
+### Security
+- Add --allowed-hosts flag to mitigate DNS rebinding against the API
+
+### Chore
+- Update Go dependencies
+- Update node dependencies
+- Update Github Actions
+
+### Fix
+- Block Azure WireServer, IPv4-translated prefix and additional reserved ranges in SSRF deny-list
+- Pass line-boundary state to drainData to prevent SMTP desync
+- Allow SP inside quoted local-parts per RFC 5321 ([#731](https://github.com/axllent/mailpit/issues/731))
+- Bound header-rewrite scanner to header block and fail closed on missing header
+- Prevent quadratic CPU in proxy CSS rewriter via O(1) asset dedup
+
+
 ## [v1.31.0]
 
 ### Feature
