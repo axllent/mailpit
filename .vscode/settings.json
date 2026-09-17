@@ -6,6 +6,7 @@
         "editor.defaultFormatter": "esbenp.prettier-vscode"
     },
     "cSpell.words": [
+        "APNG",
         "AUTHCRAMMD",
         "AUTHLOGIN",
         "AUTHPLAIN",
@@ -15,6 +16,7 @@
         "EHLO",
         "ESMTP",
         "EXPN",
+        "goexif",
         "gofmt",
         "Healthz",
         "HTTPIP",
@@ -30,11 +32,17 @@
         "popperjs",
         "readyz",
         "RSET",
+        "rwcarlsen",
+        "Scanlines",
         "shortuuid",
         "SMTPTLS",
+        "stdlib",
         "swaggerexpert",
         "UITLS",
+        "upscales",
         "VRFY",
-        "writef"
+        "webp",
+        "writef",
+        "xdraw"
     ]
 }
