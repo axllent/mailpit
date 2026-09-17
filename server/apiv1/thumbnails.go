@@ -1,32 +1,19 @@
 package apiv1
 
 import (
-	"bufio"
-	"bytes"
-	"image"
-	"image/color"
-	"image/draw"
-	"image/jpeg"
 	"net/http"
 	"net/url"
+	"path"
 	"strings"
 
-	"github.com/axllent/mailpit/internal/logger"
 	"github.com/axllent/mailpit/internal/storage"
-	"github.com/jhillyerd/enmime/v2"
-	"github.com/kovidgoyal/imaging"
+	"github.com/axllent/mailpit/internal/thumbnail"
 )
 
 var (
 	thumbWidth  = 180
 	thumbHeight = 120
 )
-
-// maxDecodedPixels is the maximum number of decoded pixels (width * height)
-// allowed before thumbnail generation. This guards against compressed images
-// that declare large dimensions, which would allocate large rasters in memory
-// before scaling. At 4 bytes per RGBA pixel, 20 MP ≈ 80 MB per decode.
-const maxDecodedPixels int64 = 20_000_000
 
 // Thumbnail returns a thumbnail image for an attachment (images only)
 func Thumbnail(w http.ResponseWriter, r *http.Request) {
@@ -63,79 +50,36 @@ func Thumbnail(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !strings.HasPrefix(a.ContentType, "image/") {
-		blankImage(a, w)
+		writeBlank(w, fileName)
 		return
 	}
 
-	// Peek at the image dimensions before full decode to guard against
-	// compressed images with large declared dimensions (pixel-budget exhaustion).
-	// image.DecodeConfig reads only the image header without allocating the raster.
-	if cfg, _, cfgErr := image.DecodeConfig(bytes.NewReader(a.Content)); cfgErr == nil {
-		if int64(cfg.Width)*int64(cfg.Height) > maxDecodedPixels {
-			logger.Log().Warnf("[image] rejected oversized image dimensions %dx%d (exceeds %d pixel limit)", cfg.Width, cfg.Height, maxDecodedPixels)
-			blankImage(a, w)
-			return
-		}
-	}
-
-	buf := bytes.NewReader(a.Content)
-
-	img, err := imaging.Decode(buf, imaging.AutoOrientation(true))
+	data, err := thumbnail.Generate(a.Content, thumbWidth, thumbHeight)
 	if err != nil {
-		// it's not an image, return default
-		logger.Log().Warnf("[image] %s", err.Error())
-		blankImage(a, w)
-		return
-	}
-
-	var b bytes.Buffer
-	foo := bufio.NewWriter(&b)
-
-	var temp image.Image
-	if img.Bounds().Dx() < thumbWidth || img.Bounds().Dy() < thumbHeight {
-		temp = imaging.Fit(img, thumbWidth, thumbHeight, imaging.Lanczos)
-	} else {
-		temp = imaging.Fill(img, thumbWidth, thumbHeight, imaging.Center, imaging.Lanczos)
-	}
-	dstImageFill := imaging.Clone(temp)
-
-	// create white image and paste image over the top
-	// preventing black backgrounds for transparent GIF/PNG images
-	dst := imaging.New(thumbWidth, thumbHeight, color.White)
-	// paste the original over the top
-	dst = imaging.OverlayCenter(dst, dstImageFill, 1.0)
-
-	if err := jpeg.Encode(foo, dst, &jpeg.Options{Quality: 70}); err != nil {
-		logger.Log().Warnf("[image] %s", err.Error())
-		blankImage(a, w)
+		writeBlank(w, fileName)
 		return
 	}
 
 	w.Header().Add("Content-Type", "image/jpeg")
-	w.Header().Set("Content-Disposition", "filename=\""+url.PathEscape(fileName)+"\"")
-	_, _ = w.Write(b.Bytes())
+	w.Header().Set("Content-Disposition", "filename=\""+url.PathEscape(jpegName(fileName))+"\"")
+	_, _ = w.Write(data)
 }
 
-// Return a blank image instead of an error when file or image not supported
-func blankImage(a *enmime.Part, w http.ResponseWriter) {
-	rect := image.Rect(0, 0, thumbWidth, thumbHeight)
-	img := image.NewRGBA(rect)
-	background := color.RGBA{255, 255, 255, 255}
-	draw.Draw(img, img.Bounds(), &image.Uniform{background}, image.Point{}, draw.Src)
-	var b bytes.Buffer
-	foo := bufio.NewWriter(&b)
-	dstImageFill := imaging.Fill(img, thumbWidth, thumbHeight, imaging.Center, imaging.Lanczos)
-
-	if err := jpeg.Encode(foo, dstImageFill, &jpeg.Options{Quality: 70}); err != nil {
-		logger.Log().Warnf("[image] %s", err.Error())
-	}
-
-	fileName := a.FileName
-	if fileName == "" {
-		fileName = a.ContentID
-	}
-
+// writeBlank returns a blank thumbnail when the attachment is not a
+// supported image or cannot be decoded.
+func writeBlank(w http.ResponseWriter, fileName string) {
+	data, _ := thumbnail.Generate(nil, thumbWidth, thumbHeight)
 	w.Header().Add("Content-Type", "image/jpeg")
-	w.Header().Set("Content-Disposition", "filename=\""+url.PathEscape(fileName)+"\"")
-	_, _ = w.Write(b.Bytes())
+	w.Header().Set("Content-Disposition", "filename=\""+url.PathEscape(jpegName(fileName))+"\"")
+	_, _ = w.Write(data)
+}
+
+// jpegName replaces the extension of the source filename with .jpg to
+// match the JPEG bytes we always emit. Empty input becomes "thumb.jpg".
+func jpegName(name string) string {
+	name = strings.TrimSuffix(name, path.Ext(name))
+	if name == "" {
+		return "thumb.jpg"
+	}
+	return name + ".jpg"
 }

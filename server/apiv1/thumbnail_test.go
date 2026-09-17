@@ -131,16 +131,14 @@ func TestThumbnailSmallImage(t *testing.T) {
 }
 
 // TestThumbnailOversizedImageRejected verifies that a compressed PNG with dimensions
-// exceeding maxDecodedPixels is rejected without performing a full raster decode,
-// and returns a blank JPEG thumbnail rather than an error.
+// exceeding the pixel budget is rejected and returns a blank JPEG thumbnail.
 func TestThumbnailOversizedImageRejected(t *testing.T) {
 	initTestDB(t)
 
 	// 4500x4500 = 20,250,000 pixels, above the 20,000,000 limit.
-	// The encoded PNG is ~72 KB; the decoded RGBA would be ~81 MB.
 	png := solidRGBApng(4500, 4500)
-	t.Logf("encoded PNG size: %d bytes, decoded pixels: %d (limit: %d)",
-		len(png), 4500*4500, maxDecodedPixels)
+	t.Logf("encoded PNG size: %d bytes, decoded pixels: %d",
+		len(png), 4500*4500)
 
 	msgID, partID := storeEmailWithPNG(t, "oversized", png)
 	rr := thumbnailRequest(t, msgID, partID)
@@ -162,7 +160,7 @@ func TestThumbnailOversizedImageRejected(t *testing.T) {
 func TestThumbnailBoundaryDimensions(t *testing.T) {
 	initTestDB(t)
 
-	// 4472x4472 ≈ 19,998,784 pixels — just under the 20,000,000 limit.
+	// 4472x4472 = 19,998,784 pixels, just under the 20,000,000 limit.
 	acceptPNG := solidRGBApng(4472, 4472)
 	msgID, partID := storeEmailWithPNG(t, "boundary-accept", acceptPNG)
 	rr := thumbnailRequest(t, msgID, partID)
@@ -173,7 +171,7 @@ func TestThumbnailBoundaryDimensions(t *testing.T) {
 		t.Fatalf("boundary-accept: Content-Type=%q", ct)
 	}
 
-	// 4473x4473 ≈ 20,007,729 pixels — just over the 20,000,000 limit.
+	// 4473x4473 = 20,007,729 pixels, just over the 20,000,000 limit.
 	rejectPNG := solidRGBApng(4473, 4473)
 	msgID2, partID2 := storeEmailWithPNG(t, "boundary-reject", rejectPNG)
 	rr2 := thumbnailRequest(t, msgID2, partID2)
