@@ -305,16 +305,7 @@ func List(start int, beforeTS int64, limit int) ([]MessageSummary, error) {
 // GetMessage returns a Message generated from the mailbox_data collection.
 // If the message lacks a date header, then the received datetime is used.
 func GetMessage(id string) (*Message, error) {
-	raw, err := GetMessageRaw(id)
-	if err != nil {
-		return nil, err
-	}
-
-	r := bytes.NewReader(raw)
-
-	parser := enmime.NewParser(enmime.DisableCharacterDetection(true))
-
-	env, err := parser.ReadEnvelope(r)
+	env, rawSize, err := getCachedEnvelope(id)
 	if err != nil {
 		return nil, err
 	}
@@ -376,7 +367,7 @@ func GetMessage(id string) (*Message, error) {
 		ReturnPath: returnPath,
 		Subject:    env.GetHeader("Subject"),
 		Tags:       getMessageTags(id),
-		Size:       uint64(len(raw)),
+		Size:       rawSize,
 		Text:       env.Text,
 		Username:   meta.Username,
 	}
@@ -470,16 +461,7 @@ func GetMessageRaw(id string) ([]byte, error) {
 
 // GetAttachmentPart returns an *enmime.Part (attachment or inline) from a message
 func GetAttachmentPart(id, partID string) (*enmime.Part, error) {
-	raw, err := GetMessageRaw(id)
-	if err != nil {
-		return nil, err
-	}
-
-	r := bytes.NewReader(raw)
-
-	parser := enmime.NewParser(enmime.DisableCharacterDetection(true))
-
-	env, err := parser.ReadEnvelope(r)
+	env, _, err := getCachedEnvelope(id)
 	if err != nil {
 		return nil, err
 	}
@@ -809,6 +791,8 @@ func DeleteMessages(ids []string) error {
 
 	// broadcast individual message deletions
 	for _, id := range toDelete {
+		invalidateEnvelopeCache(id)
+
 		d := struct {
 			ID string
 		}{ID: id}
@@ -867,6 +851,8 @@ func DeleteAllMessages() error {
 	logMessagesDeleted(total)
 
 	BroadcastMailboxStats()
+
+	invalidateAllEnvelopeCache()
 
 	websockets.Broadcast("truncate", nil)
 

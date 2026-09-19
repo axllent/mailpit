@@ -100,8 +100,17 @@ func (d sendMessageParams) Send(remoteAddr string, httpAuthUser *string) (string
 
 	addresses := []string{}
 
+	// enmime.Builder expects the decoded local-part (no quotes) and handles
+	// RFC 5322 quoting itself. Use mail.ParseAddress to decode quoted
+	// local-parts like "odd user"@example.com into enmime's expected form,
+	// while keeping the original Email value for SMTP envelope use.
+	fromEmail := d.Body.From.Email
+	if parsed, err := mail.ParseAddress(d.Body.From.Email); err == nil {
+		fromEmail = parsed.Address
+	}
+
 	msg := enmime.Builder().
-		From(d.Body.From.Name, d.Body.From.Email).
+		From(d.Body.From.Name, fromEmail).
 		Subject(d.Body.Subject).
 		Text([]byte(d.Body.Text))
 
@@ -111,8 +120,8 @@ func (d sendMessageParams) Send(remoteAddr string, httpAuthUser *string) (string
 
 	if len(d.Body.To) > 0 {
 		for _, a := range d.Body.To {
-			if _, err := mail.ParseAddress(a.Email); err == nil {
-				msg = msg.To(a.Name, a.Email)
+			if parsed, err := mail.ParseAddress(a.Email); err == nil {
+				msg = msg.To(a.Name, parsed.Address)
 				addresses = append(addresses, a.Email)
 			} else {
 				return "", fmt.Errorf("invalid To address: %s", a.Email)
@@ -122,8 +131,8 @@ func (d sendMessageParams) Send(remoteAddr string, httpAuthUser *string) (string
 
 	if len(d.Body.Cc) > 0 {
 		for _, a := range d.Body.Cc {
-			if _, err := mail.ParseAddress(a.Email); err == nil {
-				msg = msg.CC(a.Name, a.Email)
+			if parsed, err := mail.ParseAddress(a.Email); err == nil {
+				msg = msg.CC(a.Name, parsed.Address)
 				addresses = append(addresses, a.Email)
 			} else {
 				return "", fmt.Errorf("invalid Cc address: %s", a.Email)
@@ -133,8 +142,8 @@ func (d sendMessageParams) Send(remoteAddr string, httpAuthUser *string) (string
 
 	if len(d.Body.Bcc) > 0 {
 		for _, e := range d.Body.Bcc {
-			if _, err := mail.ParseAddress(e); err == nil {
-				msg = msg.BCC("", e)
+			if parsed, err := mail.ParseAddress(e); err == nil {
+				msg = msg.BCC("", parsed.Address)
 				addresses = append(addresses, e)
 			} else {
 				return "", fmt.Errorf("invalid Bcc address: %s", e)
@@ -144,8 +153,8 @@ func (d sendMessageParams) Send(remoteAddr string, httpAuthUser *string) (string
 
 	if len(d.Body.ReplyTo) > 0 {
 		for _, a := range d.Body.ReplyTo {
-			if _, err := mail.ParseAddress(a.Email); err == nil {
-				msg = msg.ReplyTo(a.Name, a.Email)
+			if parsed, err := mail.ParseAddress(a.Email); err == nil {
+				msg = msg.ReplyTo(a.Name, parsed.Address)
 			} else {
 				return "", fmt.Errorf("invalid Reply-To address: %s", a.Email)
 			}

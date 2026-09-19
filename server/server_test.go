@@ -641,6 +641,87 @@ func TestSendAPIAuthMiddleware(t *testing.T) {
 	})
 }
 
+func TestAPIv1QuotedLocalPartStore(t *testing.T) {
+	setup()
+	defer storage.Close()
+
+	r := apiRoutes()
+	ts := httptest.NewServer(r)
+	defer ts.Close()
+
+	// Store a raw message with quoted local-parts in the headers.
+	// This simulates what arrives via SMTP for addresses like "odd user"@example.com.
+	raw := []byte("From: <\"odd user\"@example.com>\r\nTo: <\"a@b\"@example.com>\r\nSubject: Quoted local-part test\r\nMIME-Version: 1.0\r\nContent-Type: text/plain\r\n\r\nTest body\r\n")
+	id, err := storage.Store(&raw, nil)
+	if err != nil {
+		t.Fatalf("failed to store message: %s", err)
+	}
+
+	// Fetch the individual message via the API
+	msg, err := fetchMessage(ts.URL + "/api/v1/message/" + id)
+	if err != nil {
+		t.Fatalf("failed to fetch message: %s", err)
+	}
+
+	// The Address field must contain a valid, parseable addr-spec with quotes
+	assertEqual(t, `"odd user"@example.com`, msg.From.Address, "From address not re-quoted")
+	assertEqual(t, 1, len(msg.To), "wrong To count")
+	assertEqual(t, `"a@b"@example.com`, msg.To[0].Address, "To address not re-quoted")
+
+	// Also verify the messages list endpoint (reads from stored metadata JSON)
+	m, err := fetchMessages(ts.URL + "/api/v1/messages")
+	if err != nil {
+		t.Fatalf("failed to fetch messages: %s", err)
+	}
+
+	assertEqual(t, uint64(1), m.Total, "wrong total count")
+	assertEqual(t, `"odd user"@example.com`, m.Messages[0].From.Address, "From address in list not re-quoted")
+	assertEqual(t, `"a@b"@example.com`, m.Messages[0].To[0].Address, "To address in list not re-quoted")
+}
+
+func TestAPIv1QuotedLocalPartSend(t *testing.T) {
+	setup()
+	defer storage.Close()
+
+	r := apiRoutes()
+	ts := httptest.NewServer(r)
+	defer ts.Close()
+
+	jsonData := `{
+		"From": {
+			"Email": "\"odd user\"@example.com"
+		},
+		"To": [
+			{
+				"Email": "\"a@b\"@example.com",
+				"Name": "Quoted Recipient"
+			}
+		],
+		"Subject": "Quoted local-part via Send API",
+		"Text": "Test body"
+	}`
+
+	b, err := clientPost(ts.URL+"/api/v1/send", jsonData)
+	if err != nil {
+		t.Fatalf("send failed: %s", err)
+	}
+
+	resp := struct{ ID string }{}
+	if err := json.Unmarshal(b, &resp); err != nil {
+		t.Fatalf("failed to parse send response: %s", err)
+	}
+
+	msg, err := fetchMessage(ts.URL + "/api/v1/message/" + resp.ID)
+	if err != nil {
+		t.Fatalf("failed to fetch message: %s", err)
+	}
+
+	assertEqual(t, `"odd user"@example.com`, msg.From.Address, "From address not re-quoted")
+	assertEqual(t, 1, len(msg.To), "wrong To count")
+	assertEqual(t, `"a@b"@example.com`, msg.To[0].Address, "To address not re-quoted")
+	assertEqual(t, "Quoted Recipient", msg.To[0].Name, "To name lost")
+}
+
 func setup() {
 	logger.NoLogging = true
 	config.MaxMessages = 0

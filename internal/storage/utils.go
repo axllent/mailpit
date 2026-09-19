@@ -41,7 +41,28 @@ func addressToSlice(env *enmime.Envelope, key string) []*mail.Address {
 		return []*mail.Address{}
 	}
 
+	for _, a := range data {
+		normalizeAddress(a)
+	}
+
 	return data
+}
+
+// normalizeAddress re-quotes the local-part of an email address when it
+// contains characters not valid in a dot-atom (RFC 5321 §4.1.2).
+// Go's mail.Address stores the decoded local-part, stripping quotes during
+// parsing; this restores them so the Address field is a valid addr-spec.
+//
+// Rather than reimplementing RFC quoting rules, this delegates to
+// mail.Address.String() which already handles quoting and escaping
+// correctly, then extracts the addr-spec from the angle brackets.
+func normalizeAddress(a *mail.Address) {
+	s := a.String()
+	start := strings.LastIndex(s, "<")
+	end := strings.LastIndex(s, ">")
+	if start >= 0 && end > start {
+		a.Address = s[start+1 : end]
+	}
 }
 
 // Generate the search text based on some header fields (to, from, subject etc)
