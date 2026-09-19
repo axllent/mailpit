@@ -53,7 +53,7 @@ func ReindexAll() {
 		Metadata string
 	}
 
-	parser := enmime.NewParser(enmime.DisableCharacterDetection(true))
+	parser := enmime.NewParser(enmime.DisableCharacterDetection(true), enmime.MaxMIMEParts(500))
 
 	for _, ids := range chunks {
 		updates := []updateStruct{}

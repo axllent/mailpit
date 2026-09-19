@@ -53,7 +53,7 @@ func HTMLCheck(w http.ResponseWriter, r *http.Request) {
 
 	e := bytes.NewReader(raw)
 
-	parser := enmime.NewParser(enmime.DisableCharacterDetection(true))
+	parser := enmime.NewParser(enmime.DisableCharacterDetection(true), enmime.MaxMIMEParts(500))
 
 	msg, err := parser.ReadEnvelope(e)
 	if err != nil {
