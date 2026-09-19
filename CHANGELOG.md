@@ -2,6 +2,24 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.31.2]
+
+### Security
+- Bound thumbnail decode to single frame (GHSA-2vgv-6hcp-mf43)
+
+### Feature
+- Add major version tag for Docker images in workflow ([#734](https://github.com/axllent/mailpit/issues/734))
+
+### Chore
+- Improve message rendering performance with envelope caching
+- Update Go dependencies
+- Update node dependencies
+- Update caniemail test database
+
+### Fix
+- Re-quote local-parts in API JSON responses ([#732](https://github.com/axllent/mailpit/issues/732))
+
+
 ## [v1.31.1]
 
 ### Security
