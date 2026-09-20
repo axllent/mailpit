@@ -21,6 +21,9 @@ var (
 
 	// cleanStringRe is used to remove unwanted characters from stored search text and search queries
 	cleanStringRe = regexp.MustCompile(`(\r?\n|\t|>|<|"|\,|;|\(|\))`)
+
+	// envelopeParser is a shared enmime parser instance used for message parsing
+	envelopeParser = enmime.NewParser(enmime.DisableCharacterDetection(true), enmime.MaxMIMEParts(500))
 )
 
 // AddTempFile adds a file to the slice of files to delete on exit

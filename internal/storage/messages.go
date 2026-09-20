@@ -31,10 +31,8 @@ import (
 // The username is the authentication username of either the SMTP or HTTP client (blank for none).
 // Returns the database ID of the saved message.
 func Store(body *[]byte, username *string) (string, error) {
-	parser := enmime.NewParser(enmime.DisableCharacterDetection(true), enmime.MaxMIMEParts(500))
-
 	// Parse message body with enmime
-	env, err := parser.ReadEnvelope(bytes.NewReader(*body))
+	env, err := envelopeParser.ReadEnvelope(bytes.NewReader(*body))
 	if err != nil {
 		logger.Log().Warnf("[message] %s", err.Error())
 		return "", nil
