@@ -36,6 +36,9 @@ var (
 
 	// extract mail size from 'MAIL FROM' parameter
 	mailFromSizeRE = regexp.MustCompile(`(?U)(^| |,)[Ss][Ii][Zz][Ee]=(.*)($|,| )`)
+
+	// checkErrFormatRE matches SMTP error responses with a status code prefix
+	checkErrFormatRE = regexp.MustCompile(`^([2-5][0-9]{2})[\s\-](.+)$`)
 )
 
 // Handler function called upon successful receipt of an email.
@@ -600,8 +603,7 @@ loop:
 			if len(to) > 0 && s.srv.Handler != nil {
 				err := s.srv.Handler(s.conn.RemoteAddr(), from, to, buffer.Bytes())
 				if err != nil {
-					checkErrFormat := regexp.MustCompile(`^([2-5][0-9]{2})[\s\-](.+)$`)
-					if checkErrFormat.MatchString(err.Error()) {
+					if checkErrFormatRE.MatchString(err.Error()) {
 						s.writef("%s", err.Error())
 					} else {
 						s.writef("451 4.3.5 Unable to process mail")
@@ -612,8 +614,7 @@ loop:
 			} else if len(to) > 0 && s.srv.MsgIDHandler != nil {
 				msgID, err := s.srv.MsgIDHandler(s.conn.RemoteAddr(), from, to, buffer.Bytes(), s.username)
 				if err != nil {
-					checkErrFormat := regexp.MustCompile(`^([2-5][0-9]{2})[\s\-](.+)$`)
-					if checkErrFormat.MatchString(err.Error()) {
+					if checkErrFormatRE.MatchString(err.Error()) {
 						s.writef("%s", err.Error())
 					} else {
 						s.writef("451 4.3.5 Unable to process mail")
