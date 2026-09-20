@@ -18,6 +18,9 @@ var (
 	mu sync.RWMutex
 	// StatsDeleted for counting the number of messages deleted
 	StatsDeleted uint64
+
+	// cleanStringRe is used to remove unwanted characters from stored search text and search queries
+	cleanStringRe = regexp.MustCompile(`(\r?\n|\t|>|<|"|\,|;|\(|\))`)
 )
 
 // AddTempFile adds a file to the slice of files to delete on exit
@@ -100,8 +103,7 @@ func cleanString(str string) string {
 	str = strings.ReplaceAll(str, string('\uFEFF'), " ")
 
 	// remove/replace new lines
-	re := regexp.MustCompile(`(\r?\n|\t|>|<|"|\,|;|\(|\))`)
-	str = re.ReplaceAllString(str, " ")
+	str = cleanStringRe.ReplaceAllString(str, " ")
 
 	// remove duplicate whitespace and trim
 	return strings.ToLower(strings.Join(strings.Fields(strings.TrimSpace(str)), " "))
