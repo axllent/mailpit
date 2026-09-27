@@ -13,6 +13,9 @@ import (
 	"github.com/axllent/mailpit/internal/logger"
 )
 
+// reLeadingWhitespace matches lines starting with whitespace (continuation lines in headers)
+var reLeadingWhitespace = regexp.MustCompile(`^\s+`)
+
 // RemoveMessageHeaders scans a message for headers, if found them removes them.
 // It will only remove a single instance of any given message header.
 func RemoveMessageHeaders(msg []byte, headers []string) ([]byte, error) {
@@ -21,8 +24,6 @@ func RemoveMessageHeaders(msg []byte, headers []string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	reBlank := regexp.MustCompile(`^\s+`)
 
 	for _, name := range headers {
 		if m.Header.Get(name) == "" {
@@ -51,7 +52,7 @@ func RemoveMessageHeaders(msg []byte, headers []string) ([]byte, error) {
 				hdr = append(hdr, line...)
 				hdr = append(hdr, []byte("\r\n")...)
 				found = true
-			} else if found && reBlank.Match(line) {
+			} else if found && reLeadingWhitespace.Match(line) {
 				// add any following lines starting with a whitespace (tab or space)
 				hdr = append(hdr, line...)
 				hdr = append(hdr, []byte("\r\n")...)
@@ -88,7 +89,6 @@ func SetMessageHeader(msg []byte, header, value string) ([]byte, error) {
 	}
 
 	if m.Header.Get(header) != "" {
-		reBlank := regexp.MustCompile(`^\s+`)
 		reHdr := regexp.MustCompile(`(?i)^` + regexp.QuoteMeta(header+":"))
 
 		// bound the scanner to the header block so long body content and
@@ -110,7 +110,7 @@ func SetMessageHeader(msg []byte, header, value string) ([]byte, error) {
 				hdr = append(hdr, line...)
 				hdr = append(hdr, []byte("\r\n")...)
 				found = true
-			} else if found && reBlank.Match(line) {
+			} else if found && reLeadingWhitespace.Match(line) {
 				// add any following lines starting with a whitespace (tab or space)
 				hdr = append(hdr, line...)
 				hdr = append(hdr, []byte("\r\n")...)
@@ -145,7 +145,6 @@ func OverrideFromHeader(msg []byte, address string) ([]byte, error) {
 	}
 
 	if m.Header.Get("From") != "" {
-		reBlank := regexp.MustCompile(`^\s+`)
 		reHdr := regexp.MustCompile(`(?i)^` + regexp.QuoteMeta("From:"))
 
 		// bound the scanner to the header block so long body content and
@@ -167,7 +166,7 @@ func OverrideFromHeader(msg []byte, address string) ([]byte, error) {
 				hdr = append(hdr, line...)
 				hdr = append(hdr, []byte("\r\n")...)
 				found = true
-			} else if found && reBlank.Match(line) {
+			} else if found && reLeadingWhitespace.Match(line) {
 				// add any following lines starting with a whitespace (tab or space)
 				hdr = append(hdr, line...)
 				hdr = append(hdr, []byte("\r\n")...)

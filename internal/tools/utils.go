@@ -6,6 +6,11 @@ import (
 	"strings"
 )
 
+var (
+	normalizeNlRe = regexp.MustCompile(`\r?\r`)
+	normalizeWsRe = regexp.MustCompile(`\s+`)
+)
+
 // Plural returns a singular or plural of a word together with the total
 func Plural(total int, singular, plural string) string {
 	if total == 1 {
@@ -28,11 +33,8 @@ func InArray(k string, arr []string) bool {
 
 // Normalize will remove any extra spaces, remove newlines, and trim leading and trailing spaces
 func Normalize(s string) string {
-	nlRe := regexp.MustCompile(`\r?\r`)
-	re := regexp.MustCompile(`\s+`)
-
-	s = nlRe.ReplaceAllString(s, " ")
-	s = re.ReplaceAllString(s, " ")
+	s = normalizeNlRe.ReplaceAllString(s, " ")
+	s = normalizeWsRe.ReplaceAllString(s, " ")
 
 	return strings.TrimSpace(s)
 }

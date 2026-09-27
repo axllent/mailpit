@@ -97,9 +97,7 @@ func parseEnvelope(id string) (*enmime.Envelope, uint64, error) {
 		return nil, 0, err
 	}
 
-	parser := enmime.NewParser(enmime.DisableCharacterDetection(true))
-
-	env, err := parser.ReadEnvelope(bytes.NewReader(raw))
+	env, err := envelopeParser.ReadEnvelope(bytes.NewReader(raw))
 	if err != nil {
 		return nil, 0, err
 	}

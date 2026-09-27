@@ -31,10 +31,8 @@ import (
 // The username is the authentication username of either the SMTP or HTTP client (blank for none).
 // Returns the database ID of the saved message.
 func Store(body *[]byte, username *string) (string, error) {
-	parser := enmime.NewParser(enmime.DisableCharacterDetection(true))
-
 	// Parse message body with enmime
-	env, err := parser.ReadEnvelope(bytes.NewReader(*body))
+	env, err := envelopeParser.ReadEnvelope(bytes.NewReader(*body))
 	if err != nil {
 		logger.Log().Warnf("[message] %s", err.Error())
 		return "", nil
@@ -166,13 +164,25 @@ func Store(body *[]byte, username *string) (string, error) {
 		}
 	}
 
-	c := &MessageSummary{}
-	if err := json.Unmarshal(summaryJSON, c); err != nil {
-		return "", err
-	}
-
-	// we do not want to to broadcast null values for MetaData else this does not align
+	// Build the summary directly from obj rather than round-tripping through JSON.
+	// We do not want to broadcast null values for metadata else this does not align
 	// with the message summary documented in the API docs, so we set them to empty slices.
+	c := &MessageSummary{
+		Created:     created,
+		ID:          id,
+		MessageID:   messageID,
+		From:        obj.From,
+		To:          obj.To,
+		Cc:          obj.Cc,
+		Bcc:         obj.Bcc,
+		ReplyTo:     obj.ReplyTo,
+		Username:    obj.Username,
+		Subject:     subject,
+		Attachments: attachments,
+		Size:        size,
+		Tags:        setTags,
+		Snippet:     snippet,
+	}
 	if c.From == nil {
 		c.From = &mail.Address{}
 	}
@@ -188,15 +198,6 @@ func Store(body *[]byte, username *string) (string, error) {
 	if c.ReplyTo == nil {
 		c.ReplyTo = []*mail.Address{}
 	}
-
-	c.Created = created
-	c.ID = id
-	c.MessageID = messageID
-	c.Attachments = attachments
-	c.Subject = subject
-	c.Size = size
-	c.Tags = setTags
-	c.Snippet = snippet
 
 	websockets.Broadcast("new", c)
 	webhook.Send(c)

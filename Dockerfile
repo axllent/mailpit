@@ -23,7 +23,9 @@ LABEL org.opencontainers.image.title="Mailpit" \
 
 COPY --from=builder /mailpit /mailpit
 
-RUN apk upgrade --no-cache && apk add --no-cache tzdata
+RUN apk upgrade --no-cache && apk add --no-cache tzdata && \
+    ln -sf /mailpit /usr/sbin/sendmail && \
+    ln -sf /mailpit /usr/local/bin/sendmail
 
 EXPOSE 1025/tcp 1110/tcp 8025/tcp
 

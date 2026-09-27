@@ -1,7 +1,6 @@
 package storage
 
 import (
-	"bytes"
 	"context"
 	"database/sql"
 	"fmt"
@@ -323,9 +322,8 @@ func findTagsInRawMessage(message *[]byte) []string {
 		return tags
 	}
 
-	str := bytes.ToLower(*message)
 	for _, t := range tagFilters {
-		if bytes.Contains(str, []byte(t.Match)) {
+		if containsFold(*message, []byte(t.Match)) {
 			tags = append(tags, t.Tags...)
 		}
 	}
@@ -450,4 +448,35 @@ func sortedUniqueTags(s []string) []string {
 	sort.Strings(tags)
 
 	return tags
+}
+
+// containsFold reports whether needle (which must be lowercase) is found
+// anywhere in haystack using ASCII case-insensitive comparison.
+// This avoids allocating a lowered copy of the entire haystack.
+func containsFold(haystack, needle []byte) bool {
+	nl := len(needle)
+	if nl == 0 {
+		return true
+	}
+	hl := len(haystack)
+	if nl > hl {
+		return false
+	}
+	for i := 0; i <= hl-nl; i++ {
+		match := true
+		for j := 0; j < nl; j++ {
+			hb := haystack[i+j]
+			if hb >= 'A' && hb <= 'Z' {
+				hb += 'a' - 'A'
+			}
+			if hb != needle[j] {
+				match = false
+				break
+			}
+		}
+		if match {
+			return true
+		}
+	}
+	return false
 }
