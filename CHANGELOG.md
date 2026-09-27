@@ -2,6 +2,21 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.31.3]
+
+### Chore
+- Limit maximum MIME parts parsed per message to 500
+- Refactor regex usage for string cleaning and normalization
+- Optimize envelope parsing by using a shared parser instance
+- Optimize message summary construction by eliminating JSON round-trip
+- Replace bytes.ToLower with containsFold for case-insensitive tag matching
+- Replace inline regex for leading whitespace with a package-level variable
+- Symlink sendmail to Mailpit in Docker image ([#736](https://github.com/axllent/mailpit/issues/736))
+- Update Go dependencies
+- Update node dependencies
+- Update GitHub Actions dependencies
+
+
 ## [v1.31.2]
 
 ### Security
