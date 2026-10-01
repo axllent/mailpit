@@ -227,6 +227,11 @@ export default {
 				return;
 			}
 
+			// ignore if already in the list (race between API response and websocket broadcast)
+			if (this.messagesList.some((m) => m.ID === data.ID)) {
+				return;
+			}
+
 			this.liveLoaded++;
 			this.messagesList.unshift(data);
 		},
