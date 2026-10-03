@@ -47,6 +47,14 @@ func createForwardingSMTPClient(config config.SMTPForwardConfigStruct, addr stri
 			return nil, fmt.Errorf("SMTP client error: %v", err)
 		}
 
+		// Set the hostname for HELO/EHLO
+		if hostname, err := os.Hostname(); err == nil {
+			if err := client.Hello(hostname); err != nil {
+				_ = client.Close()
+				return nil, fmt.Errorf("error saying HELO/EHLO to %s: %v", addr, err)
+			}
+		}
+
 		// Note: The caller is responsible for closing the client
 		return client, nil
 	}

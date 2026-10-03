@@ -112,6 +112,10 @@ export default {
 		// handler for websocket new messages
 		handleWSNew(data) {
 			if (pagination.start < 1) {
+				// ignore if already in the list (race between API response and websocket broadcast)
+				if (mailbox.messages.some((m) => m.ID === data.ID)) {
+					return;
+				}
 				// push results directly into first page
 				mailbox.messages.unshift(data);
 				if (mailbox.messages.length > pagination.limit) {
