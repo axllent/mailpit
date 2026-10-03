@@ -2,6 +2,13 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.31.4]
+
+### Fix
+- Prevent duplicate messages from being added in websocket handlers ([#737](https://github.com/axllent/mailpit/issues/737))
+- Set hostname for HELO/EHLO in SMTP client creation ([#738](https://github.com/axllent/mailpit/issues/738))
+
+
 ## [v1.31.3]
 
 ### Chore
