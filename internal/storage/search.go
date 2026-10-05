@@ -356,73 +356,73 @@ func searchQueryBuilder(searchString, timezone string) *sqlf.Stmt {
 			w = cleanString(w[3:])
 			if w != "" {
 				if exclude {
-					q.Where("ToJSON NOT LIKE ?", "%"+escPercentChar(w)+"%")
+					q.Where("ToJSON NOT LIKE ? ESCAPE '\\'", "%"+escLikeChars(w)+"%")
 				} else {
-					q.Where("ToJSON LIKE ?", "%"+escPercentChar(w)+"%")
+					q.Where("ToJSON LIKE ? ESCAPE '\\'", "%"+escLikeChars(w)+"%")
 				}
 			}
 		} else if strings.HasPrefix(lw, "from:") {
 			w = cleanString(w[5:])
 			if w != "" {
 				if exclude {
-					q.Where("FromJSON NOT LIKE ?", "%"+escPercentChar(w)+"%")
+					q.Where("FromJSON NOT LIKE ? ESCAPE '\\'", "%"+escLikeChars(w)+"%")
 				} else {
-					q.Where("FromJSON LIKE ?", "%"+escPercentChar(w)+"%")
+					q.Where("FromJSON LIKE ? ESCAPE '\\'", "%"+escLikeChars(w)+"%")
 				}
 			}
 		} else if strings.HasPrefix(lw, "cc:") {
 			w = cleanString(w[3:])
 			if w != "" {
 				if exclude {
-					q.Where("CcJSON NOT LIKE ?", "%"+escPercentChar(w)+"%")
+					q.Where("CcJSON NOT LIKE ? ESCAPE '\\'", "%"+escLikeChars(w)+"%")
 				} else {
-					q.Where("CcJSON LIKE ?", "%"+escPercentChar(w)+"%")
+					q.Where("CcJSON LIKE ? ESCAPE '\\'", "%"+escLikeChars(w)+"%")
 				}
 			}
 		} else if strings.HasPrefix(lw, "bcc:") {
 			w = cleanString(w[4:])
 			if w != "" {
 				if exclude {
-					q.Where("BccJSON NOT LIKE ?", "%"+escPercentChar(w)+"%")
+					q.Where("BccJSON NOT LIKE ? ESCAPE '\\'", "%"+escLikeChars(w)+"%")
 				} else {
-					q.Where("BccJSON LIKE ?", "%"+escPercentChar(w)+"%")
+					q.Where("BccJSON LIKE ? ESCAPE '\\'", "%"+escLikeChars(w)+"%")
 				}
 			}
 		} else if strings.HasPrefix(lw, "reply-to:") {
 			w = cleanString(w[9:])
 			if w != "" {
 				if exclude {
-					q.Where("ReplyToJSON NOT LIKE ?", "%"+escPercentChar(w)+"%")
+					q.Where("ReplyToJSON NOT LIKE ? ESCAPE '\\'", "%"+escLikeChars(w)+"%")
 				} else {
-					q.Where("ReplyToJSON LIKE ?", "%"+escPercentChar(w)+"%")
+					q.Where("ReplyToJSON LIKE ? ESCAPE '\\'", "%"+escLikeChars(w)+"%")
 				}
 			}
 		} else if strings.HasPrefix(lw, "addressed:") {
 			w = cleanString(w[10:])
-			arg := "%" + escPercentChar(w) + "%"
+			arg := "%" + escLikeChars(w) + "%"
 			if w != "" {
 				if exclude {
-					q.Where("(ToJSON NOT LIKE ? AND FromJSON NOT LIKE ? AND CcJSON NOT LIKE ? AND BccJSON NOT LIKE ? AND ReplyToJSON NOT LIKE ?)", arg, arg, arg, arg, arg)
+					q.Where("(ToJSON NOT LIKE ? ESCAPE '\\' AND FromJSON NOT LIKE ? ESCAPE '\\' AND CcJSON NOT LIKE ? ESCAPE '\\' AND BccJSON NOT LIKE ? ESCAPE '\\' AND ReplyToJSON NOT LIKE ? ESCAPE '\\')", arg, arg, arg, arg, arg)
 				} else {
-					q.Where("(ToJSON LIKE ? OR FromJSON LIKE ? OR CcJSON LIKE ? OR BccJSON LIKE ? OR ReplyToJSON LIKE ?)", arg, arg, arg, arg, arg)
+					q.Where("(ToJSON LIKE ? ESCAPE '\\' OR FromJSON LIKE ? ESCAPE '\\' OR CcJSON LIKE ? ESCAPE '\\' OR BccJSON LIKE ? ESCAPE '\\' OR ReplyToJSON LIKE ? ESCAPE '\\')", arg, arg, arg, arg, arg)
 				}
 			}
 		} else if strings.HasPrefix(lw, "subject:") {
 			w = w[8:]
 			if w != "" {
 				if exclude {
-					q.Where("Subject NOT LIKE ?", "%"+escPercentChar(w)+"%")
+					q.Where("Subject NOT LIKE ? ESCAPE '\\'", "%"+escLikeChars(w)+"%")
 				} else {
-					q.Where("Subject LIKE ?", "%"+escPercentChar(w)+"%")
+					q.Where("Subject LIKE ? ESCAPE '\\'", "%"+escLikeChars(w)+"%")
 				}
 			}
 		} else if strings.HasPrefix(lw, "message-id:") {
 			w = cleanString(w[11:])
 			if w != "" {
 				if exclude {
-					q.Where("MessageID NOT LIKE ?", "%"+escPercentChar(w)+"%")
+					q.Where("MessageID NOT LIKE ? ESCAPE '\\'", "%"+escLikeChars(w)+"%")
 				} else {
-					q.Where("MessageID LIKE ?", "%"+escPercentChar(w)+"%")
+					q.Where("MessageID LIKE ? ESCAPE '\\'", "%"+escLikeChars(w)+"%")
 				}
 			}
 		} else if strings.HasPrefix(lw, "tag:") {
@@ -513,9 +513,9 @@ func searchQueryBuilder(searchString, timezone string) *sqlf.Stmt {
 		} else {
 			// search text
 			if exclude {
-				q.Where("SearchText NOT LIKE ?", "%"+cleanString(escPercentChar(strings.ToLower(w)))+"%")
+				q.Where("SearchText NOT LIKE ? ESCAPE '\\'", "%"+escLikeChars(cleanString(w))+"%")
 			} else {
-				q.Where("SearchText LIKE ?", "%"+cleanString(escPercentChar(strings.ToLower(w)))+"%")
+				q.Where("SearchText LIKE ? ESCAPE '\\'", "%"+escLikeChars(cleanString(w))+"%")
 			}
 		}
 	}
