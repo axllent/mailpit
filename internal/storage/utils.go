@@ -129,7 +129,11 @@ func isFile(path string) bool {
 	return true
 }
 
-// Convert `%` to `%%` for SQL searches
-func escPercentChar(s string) string {
-	return strings.ReplaceAll(s, "%", "%%")
+// likeEscaper escapes the SQL LIKE wildcards `%` and `_` (and the escape character
+// itself) so they match literally. Queries must use `LIKE ? ESCAPE '\'`.
+var likeEscaper = strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`)
+
+// escLikeChars escapes a search term for use in a SQL LIKE pattern
+func escLikeChars(s string) string {
+	return likeEscaper.Replace(s)
 }

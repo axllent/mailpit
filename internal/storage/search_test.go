@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"math/rand/v2"
+	"slices"
 	"testing"
 
 	"github.com/axllent/mailpit/config"
@@ -186,18 +187,127 @@ func TestSearchDelete1100(t *testing.T) {
 	assertEqual(t, total, 0, "0 search results expected")
 }
 
-func TestEscPercentChar(t *testing.T) {
+func TestSearchLikeWildcards(t *testing.T) {
+	setup("")
+	defer Close()
+
+	t.Log("Testing search with SQL LIKE wildcard characters")
+
+	// The first message of each pair has a literal `_`, `%` or `\` where the
+	// second has another character, so a search for the first must not match the second.
+	type addrs struct{ from, to, cc, bcc, replyTo string }
+
+	messages := []struct {
+		addrs     addrs
+		subject   string
+		body      string
+		messageID string
+	}{
+		{addrs{"from_a", "to_a", "cc_a", "blind_a", "reply_a"}, "Save 50% today", "ref abc_def", "<id_1@example.com>"},
+		{addrs{"fromxa", "toxa", "ccxa", "blindxa", "replyxa"}, "Save 50 on everything today", "ref abcXdef", "<idx1@example.com>"},
+		{addrs{"other1", "other1", "other1", "other1", "other1"}, `dir a\b`, "body", "<other1@example.com>"},
+		{addrs{"other2", "other2", "other2", "other2", "other2"}, "dir ab", "body", "<other2@example.com>"},
+	}
+
+	for _, m := range messages {
+		env, err := enmime.Builder().
+			From("", m.addrs.from+"@example.com").
+			To("", m.addrs.to+"@example.com").
+			CC("", m.addrs.cc+"@example.com").
+			Header("Bcc", m.addrs.bcc+"@example.com").
+			ReplyTo("", m.addrs.replyTo+"@example.com").
+			Subject(m.subject).
+			Header("Message-Id", m.messageID).
+			Text([]byte(m.body)).
+			Build()
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		buf := new(bytes.Buffer)
+		if err := env.Encode(buf); err != nil {
+			t.Fatal(err)
+		}
+
+		b := buf.Bytes()
+		if _, err := Store(&b, nil); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	searches := []struct {
+		search  string
+		subject string
+	}{
+		{"from:from_a", "Save 50% today"},
+		{"to:to_a", "Save 50% today"},
+		{"cc:cc_a", "Save 50% today"},
+		{"bcc:blind_a", "Save 50% today"},
+		{"reply-to:reply_a", "Save 50% today"},
+		{"addressed:from_a", "Save 50% today"},
+		{"addressed:to_a", "Save 50% today"},
+		{"addressed:cc_a", "Save 50% today"},
+		{"addressed:blind_a", "Save 50% today"},
+		{"addressed:reply_a", "Save 50% today"},
+		{"message-id:id_1", "Save 50% today"},
+		{`subject:"50% today"`, "Save 50% today"},
+		{"abc_def", "Save 50% today"},
+		{`"50% today"`, "Save 50% today"},
+		{`subject:a\b`, `dir a\b`},
+	}
+
+	for _, s := range searches {
+		// the search must match only the literal message
+		summaries, _, err := Search(s.search, "", 0, 0, 100)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(summaries) != 1 || summaries[0].Subject != s.subject {
+			t.Errorf("search %s: expected [%s], got %q", s.search, s.subject, subjects(summaries))
+		}
+
+		// the negated search must exclude only the literal message
+		summaries, _, err = Search("-"+s.search, "", 0, 0, 100)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(summaries) != len(messages)-1 || slices.Contains(subjects(summaries), s.subject) {
+			t.Errorf("search -%s: expected all but [%s], got %q", s.search, s.subject, subjects(summaries))
+		}
+	}
+
+	// deleting by search must only delete the literal match
+	if err := DeleteSearch("to:to_a", ""); err != nil {
+		t.Fatal(err)
+	}
+	if n := CountTotal(); n != uint64(len(messages)-1) {
+		t.Errorf("DeleteSearch to:to_a: expected %d messages left, got %d", len(messages)-1, n)
+	}
+}
+
+func subjects(summaries []MessageSummary) []string {
+	s := []string{}
+	for _, m := range summaries {
+		s = append(s, m.Subject)
+	}
+	return s
+}
+
+func TestEscLikeChars(t *testing.T) {
 	tests := map[string]string{}
 	tests["this is a test"] = "this is a test"
-	tests["this is% a test"] = "this is%% a test"
-	tests["this is%% a test"] = "this is%%%% a test"
-	tests["this is%%% a test"] = "this is%%%%%% a test"
-	tests["%this is% a test"] = "%%this is%% a test"
+	tests["this is% a test"] = `this is\% a test`
+	tests["this is%% a test"] = `this is\%\% a test`
+	tests["this is%%% a test"] = `this is\%\%\% a test`
+	tests["%this is% a test"] = `\%this is\% a test`
+	tests["john_doe"] = `john\_doe`
+	tests[`a\b`] = `a\\b`
+	tests[`a\%_b`] = `a\\\%\_b`
 	tests["Ä"] = "Ä"
-	tests["Ä%"] = "Ä%%"
+	tests["Ä%"] = `Ä\%`
 
 	for search, expected := range tests {
-		res := escPercentChar(search)
+		res := escLikeChars(search)
 		assertEqual(t, res, expected, "no match")
 	}
 }
