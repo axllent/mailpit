@@ -44,19 +44,22 @@ func GetMessageHTML(w http.ResponseWriter, r *http.Request) {
 		var err error
 		id, err = storage.LatestID(r)
 		if err != nil {
+			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 			w.WriteHeader(404)
-			_, _ = fmt.Fprint(w, err.Error())
+			_, _ = fmt.Fprint(w, err.Error()) // #nosec G705 -- served as text/plain
 			return
 		}
 	}
 
 	msg, err := storage.GetMessage(id)
 	if err != nil {
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		w.WriteHeader(404)
 		_, _ = fmt.Fprint(w, "Message not found")
 		return
 	}
 	if msg.HTML == "" {
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		w.WriteHeader(404)
 		_, _ = fmt.Fprint(w, "This message does not contain a HTML part")
 		return
@@ -98,7 +101,7 @@ func GetMessageHTML(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Add("Content-Type", "text/html; charset=utf-8")
-	_, _ = w.Write([]byte(htmlStr))
+	_, _ = w.Write([]byte(htmlStr)) // #nosec G705 -- intentionally renders stored email HTML for UI integration testing
 }
 
 // GetMessageText (method: GET) returns a message's text part
@@ -128,21 +131,23 @@ func GetMessageText(w http.ResponseWriter, r *http.Request) {
 		var err error
 		id, err = storage.LatestID(r)
 		if err != nil {
+			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 			w.WriteHeader(404)
-			_, _ = fmt.Fprint(w, err.Error())
+			_, _ = fmt.Fprint(w, err.Error()) // #nosec G705 -- served as text/plain
 			return
 		}
 	}
 
 	msg, err := storage.GetMessage(id)
 	if err != nil {
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		w.WriteHeader(404)
 		_, _ = fmt.Fprint(w, "Message not found")
 		return
 	}
 
 	w.Header().Add("Content-Type", "text/plain; charset=utf-8")
-	_, _ = w.Write([]byte(msg.Text))
+	_, _ = w.Write([]byte(msg.Text)) // #nosec G705 -- served as text/plain, not rendered as HTML
 }
 
 // This will rewrite all inline image paths to API URLs

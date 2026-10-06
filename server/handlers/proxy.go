@@ -143,7 +143,7 @@ func ProxyHandler(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 
-	req, err := http.NewRequest("GET", uri, nil)
+	req, err := http.NewRequest("GET", uri, nil) // #nosec G704 -- URI is allowlisted via hasAsset + validated by IsValidLinkURL + internal IPs blocked by safeDialContext
 	if err != nil {
 		logger.Log().Warnf("[proxy] %s", err.Error())
 		httpError(w, "Error: invalid request")
@@ -153,7 +153,7 @@ func ProxyHandler(w http.ResponseWriter, r *http.Request) {
 	// use requesting useragent
 	req.Header.Set("User-Agent", r.UserAgent())
 
-	resp, err := client.Do(req)
+	resp, err := client.Do(req) // #nosec G704 -- URI is allowlisted via hasAsset + validated by IsValidLinkURL + internal IPs blocked by safeDialContext
 	if err != nil {
 		logger.Log().Warnf("[proxy] %s", err.Error())
 		httpError(w, "Error: invalid request")
@@ -390,7 +390,7 @@ func httpError(w http.ResponseWriter, msg string) {
 	w.Header().Set("Content-Security-Policy", config.ContentSecurityPolicy)
 	w.Header().Set("Content-Type", "text/plain")
 	w.WriteHeader(http.StatusBadRequest)
-	_, _ = fmt.Fprint(w, msg)
+	_, _ = fmt.Fprint(w, msg) // #nosec G705 -- msg is always a hardcoded string literal, never user input
 }
 
 // SupportedProxyContentType checks if the content-type is supported for proxying.

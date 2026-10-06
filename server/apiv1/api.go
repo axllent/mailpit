@@ -27,7 +27,7 @@ func httpError(w http.ResponseWriter, msg string) {
 	w.Header().Set("Content-Security-Policy", config.ContentSecurityPolicy)
 	w.Header().Set("Content-Type", "text/plain")
 	w.WriteHeader(http.StatusBadRequest)
-	_, _ = fmt.Fprint(w, msg)
+	_, _ = fmt.Fprint(w, msg) // #nosec G705 -- served as text/plain (set above)
 }
 
 // httpJSONError returns a basic error message (400 response) in JSON format

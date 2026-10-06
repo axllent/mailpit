@@ -67,7 +67,7 @@ type Client struct {
 func (c *Client) readPump() {
 	defer func() {
 		c.hub.unregister <- c
-		c.conn.Close()
+		_ = c.conn.Close()
 	}()
 
 	for {
@@ -91,7 +91,7 @@ func (c *Client) writePump() {
 	defer func() {
 		ticker.Stop()
 		c.hub.unregister <- c
-		c.conn.Close()
+		_ = c.conn.Close()
 	}()
 	for {
 		select {

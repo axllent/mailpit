@@ -62,7 +62,7 @@ func Thumbnail(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Add("Content-Type", "image/jpeg")
 	w.Header().Set("Content-Disposition", "filename=\""+url.PathEscape(jpegName(fileName))+"\"")
-	_, _ = w.Write(data)
+	_, _ = w.Write(data) // #nosec G705 -- JPEG bytes from thumbnail.Generate, served as image/jpeg
 }
 
 // writeBlank returns a blank thumbnail when the attachment is not a
@@ -71,7 +71,7 @@ func writeBlank(w http.ResponseWriter, fileName string) {
 	data, _ := thumbnail.Generate(nil, thumbWidth, thumbHeight)
 	w.Header().Add("Content-Type", "image/jpeg")
 	w.Header().Set("Content-Disposition", "filename=\""+url.PathEscape(jpegName(fileName))+"\"")
-	_, _ = w.Write(data)
+	_, _ = w.Write(data) // #nosec G705 -- blank JPEG from thumbnail.Generate, served as image/jpeg
 }
 
 // jpegName replaces the extension of the source filename with .jpg to
