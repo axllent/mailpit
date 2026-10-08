@@ -37,6 +37,9 @@ var (
 	// extract mail size from 'MAIL FROM' parameter
 	mailFromSizeRE = regexp.MustCompile(`(?U)(^| |,)[Ss][Ii][Zz][Ee]=(.*)($|,| )`)
 
+	// extract auth from 'MAIL FROM' parameter
+	mailFromAuthRE = regexp.MustCompile(`(?U)(^| |,)[Aa][Uu][Tt][Hh]=(.*)($|,| )`)
+
 	// checkErrFormatRE matches SMTP error responses with a status code prefix
 	checkErrFormatRE = regexp.MustCompile(`^([2-5][0-9]{2})[\s\-](.+)$`)
 )
@@ -460,28 +463,41 @@ loop:
 					break
 				}
 
-				// Validate the SIZE parameter if one was sent.
+				// Validate parameters if sent.
 				if len(match[2]) > 0 { // A parameter is present
-					sizeMatch := mailFromSizeRE.FindStringSubmatch(match[3])
-					if sizeMatch == nil {
-						// ignore other parameter
-						from = match[1]
-						gotFROM = true
-						s.writef("250 2.1.0 Ok")
-					} else {
+					if authMatch := mailFromAuthRE.FindStringSubmatch(match[3]); authMatch != nil {
+						if !isValidAuthParam(authMatch[2]) {
+							s.writef("501 5.5.4 Syntax error in parameters or arguments (invalid AUTH parameter)")
+							to = nil
+							hasRejectedRecipients = false
+							buffer.Reset()
+							break
+						}
+					}
+
+					if sizeMatch := mailFromSizeRE.FindStringSubmatch(match[3]); sizeMatch != nil {
 						// Enforce the maximum message size if one is set.
 						size, err := strconv.Atoi(sizeMatch[2])
 						if err != nil { // Bad SIZE parameter
 							s.writef("501 5.5.4 Syntax error in parameters or arguments (invalid SIZE parameter)")
-						} else if s.srv.MaxSize > 0 && size > s.srv.MaxSize { // SIZE above maximum size, if set
+							to = nil
+							hasRejectedRecipients = false
+							buffer.Reset()
+							break
+						}
+						if s.srv.MaxSize > 0 && size > s.srv.MaxSize { // SIZE above maximum size, if set
 							err = maxSizeExceeded(s.srv.MaxSize)
 							s.writef("%s", err.Error())
-						} else { // SIZE ok
-							from = match[1]
-							gotFROM = true
-							s.writef("250 2.1.0 Ok")
+							to = nil
+							hasRejectedRecipients = false
+							buffer.Reset()
+							break
 						}
 					}
+
+					from = match[1]
+					gotFROM = true
+					s.writef("250 2.1.0 Ok")
 				} else { // No parameters after FROM
 					from = match[1]
 					gotFROM = true
@@ -1183,4 +1199,30 @@ func hasUnquotedWhitespace(s string) bool {
 		}
 	}
 	return false
+}
+
+// isValidAuthParam validates an AUTH parameter value per RFC 4954 and RFC 3461 (xtext).
+func isValidAuthParam(val string) bool {
+	if val == "<>" {
+		return true
+	}
+	if len(val) == 0 {
+		return false
+	}
+	for i := 0; i < len(val); i++ {
+		c := val[i]
+		if c == '+' {
+			if i+2 >= len(val) || !isHex(val[i+1]) || !isHex(val[i+2]) {
+				return false
+			}
+			i += 2
+		} else if c < 33 || c > 126 || c == '=' {
+			return false
+		}
+	}
+	return true
+}
+
+func isHex(c byte) bool {
+	return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')
 }
