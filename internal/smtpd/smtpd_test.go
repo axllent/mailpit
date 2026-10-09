@@ -233,10 +233,11 @@ func TestCmdMAIL(t *testing.T) {
 	cmdCode(t, conn, "MAIL FROM:<sender@example.com> SIZE= ", "501")
 	cmdCode(t, conn, "MAIL FROM:<sender@example.com> SIZE=foo", "501")
 
-	// MAIL with BODY parameter should be accepted (8BITMIME support)
+	// MAIL with BODY and SIZE parameters (space-separated per RFC 5321)
 	cmdCode(t, conn, "MAIL FROM:<sender@example.com> BODY=8BITMIME", "250")
-	cmdCode(t, conn, "MAIL FROM:<sender@example.com> BODY=8BITMIME,SIZE=1000", "250")
-	cmdCode(t, conn, "MAIL FROM:<sender@example.com> BODY=8BITMIME,SIZE=foo", "501") // SIZE validation error
+	cmdCode(t, conn, "MAIL FROM:<sender@example.com> BODY=8BITMIME SIZE=1000", "250")
+	cmdCode(t, conn, "MAIL FROM:<sender@example.com> SIZE=1000 BODY=8BITMIME", "250")
+	cmdCode(t, conn, "MAIL FROM:<sender@example.com> BODY=8BITMIME SIZE=foo", "501")
 
 	// MAIL with valid AUTH parameter should return 250 Ok
 	cmdCode(t, conn, "MAIL FROM:<sender@example.com> AUTH=<>", "250")

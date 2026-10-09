@@ -35,10 +35,10 @@ var (
 	mailFromRE = regexp.MustCompile(`(?i)FROM: ?<(|[^<>\v]+)>( |$)(.*)?`) // Delivery Status Notifications are sent with "MAIL FROM:<>"
 
 	// extract mail size from 'MAIL FROM' parameter
-	mailFromSizeRE = regexp.MustCompile(`(?U)(^| |,)[Ss][Ii][Zz][Ee]=(.*)($|,| )`)
+	mailFromSizeRE = regexp.MustCompile(`(?U)(^| )[Ss][Ii][Zz][Ee]=(.*)($| )`)
 
 	// extract auth from 'MAIL FROM' parameter
-	mailFromAuthRE = regexp.MustCompile(`(?U)(^| |,)[Aa][Uu][Tt][Hh]=(.*)($|,| )`)
+	mailFromAuthRE = regexp.MustCompile(`(?U)(^| )[Aa][Uu][Tt][Hh]=(.*)($| )`)
 
 	// checkErrFormatRE matches SMTP error responses with a status code prefix
 	checkErrFormatRE = regexp.MustCompile(`^([2-5][0-9]{2})[\s\-](.+)$`)
