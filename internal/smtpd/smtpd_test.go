@@ -245,6 +245,9 @@ func TestCmdMAIL(t *testing.T) {
 	cmdCode(t, conn, "MAIL FROM:<sender@example.com> AUTH=user@example.com", "250")
 	cmdCode(t, conn, "MAIL FROM:<sender@example.com> AUTH=user+2Bname", "250")
 	cmdCode(t, conn, "MAIL FROM:<sender@example.com> SIZE=1000 AUTH=username", "250")
+	cmdCode(t, conn, "MAIL FROM:<sender@example.com> AUTH=username SIZE=1000", "250")
+	cmdCode(t, conn, "MAIL FROM:<sender@example.com> BODY=8BITMIME SIZE=1000 AUTH=username", "250")
+	cmdCode(t, conn, "MAIL FROM:<sender@example.com> AUTH=username BODY=8BITMIME SIZE=1000", "250")
 
 	// MAIL with invalid AUTH parameter must return 501 syntax error
 	cmdCode(t, conn, "MAIL FROM:<sender@example.com> AUTH=", "501")
