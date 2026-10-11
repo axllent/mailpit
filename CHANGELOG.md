@@ -2,6 +2,23 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.31.5]
+
+### Chore
+- Add gosec #nosec annotations and set explicit Content-Type on error responses
+- Update Go dependencies
+- Update node dependencies
+
+### Fix
+- Escape `_` and `%` in search terms so they match literally ([#742](https://github.com/axllent/mailpit/issues/742))
+- Match `&` and `\` in address searches ([#743](https://github.com/axllent/mailpit/issues/743))
+- Validate AUTH parameter in MAIL FROM command ([#744](https://github.com/axllent/mailpit/issues/744))
+- MAIL FROM parameters must be space-separated per RFC 5321
+
+### Test
+- Include additional tests for MAIL FROM parameters
+
+
 ## [v1.31.4]
 
 ### Fix
