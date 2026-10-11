@@ -161,8 +161,9 @@ func SpamAssassinCheck(w http.ResponseWriter, r *http.Request) {
 		var err error
 		id, err = storage.LatestID(r)
 		if err != nil {
+			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 			w.WriteHeader(404)
-			_, _ = fmt.Fprint(w, err.Error())
+			_, _ = fmt.Fprint(w, err.Error()) // #nosec G705 -- served as text/plain
 			return
 		}
 	}

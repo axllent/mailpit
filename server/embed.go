@@ -47,7 +47,7 @@ func embedController(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", contentType(p))
-	_, _ = w.Write(b)
+	_, _ = w.Write(b) // #nosec G705 -- content is from compile-time embed.FS, not user input
 }
 
 // ContentType supports only a few content types, limited to this application's needs.

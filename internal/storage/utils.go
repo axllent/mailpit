@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"encoding/json"
 	"net/mail"
 	"os"
 	"regexp"
@@ -129,7 +130,24 @@ func isFile(path string) bool {
 	return true
 }
 
-// Convert `%` to `%%` for SQL searches
-func escPercentChar(s string) string {
-	return strings.ReplaceAll(s, "%", "%%")
+// likeEscaper escapes the SQL LIKE wildcards `%` and `_` (and the escape character
+// itself) so they match literally. Queries must use `LIKE ? ESCAPE '\'`.
+var likeEscaper = strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`)
+
+// escLikeChars escapes a search term for use in a SQL LIKE pattern
+func escLikeChars(s string) string {
+	return likeEscaper.Replace(s)
+}
+
+// escJSONChars encodes a search term the way encoding/json stores it in the message
+// metadata (eg: `&` as `\u0026` and `\` as `\\`), so it can be matched against
+// the To, From, Cc, Bcc and ReplyTo JSON.
+func escJSONChars(s string) string {
+	b, err := json.Marshal(s)
+	if err != nil {
+		return s
+	}
+
+	// remove the surrounding quotes
+	return string(b[1 : len(b)-1])
 }

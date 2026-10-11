@@ -233,14 +233,28 @@ func TestCmdMAIL(t *testing.T) {
 	cmdCode(t, conn, "MAIL FROM:<sender@example.com> SIZE= ", "501")
 	cmdCode(t, conn, "MAIL FROM:<sender@example.com> SIZE=foo", "501")
 
-	// MAIL with BODY parameter should be accepted (8BITMIME support)
+	// MAIL with BODY and SIZE parameters (space-separated per RFC 5321)
 	cmdCode(t, conn, "MAIL FROM:<sender@example.com> BODY=8BITMIME", "250")
-	cmdCode(t, conn, "MAIL FROM:<sender@example.com> BODY=8BITMIME,SIZE=1000", "250")
-	cmdCode(t, conn, "MAIL FROM:<sender@example.com> BODY=8BITMIME,SIZE=foo", "501") // SIZE validation error
+	cmdCode(t, conn, "MAIL FROM:<sender@example.com> BODY=8BITMIME SIZE=1000", "250")
+	cmdCode(t, conn, "MAIL FROM:<sender@example.com> SIZE=1000 BODY=8BITMIME", "250")
+	cmdCode(t, conn, "MAIL FROM:<sender@example.com> BODY=8BITMIME SIZE=foo", "501")
 
-	// TODO: MAIL with valid AUTH parameter should return 250 Ok
+	// MAIL with valid AUTH parameter should return 250 Ok
+	cmdCode(t, conn, "MAIL FROM:<sender@example.com> AUTH=<>", "250")
+	cmdCode(t, conn, "MAIL FROM:<sender@example.com> AUTH=username", "250")
+	cmdCode(t, conn, "MAIL FROM:<sender@example.com> AUTH=user@example.com", "250")
+	cmdCode(t, conn, "MAIL FROM:<sender@example.com> AUTH=user+2Bname", "250")
+	cmdCode(t, conn, "MAIL FROM:<sender@example.com> SIZE=1000 AUTH=username", "250")
+	cmdCode(t, conn, "MAIL FROM:<sender@example.com> AUTH=username SIZE=1000", "250")
+	cmdCode(t, conn, "MAIL FROM:<sender@example.com> BODY=8BITMIME SIZE=1000 AUTH=username", "250")
+	cmdCode(t, conn, "MAIL FROM:<sender@example.com> AUTH=username BODY=8BITMIME SIZE=1000", "250")
 
-	// TODO: MAIL with invalid AUTH parameter must return 501 syntax error
+	// MAIL with invalid AUTH parameter must return 501 syntax error
+	cmdCode(t, conn, "MAIL FROM:<sender@example.com> AUTH=", "501")
+	cmdCode(t, conn, "MAIL FROM:<sender@example.com> AUTH= ", "501")
+	cmdCode(t, conn, "MAIL FROM:<sender@example.com> AUTH=user+ZZ", "501")
+	cmdCode(t, conn, "MAIL FROM:<sender@example.com> AUTH=user=name", "501")
+	cmdCode(t, conn, "MAIL FROM:<sender@example.com> AUTH=user+", "501")
 
 	cmdCode(t, conn, "QUIT", "221")
 	_ = conn.Close()

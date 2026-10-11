@@ -38,8 +38,9 @@ func GetMessage(w http.ResponseWriter, r *http.Request) {
 		var err error
 		id, err = storage.LatestID(r)
 		if err != nil {
+			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 			w.WriteHeader(404)
-			_, _ = fmt.Fprint(w, err.Error())
+			_, _ = fmt.Fprint(w, err.Error()) // #nosec G705 -- served as text/plain
 			return
 		}
 	}
@@ -82,8 +83,9 @@ func GetHeaders(w http.ResponseWriter, r *http.Request) {
 		var err error
 		id, err = storage.LatestID(r)
 		if err != nil {
+			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 			w.WriteHeader(404)
-			_, _ = fmt.Fprint(w, err.Error())
+			_, _ = fmt.Fprint(w, err.Error()) // #nosec G705 -- served as text/plain
 			return
 		}
 	}
@@ -136,8 +138,9 @@ func DownloadAttachment(w http.ResponseWriter, r *http.Request) {
 		var err error
 		id, err = storage.LatestID(r)
 		if err != nil {
+			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 			w.WriteHeader(404)
-			_, _ = fmt.Fprint(w, err.Error())
+			_, _ = fmt.Fprint(w, err.Error()) // #nosec G705 -- served as text/plain
 			return
 		}
 	}
@@ -163,7 +166,7 @@ func DownloadAttachment(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", contentType)
 	w.Header().Set("Content-Disposition", disposition+"; filename=\""+url.PathEscape(fileName)+"\"")
-	_, _ = w.Write(a.Content)
+	_, _ = w.Write(a.Content) // #nosec G705 -- HTML/SVG/XML content types are forced to application/octet-stream above
 }
 
 // DownloadRaw (method: GET) returns the full email source as plain text
@@ -187,14 +190,15 @@ func DownloadRaw(w http.ResponseWriter, r *http.Request) {
 	//    404: NotFoundResponse
 
 	id := r.PathValue("id")
-	dl := r.FormValue("dl")
+	dl := r.FormValue("dl") // #nosec G120 -- GET request, FormValue only parses URL query string
 
 	if id == "latest" {
 		var err error
 		id, err = storage.LatestID(r)
 		if err != nil {
+			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 			w.WriteHeader(404)
-			_, _ = fmt.Fprint(w, err.Error())
+			_, _ = fmt.Fprint(w, err.Error()) // #nosec G705 -- served as text/plain
 			return
 		}
 	}
@@ -209,5 +213,5 @@ func DownloadRaw(w http.ResponseWriter, r *http.Request) {
 	if dl == "1" {
 		w.Header().Set("Content-Disposition", "attachment; filename=\""+id+".eml\"")
 	}
-	_, _ = w.Write(data)
+	_, _ = w.Write(data) // #nosec G705 -- raw email source served as text/plain, not rendered as HTML
 }

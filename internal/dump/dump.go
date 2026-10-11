@@ -220,14 +220,14 @@ func saveMessages() error {
 			}
 
 			if res.StatusCode != http.StatusOK {
-				res.Body.Close()
+				_ = res.Body.Close()
 				logger.Log().Errorf("error fetching message %s: HTTP %d", id, res.StatusCode)
 				continue
 			}
 
 			if config.MaxMessageSize > 0 {
 				b, err = io.ReadAll(io.LimitReader(res.Body, limit+1))
-				res.Body.Close()
+				_ = res.Body.Close()
 
 				if err != nil {
 					logger.Log().Errorf("error fetching message %s: %s", id, err.Error())
@@ -240,7 +240,7 @@ func saveMessages() error {
 				}
 			} else {
 				b, err = io.ReadAll(res.Body)
-				res.Body.Close()
+				_ = res.Body.Close()
 
 				if err != nil {
 					logger.Log().Errorf("error fetching message %s: %s", id, err.Error())
