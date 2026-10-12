@@ -842,75 +842,78 @@ export default {
 				<div
 					v-if="mailbox.showSearchSuggestions && showDropdown && flatSuggestions.length"
 					ref="dropdownMenu"
-					class="search-autocomplete dropdown-menu show shadow-sm py-1"
+					class="search-autocomplete dropdown-menu show shadow-sm p-0"
 					role="listbox"
 					@mousedown.prevent
 					@mouseleave="selectedIndex = -1"
 				>
-					<template v-for="(group, gIdx) in groupedSuggestions" :key="group.name">
-						<hr v-if="gIdx > 0" class="dropdown-divider my-1" />
-						<div
-							class="dropdown-header text-uppercase small fw-bold d-flex justify-content-between align-items-center py-1"
-						>
-							<span>{{ group.name }}</span>
-							<button
-								v-if="group.isHistory"
-								type="button"
-								class="btn btn-link btn-sm p-0 text-decoration-none text-muted"
-								style="font-size: 0.72rem"
-								@click.stop="clearSearchHistory"
+					<div class="search-autocomplete-body py-1">
+						<template v-for="(group, gIdx) in groupedSuggestions" :key="group.name">
+							<hr v-if="gIdx > 0" class="dropdown-divider my-1" />
+							<div
+								class="dropdown-header text-uppercase small fw-bold d-flex justify-content-between align-items-center py-1"
 							>
-								Clear all
+								<span>{{ group.name }}</span>
+								<button
+									v-if="group.isHistory"
+									type="button"
+									class="btn btn-link btn-sm p-0 text-decoration-none text-muted"
+									style="font-size: 0.72rem"
+									@click.stop="clearSearchHistory"
+								>
+									Clear all
+								</button>
+							</div>
+							<button
+								v-for="item in group.items"
+								:key="item.key"
+								type="button"
+								class="dropdown-item d-flex align-items-center justify-content-between py-1 px-3 text-start"
+								:class="{ active: selectedIndex === item.flatIndex }"
+								role="option"
+								:aria-selected="selectedIndex === item.flatIndex"
+								@mouseenter="selectedIndex = item.flatIndex"
+								@click="selectItem(item)"
+							>
+								<div class="d-flex align-items-center text-truncate me-2">
+									<i
+										class="bi me-2 flex-shrink-0"
+										:class="[
+											item.icon,
+											selectedIndex === item.flatIndex ? 'text-white' : 'text-body-secondary',
+										]"
+										:style="item.iconStyle || ''"
+									></i>
+									<span class="font-monospace fw-semibold text-truncate me-2">{{ item.label }}</span>
+								</div>
+								<div class="d-flex align-items-center flex-shrink-0">
+									<span
+										class="small text-truncate d-none d-sm-inline"
+										:class="
+											selectedIndex === item.flatIndex ? 'text-white-50' : 'text-body-secondary'
+										"
+									>
+										{{ item.isHistory ? "Recent search" : item.description }}
+									</span>
+									<span
+										v-if="item.isHistory"
+										class="btn btn-sm btn-link p-0 border-0 ms-2"
+										:class="selectedIndex === item.flatIndex ? 'text-white' : 'text-body-secondary'"
+										title="Remove from history"
+										aria-label="Remove from history"
+										role="button"
+										@click.stop="removeFromSearchHistory(item.value)"
+									>
+										<i class="bi bi-x-lg"></i>
+									</span>
+								</div>
 							</button>
-						</div>
-						<button
-							v-for="item in group.items"
-							:key="item.key"
-							type="button"
-							class="dropdown-item d-flex align-items-center justify-content-between py-1 px-3 text-start"
-							:class="{ active: selectedIndex === item.flatIndex }"
-							role="option"
-							:aria-selected="selectedIndex === item.flatIndex"
-							@mouseenter="selectedIndex = item.flatIndex"
-							@click="selectItem(item)"
-						>
-							<div class="d-flex align-items-center text-truncate me-2">
-								<i
-									class="bi me-2 flex-shrink-0"
-									:class="[
-										item.icon,
-										selectedIndex === item.flatIndex ? 'text-white' : 'text-body-secondary',
-									]"
-									:style="item.iconStyle || ''"
-								></i>
-								<span class="font-monospace fw-semibold text-truncate me-2">{{ item.label }}</span>
-							</div>
-							<div class="d-flex align-items-center flex-shrink-0">
-								<span
-									class="small text-truncate d-none d-sm-inline"
-									:class="selectedIndex === item.flatIndex ? 'text-white-50' : 'text-body-secondary'"
-								>
-									{{ item.isHistory ? "Recent search" : item.description }}
-								</span>
-								<span
-									v-if="item.isHistory"
-									class="btn btn-sm btn-link p-0 border-0 ms-2"
-									:class="selectedIndex === item.flatIndex ? 'text-white' : 'text-body-secondary'"
-									title="Remove from history"
-									aria-label="Remove from history"
-									role="button"
-									@click.stop="removeFromSearchHistory(item.value)"
-								>
-									<i class="bi bi-x-lg"></i>
-								</span>
-							</div>
-						</button>
-					</template>
+						</template>
+					</div>
 
-					<!-- Dropdown footer with keyboard hints -->
-					<hr class="dropdown-divider my-1" />
+					<!-- Static dropdown footer with keyboard hints and syntax help -->
 					<div
-						class="dropdown-item-text py-1 px-3 d-flex justify-content-between align-items-center text-body-secondary small"
+						class="search-autocomplete-footer dropdown-item-text pt-1 pb-2 px-3 d-flex justify-content-between align-items-center text-body-secondary small"
 					>
 						<span style="font-size: 0.75rem">
 							<kbd class="bg-body border text-body">↑</kbd>
