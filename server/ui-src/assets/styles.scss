@@ -471,8 +471,9 @@ pre[class*="language-"] {
 .search-autocomplete {
 	position: absolute;
 	top: 100%;
-	left: 0;
-	right: 0;
+	left: -1px;
+	right: -1px;
+	min-width: 0;
 	z-index: 1055;
 	margin-top: 2px;
 	max-height: 380px;
