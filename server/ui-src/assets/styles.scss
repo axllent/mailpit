@@ -466,3 +466,41 @@ pre[class*="language-"] {
 		box-shadow: none;
 	}
 }
+
+// Search autocomplete dropdown
+.search-autocomplete {
+	position: absolute;
+	top: 100%;
+	left: 0;
+	right: 0;
+	z-index: 1055;
+	margin-top: 2px;
+	max-height: 380px;
+	overflow-y: auto;
+
+	.dropdown-item {
+		white-space: normal;
+		cursor: pointer;
+		user-select: none;
+
+		code {
+			color: inherit;
+		}
+
+		&.active {
+			code {
+				color: inherit;
+			}
+		}
+	}
+}
+
+.search-filter-badge {
+	cursor: pointer;
+	font-family: var(--bs-font-monospace);
+	transition: opacity 0.15s ease;
+
+	&:hover {
+		opacity: 0.85;
+	}
+}
