@@ -389,6 +389,7 @@ export default {
 							<code>enable notifications</code>, and that you must have Mailpit open in a browser tab to
 							be able to receive the notifications.
 						</p>
+						<p>Click a notification to return to the Mailpit tab and open that message.</p>
 					</div>
 					<div class="modal-footer">
 						<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>

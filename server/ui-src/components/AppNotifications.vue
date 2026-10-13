@@ -78,7 +78,7 @@ export default {
 						this.pauseNotifications = true;
 						const from = response.Data.From !== null ? response.Data.From.Address : "[unknown]";
 						const subject = String(response.Data.Subject ?? "").substring(0, 100);
-						this.browserNotify("New mail from: " + from, subject);
+						this.browserNotify("New mail from: " + from, subject, response.Data.ID);
 						this.setMessageToast(response.Data);
 						// delay notifications by 2s
 						window.setTimeout(() => {
@@ -174,7 +174,7 @@ export default {
 			}, 15000);
 		},
 
-		browserNotify(title, message) {
+		browserNotify(title, message, messageID) {
 			if (!("Notification" in window)) {
 				return;
 			}
@@ -185,7 +185,13 @@ export default {
 					icon: this.resolve("/notification.png"),
 				};
 
-				(() => new Notification(title, options))();
+				const notification = new Notification(title, options);
+				notification.onclick = (event) => {
+					event.preventDefault();
+					window.focus();
+					this.$router.push("/view/" + messageID);
+					notification.close();
+				};
 			}
 		},
 
