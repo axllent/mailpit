@@ -166,6 +166,10 @@ func pruneMessages() {
 
 	if err = tx.Commit(); err != nil {
 		logger.Log().Errorf("[db] %s", err.Error())
+	} else {
+		for _, id := range ids {
+			invalidateEnvelopeCache(id)
+		}
 	}
 
 	if err := pruneUnusedTags(); err != nil {

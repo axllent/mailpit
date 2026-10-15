@@ -15,6 +15,7 @@ type envelopeCacheEntry struct {
 	env     *enmime.Envelope
 	rawSize uint64
 	created time.Time
+	timer   *time.Timer // removes the entry once the TTL expires
 }
 
 // envelopeCache provides a short-lived cache for parsed enmime envelopes.
@@ -76,11 +77,7 @@ func getCachedEnvelope(id string) (*enmime.Envelope, uint64, error) {
 		envelopeCache.Lock()
 		delete(envelopeCache.inflight, id)
 		if inf.err == nil {
-			envelopeCache.entries[id] = &envelopeCacheEntry{
-				env:     inf.env,
-				rawSize: inf.size,
-				created: time.Now(),
-			}
+			storeEnvelopeLocked(id, inf.env, inf.size)
 		}
 		envelopeCache.Unlock()
 	}()
@@ -88,6 +85,26 @@ func getCachedEnvelope(id string) (*enmime.Envelope, uint64, error) {
 	inf.env, inf.size, inf.err = parseEnvelope(id)
 
 	return inf.env, inf.size, inf.err
+}
+
+// storeEnvelopeLocked adds an entry to the cache and schedules its removal
+// after the TTL, so entries are freed even if never requested again.
+// The caller must hold envelopeCache's lock.
+func storeEnvelopeLocked(id string, env *enmime.Envelope, size uint64) {
+	if old, ok := envelopeCache.entries[id]; ok {
+		old.timer.Stop()
+	}
+
+	entry := &envelopeCacheEntry{env: env, rawSize: size, created: time.Now()}
+	entry.timer = time.AfterFunc(envelopeCacheTTL, func() {
+		envelopeCache.Lock()
+		defer envelopeCache.Unlock()
+		// only remove our own entry, not a newer one stored under the same ID
+		if envelopeCache.entries[id] == entry {
+			delete(envelopeCache.entries, id)
+		}
+	})
+	envelopeCache.entries[id] = entry
 }
 
 // parseEnvelope fetches a raw message from the database and parses it with enmime.
@@ -109,7 +126,10 @@ func parseEnvelope(id string) (*enmime.Envelope, uint64, error) {
 // e.g. when a message is deleted.
 func invalidateEnvelopeCache(id string) {
 	envelopeCache.Lock()
-	delete(envelopeCache.entries, id)
+	if entry, ok := envelopeCache.entries[id]; ok {
+		entry.timer.Stop()
+		delete(envelopeCache.entries, id)
+	}
 	envelopeCache.Unlock()
 }
 
@@ -117,6 +137,9 @@ func invalidateEnvelopeCache(id string) {
 // e.g. when all messages are deleted.
 func invalidateAllEnvelopeCache() {
 	envelopeCache.Lock()
+	for _, entry := range envelopeCache.entries {
+		entry.timer.Stop()
+	}
 	envelopeCache.entries = make(map[string]*envelopeCacheEntry)
 	envelopeCache.Unlock()
 }
