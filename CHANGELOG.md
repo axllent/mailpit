@@ -2,6 +2,12 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.31.6]
+
+### Fix
+- Remove expired envelope cache entries and clear them on auto-prune ([#748](https://github.com/axllent/mailpit/issues/748))
+
+
 ## [v1.31.5]
 
 ### Chore
