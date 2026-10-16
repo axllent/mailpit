@@ -23,7 +23,7 @@ export default {
 		aria-labelledby="SearchFiltersModalLabel"
 		aria-hidden="true"
 	>
-		<div class="modal-dialog modal-lg modal-dialog-scrollable">
+		<div class="modal-dialog modal-xl modal-dialog-scrollable">
 			<div class="modal-content">
 				<div class="modal-header">
 					<h5 id="SearchFiltersModalLabel" class="modal-title">
@@ -415,7 +415,7 @@ export default {
 						rel="noopener noreferrer"
 						class="btn btn-sm btn-link text-decoration-none"
 					>
-						Search documentation
+						Online documentation
 					</a>
 					<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
 				</div>

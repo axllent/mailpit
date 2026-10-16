@@ -456,6 +456,90 @@ export default {
 						insertText: (isNegated ? "!" : "") + "tag:",
 					});
 				}
+			} else if (/^[!-]?(before|after):/.test(token)) {
+				const m = token.match(/^([!-]?)(before|after):(.*)$/);
+				const sub = m[3];
+				const fmt = (d) =>
+					`${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, "0")}/${String(d.getDate()).padStart(2, "0")}`;
+				const daysAgo = (n) => {
+					const d = new Date();
+					d.setDate(d.getDate() - n);
+					return d;
+				};
+				matchingFilters = [
+					{ label: "Today", d: daysAgo(0) },
+					{ label: "Yesterday", d: daysAgo(1) },
+					{ label: "7 days ago", d: daysAgo(7) },
+					{ label: "30 days ago", d: daysAgo(30) },
+				]
+					.filter((v) => fmt(v.d).startsWith(sub))
+					.map((v) => {
+						const k = `${m[1]}${m[2]}:${fmt(v.d)}`;
+						return {
+							key: k,
+							type: "field-value",
+							group: "Dates & sizes",
+							icon: "bi-calendar-event",
+							label: k,
+							description: v.label,
+							insertText: k,
+						};
+					});
+			} else if (/^[!-]?(larger|smaller):/.test(token)) {
+				const m = token.match(/^([!-]?)(larger|smaller):(.*)$/);
+				const sub = m[3];
+				matchingFilters = ["100KB", "500KB", "1MB", "5MB", "10MB"]
+					.filter((v) => v.toLowerCase().startsWith(sub))
+					.map((v) => {
+						const k = `${m[1]}${m[2]}:${v}`;
+						return {
+							key: k,
+							type: "field-value",
+							group: "Dates & sizes",
+							icon: m[2] === "larger" ? "bi-hdd" : "bi-hdd-fill",
+							label: k,
+							description: `Messages ${m[2]} than ${v}`,
+							insertText: k,
+						};
+					});
+			} else if (/^[!-]?(from|to|cc|bcc|reply-to|addressed):/.test(token)) {
+				const m = token.match(/^([!-]?)(from|to|cc|bcc|reply-to|addressed):(.*)$/);
+				const sub = m[3].replace(/^"/, "");
+				const prop = {
+					from: ["From"],
+					to: ["To"],
+					cc: ["Cc"],
+					bcc: ["Bcc"],
+					"reply-to": ["ReplyTo"],
+					addressed: ["From", "To", "Cc", "Bcc", "ReplyTo"],
+				}[m[2]];
+				const seen = new Set();
+				const messages = Array.isArray(mailbox.messages) ? mailbox.messages : [];
+				for (const msg of messages) {
+					for (const p of prop) {
+						const list = Array.isArray(msg[p]) ? msg[p] : msg[p] ? [msg[p]] : [];
+						for (const a of list) {
+							if (a && a.Address && a.Address.toLowerCase().includes(sub)) {
+								seen.add(a.Address);
+							}
+						}
+					}
+				}
+				matchingFilters = [...seen].slice(0, 8).map((addr) => {
+					const k = `${m[1]}${m[2]}:${addr.includes(" ") ? `"${addr}"` : addr}`;
+					return {
+						key: k,
+						type: "field-value",
+						group: "Addresses",
+						icon: "bi-person",
+						label: k,
+						description: "From current messages",
+						insertText: k,
+					};
+				});
+				if (!matchingFilters.length && sub === "") {
+					matchingFilters.push(BASE_FILTERS.find((f) => f.key === m[2] + ":"));
+				}
 			} else if (token.startsWith("!") || token.startsWith("-")) {
 				const sub = token.slice(1);
 				matchingFilters = BASE_FILTERS.filter(
@@ -493,7 +577,7 @@ export default {
 			}
 
 			// Group filters by their group property
-			const groupOrder = ["Fields", "Status & content", "Dates & sizes", "Tags", "Negations"];
+			const groupOrder = ["Fields", "Addresses", "Status & content", "Dates & sizes", "Tags", "Negations"];
 			groupOrder.forEach((grpName) => {
 				const items = matchingFilters.filter((f) => f.group === grpName);
 				if (items.length > 0) {
@@ -701,9 +785,10 @@ export default {
 				}
 			} else if (e.key === "Tab") {
 				// Only complete with Tab if the user has explicitly highlighted a suggestion.
+				// Tab populates the input only, it does not run the search.
 				if (this.showDropdown && this.selectedIndex >= 0 && this.selectedIndex < this.flatSuggestions.length) {
 					e.preventDefault();
-					this.selectItem(this.flatSuggestions[this.selectedIndex]);
+					this.selectItem(this.flatSuggestions[this.selectedIndex], false);
 				}
 			} else if (e.key === "Escape") {
 				if (this.showDropdown) {
@@ -730,12 +815,14 @@ export default {
 		 * and executed. For filter tokens, replaces only the active token under the cursor,
 		 * appending a trailing space for completed values, and restores focus and caret position.
 		 */
-		selectItem(item) {
+		selectItem(item, search = true) {
 			if (item.isHistory) {
 				this.search = item.value;
 				this.showDropdown = false;
-				this.addToSearchHistory(item.value);
-				this.doSearch();
+				if (search) {
+					this.addToSearchHistory(item.value);
+					this.doSearch();
+				}
 				return;
 			}
 
@@ -746,7 +833,11 @@ export default {
 			const after = this.search.slice(tokenInfo.endIndex);
 
 			let insertText = item.insertText;
-			const isCompleteValue = item.type === "value" || item.type === "negation" || item.type === "tag-value";
+			const isCompleteValue =
+				item.type === "value" ||
+				item.type === "negation" ||
+				item.type === "tag-value" ||
+				item.type === "field-value";
 
 			if (isCompleteValue && !after.startsWith(" ")) {
 				insertText += " ";
@@ -754,6 +845,12 @@ export default {
 
 			this.search = before + insertText + after;
 			this.showDropdown = false;
+
+			// A complete filter (e.g. "is:unread", not a "from:" prefix awaiting a value) is searched immediately,
+			// unless the caller only wants the input populated (Tab completion)
+			if (search && isCompleteValue && !item.insertText.endsWith(":")) {
+				this.doSearch();
+			}
 
 			const newCursorPos = before.length + insertText.length;
 			this.$nextTick(() => {
@@ -847,7 +944,7 @@ export default {
 					@mousedown.prevent
 					@mouseleave="selectedIndex = -1"
 				>
-					<div class="search-autocomplete-body py-1">
+					<div class="search-autocomplete-body py-1 small">
 						<template v-for="(group, gIdx) in groupedSuggestions" :key="group.name">
 							<hr v-if="gIdx > 0" class="dropdown-divider my-1" />
 							<div
