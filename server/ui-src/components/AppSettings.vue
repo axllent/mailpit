@@ -260,6 +260,20 @@ export default {
 									</label>
 								</div>
 							</div>
+							<div class="mb-3">
+								<div class="form-check form-switch">
+									<input
+										id="searchSuggestions"
+										v-model="mailbox.showSearchSuggestions"
+										class="form-check-input"
+										type="checkbox"
+										role="switch"
+									/>
+									<label class="form-check-label" for="searchSuggestions">
+										Show search autocomplete suggestions
+									</label>
+								</div>
+							</div>
 						</div>
 
 						<!-- Default relay addresses -->

@@ -46,6 +46,7 @@ export const mailbox = reactive({
 		? localStorage.getItem("mp-time-zone")
 		: Intl.DateTimeFormat().resolvedOptions().timeZone,
 	showAttachmentDetails: localStorage.getItem("mp-show-attachment-details"), // show attachment details
+	showSearchSuggestions: !localStorage.getItem("mp-hide-search-suggestions"),
 });
 
 watch(
@@ -128,6 +129,17 @@ watch(
 			localStorage.setItem("mp-show-attachment-details", "true");
 		} else {
 			localStorage.removeItem("mp-show-attachment-details");
+		}
+	},
+);
+
+watch(
+	() => mailbox.showSearchSuggestions,
+	(v) => {
+		if (v) {
+			localStorage.removeItem("mp-hide-search-suggestions");
+		} else {
+			localStorage.setItem("mp-hide-search-suggestions", "true");
 		}
 	},
 );
