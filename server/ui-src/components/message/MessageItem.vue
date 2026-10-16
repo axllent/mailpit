@@ -8,6 +8,7 @@ import Tags from "bootstrap5-tags";
 import { Tooltip } from "bootstrap";
 import commonMixins from "../../mixins/CommonMixins";
 import { mailbox } from "../../stores/mailbox";
+import { sanitizeHTML } from "../../utils/sanitize";
 import DOMPurify from "dompurify";
 import hljs from "highlight.js/lib/core";
 import xml from "highlight.js/lib/languages/xml";
@@ -71,45 +72,7 @@ export default {
 
 		// remove bad HTML, JavaScript, iframes etc
 		sanitizedHTML() {
-			// set target & rel on all links
-			DOMPurify.addHook("afterSanitizeAttributes", (node) => {
-				if (
-					node.tagName !== "A" ||
-					(node.hasAttribute("href") && node.getAttribute("href").substring(0, 1) === "#")
-				) {
-					return;
-				}
-				if ("target" in node) {
-					node.setAttribute("target", "_blank");
-					node.setAttribute("rel", "noopener noreferrer");
-				}
-				if (!node.hasAttribute("target") && (node.hasAttribute("xlink:href") || node.hasAttribute("href"))) {
-					node.setAttribute("xlink:show", "_blank");
-				}
-			});
-
-			const clean = DOMPurify.sanitize(this.message.HTML, {
-				WHOLE_DOCUMENT: true,
-				SANITIZE_DOM: false,
-				ADD_TAGS: ["link", "meta", "o:p", "style"],
-				ADD_ATTR: [
-					"bordercolor",
-					"charset",
-					"content",
-					"hspace",
-					"http-equiv",
-					"itemprop",
-					"itemscope",
-					"itemtype",
-					"link",
-					"vertical-align",
-					"vlink",
-					"vspace",
-					"xml:lang",
-				],
-				FORBID_TAGS: ["script", "form"], // all JavaScript should be removed
-				ALLOW_UNKNOWN_PROTOCOLS: true, // allow link href protocols like myapp:// etc
-			});
+			const clean = sanitizeHTML(this.message.HTML);
 
 			// for debugging
 			// this.debugDOMPurify(DOMPurify.removed);
