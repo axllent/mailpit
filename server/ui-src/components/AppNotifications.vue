@@ -186,8 +186,10 @@ export default {
 				};
 
 				const notification = new Notification(title, options);
-				notification.onclick = (event) => {
-					event.preventDefault();
+				// Do not call event.preventDefault() here: it cancels the browser's native focus of this tab,
+				// which is the only way Firefox will off to raise the window and select the tab. window.focus()
+				// is a fallback for browsers that do not focus the tab by default (eg: Chrome).
+				notification.onclick = () => {
 					window.focus();
 					this.$router.push("/view/" + messageID);
 					notification.close();

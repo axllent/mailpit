@@ -87,7 +87,8 @@ for (const base of ["/", "/mailpit/"]) {
 			},
 		});
 		await router.isReady();
-		assert.equal(prevented, true);
+		// the default must not be prevented, or Firefox will not focus the tab / raise the window
+		assert.equal(prevented, false);
 		assert.equal(isFocused(), true);
 		assert.equal(notification.closed, true);
 		assert.equal(router.currentRoute.value.path, "/view/message-1");
