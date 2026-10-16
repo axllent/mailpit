@@ -4,6 +4,7 @@ import Favicon from "./components/AppFavicon.vue";
 import AppBadge from "./components/AppBadge.vue";
 import Notifications from "./components/AppNotifications.vue";
 import EditTags from "./components/EditTags.vue";
+import SearchFiltersModal from "./components/SearchFiltersModal.vue";
 import { mailbox } from "./stores/mailbox";
 
 export default {
@@ -12,6 +13,7 @@ export default {
 		AppBadge,
 		Notifications,
 		EditTags,
+		SearchFiltersModal,
 	},
 
 	mixins: [CommonMixins],
@@ -44,4 +46,5 @@ export default {
 	<AppBadge />
 	<Notifications />
 	<EditTags />
+	<SearchFiltersModal />
 </template>
