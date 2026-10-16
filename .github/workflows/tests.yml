@@ -49,6 +49,9 @@ jobs:
     - name: Run JavaScript linting
       if: startsWith(matrix.os, 'ubuntu') == true
       run: npm run lint
+    - name: Run JavaScript tests
+      if: startsWith(matrix.os, 'ubuntu') == true
+      run: npm test
     - name: Test JavaScript packaging
       if: startsWith(matrix.os, 'ubuntu') == true
       run: npm run package
