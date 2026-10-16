@@ -4,6 +4,7 @@
   "type": "module",
   "private": true,
   "scripts": {
+    "test": "node --test",
     "build": "MINIFY=true node esbuild.config.mjs",
     "watch": "WATCH=true node esbuild.config.mjs",
     "package": "MINIFY=true node esbuild.config.mjs",

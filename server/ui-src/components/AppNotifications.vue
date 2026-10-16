@@ -78,7 +78,7 @@ export default {
 						this.pauseNotifications = true;
 						const from = response.Data.From !== null ? response.Data.From.Address : "[unknown]";
 						const subject = String(response.Data.Subject ?? "").substring(0, 100);
-						this.browserNotify("New mail from: " + from, subject);
+						this.browserNotify("New mail from: " + from, subject, response.Data.ID);
 						this.setMessageToast(response.Data);
 						// delay notifications by 2s
 						window.setTimeout(() => {
@@ -174,7 +174,7 @@ export default {
 			}, 15000);
 		},
 
-		browserNotify(title, message) {
+		browserNotify(title, message, messageID) {
 			if (!("Notification" in window)) {
 				return;
 			}
@@ -185,7 +185,15 @@ export default {
 					icon: this.resolve("/notification.png"),
 				};
 
-				(() => new Notification(title, options))();
+				const notification = new Notification(title, options);
+				// Do not call event.preventDefault() here: it cancels the browser's native focus of this tab,
+				// which is the only way Firefox will off to raise the window and select the tab. window.focus()
+				// is a fallback for browsers that do not focus the tab by default (eg: Chrome).
+				notification.onclick = () => {
+					window.focus();
+					this.$router.push("/view/" + messageID);
+					notification.close();
+				};
 			}
 		},
 
