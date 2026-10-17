@@ -6,12 +6,9 @@ import (
 	"strings"
 	"testing"
 	"time"
-
-	"github.com/axllent/mailpit/internal/logger"
 )
 
 func TestMaxConnections(t *testing.T) {
-	_ = logger.Log() // initialise before concurrent use
 	maxConnections = 3
 	defer func() { maxConnections = 1000 }()
 
@@ -20,7 +17,7 @@ func TestMaxConnections(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	srv := &Server{DisableReverseDNS: true, Hostname: "test", AppName: "test", MaxRecipients: 100}
+	srv := &Server{DisableReverseDNS: true, Hostname: "test", AppName: "test"}
 	go func() { _ = srv.Serve(ln) }()
 	defer func() { _ = srv.Shutdown(t.Context()); _ = ln.Close() }()
 

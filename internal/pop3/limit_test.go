@@ -6,12 +6,9 @@ import (
 	"strings"
 	"testing"
 	"time"
-
-	"github.com/axllent/mailpit/internal/logger"
 )
 
 func TestMaxConnections(t *testing.T) {
-	_ = logger.Log() // initialise before concurrent use
 	ln, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		t.Fatal(err)

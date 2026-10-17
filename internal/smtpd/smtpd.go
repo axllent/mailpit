@@ -239,6 +239,11 @@ func (srv *Server) Serve(ln net.Listener) error {
 
 	defer func() { _ = ln.Close() }()
 
+	// Set before any session starts, as sessions share the server and run concurrently.
+	if srv.MaxRecipients == 0 {
+		srv.MaxRecipients = 100
+	}
+
 	limiter := connlimit.New("smtpd", maxConnections)
 
 	var backoff connlimit.Backoff
