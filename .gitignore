@@ -7,3 +7,5 @@
 /.idea
 *.old
 *.db
+/test-results
+/playwright-report

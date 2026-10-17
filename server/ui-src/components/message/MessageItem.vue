@@ -422,7 +422,7 @@ export default {
 						</tr>
 						<tr class="small">
 							<th>Tags</th>
-							<td>
+							<td data-testid="message-tags">
 								<select
 									v-model="messageTags"
 									class="form-select small tag-selector"
@@ -693,7 +693,7 @@ export default {
 				aria-selected="false"
 			>
 				Link Check
-				<i v-if="linkCheckErrors === 0" class="bi bi-check-all text-success"></i>
+				<i v-if="linkCheckErrors === 0" class="bi bi-check-all text-success" data-testid="link-check-ok"></i>
 				<span v-else-if="linkCheckErrors > 0" class="badge rounded-pill bg-danger">
 					<small>{{ formatNumber(linkCheckErrors) }}</small>
 				</span>

@@ -1,2 +1,5 @@
 /node_modules
 /mailpit
+/e2e
+/playwright.config.js
+/test-results
