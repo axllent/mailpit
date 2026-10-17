@@ -20,7 +20,8 @@ type Logger struct {
 }
 
 var (
-	log *Logger
+	log     *Logger
+	logOnce sync.Once
 	// VerboseLogging for verbose logging
 	VerboseLogging bool
 	// QuietLogging shows only errors
@@ -35,7 +36,7 @@ var (
 // output destination are determined once from VerboseLogging, QuietLogging,
 // NoLogging, and LogFile at the time of first use.
 func Log() *Logger {
-	if log == nil {
+	logOnce.Do(func() {
 		level := slog.LevelInfo
 		switch {
 		case VerboseLogging:
@@ -63,7 +64,7 @@ func Log() *Logger {
 				color: isTerminal(out),
 			}),
 		}
-	}
+	})
 
 	return log
 }

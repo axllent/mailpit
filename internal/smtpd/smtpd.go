@@ -25,6 +25,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/axllent/mailpit/internal/connlimit"
+	"github.com/axllent/mailpit/internal/logger"
 	"github.com/axllent/mailpit/internal/smtpd/chaos"
 )
 
@@ -99,6 +101,10 @@ func maxSizeExceeded(limit int) maxSizeExceededError {
 func (err maxSizeExceededError) Error() string {
 	return fmt.Sprintf("552 5.3.4 Requested mail action aborted: exceeded storage allocation (%d)", err.limit)
 }
+
+// maxConnections is the maximum number of concurrent SMTP sessions.
+// It is a variable only so that tests can lower it.
+var maxConnections = connlimit.Max
 
 // LogFunc is a function capable of logging the client-server communication.
 type LogFunc func(remoteIP, verb, line string)
@@ -233,6 +239,15 @@ func (srv *Server) Serve(ln net.Listener) error {
 
 	defer func() { _ = ln.Close() }()
 
+	// Set before any session starts, as sessions share the server and run concurrently.
+	if srv.MaxRecipients == 0 {
+		srv.MaxRecipients = 100
+	}
+
+	limiter := connlimit.New("smtpd", maxConnections)
+
+	var backoff connlimit.Backoff
+
 	for {
 		// if we are shutting down, don't accept new connections
 		select {
@@ -246,12 +261,28 @@ func (srv *Server) Serve(ln net.Listener) error {
 			if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
 				continue
 			}
+			// Errors such as running out of file descriptors are temporary,
+			// so back off and retry rather than bringing down the server.
+			if connlimit.Retryable(err) {
+				logger.Log().Errorf("[smtpd] accept error: %s", err.Error())
+				backoff.Wait()
+				continue
+			}
 			return err
+		}
+		backoff.Reset()
+
+		if !limiter.TryAcquire() {
+			connlimit.Refuse(conn, "421 4.3.2 Too many connections, please try again later\r\n")
+			continue
 		}
 
 		session := srv.newSession(conn)
 		atomic.AddInt32(&srv.openSessions, 1)
-		go session.serve()
+		go func() {
+			defer limiter.Release()
+			session.serve()
+		}()
 	}
 }
 

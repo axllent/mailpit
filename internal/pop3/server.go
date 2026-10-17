@@ -18,6 +18,7 @@ import (
 
 	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/internal/auth"
+	"github.com/axllent/mailpit/internal/connlimit"
 	"github.com/axllent/mailpit/internal/logger"
 	"github.com/axllent/mailpit/internal/storage"
 	"github.com/axllent/mailpit/server/websockets"
@@ -67,15 +68,38 @@ func Run() {
 
 	logger.Log().Infof("[pop3] starting on %s", config.POP3Listen)
 
+	serve(listener, connlimit.Max)
+}
+
+// serve accepts connections on the listener, allowing at most maxConns concurrent clients.
+func serve(listener net.Listener, maxConns int) {
+	limiter := connlimit.New("pop3", maxConns)
+
+	var backoff connlimit.Backoff
+
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
+			if !connlimit.Retryable(err) {
+				return
+			}
+			// Errors such as running out of file descriptors are temporary
 			logger.Log().Errorf("[pop3] accept error: %s", err.Error())
+			backoff.Wait()
+			continue
+		}
+		backoff.Reset()
+
+		if !limiter.TryAcquire() {
+			connlimit.Refuse(conn, "-ERR Too many connections, please try again later\r\n")
 			continue
 		}
 
 		// run as goroutine
-		go handleClient(conn)
+		go func() {
+			defer limiter.Release()
+			handleClient(conn)
+		}()
 	}
 }
 
