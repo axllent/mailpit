@@ -127,6 +127,7 @@ export default {
 				v-for="message in mailbox.messages"
 				:id="message.ID"
 				:key="'message_' + message.ID"
+				data-testid="message-row"
 				:to="'/view/' + message.ID"
 				class="row gx-1 message d-flex small list-group-item list-group-item-action border-start-0 border-end-0"
 				:class="[message.Read ? 'read' : '', isSelected(message.ID) ? ' selected' : '']"
@@ -136,7 +137,11 @@ export default {
 			>
 				<div class="col-lg-3">
 					<div class="d-lg-none float-end text-muted text-nowrap small">
-						<i v-if="message.Attachments" class="bi bi-paperclip h6 me-1"></i>
+						<i
+							v-if="message.Attachments"
+							class="bi bi-paperclip h6 me-1"
+							data-testid="message-attachment-icon"
+						></i>
 						{{ getRelativeCreated(message) }}
 					</div>
 					<div v-if="message.From" class="overflow-x-hidden">
@@ -154,7 +159,7 @@ export default {
 					</div>
 				</div>
 				<div class="col-lg-6 col-xxl-7 mt-2 mt-lg-0">
-					<div class="subject text-truncate text-spaces-nowrap">
+					<div class="subject text-truncate text-spaces-nowrap" data-testid="message-subject">
 						<b>{{ message.Subject !== "" ? message.Subject : "[ no subject ]" }}</b>
 					</div>
 					<div v-if="message.Snippet !== ''" class="small text-muted text-truncate">
@@ -179,7 +184,11 @@ export default {
 					</div>
 				</div>
 				<div class="d-none d-lg-block col-1 small text-end text-muted">
-					<i v-if="message.Attachments" class="bi bi-paperclip float-start h6"></i>
+					<i
+						v-if="message.Attachments"
+						class="bi bi-paperclip float-start h6"
+						data-testid="message-attachment-icon"
+					></i>
 					{{ getFileSize(message.Size) }}
 				</div>
 				<div class="d-none d-lg-block col-2 col-xxl-1 small text-end text-muted">
