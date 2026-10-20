@@ -174,6 +174,22 @@ func TestReadOrientationEdgeCases(t *testing.T) {
 		return b
 	}
 
+	// straddle returns a block with the given IFD offset where the byte at
+	// 8 is 0x01. At offset 8 that is a valid count of 1 (little-endian) and
+	// the entry at 10 is read. At offset 7 the count would overlap the
+	// header, and only an explicit check stops the entry at 9 being read.
+	straddle := func(off uint32) []byte {
+		b := []byte("II\x2a\x00\x00\x00\x00\x00")
+		le.PutUint32(b[4:], off)
+		if off == 8 {
+			b = append(b, 0x01, 0x00)
+		} else {
+			b = append(b, 0x01)
+		}
+		b = append(b, orient(6)...)
+		return append(b, 0, 0, 0, 0)
+	}
+
 	tests := []struct {
 		name string
 		data []byte
@@ -181,6 +197,12 @@ func TestReadOrientationEdgeCases(t *testing.T) {
 	}{
 		// IFD offset
 		{"control: valid", jpegWithSegments(t, exifApp1(valid)), 6},
+		{"ifd offset 0 (overlaps header)", jpegWithSegments(t, exifApp1(withIFDOffset(0))), 0},
+		{"ifd offset 1", jpegWithSegments(t, exifApp1(withIFDOffset(1))), 0},
+		{"ifd offset 7", jpegWithSegments(t, exifApp1(withIFDOffset(7))), 0},
+		{"control: ifd offset 8", jpegWithSegments(t, exifApp1(withIFDOffset(8))), 6},
+		{"ifd count straddles header", jpegWithSegments(t, exifApp1(straddle(7))), 0},
+		{"control: same bytes, ifd after header", jpegWithSegments(t, exifApp1(straddle(8))), 6},
 		{"ifd offset max uint32", jpegWithSegments(t, exifApp1(withIFDOffset(0xFFFFFFFF))), 0},
 		{"ifd offset past segment", jpegWithSegments(t, exifApp1(withIFDOffset(uint32(len(valid))))), 0},
 		{"ifd offset leaves 1 byte", jpegWithSegments(t, exifApp1(withIFDOffset(uint32(len(valid)-1)))), 0},

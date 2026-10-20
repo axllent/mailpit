@@ -9,6 +9,7 @@ const (
 	exifOrientationTag = 0x0112
 	tiffTypeShort      = 3
 	ifdEntrySize       = 12
+	tiffHeaderSize     = 8 // byte order, magic and first IFD offset
 
 	jpegMarkerPrefix = 0xFF
 	jpegSOI          = 0xD8 // start of image
@@ -38,7 +39,7 @@ var exifHeader = []byte("Exif\x00\x00")
 // duplicates are not consulted, as they would be ambiguous.
 func readOrientation(data []byte) int {
 	seg := findExifSegment(data)
-	if len(seg) < 8 {
+	if len(seg) < tiffHeaderSize {
 		return 0
 	}
 
@@ -55,8 +56,9 @@ func readOrientation(data []byte) int {
 		return 0
 	}
 
-	ifd := int64(order.Uint32(seg[4:8]))
-	if ifd+2 > int64(len(seg)) {
+	ifd := int64(order.Uint32(seg[4:tiffHeaderSize]))
+	// The first IFD cannot overlap the TIFF header.
+	if ifd < tiffHeaderSize || ifd+2 > int64(len(seg)) {
 		return 0
 	}
 	count := int64(order.Uint16(seg[ifd : ifd+2]))
