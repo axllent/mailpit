@@ -215,6 +215,11 @@ func TestReadOrientationEdgeCases(t *testing.T) {
 		{"control: entry fits exactly", jpegWithSegments(t, exifApp1(tiffIFD0(1, orient(8))[:8+2+12])), 8},
 		{"entry truncated mid-value", jpegWithSegments(t, exifApp1(tiffIFD0(1, orient(8))[:8+2+10])), 0},
 
+		// Linear-walk paths at their limits
+		{"maximal APP1, orientation last", jpegWithSegments(t, maximalExif(8)), 8},
+		{"long fill and RST run before APP1", jpegWithSegments(t, fillRun(1<<20), exifApp1(valid)), 6},
+		{"control: long fill run, no Exif", jpegWithSegments(t, fillRun(1<<20)), 0},
+
 		// Entry encoding
 		{"wrong type LONG", jpegWithSegments(t, exifApp1(tiffIFD0(1, ifdEntry(le, exifOrientationTag, 4, 1, 6)))), 0},
 		{"count 2", jpegWithSegments(t, exifApp1(tiffIFD0(1, ifdEntry(le, exifOrientationTag, tiffTypeShort, 2, 6)))), 0},
@@ -242,6 +247,31 @@ func TestReadOrientationEdgeCases(t *testing.T) {
 	}
 }
 
+// maximalExif returns an APP1 Exif segment at the 64 KiB limit: IFD0 declares
+// 0xFFFF entries, is packed with irrelevant ones, and holds the orientation
+// entry last so that the reader has to walk the whole segment to find it.
+func maximalExif(orientation uint16) []byte {
+	le := binary.LittleEndian
+	// 8 header + 2 count + n*12 entries + 4 next offset + 6 Exif header + 2 length <= 65535
+	const entries = 5459
+	list := make([][]byte, 0, entries)
+	for i := 0; i < entries-1; i++ {
+		list = append(list, ifdEntry(le, 0x010F, 2, 1, 0))
+	}
+	list = append(list, ifdEntry(le, exifOrientationTag, tiffTypeShort, 1, orientation))
+	return exifApp1(tiffIFD0(0xFFFF, list...))
+}
+
+// fillRun returns n alternating fill bytes and RSTn markers, all of which the
+// segment walker must skip one step at a time.
+func fillRun(n int) []byte {
+	b := make([]byte, 0, n)
+	for len(b) < n {
+		b = append(b, 0xFF, 0xFF, 0xD0)
+	}
+	return b
+}
+
 // exifSegmentEnd returns the offset in data at which the Exif TIFF payload
 // ends, or -1 if there is no Exif segment. It relies on findExifSegment
 // returning a sub-slice of data.
@@ -260,6 +290,8 @@ func FuzzReadOrientation(f *testing.F) {
 	f.Add(jpegWithSegments(f, []byte{0xFF}, exifApp1(tiffIFD0(0xFFFF, ifdEntry(le, exifOrientationTag, tiffTypeShort, 1, 8)))))
 	f.Add(jpegWithSegments(f, app1([]byte("http://ns.adobe.com/xap/1.0/\x00")), exifApp1(tiffBlock(le, 2, 0))))
 	f.Add(jpegWithSegments(f, []byte{0xFF, 0xD0, 0xFF, 0xE0, 0x00, 0x01}))
+	f.Add(jpegWithSegments(f, maximalExif(8)))
+	f.Add(jpegWithSegments(f, fillRun(1<<16), exifApp1(tiffBlock(le, 6, 0))))
 
 	f.Fuzz(func(t *testing.T, data []byte) {
 		o := readOrientation(data)
