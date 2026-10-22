@@ -89,3 +89,13 @@ test("email-specific head and attributes survive", () => {
 	assert.equal(doc.querySelector("style").textContent, "p{color:red}");
 	assert.equal(doc.body.getAttribute("vlink"), "#00f");
 });
+
+test("meta refresh is removed, other meta tags are kept", () => {
+	const head = (html) => parse(html).head.innerHTML;
+	for (const v of ["refresh", "Refresh", " REFRESH "]) {
+		assert.equal(head(`<meta http-equiv="${v}" content="0;url=https://x.invalid"><p>a</p>`), "");
+	}
+	// control
+	assert.equal(head('<meta http-equiv="Content-Type" content="text/html">'), '<meta http-equiv="Content-Type" content="text/html">');
+	assert.equal(head('<meta charset="utf-8">'), '<meta charset="utf-8">');
+});
