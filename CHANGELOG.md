@@ -2,6 +2,32 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.32.0]
+
+### Security
+- Strip base and meta refresh tags from /view/{ID}.html output
+- Replace goexif with minimal EXIF orientation reader (GHSA-379p-g4f4-hq5h)
+
+### Feature
+- Autocomplete search suggestions and history ([#745](https://github.com/axllent/mailpit/issues/745))
+- Open received email when clicking a browser notification ([#747](https://github.com/axllent/mailpit/issues/747))
+
+### Chore
+- Add composite index on message_tags (ID, TagID) to keep inserts fast as the mailbox grows ([#750](https://github.com/axllent/mailpit/issues/750))
+- Limit concurrent SMTP, POP3 and HTTP connections to 1000 each
+- Reject EXIF IFD0 offsets that overlap the TIFF header
+- Update Go dependencies
+- Update node dependencies
+
+### Fix
+- Resolve data races in mailbox stats broadcast, logger init and SMTP MaxRecipients
+
+### Test
+- Add JS tests for search suggestions and HTML sanitising
+- Add e2e Playwright UI testing
+- Add maximal APP1 and fill-byte cases for EXIF orientation reader
+
+
 ## [v1.31.6]
 
 ### Fix
