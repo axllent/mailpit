@@ -100,6 +100,17 @@ func GetMessageHTML(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// Remove <base> and <meta http-equiv="refresh"> tags, which CSP does not (fully) cover.
+	// This is done last so that it applies to exactly what is served, and fails closed.
+	htmlStr, err = tools.StripHTMLRedirects(htmlStr)
+	if err != nil {
+		logger.Log().Error(err.Error())
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		w.WriteHeader(500)
+		_, _ = fmt.Fprint(w, "Unable to render message")
+		return
+	}
+
 	w.Header().Add("Content-Type", "text/html; charset=utf-8")
 	_, _ = w.Write([]byte(htmlStr)) // #nosec G705 -- intentionally renders stored email HTML for UI integration testing
 }

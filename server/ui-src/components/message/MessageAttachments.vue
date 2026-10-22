@@ -97,6 +97,7 @@ export default {
 					<a
 						:href="resolve('/api/v1/message/' + message.ID + '/part/' + part.PartID)"
 						class="card attachment float-start me-3 mb-3"
+						data-testid="attachment-card"
 						target="_blank"
 						style="width: 180px"
 						@click="openAttachment(part, $event)"
@@ -105,6 +106,7 @@ export default {
 							v-if="isImage(part)"
 							:src="resolve('/api/v1/message/' + message.ID + '/part/' + part.PartID + '/thumb')"
 							class="card-img-top"
+							data-testid="attachment-thumb"
 							alt=""
 						/>
 						<img

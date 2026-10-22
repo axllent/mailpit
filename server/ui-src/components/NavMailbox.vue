@@ -80,6 +80,7 @@ export default {
 					v-if="mailbox.unread"
 					class="badge rounded-pill ms-1 float-end text-bg-secondary"
 					title="Unread messages"
+					data-testid="unread-badge"
 				>
 					{{ formatNumber(mailbox.unread) }}
 				</span>

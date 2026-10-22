@@ -19,6 +19,7 @@ import (
 
 	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/internal/auth"
+	"github.com/axllent/mailpit/internal/connlimit"
 	"github.com/axllent/mailpit/internal/licenses"
 	"github.com/axllent/mailpit/internal/logger"
 	"github.com/axllent/mailpit/internal/pop3"
@@ -134,7 +135,13 @@ func Listen() {
 	if config.UITLSCert != "" && config.UITLSKey != "" {
 		logger.Log().Infof("[http] starting on %s (TLS)", config.HTTPListen)
 		logger.Log().Infof("[http] accessible via https://%s%s", logger.CleanHTTPIP(config.HTTPListen), config.Webroot)
-		if err := server.ListenAndServeTLS(config.UITLSCert, config.UITLSKey); err != nil {
+		ln, err := listenLimited("tcp", config.HTTPListen)
+		if err != nil {
+			storage.Close()
+			logger.Log().Fatal(err)
+		}
+
+		if err := server.ServeTLS(ln, config.UITLSCert, config.UITLSKey); err != nil {
 			storage.Close()
 			logger.Log().Fatal(err)
 		}
@@ -151,7 +158,7 @@ func Listen() {
 			// delete the Unix socket file on exit
 			storage.AddTempFile(socketAddr)
 
-			ln, err := net.Listen("unix", socketAddr)
+			ln, err := listenLimited("unix", socketAddr)
 			if err != nil {
 				storage.Close()
 				logger.Log().Fatal(err)
@@ -172,12 +179,29 @@ func Listen() {
 		} else {
 			logger.Log().Infof("[http] starting on %s", config.HTTPListen)
 			logger.Log().Infof("[http] accessible via http://%s%s", logger.CleanHTTPIP(config.HTTPListen), config.Webroot)
-			if err := server.ListenAndServe(); err != nil {
+
+			ln, err := listenLimited("tcp", config.HTTPListen)
+			if err != nil {
+				storage.Close()
+				logger.Log().Fatal(err)
+			}
+
+			if err := server.Serve(ln); err != nil {
 				storage.Close()
 				logger.Log().Fatal(err)
 			}
 		}
 	}
+}
+
+// listenLimited listens on the address, limiting the number of concurrent connections.
+func listenLimited(network, address string) (net.Listener, error) {
+	ln, err := net.Listen(network, address)
+	if err != nil {
+		return nil, err
+	}
+
+	return connlimit.Listener("http", ln, connlimit.Max), nil
 }
 
 // warnIfExposedWithoutHostProtection logs a warning at startup when Mailpit

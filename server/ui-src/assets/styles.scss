@@ -466,3 +466,49 @@ pre[class*="language-"] {
 		box-shadow: none;
 	}
 }
+
+// Search autocomplete dropdown
+.search-autocomplete {
+	position: absolute;
+	top: 100%;
+	left: 0;
+	right: 0;
+	z-index: 1055;
+	margin-top: 2px;
+
+	&-body {
+		max-height: 330px;
+		overflow-x: hidden;
+		overflow-y: auto;
+	}
+
+	&-footer {
+		border-top: 1px solid var(--bs-dropdown-divider-bg, var(--bs-border-color-translucent));
+	}
+
+	.dropdown-item {
+		white-space: normal;
+		cursor: pointer;
+		user-select: none;
+
+		code {
+			color: inherit;
+		}
+
+		&.active {
+			code {
+				color: inherit;
+			}
+		}
+	}
+}
+
+.search-filter-badge {
+	cursor: pointer;
+	font-family: var(--bs-font-monospace);
+	transition: opacity 0.15s ease;
+
+	&:hover {
+		opacity: 0.85;
+	}
+}

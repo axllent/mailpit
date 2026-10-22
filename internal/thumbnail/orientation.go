@@ -1,29 +1,14 @@
 package thumbnail
 
 import (
-	"bytes"
-	"github.com/rwcarlsen/goexif/exif"
 	"image"
 )
 
 // fixOrientation reads the EXIF orientation tag from JPEG data and
 // applies the corresponding transform. For non-JPEG data or data
-// without an orientation tag the image is returned unchanged.
+// without a valid orientation tag the image is returned unchanged.
 func fixOrientation(data []byte, img image.Image) image.Image {
-	x, err := exif.Decode(bytes.NewReader(data))
-	if err != nil {
-		return img
-	}
-
-	tag, err := x.Get(exif.Orientation)
-	if err != nil {
-		return img
-	}
-
-	o, err := tag.Int(0)
-	if err != nil || o < 1 || o > 8 {
-		return img
-	}
+	o := readOrientation(data)
 
 	switch o {
 	case 2:
