@@ -16,10 +16,7 @@ export const sanitizeHTML = (html, purify = DOMPurify) => {
 		hooked.add(purify);
 		purify.addHook("afterSanitizeAttributes", (node) => {
 			// meta refresh navigates the preview iframe, and is not governed by CSP
-			if (
-				node.tagName === "META" &&
-				(node.getAttribute("http-equiv") || "").trim().toLowerCase() === "refresh"
-			) {
+			if (node.tagName === "META" && (node.getAttribute("http-equiv") || "").trim().toLowerCase() === "refresh") {
 				node.remove();
 				return;
 			}

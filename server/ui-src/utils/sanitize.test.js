@@ -96,6 +96,9 @@ test("meta refresh is removed, other meta tags are kept", () => {
 		assert.equal(head(`<meta http-equiv="${v}" content="0;url=https://x.invalid"><p>a</p>`), "");
 	}
 	// control
-	assert.equal(head('<meta http-equiv="Content-Type" content="text/html">'), '<meta http-equiv="Content-Type" content="text/html">');
+	assert.equal(
+		head('<meta http-equiv="Content-Type" content="text/html">'),
+		'<meta http-equiv="Content-Type" content="text/html">',
+	);
 	assert.equal(head('<meta charset="utf-8">'), '<meta charset="utf-8">');
 });
