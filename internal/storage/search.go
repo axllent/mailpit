@@ -473,7 +473,7 @@ func searchQueryBuilder(searchString, timezone string) *sqlf.Stmt {
 				} else {
 					timestamp := t.UnixMilli()
 					if exclude {
-						q.Where(`m.Created <= ?`, timestamp)
+						q.Where(`m.Created < ?`, timestamp)
 					} else {
 						q.Where(`m.Created >= ?`, timestamp)
 					}
@@ -488,7 +488,7 @@ func searchQueryBuilder(searchString, timezone string) *sqlf.Stmt {
 				} else {
 					timestamp := t.UnixMilli()
 					if exclude {
-						q.Where(`m.Created >= ?`, timestamp)
+						q.Where(`m.Created > ?`, timestamp)
 					} else {
 						q.Where(`m.Created <= ?`, timestamp)
 					}
@@ -498,7 +498,7 @@ func searchQueryBuilder(searchString, timezone string) *sqlf.Stmt {
 			w = cleanString(w[7:])
 			size := sizeToBytes(w)
 			if exclude {
-				q.Where("Size < ?", size)
+				q.Where("Size <= ?", size)
 			} else {
 				q.Where("Size > ?", size)
 			}
@@ -506,7 +506,7 @@ func searchQueryBuilder(searchString, timezone string) *sqlf.Stmt {
 			w = cleanString(w[8:])
 			size := sizeToBytes(w)
 			if exclude {
-				q.Where("Size > ?", size)
+				q.Where("Size >= ?", size)
 			} else {
 				q.Where("Size < ?", size)
 			}

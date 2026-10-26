@@ -6,7 +6,9 @@ import (
 	"math/rand/v2"
 	"net/mail"
 	"slices"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/axllent/mailpit/config"
 	"github.com/jhillyerd/enmime/v2"
@@ -378,6 +380,88 @@ func TestSearchJSONEscapedAddresses(t *testing.T) {
 	}
 	if n := CountTotal(); n != 1 {
 		t.Errorf(`DeleteSearch -from:"from & co": expected 1 message left, got %d`, n)
+	}
+}
+
+func TestSearchNegatedSizeAndDate(t *testing.T) {
+	setup("")
+	defer Close()
+
+	useMessageDates := config.UseMessageDates
+	config.UseMessageDates = true
+	defer func() { config.UseMessageDates = useMessageDates }()
+
+	t.Log("Testing negated size and date searches")
+
+	// the second message is dated exactly at midnight, the boundary of the date searches below
+	dates := []time.Time{
+		time.Date(2025, 12, 31, 12, 0, 0, 0, time.UTC),
+		time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC),
+		time.Date(2026, 1, 1, 12, 0, 0, 0, time.UTC),
+	}
+
+	for i, date := range dates {
+		env, err := enmime.Builder().
+			From("", "sender@example.com").
+			To("", "recipient@example.com").
+			Subject(fmt.Sprintf("message %d", i)).
+			Date(date).
+			Text([]byte(strings.Repeat("x", (i+1)*100))).
+			Build()
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		buf := new(bytes.Buffer)
+		if err := env.Encode(buf); err != nil {
+			t.Fatal(err)
+		}
+
+		b := buf.Bytes()
+		if _, err := Store(&b, nil); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	// use the size of the middle message, the boundary of the size searches below
+	all, _, err := Search("", "", 0, 0, 100)
+	if err != nil {
+		t.Fatal(err)
+	}
+	size := uint64(0)
+	for _, m := range all {
+		if m.Subject == "message 1" {
+			size = m.Size
+		}
+	}
+	if size == 0 {
+		t.Fatal("message 1 not found")
+	}
+
+	for _, search := range []string{
+		fmt.Sprintf("larger:%d", size),
+		fmt.Sprintf("smaller:%d", size),
+		"after:2026-01-01",
+		"before:2026-01-01",
+	} {
+		// every message must match either the search or its negation, never both or neither
+		summaries, _, err := Search(search, "UTC", 0, 0, 100)
+		if err != nil {
+			t.Fatal(err)
+		}
+		negated, _, err := Search("-"+search, "UTC", 0, 0, 100)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		for i := range dates {
+			subject := fmt.Sprintf("message %d", i)
+			inSearch := slices.Contains(subjects(summaries), subject)
+			inNegated := slices.Contains(subjects(negated), subject)
+			if inSearch == inNegated {
+				t.Errorf("%q matched by %s: %v, by -%s: %v", subject, search, inSearch, search, inNegated)
+			}
+		}
 	}
 }
 
