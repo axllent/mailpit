@@ -118,3 +118,22 @@ func TestLinkLimit(t *testing.T) {
 		}
 	}
 }
+
+func TestTextLinkAtStart(t *testing.T) {
+	tests := map[string][]string{
+		"https://example.com/start":                       {"https://example.com/start"},
+		"https://example.com/start\nhttp://example.com/2": {"https://example.com/start", "http://example.com/2"},
+		"<https://example.com/start link>":                {"https://example.com/start link"},
+		"text\nhttps://example.com/line":                  {"https://example.com/line"},
+	}
+
+	for text, expected := range tests {
+		m := storage.Message{Text: text}
+		c := &linkCollector{seen: make(map[string]bool)}
+		extractTextLinks(&m, c)
+
+		if !reflect.DeepEqual(c.links, expected) {
+			t.Errorf("text %q: expected %v, got %v", text, expected, c.links)
+		}
+	}
+}
