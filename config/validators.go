@@ -145,6 +145,11 @@ func validateRelayConfig() error {
 		SMTPRelayConfig.OverrideFrom = m.Address
 	}
 
+	SMTPRelayConfig.SubjectPrefix = strings.TrimSpace(SMTPRelayConfig.SubjectPrefix)
+	if strings.ContainsAny(SMTPRelayConfig.SubjectPrefix, "\r\n") {
+		return fmt.Errorf("[relay] subject-prefix must not contain line breaks")
+	}
+
 	if SMTPRelayConfig.STARTTLS && SMTPRelayConfig.TLS {
 		return fmt.Errorf("[relay] TLS & STARTTLS cannot be required together")
 	}
@@ -245,6 +250,11 @@ func validateForwardConfig() error {
 		}
 
 		SMTPForwardConfig.OverrideFrom = m.Address
+	}
+
+	SMTPForwardConfig.SubjectPrefix = strings.TrimSpace(SMTPForwardConfig.SubjectPrefix)
+	if strings.ContainsAny(SMTPForwardConfig.SubjectPrefix, "\r\n") {
+		return fmt.Errorf("[forward] subject-prefix must not contain line breaks")
 	}
 
 	if SMTPForwardConfig.STARTTLS && SMTPForwardConfig.TLS {

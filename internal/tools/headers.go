@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"mime"
 	"net/mail"
 	"regexp"
 	"strings"
@@ -211,4 +212,37 @@ func OverrideFromHeader(msg []byte, address string) ([]byte, error) {
 	}
 
 	return msg, nil
+}
+
+// PrefixSubject prepends prefix, followed by a single space, to the message Subject.
+// The existing Subject is decoded (RFC 2047) and the result re-encoded if it
+// contains non-ASCII characters. If there is no Subject, one is added containing
+// only the prefix. The prefix is space-trimmed, and an empty prefix is a no-op.
+func PrefixSubject(msg []byte, prefix string) ([]byte, error) {
+	prefix = strings.TrimSpace(prefix)
+	if prefix == "" {
+		return msg, nil
+	}
+	if strings.ContainsAny(prefix, "\r\n") {
+		return nil, errors.New("subject prefix must not contain line breaks")
+	}
+
+	m, err := mail.ReadMessage(bytes.NewReader(msg))
+	if err != nil {
+		return nil, err
+	}
+
+	subject := m.Header.Get("Subject")
+	if decoded, err := new(mime.WordDecoder).DecodeHeader(subject); err == nil {
+		subject = decoded
+	}
+	subject = strings.TrimSpace(subject)
+
+	value := prefix
+	if subject != "" {
+		value += " " + subject
+	}
+
+	// returns the string unchanged if it is plain ASCII
+	return SetMessageHeader(msg, "Subject", mime.QEncoding.Encode("utf-8", value))
 }
