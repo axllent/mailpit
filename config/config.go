@@ -265,6 +265,7 @@ type SMTPRelayConfigStruct struct {
 	Secret                  string         `yaml:"secret"`             // cram-md5
 	ReturnPath              string         `yaml:"return-path"`        // allow overriding the bounce address
 	OverrideFrom            string         `yaml:"override-from"`      // allow overriding of the from address
+	SubjectPrefix           string         `yaml:"subject-prefix"`     // text to prepend to the Subject
 	AllowedRecipients       string         `yaml:"allowed-recipients"` // regex, if set needs to match for mails to be relayed
 	AllowedRecipientsRegexp *regexp.Regexp // compiled regexp using AllowedRecipients
 	BlockedRecipients       string         `yaml:"blocked-recipients"` // regex, if set prevents relating to these addresses
@@ -290,6 +291,7 @@ type SMTPForwardConfigStruct struct {
 	Secret            string `yaml:"secret"`              // cram-md5
 	ReturnPath        string `yaml:"return-path"`         // allow overriding the bounce address
 	OverrideFrom      string `yaml:"override-from"`       // allow overriding of the from address
+	SubjectPrefix     string `yaml:"subject-prefix"`      // text to prepend to the Subject
 	ForwardSMTPErrors bool   `yaml:"forward-smtp-errors"` // whether to log smtp-errors or forward them to upstream-client
 }
 

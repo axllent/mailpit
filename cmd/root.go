@@ -349,6 +349,7 @@ func initConfigFromEnv() {
 	config.SMTPRelayConfig.Secret = os.Getenv("MP_SMTP_RELAY_SECRET")
 	config.SMTPRelayConfig.ReturnPath = os.Getenv("MP_SMTP_RELAY_RETURN_PATH")
 	config.SMTPRelayConfig.OverrideFrom = os.Getenv("MP_SMTP_RELAY_OVERRIDE_FROM")
+	config.SMTPRelayConfig.SubjectPrefix = os.Getenv("MP_SMTP_RELAY_SUBJECT_PREFIX")
 	config.SMTPRelayConfig.AllowedRecipients = os.Getenv("MP_SMTP_RELAY_ALLOWED_RECIPIENTS")
 	config.SMTPRelayConfig.BlockedRecipients = os.Getenv("MP_SMTP_RELAY_BLOCKED_RECIPIENTS")
 	config.SMTPRelayConfig.PreserveMessageIDs = getEnabledFromEnv("MP_SMTP_RELAY_PRESERVE_MESSAGE_IDS")
@@ -370,6 +371,7 @@ func initConfigFromEnv() {
 	config.SMTPForwardConfig.Secret = os.Getenv("MP_SMTP_FORWARD_SECRET")
 	config.SMTPForwardConfig.ReturnPath = os.Getenv("MP_SMTP_FORWARD_RETURN_PATH")
 	config.SMTPForwardConfig.OverrideFrom = os.Getenv("MP_SMTP_FORWARD_OVERRIDE_FROM")
+	config.SMTPForwardConfig.SubjectPrefix = os.Getenv("MP_SMTP_FORWARD_SUBJECT_PREFIX")
 	config.SMTPForwardConfig.To = os.Getenv("MP_SMTP_FORWARD_TO")
 	config.SMTPForwardConfig.ForwardSMTPErrors = getEnabledFromEnv("MP_SMTP_FORWARD_FWD_SMTP_ERRORS")
 

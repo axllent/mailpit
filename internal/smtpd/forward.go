@@ -113,6 +113,13 @@ func forward(from string, msg []byte) error {
 		from = config.SMTPForwardConfig.OverrideFrom
 	}
 
+	if config.SMTPForwardConfig.SubjectPrefix != "" {
+		msg, err = tools.PrefixSubject(msg, config.SMTPForwardConfig.SubjectPrefix)
+		if err != nil {
+			return fmt.Errorf("error prefixing Subject header: %s", err.Error())
+		}
+	}
+
 	if err = c.Mail(from); err != nil {
 		return fmt.Errorf("error response to MAIL command: %s", err.Error())
 	}
