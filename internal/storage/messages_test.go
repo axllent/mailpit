@@ -2,6 +2,7 @@ package storage
 
 import (
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -300,4 +301,30 @@ func TestMixedAttachmentHandling(t *testing.T) {
 	if msg.Attachments[0].ContentID != "" {
 		t.Errorf("Test case 4: Expected attachment ContentID to be empty, got '%s'", msg.Attachments[0].ContentID)
 	}
+}
+
+func TestStoreUnparsableMessage(t *testing.T) {
+	setup("")
+	defer Close()
+
+	t.Log("Testing a message the MIME parser cannot read")
+
+	messages := map[string]string{
+		"invalid Content-Type": "From: sender@example.com\r\nTo: recipient@example.com\r\nSubject: Invalid content type\r\n" +
+			"Content-Type: text/plain>\r\n\r\nBody\r\n",
+		"multipart without boundary": "From: sender@example.com\r\nTo: recipient@example.com\r\nSubject: No boundary\r\n" +
+			"Content-Type: multipart/report;\r\n\r\nBody\r\n",
+	}
+
+	for name, msg := range messages {
+		b := []byte(msg)
+		id, err := Store(&b, nil)
+
+		// the message can never be stored, so it must be rejected with a permanent SMTP error
+		if err == nil || !strings.HasPrefix(err.Error(), "554 ") {
+			t.Errorf("%s: expected a 554 error, got %v (id %q)", name, err, id)
+		}
+	}
+
+	assertEqual(t, CountTotal(), uint64(0), "no message should be stored")
 }
