@@ -3,17 +3,26 @@ package storage
 import (
 	"bytes"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/jhillyerd/enmime/v2"
 )
 
-const envelopeCacheTTL = 5 * time.Second
+const (
+	envelopeCacheTTL = 5 * time.Second
+
+	// envelopeCacheMaxBytes caps the combined estimated size of cached envelopes
+	// (see envelopeSize), regardless of request rate. The most recent envelope is
+	// always kept, so a single message larger than this is still cached.
+	envelopeCacheMaxBytes = 50 << 20
+)
 
 type envelopeCacheEntry struct {
 	env     *enmime.Envelope
-	rawSize uint64
+	rawSize uint64 // size of the raw message
+	size    uint64 // estimated memory retained by env
 	created time.Time
 	timer   *time.Timer // removes the entry once the TTL expires
 }
@@ -28,6 +37,7 @@ var envelopeCache = struct {
 	sync.Mutex
 	entries  map[string]*envelopeCacheEntry
 	inflight map[string]*envelopeInflight
+	bytes    uint64 // combined size of all entries
 }{
 	entries:  make(map[string]*envelopeCacheEntry),
 	inflight: make(map[string]*envelopeInflight),
@@ -87,24 +97,86 @@ func getCachedEnvelope(id string) (*enmime.Envelope, uint64, error) {
 	return inf.env, inf.size, inf.err
 }
 
-// storeEnvelopeLocked adds an entry to the cache and schedules its removal
-// after the TTL, so entries are freed even if never requested again.
+// removeEnvelopeLocked removes an entry from the cache and stops its timer.
 // The caller must hold envelopeCache's lock.
-func storeEnvelopeLocked(id string, env *enmime.Envelope, size uint64) {
-	if old, ok := envelopeCache.entries[id]; ok {
-		old.timer.Stop()
+func removeEnvelopeLocked(id string) {
+	if entry, ok := envelopeCache.entries[id]; ok {
+		entry.timer.Stop()
+		envelopeCache.bytes -= entry.size
+		delete(envelopeCache.entries, id)
+	}
+}
+
+// envelopeParts returns every attachment, inline and other part of an envelope.
+func envelopeParts(env *enmime.Envelope) []*enmime.Part {
+	parts := make([]*enmime.Part, 0, len(env.Attachments)+len(env.Inlines)+len(env.OtherParts))
+	parts = append(parts, env.Attachments...)
+	parts = append(parts, env.Inlines...)
+
+	return append(parts, env.OtherParts...)
+}
+
+// hasImagePart returns true if any attachment, inline or other part is an image.
+// Only these cause the browser to fire a burst of requests for the same message
+// (one per inline image or attachment thumbnail).
+func hasImagePart(env *enmime.Envelope) bool {
+	for _, p := range envelopeParts(env) {
+		if strings.HasPrefix(p.ContentType, "image/") {
+			return true
+		}
 	}
 
-	entry := &envelopeCacheEntry{env: env, rawSize: size, created: time.Now()}
+	return false
+}
+
+// envelopeSize estimates the memory retained by an envelope, which is dominated
+// by the decoded bodies and part content.
+func envelopeSize(env *enmime.Envelope) uint64 {
+	size := uint64(len(env.Text) + len(env.HTML))
+	for _, p := range envelopeParts(env) {
+		size += uint64(len(p.Content))
+	}
+
+	return size
+}
+
+// storeEnvelopeLocked adds an entry to the cache and schedules its removal
+// after the TTL, so entries are freed even if never requested again.
+// Only messages with at least one image part are cached. The combined size of
+// the cache is bounded by envelopeCacheMaxBytes, evicting the oldest entries
+// first, but the newest entry is always kept.
+// The caller must hold envelopeCache's lock.
+func storeEnvelopeLocked(id string, env *enmime.Envelope, rawSize uint64) {
+	if !hasImagePart(env) {
+		return
+	}
+
+	removeEnvelopeLocked(id)
+
+	size := envelopeSize(env)
+
+	for len(envelopeCache.entries) > 0 && envelopeCache.bytes+size > envelopeCacheMaxBytes {
+		var oldestID string
+		var oldest time.Time
+		for k, e := range envelopeCache.entries {
+			if oldestID == "" || e.created.Before(oldest) {
+				oldestID, oldest = k, e.created
+			}
+		}
+		removeEnvelopeLocked(oldestID)
+	}
+
+	entry := &envelopeCacheEntry{env: env, rawSize: rawSize, size: size, created: time.Now()}
 	entry.timer = time.AfterFunc(envelopeCacheTTL, func() {
 		envelopeCache.Lock()
 		defer envelopeCache.Unlock()
 		// only remove our own entry, not a newer one stored under the same ID
 		if envelopeCache.entries[id] == entry {
-			delete(envelopeCache.entries, id)
+			removeEnvelopeLocked(id)
 		}
 	})
 	envelopeCache.entries[id] = entry
+	envelopeCache.bytes += size
 }
 
 // parseEnvelope fetches a raw message from the database and parses it with enmime.
@@ -126,10 +198,7 @@ func parseEnvelope(id string) (*enmime.Envelope, uint64, error) {
 // e.g. when a message is deleted.
 func invalidateEnvelopeCache(id string) {
 	envelopeCache.Lock()
-	if entry, ok := envelopeCache.entries[id]; ok {
-		entry.timer.Stop()
-		delete(envelopeCache.entries, id)
-	}
+	removeEnvelopeLocked(id)
 	envelopeCache.Unlock()
 }
 
@@ -141,5 +210,6 @@ func invalidateAllEnvelopeCache() {
 		entry.timer.Stop()
 	}
 	envelopeCache.entries = make(map[string]*envelopeCacheEntry)
+	envelopeCache.bytes = 0
 	envelopeCache.Unlock()
 }
