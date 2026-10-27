@@ -438,29 +438,45 @@ func TestSearchNegatedSizeAndDate(t *testing.T) {
 		t.Fatal("message 1 not found")
 	}
 
-	for _, search := range []string{
-		fmt.Sprintf("larger:%d", size),
-		fmt.Sprintf("smaller:%d", size),
-		"after:2026-01-01",
-		"before:2026-01-01",
-	} {
-		// every message must match either the search or its negation, never both or neither
-		summaries, _, err := Search(search, "UTC", 0, 0, 100)
-		if err != nil {
-			t.Fatal(err)
+	tests := []struct {
+		search   string
+		timezone string
+		want     []string
+	}{
+		{fmt.Sprintf("larger:%d", size), "UTC", []string{"message 1", "message 2"}},
+		{fmt.Sprintf("-larger:%d", size), "UTC", []string{"message 0"}},
+		{fmt.Sprintf("smaller:%d", size), "UTC", []string{"message 0"}},
+		{fmt.Sprintf("-smaller:%d", size), "UTC", []string{"message 1", "message 2"}},
+		{"after:2026-01-01", "UTC", []string{"message 1", "message 2"}},
+		{"-after:2026-01-01", "UTC", []string{"message 0"}},
+		{"before:2026-01-01", "UTC", []string{"message 0", "message 1"}},
+		{"-before:2026-01-01", "UTC", []string{"message 2"}},
+		// midnight in New York is 05:00 UTC
+		{"after:2026-01-01", "America/New_York", []string{"message 2"}},
+		{"-after:2026-01-01", "America/New_York", []string{"message 0", "message 1"}},
+		{"before:2026-01-01", "America/New_York", []string{"message 0", "message 1"}},
+		{"-before:2026-01-01", "America/New_York", []string{"message 2"}},
+		// midnight in Tokyo is 15:00 UTC the day before
+		{"after:2026-01-01", "Asia/Tokyo", []string{"message 1", "message 2"}},
+		{"-after:2026-01-01", "Asia/Tokyo", []string{"message 0"}},
+		{"before:2026-01-01", "Asia/Tokyo", []string{"message 0"}},
+		{"-before:2026-01-01", "Asia/Tokyo", []string{"message 1", "message 2"}},
+	}
+
+	for _, test := range tests {
+		if _, err := time.LoadLocation(test.timezone); err != nil {
+			t.Fatalf("timezone %s not available: %s", test.timezone, err)
 		}
-		negated, _, err := Search("-"+search, "UTC", 0, 0, 100)
+
+		summaries, _, err := Search(test.search, test.timezone, 0, 0, 100)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		for i := range dates {
-			subject := fmt.Sprintf("message %d", i)
-			inSearch := slices.Contains(subjects(summaries), subject)
-			inNegated := slices.Contains(subjects(negated), subject)
-			if inSearch == inNegated {
-				t.Errorf("%q matched by %s: %v, by -%s: %v", subject, search, inSearch, search, inNegated)
-			}
+		got := subjects(summaries)
+		slices.Sort(got)
+		if !slices.Equal(got, test.want) {
+			t.Errorf("%s (%s) returned %v, expected %v", test.search, test.timezone, got, test.want)
 		}
 	}
 }
