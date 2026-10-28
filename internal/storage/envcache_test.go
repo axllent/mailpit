@@ -59,7 +59,7 @@ func TestEnvelopeCacheIsBounded(t *testing.T) {
 	const size = 1 << 20 // 1 MiB
 	const capacity = envelopeCacheMaxBytes / size
 
-	for i := 0; i < capacity*2; i++ {
+	for i := range capacity * 2 {
 		storeEnvelope(strconv.Itoa(i), imageEnvelope(size))
 	}
 

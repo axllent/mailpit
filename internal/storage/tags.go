@@ -394,6 +394,10 @@ func getTagsForIDs(ids []string) map[string][]string {
 		result[id] = append(result[id], name)
 	}
 
+	if err := rows.Err(); err != nil {
+		logger.Log().Errorf("[tags] %s", err.Error())
+	}
+
 	return result
 }
 
@@ -464,7 +468,7 @@ func containsFold(haystack, needle []byte) bool {
 	}
 	for i := 0; i <= hl-nl; i++ {
 		match := true
-		for j := 0; j < nl; j++ {
+		for j := range nl {
 			hb := haystack[i+j]
 			if hb >= 'A' && hb <= 'Z' {
 				hb += 'a' - 'A'

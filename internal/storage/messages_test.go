@@ -185,7 +185,7 @@ func BenchmarkImportText(b *testing.B) {
 	setup("")
 	defer Close()
 
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		if _, err := Store(&testTextEmail, nil); err != nil {
 			b.Log("error ", err)
 			b.Fail()
@@ -197,7 +197,7 @@ func BenchmarkImportMime(b *testing.B) {
 	setup("")
 	defer Close()
 
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		if _, err := Store(&testMimeEmail, nil); err != nil {
 			b.Log("error ", err)
 			b.Fail()

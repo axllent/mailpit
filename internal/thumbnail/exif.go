@@ -63,7 +63,7 @@ func readOrientation(data []byte) int {
 	}
 	count := int64(order.Uint16(seg[ifd : ifd+2]))
 
-	for i := int64(0); i < count; i++ {
+	for i := range count {
 		start := ifd + 2 + i*ifdEntrySize
 		if start+ifdEntrySize > int64(len(seg)) {
 			return 0
