@@ -449,8 +449,13 @@ func TestSearchNegatedSizeAndDate(t *testing.T) {
 		{fmt.Sprintf("-smaller:%d", size), "UTC", []string{"message 1", "message 2"}},
 		{"after:2026-01-01", "UTC", []string{"message 1", "message 2"}},
 		{"-after:2026-01-01", "UTC", []string{"message 0"}},
-		{"before:2026-01-01", "UTC", []string{"message 0", "message 1"}},
-		{"-before:2026-01-01", "UTC", []string{"message 2"}},
+		{"before:2026-01-01", "UTC", []string{"message 0"}},
+		{"-before:2026-01-01", "UTC", []string{"message 1", "message 2"}},
+		// adjacent ranges tile: each message is in exactly one, none are dropped or counted twice
+		{"after:2025-12-31 before:2026-01-01", "UTC", []string{"message 0"}},
+		{"after:2026-01-01 before:2026-01-02", "UTC", []string{"message 1", "message 2"}},
+		// combined with a size filter, the control (message 0 is in the date range but too small)
+		{fmt.Sprintf("larger:%d before:2026-01-02", size), "UTC", []string{"message 1", "message 2"}},
 		// midnight in New York is 05:00 UTC
 		{"after:2026-01-01", "America/New_York", []string{"message 2"}},
 		{"-after:2026-01-01", "America/New_York", []string{"message 0", "message 1"}},

@@ -149,7 +149,7 @@ export const BASE_FILTERS = [
 		group: "Dates & sizes",
 		icon: "bi-calendar-event",
 		label: "after:",
-		description: "Filter messages after date (YYYY/MM/DD)",
+		description: "Filter messages on or after date (YYYY/MM/DD)",
 		insertText: "after:",
 	},
 	{
@@ -158,7 +158,7 @@ export const BASE_FILTERS = [
 		group: "Dates & sizes",
 		icon: "bi-hdd",
 		label: "larger:",
-		description: "Filter messages larger than size (e.g. 2M, 500KB)",
+		description: "Filter messages at least this size (e.g. 2M, 500KB)",
 		insertText: "larger:",
 	},
 	{
