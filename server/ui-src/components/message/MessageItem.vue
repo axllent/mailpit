@@ -700,6 +700,8 @@ export default {
 				tabindex="0"
 			>
 				<div id="responsive-view" :class="scaleHTMLPreview" :style="responsiveSizes[scaleHTMLPreview]">
+					<!-- allow-downloads is required for links to Content-Disposition: attachment URLs (#760).
+					Scripts remain disallowed and meta refresh is stripped, so downloads need a user click. -->
 					<iframe
 						id="preview-html"
 						target-blank=""
@@ -707,7 +709,7 @@ export default {
 						:srcdoc="sanitizedHTML"
 						frameborder="0"
 						style="width: 100%; height: 100%; background: #fff"
-						sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox"
+						sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-downloads"
 						@load="resizeIframe"
 					>
 					</iframe>
