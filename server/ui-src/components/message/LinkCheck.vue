@@ -428,7 +428,7 @@ export default {
 										</li>
 										<li>
 											To speed up the checking process, Link check will attempt 5 URLs at a time.
-											This could lead to temporary heady load on the remote server.
+											This could lead to temporary heavy load on the remote server.
 										</li>
 									</ul>
 									<p>

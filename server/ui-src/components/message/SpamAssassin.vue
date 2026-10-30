@@ -274,7 +274,7 @@ export default {
 									<p>
 										SpamAssassin will also return the tests which are triggered by the message.
 										These tests can differ depending on the configuration of your SpamAssassin
-										server. The total of this score makes up the the "spamminess" of the message.
+										server. The total of this score makes up the "spamminess" of the message.
 									</p>
 								</div>
 							</div>
