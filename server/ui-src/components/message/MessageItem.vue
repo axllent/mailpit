@@ -9,7 +9,7 @@ import { Tooltip } from "bootstrap";
 import commonMixins from "../../mixins/CommonMixins";
 import { mailbox } from "../../stores/mailbox";
 import { sanitizeHTML } from "../../utils/sanitize";
-import DOMPurify from "dompurify";
+import { textToHTML } from "../../utils/textToHTML";
 import hljs from "highlight.js/lib/core";
 import xml from "highlight.js/lib/languages/xml";
 
@@ -130,6 +130,8 @@ export default {
 	},
 
 	methods: {
+		textToHTML,
+
 		isHTMLTabSelected() {
 			this.showMobileButtons = this.$refs.navhtml && this.$refs.navhtml.classList.contains("active");
 		},
@@ -246,47 +248,6 @@ export default {
 			this.put(this.resolve("/api/v1/tags"), data, () => {
 				window.scrollInPlace = true;
 				this.$emit("loadMessages");
-			});
-		},
-
-		// Convert plain text to HTML including anchor links.
-		// Only <a> tags are permitted in the output (enforced by DOMPurify).
-		textToHTML(s) {
-			// Strip the Unicode placeholder characters used below so that attacker-
-			// controlled input cannot pre-inject fake HTML tags via those chars.
-			let html = s.replace(/(˱˱˱|ˠˠˠ|˲˲˲)/gu, "");
-
-			// RFC2396 appendix E states angle brackets are recommended for text/plain emails to
-			// recognize potential spaces in between the URL
-			// @see https://www.rfc-editor.org/rfc/rfc2396#appendix-E
-			const angleLinks = /<((https?|ftp):\/\/[-\w@:%_+'!.~#?,&//=; ][^>]+)>/gim;
-			html = html.replace(angleLinks, "<˱˱˱a href=ˠˠˠ$1ˠˠˠ target=_blank rel=noopener˲˲˲$1˱˱˱/a˲˲˲>");
-
-			// find links without angle brackets, starting with http(s) or ftp
-			const regularLinks = /([^ˠ˲]\b)(((https?|ftp):\/\/[-\w@:%_+'!.~#?,&//=;]+))/gim;
-			html = html.replace(regularLinks, "$1˱˱˱a href=ˠˠˠ$2ˠˠˠ target=_blank rel=noopener˲˲˲$2˱˱˱/a˲˲˲");
-
-			// plain www links without https?:// prefix
-			const shortLinks = /(^|[^/])(www\.[\S]+(\b|$))/gim;
-			html = html.replace(
-				shortLinks,
-				"$1˱˱˱a href=ˠˠˠhttp://$2ˠˠˠ target=ˠˠˠ_blankˠˠˠ rel=ˠˠˠnoopenerˠˠˠ˲˲˲$2˱˱˱/a˲˲˲",
-			);
-
-			// escape to HTML & convert <>" characters back
-			html = html
-				.replace(/&/g, "&amp;")
-				.replace(/</g, "&lt;")
-				.replace(/>/g, "&gt;")
-				.replace(/"/g, "&quot;")
-				.replace(/'/g, "&#039;")
-				.replace(/˱˱˱/g, "<")
-				.replace(/˲˲˲/g, ">")
-				.replace(/ˠˠˠ/g, '"');
-
-			return DOMPurify.sanitize(html, {
-				ALLOWED_TAGS: ["a"],
-				ALLOWED_ATTR: ["href", "target", "rel"],
 			});
 		},
 	},
