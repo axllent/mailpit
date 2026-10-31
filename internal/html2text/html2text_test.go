@@ -56,13 +56,13 @@ func TestWithLinks(t *testing.T) {
 }
 
 func BenchmarkPlain(b *testing.B) {
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		Strip(htmlTestData, false)
 	}
 }
 
 func BenchmarkLinks(b *testing.B) {
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		Strip(htmlTestData, true)
 	}
 }

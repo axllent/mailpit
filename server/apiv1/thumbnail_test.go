@@ -42,7 +42,7 @@ func solidRGBApng(width, height int) []byte {
 	var compressed bytes.Buffer
 	zw := zlib.NewWriter(&compressed)
 	row := make([]byte, 1+width*4)
-	for i := 0; i < height; i++ {
+	for range height {
 		_, _ = zw.Write(row)
 	}
 	_ = zw.Close()
@@ -79,7 +79,7 @@ func initTestDB(t *testing.T) {
 
 func storeEmailWithPNG(t *testing.T, subject string, png []byte) (msgID, partID string) {
 	t.Helper()
-	raw := []byte(fmt.Sprintf(
+	raw := fmt.Appendf(nil,
 		"From: a@example.test\r\nTo: b@example.test\r\nSubject: %s\r\n"+
 			"MIME-Version: 1.0\r\nContent-Type: multipart/mixed; boundary=\"b\"\r\n\r\n"+
 			"--b\r\nContent-Type: text/plain\r\n\r\nbody\r\n"+
@@ -87,7 +87,7 @@ func storeEmailWithPNG(t *testing.T, subject string, png []byte) (msgID, partID 
 			"Content-Disposition: attachment; filename=\"t.png\"\r\n"+
 			"Content-Transfer-Encoding: base64\r\n\r\n%s\r\n--b--\r\n",
 		subject, wrapBase64(png),
-	))
+	)
 	id, err := storage.Store(&raw, nil)
 	if err != nil {
 		t.Fatalf("Store: %v", err)

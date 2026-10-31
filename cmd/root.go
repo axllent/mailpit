@@ -110,7 +110,8 @@ func init() {
 	rootCmd.Flags().BoolVar(&config.BlockRemoteCSSAndFonts, "block-remote-css-and-fonts", config.BlockRemoteCSSAndFonts, "Block access to remote CSS & fonts")
 	rootCmd.Flags().BoolVar(&config.AllowInternalHTTPRequests, "allow-internal-http-requests", config.AllowInternalHTTPRequests, "Allow link checker, HTML checker & screenshots to access internal IP addresses")
 	rootCmd.Flags().BoolVar(&config.DisableLinkCheckRateLimit, "disable-link-check-rate-limit", config.DisableLinkCheckRateLimit, "Disable the per-domain rate limiter and result cache used by the link checker")
-	rootCmd.Flags().StringVar(&config.EnableSpamAssassin, "enable-spamassassin", config.EnableSpamAssassin, "Enable integration with SpamAssassin")
+	rootCmd.Flags().StringVar(&config.EnableSpamAssassin, "enable-spamassassin", config.EnableSpamAssassin, "Enable integration with SpamAssassin (<host>:<port>)")
+	rootCmd.Flags().StringVar(&config.EnableRspamd, "enable-rspamd", config.EnableRspamd, "Enable integration with Rspamd (https://<password>@<host>:<port>)")
 	rootCmd.Flags().BoolVar(&config.AllowUntrustedTLS, "allow-untrusted-tls", config.AllowUntrustedTLS, "Do not verify HTTPS certificates (link checker & screenshots)")
 	rootCmd.Flags().BoolVar(&config.DisableHTTPCompression, "disable-http-compression", config.DisableHTTPCompression, "Disable HTTP compression support (web UI & API)")
 	rootCmd.Flags().BoolVar(&config.HideDeleteAllButton, "hide-delete-all-button", config.HideDeleteAllButton, "Hide the \"Delete all\" button in the web UI")
@@ -272,6 +273,9 @@ func initConfigFromEnv() {
 	if len(os.Getenv("MP_ENABLE_SPAMASSASSIN")) > 0 {
 		config.EnableSpamAssassin = os.Getenv("MP_ENABLE_SPAMASSASSIN")
 	}
+	if len(os.Getenv("MP_ENABLE_RSPAMD")) > 0 {
+		config.EnableRspamd = os.Getenv("MP_ENABLE_RSPAMD")
+	}
 	if getEnabledFromEnv("MP_ALLOW_UNTRUSTED_TLS") {
 		config.AllowUntrustedTLS = true
 	}
@@ -349,6 +353,7 @@ func initConfigFromEnv() {
 	config.SMTPRelayConfig.Secret = os.Getenv("MP_SMTP_RELAY_SECRET")
 	config.SMTPRelayConfig.ReturnPath = os.Getenv("MP_SMTP_RELAY_RETURN_PATH")
 	config.SMTPRelayConfig.OverrideFrom = os.Getenv("MP_SMTP_RELAY_OVERRIDE_FROM")
+	config.SMTPRelayConfig.SubjectPrefix = os.Getenv("MP_SMTP_RELAY_SUBJECT_PREFIX")
 	config.SMTPRelayConfig.AllowedRecipients = os.Getenv("MP_SMTP_RELAY_ALLOWED_RECIPIENTS")
 	config.SMTPRelayConfig.BlockedRecipients = os.Getenv("MP_SMTP_RELAY_BLOCKED_RECIPIENTS")
 	config.SMTPRelayConfig.PreserveMessageIDs = getEnabledFromEnv("MP_SMTP_RELAY_PRESERVE_MESSAGE_IDS")
@@ -370,6 +375,7 @@ func initConfigFromEnv() {
 	config.SMTPForwardConfig.Secret = os.Getenv("MP_SMTP_FORWARD_SECRET")
 	config.SMTPForwardConfig.ReturnPath = os.Getenv("MP_SMTP_FORWARD_RETURN_PATH")
 	config.SMTPForwardConfig.OverrideFrom = os.Getenv("MP_SMTP_FORWARD_OVERRIDE_FROM")
+	config.SMTPForwardConfig.SubjectPrefix = os.Getenv("MP_SMTP_FORWARD_SUBJECT_PREFIX")
 	config.SMTPForwardConfig.To = os.Getenv("MP_SMTP_FORWARD_TO")
 	config.SMTPForwardConfig.ForwardSMTPErrors = getEnabledFromEnv("MP_SMTP_FORWARD_FWD_SMTP_ERRORS")
 

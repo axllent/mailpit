@@ -52,8 +52,7 @@ func SendMessageHandler(w http.ResponseWriter, r *http.Request) {
 	// prevents errors.As from finding *http.MaxBytesError to return a 413.
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		var maxErr *http.MaxBytesError
-		if errors.As(err, &maxErr) {
+		if _, ok := errors.AsType[*http.MaxBytesError](err); ok {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusRequestEntityTooLarge)
 			_ = json.NewEncoder(w).Encode(struct{ Error string }{Error: err.Error()})

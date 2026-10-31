@@ -63,7 +63,8 @@ func extractTextLinks(msg *storage.Message, c *linkCollector) {
 		return
 	}
 
-	testLinkRe := regexp.MustCompile(`(?im)([^<]\b)((http|https):\/\/([\-\w@:%_\+'!.~#?,&\/\/=;]+))`)
+	// a link may start the text, otherwise it must not follow a `<` (handled by bracketLinkRe below)
+	testLinkRe := regexp.MustCompile(`(?im)(\A|[^<]\b)((http|https):\/\/([\-\w@:%_\+'!.~#?,&\/\/=;]+))`)
 	// RFC2396 appendix E states angle brackets are recommended for text/plain emails to
 	// recognize potential spaces in between the URL
 	// @see https://www.rfc-editor.org/rfc/rfc2396#appendix-E

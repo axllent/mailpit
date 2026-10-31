@@ -262,6 +262,9 @@ func apiRoutes() *http.ServeMux {
 	if config.EnableSpamAssassin != "" {
 		r.HandleFunc("GET "+config.Webroot+"api/v1/message/{id}/sa-check", middleWareFunc(apiv1.SpamAssassinCheck))
 	}
+	if config.EnableRspamd != "" {
+		r.HandleFunc("GET "+config.Webroot+"api/v1/message/{id}/rspamd-check", middleWareFunc(apiv1.RspamdCheck))
+	}
 	r.HandleFunc("GET "+config.Webroot+"api/v1/message/{id}", middleWareFunc(apiv1.GetMessage))
 	r.HandleFunc("GET "+config.Webroot+"api/v1/info", middleWareFunc(apiv1.AppInfo))
 	r.HandleFunc("GET "+config.Webroot+"api/licenses", middleWareFunc(licenseInfo))

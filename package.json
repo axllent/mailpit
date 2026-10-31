@@ -26,7 +26,7 @@
     "ical.js": "^2.0.1",
     "mitt": "^3.0.1",
     "modern-screenshot": "^4.4.30",
-    "rapidoc": "^9.3.4",
+    "rapidoc": "^12.0.0",
     "timezones-list": "^3.0.3",
     "vue": "^3.2.13",
     "vue-css-donut-chart": "^2.0.0",
@@ -47,6 +47,10 @@
     "globals": "^17.3.0",
     "jsdom": "^30.1.3",
     "prettier": "^3.5.3"
+  },
+  "//overrides": "minimatch: remove once eslint depends on minimatch >= 11.0.1 (GHSA-g3hv-75wg-m249). Check by deleting this block, running npm install and npm audit.",
+  "overrides": {
+    "minimatch": "^11.0.1"
   },
   "prettier": {
     "tabWidth": 4,

@@ -157,7 +157,7 @@ func DownloadAttachment(w http.ResponseWriter, r *http.Request) {
 
 	contentType := a.ContentType
 	disposition := "inline"
-	mediaType := strings.SplitN(strings.ToLower(contentType), ";", 2)[0]
+	mediaType, _, _ := strings.Cut(strings.ToLower(contentType), ";")
 	switch mediaType {
 	case "text/html", "text/xml", "application/xhtml+xml",
 		"image/svg+xml", "application/xml", "text/xsl":

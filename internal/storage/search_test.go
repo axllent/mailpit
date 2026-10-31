@@ -6,7 +6,9 @@ import (
 	"math/rand/v2"
 	"net/mail"
 	"slices"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/axllent/mailpit/config"
 	"github.com/jhillyerd/enmime/v2"
@@ -378,6 +380,109 @@ func TestSearchJSONEscapedAddresses(t *testing.T) {
 	}
 	if n := CountTotal(); n != 1 {
 		t.Errorf(`DeleteSearch -from:"from & co": expected 1 message left, got %d`, n)
+	}
+}
+
+func TestSearchNegatedSizeAndDate(t *testing.T) {
+	setup("")
+	defer Close()
+
+	useMessageDates := config.UseMessageDates
+	config.UseMessageDates = true
+	defer func() { config.UseMessageDates = useMessageDates }()
+
+	t.Log("Testing negated size and date searches")
+
+	// the second message is dated exactly at midnight, the boundary of the date searches below
+	dates := []time.Time{
+		time.Date(2025, 12, 31, 12, 0, 0, 0, time.UTC),
+		time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC),
+		time.Date(2026, 1, 1, 12, 0, 0, 0, time.UTC),
+	}
+
+	for i, date := range dates {
+		env, err := enmime.Builder().
+			From("", "sender@example.com").
+			To("", "recipient@example.com").
+			Subject(fmt.Sprintf("message %d", i)).
+			Date(date).
+			Text([]byte(strings.Repeat("x", (i+1)*100))).
+			Build()
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		buf := new(bytes.Buffer)
+		if err := env.Encode(buf); err != nil {
+			t.Fatal(err)
+		}
+
+		b := buf.Bytes()
+		if _, err := Store(&b, nil); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	// use the size of the middle message, the boundary of the size searches below
+	all, _, err := Search("", "", 0, 0, 100)
+	if err != nil {
+		t.Fatal(err)
+	}
+	size := uint64(0)
+	for _, m := range all {
+		if m.Subject == "message 1" {
+			size = m.Size
+		}
+	}
+	if size == 0 {
+		t.Fatal("message 1 not found")
+	}
+
+	tests := []struct {
+		search   string
+		timezone string
+		want     []string
+	}{
+		{fmt.Sprintf("larger:%d", size), "UTC", []string{"message 1", "message 2"}},
+		{fmt.Sprintf("-larger:%d", size), "UTC", []string{"message 0"}},
+		{fmt.Sprintf("smaller:%d", size), "UTC", []string{"message 0"}},
+		{fmt.Sprintf("-smaller:%d", size), "UTC", []string{"message 1", "message 2"}},
+		{"after:2026-01-01", "UTC", []string{"message 1", "message 2"}},
+		{"-after:2026-01-01", "UTC", []string{"message 0"}},
+		{"before:2026-01-01", "UTC", []string{"message 0"}},
+		{"-before:2026-01-01", "UTC", []string{"message 1", "message 2"}},
+		// adjacent ranges tile: each message is in exactly one, none are dropped or counted twice
+		{"after:2025-12-31 before:2026-01-01", "UTC", []string{"message 0"}},
+		{"after:2026-01-01 before:2026-01-02", "UTC", []string{"message 1", "message 2"}},
+		// combined with a size filter, the control (message 0 is in the date range but too small)
+		{fmt.Sprintf("larger:%d before:2026-01-02", size), "UTC", []string{"message 1", "message 2"}},
+		// midnight in New York is 05:00 UTC
+		{"after:2026-01-01", "America/New_York", []string{"message 2"}},
+		{"-after:2026-01-01", "America/New_York", []string{"message 0", "message 1"}},
+		{"before:2026-01-01", "America/New_York", []string{"message 0", "message 1"}},
+		{"-before:2026-01-01", "America/New_York", []string{"message 2"}},
+		// midnight in Tokyo is 15:00 UTC the day before
+		{"after:2026-01-01", "Asia/Tokyo", []string{"message 1", "message 2"}},
+		{"-after:2026-01-01", "Asia/Tokyo", []string{"message 0"}},
+		{"before:2026-01-01", "Asia/Tokyo", []string{"message 0"}},
+		{"-before:2026-01-01", "Asia/Tokyo", []string{"message 1", "message 2"}},
+	}
+
+	for _, test := range tests {
+		if _, err := time.LoadLocation(test.timezone); err != nil {
+			t.Fatalf("timezone %s not available: %s", test.timezone, err)
+		}
+
+		summaries, _, err := Search(test.search, test.timezone, 0, 0, 100)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		got := subjects(summaries)
+		slices.Sort(got)
+		if !slices.Equal(got, test.want) {
+			t.Errorf("%s (%s) returned %v, expected %v", test.search, test.timezone, got, test.want)
+		}
 	}
 }
 

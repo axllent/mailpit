@@ -255,7 +255,7 @@ func maximalExif(orientation uint16) []byte {
 	// 8 header + 2 count + n*12 entries + 4 next offset + 6 Exif header + 2 length <= 65535
 	const entries = 5459
 	list := make([][]byte, 0, entries)
-	for i := 0; i < entries-1; i++ {
+	for range entries - 1 {
 		list = append(list, ifdEntry(le, 0x010F, 2, 1, 0))
 	}
 	list = append(list, ifdEntry(le, exifOrientationTag, tiffTypeShort, 1, orientation))

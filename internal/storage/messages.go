@@ -566,7 +566,11 @@ func MarkRead(ids []string) error {
 		}
 		toUpdate = append(toUpdate, id)
 	}
+	err = rows.Err()
 	_ = rows.Close()
+	if err != nil {
+		return err
+	}
 
 	if len(toUpdate) == 0 {
 		return nil
@@ -621,7 +625,11 @@ func MarkUnread(ids []string) error {
 		}
 		toUpdate = append(toUpdate, id)
 	}
+	err = rows.Err()
 	_ = rows.Close()
+	if err != nil {
+		return err
+	}
 
 	if len(toUpdate) == 0 {
 		return nil

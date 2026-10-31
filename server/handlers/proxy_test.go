@@ -43,7 +43,7 @@ func TestRecordAssetUniqueURLsScaleLinearly(t *testing.T) {
 	seedAssets(id)
 
 	start := time.Now()
-	for i := 0; i < n; i++ {
+	for i := range n {
 		recordAsset(id, fmt.Sprintf("https://example.test/asset/%06d", i))
 	}
 	elapsed := time.Since(start)
@@ -69,7 +69,7 @@ func TestRecordAssetDuplicatesControl(t *testing.T) {
 
 	seedAssets(id)
 
-	for i := 0; i < n; i++ {
+	for range n {
 		recordAsset(id, "https://example.test/asset/repeated")
 	}
 

@@ -460,6 +460,46 @@
         }
       }
     },
+    "/api/v1/message/{ID}/rspamd-check": {
+      "get": {
+        "description": "Returns the Rspamd summary (if enabled) of the message.\n\nThe ID can be set to `latest` to return the latest message.",
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "other"
+        ],
+        "summary": "Rspamd check",
+        "operationId": "RspamdCheckParams",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Message database ID or \"latest\"",
+            "name": "ID",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "RspamdResponse",
+            "schema": {
+              "$ref": "#/definitions/RspamdResponse"
+            }
+          },
+          "400": {
+            "$ref": "#/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/responses/NotFoundResponse"
+          }
+        }
+      }
+    },
     "/api/v1/message/{ID}/sa-check": {
       "get": {
         "description": "Returns the SpamAssassin summary (if enabled) of the message.\n\nThe ID can be set to `latest` to return the latest message.",
@@ -1908,25 +1948,62 @@
       },
       "x-go-package": "github.com/axllent/mailpit/server/apiv1"
     },
+    "RspamdResponse": {
+      "description": "Result is a Rspamd result",
+      "type": "object",
+      "properties": {
+        "Action": {
+          "description": "Action Rspamd recommends, eg: \"no action\", \"greylist\", \"add header\", \"reject\"",
+          "type": "string"
+        },
+        "Error": {
+          "description": "If populated will return an error string",
+          "type": "string"
+        },
+        "IsSpam": {
+          "description": "Whether the message is spam or not",
+          "type": "boolean"
+        },
+        "Rules": {
+          "description": "Rspamd symbols triggered",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Rule"
+          }
+        },
+        "Score": {
+          "description": "Total spam score based on triggered symbols",
+          "type": "number",
+          "format": "double"
+        },
+        "Threshold": {
+          "description": "Score at which Rspamd will start to treat a message as spam",
+          "type": "number",
+          "format": "double"
+        }
+      },
+      "x-go-name": "Result",
+      "x-go-package": "github.com/axllent/mailpit/internal/rspamd"
+    },
     "Rule": {
       "description": "Rule struct",
       "type": "object",
       "properties": {
         "Description": {
-          "description": "SpamAssassin rule description",
+          "description": "Rspamd symbol description",
           "type": "string"
         },
         "Name": {
-          "description": "SpamAssassin rule name",
+          "description": "Rspamd symbol name",
           "type": "string"
         },
         "Score": {
-          "description": "Spam rule score",
+          "description": "Symbol score",
           "type": "number",
           "format": "double"
         }
       },
-      "x-go-package": "github.com/axllent/mailpit/internal/spamassassin"
+      "x-go-package": "github.com/axllent/mailpit/internal/rspamd"
     },
     "SpamAssassinResponse": {
       "description": "Result is a SpamAssassin result",
@@ -2009,6 +2086,10 @@
               "type": "string"
             }
           }
+        },
+        "Rspamd": {
+          "description": "Whether Rspamd is enabled",
+          "type": "boolean"
         },
         "SpamAssassin": {
           "description": "Whether SpamAssassin is enabled",

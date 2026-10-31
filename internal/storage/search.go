@@ -33,7 +33,7 @@ func Search(search, timezone string, start int, beforeTS int64, limit int) ([]Me
 	q := searchQueryBuilder(search, timezone)
 
 	if beforeTS > 0 {
-		q = q.Where(`Created < ?`, beforeTS)
+		q = q.Where(`m.Created < ?`, beforeTS)
 	}
 
 	var err error
@@ -116,12 +116,12 @@ func SearchUnreadCount(search, timezone string, beforeTS int64) (int64, error) {
 	q := searchQueryBuilder(search, timezone)
 
 	if beforeTS > 0 {
-		q = q.Where(`Created < ?`, beforeTS)
+		q = q.Where(`m.Created < ?`, beforeTS)
 	}
 
 	var unread float64 // use float64 for rqlite compatibility
 
-	q = q.Where("Read = 0").Select(`COUNT(*)`)
+	q = q.Where("m.Read = 0").Select(`COUNT(*)`)
 
 	err := q.QueryAndClose(context.TODO(), db, func(row *sql.Rows) {
 		var ignore sql.NullString
@@ -267,7 +267,7 @@ func DeleteSearch(search, timezone string) error {
 
 // SetSearchReadStatus marks all messages matching the search as read or unread
 func SetSearchReadStatus(search, timezone string, read bool) error {
-	q := searchQueryBuilder(search, timezone).Where("Read = ?", !read)
+	q := searchQueryBuilder(search, timezone).Where("m.Read = ?", !read)
 
 	ids := []string{}
 
@@ -411,18 +411,18 @@ func searchQueryBuilder(searchString, timezone string) *sqlf.Stmt {
 			w = w[8:]
 			if w != "" {
 				if exclude {
-					q.Where("Subject NOT LIKE ? ESCAPE '\\'", "%"+escLikeChars(w)+"%")
+					q.Where("m.Subject NOT LIKE ? ESCAPE '\\'", "%"+escLikeChars(w)+"%")
 				} else {
-					q.Where("Subject LIKE ? ESCAPE '\\'", "%"+escLikeChars(w)+"%")
+					q.Where("m.Subject LIKE ? ESCAPE '\\'", "%"+escLikeChars(w)+"%")
 				}
 			}
 		} else if strings.HasPrefix(lw, "message-id:") {
 			w = cleanString(w[11:])
 			if w != "" {
 				if exclude {
-					q.Where("MessageID NOT LIKE ? ESCAPE '\\'", "%"+escLikeChars(w)+"%")
+					q.Where("m.MessageID NOT LIKE ? ESCAPE '\\'", "%"+escLikeChars(w)+"%")
 				} else {
-					q.Where("MessageID LIKE ? ESCAPE '\\'", "%"+escLikeChars(w)+"%")
+					q.Where("m.MessageID LIKE ? ESCAPE '\\'", "%"+escLikeChars(w)+"%")
 				}
 			}
 		} else if strings.HasPrefix(lw, "tag:") {
@@ -436,15 +436,15 @@ func searchQueryBuilder(searchString, timezone string) *sqlf.Stmt {
 			}
 		} else if lw == "is:read" {
 			if exclude {
-				q.Where("Read = 0")
+				q.Where("m.Read = 0")
 			} else {
-				q.Where("Read = 1")
+				q.Where("m.Read = 1")
 			}
 		} else if lw == "is:unread" {
 			if exclude {
-				q.Where("Read = 1")
+				q.Where("m.Read = 1")
 			} else {
-				q.Where("Read = 0")
+				q.Where("m.Read = 0")
 			}
 		} else if lw == "is:tagged" {
 			if exclude {
@@ -454,15 +454,15 @@ func searchQueryBuilder(searchString, timezone string) *sqlf.Stmt {
 			}
 		} else if lw == "has:inline" || lw == "has:inlines" {
 			if exclude {
-				q.Where("Inline = 0")
+				q.Where("m.Inline = 0")
 			} else {
-				q.Where("Inline > 0")
+				q.Where("m.Inline > 0")
 			}
 		} else if lw == "has:attachment" || lw == "has:attachments" {
 			if exclude {
-				q.Where("Attachments = 0")
+				q.Where("m.Attachments = 0")
 			} else {
-				q.Where("Attachments > 0")
+				q.Where("m.Attachments > 0")
 			}
 		} else if strings.HasPrefix(lw, "after:") {
 			w = strings.ToUpper(cleanString(w[6:]))
@@ -473,7 +473,7 @@ func searchQueryBuilder(searchString, timezone string) *sqlf.Stmt {
 				} else {
 					timestamp := t.UnixMilli()
 					if exclude {
-						q.Where(`m.Created <= ?`, timestamp)
+						q.Where(`m.Created < ?`, timestamp)
 					} else {
 						q.Where(`m.Created >= ?`, timestamp)
 					}
@@ -490,7 +490,7 @@ func searchQueryBuilder(searchString, timezone string) *sqlf.Stmt {
 					if exclude {
 						q.Where(`m.Created >= ?`, timestamp)
 					} else {
-						q.Where(`m.Created <= ?`, timestamp)
+						q.Where(`m.Created < ?`, timestamp)
 					}
 				}
 			}
@@ -498,24 +498,24 @@ func searchQueryBuilder(searchString, timezone string) *sqlf.Stmt {
 			w = cleanString(w[7:])
 			size := sizeToBytes(w)
 			if exclude {
-				q.Where("Size < ?", size)
+				q.Where("m.Size < ?", size)
 			} else {
-				q.Where("Size > ?", size)
+				q.Where("m.Size >= ?", size)
 			}
 		} else if strings.HasPrefix(lw, "smaller:") && sizeToBytes(cleanString(w[8:])) > 0 {
 			w = cleanString(w[8:])
 			size := sizeToBytes(w)
 			if exclude {
-				q.Where("Size > ?", size)
+				q.Where("m.Size >= ?", size)
 			} else {
-				q.Where("Size < ?", size)
+				q.Where("m.Size < ?", size)
 			}
 		} else {
 			// search text
 			if exclude {
-				q.Where("SearchText NOT LIKE ? ESCAPE '\\'", "%"+escLikeChars(cleanString(w))+"%")
+				q.Where("m.SearchText NOT LIKE ? ESCAPE '\\'", "%"+escLikeChars(cleanString(w))+"%")
 			} else {
-				q.Where("SearchText LIKE ? ESCAPE '\\'", "%"+escLikeChars(cleanString(w))+"%")
+				q.Where("m.SearchText LIKE ? ESCAPE '\\'", "%"+escLikeChars(cleanString(w))+"%")
 			}
 		}
 	}

@@ -43,6 +43,12 @@ func dbApplySchemas() error {
 			}
 		}
 
+		err = rows.Err()
+		_ = rows.Close()
+		if err != nil {
+			return err
+		}
+
 		legacySchemas = semver.SortMin(legacySchemas)
 
 		for _, v := range legacySchemas {

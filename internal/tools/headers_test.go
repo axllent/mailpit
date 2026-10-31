@@ -2,6 +2,8 @@ package tools
 
 import (
 	"bytes"
+	"mime"
+	"net/mail"
 	"strings"
 	"testing"
 )
@@ -194,5 +196,75 @@ func TestRemoveMessageHeaders_MissingHeader(t *testing.T) {
 	}
 	if !bytes.Equal(out, msg) {
 		t.Fatalf("message was modified when target header was absent")
+	}
+}
+
+func subjectOf(t *testing.T, msg []byte) string {
+	t.Helper()
+	m, err := mail.ReadMessage(bytes.NewReader(msg))
+	if err != nil {
+		t.Fatalf("unable to parse result: %v", err)
+	}
+	s, err := new(mime.WordDecoder).DecodeHeader(m.Header.Get("Subject"))
+	if err != nil {
+		t.Fatalf("unable to decode subject: %v", err)
+	}
+	return s
+}
+
+func TestPrefixSubject(t *testing.T) {
+	tests := []struct {
+		name, prefix string
+		headers      []string
+		want         string
+	}{
+		{"plain", "[TEST]", []string{"Subject: Hello"}, "[TEST] Hello"},
+		{"prefix is trimmed", "  [TEST]  ", []string{"Subject: Hello"}, "[TEST] Hello"},
+		{"folded", "[TEST]", []string{"Subject: Hello", " world"}, "[TEST] Hello world"},
+		{"encoded word", "[TEST]", []string{"Subject: =?UTF-8?Q?caf=C3=A9?="}, "[TEST] café"},
+		{"non-ASCII prefix", "[Tëst]", []string{"Subject: Hello"}, "[Tëst] Hello"},
+		{"missing subject", "[TEST]", []string{"From: a@example.test"}, "[TEST]"},
+		{"empty subject", "[TEST]", []string{"Subject:"}, "[TEST]"},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			out, err := PrefixSubject(buildMessage(append([]string{"From: a@example.test"}, tc.headers...)...), tc.prefix)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if got := subjectOf(t, out); got != tc.want {
+				t.Fatalf("subject = %q, want %q", got, tc.want)
+			}
+			if !bytes.HasSuffix(out, []byte("\r\n\r\nbody\r\n")) {
+				t.Fatalf("body was modified")
+			}
+		})
+	}
+}
+
+// TestPrefixSubject_HeaderInjection checks a CRLF prefix is rejected (exploit)
+// while a benign prefix of the same shape succeeds (control).
+func TestPrefixSubject_HeaderInjection(t *testing.T) {
+	msg := buildMessage("From: a@example.test", "Subject: Hello")
+
+	if _, err := PrefixSubject(msg, "[TEST]\r\nBcc: evil@example.test"); err == nil {
+		t.Fatalf("expected error for prefix containing line breaks")
+	}
+
+	out, err := PrefixSubject(msg, "[TEST] Bcc: evil@example.test")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if bytes.Contains(out, []byte("\r\nBcc:")) {
+		t.Fatalf("injected header found")
+	}
+}
+
+func TestPrefixSubject_EmptyPrefix(t *testing.T) {
+	msg := buildMessage("From: a@example.test", "Subject: Hello")
+	out, err := PrefixSubject(msg, "  ")
+	if err != nil || !bytes.Equal(out, msg) {
+		t.Fatalf("empty prefix should leave message untouched (err=%v)", err)
 	}
 }

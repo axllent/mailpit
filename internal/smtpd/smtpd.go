@@ -133,8 +133,8 @@ type Server struct {
 	Protocol                 string      // Default tcp, supports unix
 	SocketPerm               fs.FileMode // if using Unix socket, socket permissions
 
-	inShutdown   int32 // server was closed or shutdown
-	openSessions int32 // count of open sessions
+	inShutdown   atomic.Int32 // server was closed or shutdown
+	openSessions atomic.Int32 // count of open sessions
 	mu           sync.Mutex
 	shutdownChan chan struct{} // let the sessions know we are shutting down
 
@@ -187,7 +187,7 @@ func (srv *Server) ConfigureTLS(certFile string, keyFile string) error {
 // alternatively a Unix socket. and then calls Serve to handle requests on
 // incoming connections. If srv.Addr is blank, ":25" is used.
 func (srv *Server) ListenAndServe() error {
-	if atomic.LoadInt32(&srv.inShutdown) != 0 {
+	if srv.inShutdown.Load() != 0 {
 		return ErrServerClosed
 	}
 
@@ -233,7 +233,7 @@ func (srv *Server) ListenAndServe() error {
 
 // Serve creates a new SMTP session after a network connection is established.
 func (srv *Server) Serve(ln net.Listener) error {
-	if atomic.LoadInt32(&srv.inShutdown) != 0 {
+	if srv.inShutdown.Load() != 0 {
 		return ErrServerClosed
 	}
 
@@ -278,7 +278,7 @@ func (srv *Server) Serve(ln net.Listener) error {
 		}
 
 		session := srv.newSession(conn)
-		atomic.AddInt32(&srv.openSessions, 1)
+		srv.openSessions.Add(1)
 		go func() {
 			defer limiter.Release()
 			session.serve()
@@ -365,14 +365,14 @@ func (srv *Server) closeShutdownChan() {
 
 // Close - closes the connection without waiting
 func (srv *Server) Close() error {
-	atomic.StoreInt32(&srv.inShutdown, 1)
+	srv.inShutdown.Store(1)
 	srv.closeShutdownChan()
 	return nil
 }
 
 // Shutdown - waits for current sessions to complete before closing
 func (srv *Server) Shutdown(ctx context.Context) error {
-	atomic.StoreInt32(&srv.inShutdown, 1)
+	srv.inShutdown.Store(1)
 	srv.closeShutdownChan()
 
 	// wait for up to 30 seconds to allow the current sessions to
@@ -382,7 +382,7 @@ func (srv *Server) Shutdown(ctx context.Context) error {
 
 	for range 300 {
 		// wait for open sessions to close
-		if atomic.LoadInt32(&srv.openSessions) == 0 {
+		if srv.openSessions.Load() == 0 {
 			break
 		}
 
@@ -400,7 +400,7 @@ func (srv *Server) Shutdown(ctx context.Context) error {
 
 // Function called to handle connection requests.
 func (s *session) serve() {
-	defer atomic.AddInt32(&s.srv.openSessions, -1)
+	defer s.srv.openSessions.Add(-1)
 	// pass the connection into the defer function to ensure it is closed,
 	// otherwise results in a 5s timeout for each connection
 	defer func(c net.Conn) { _ = c.Close() }(s.conn)

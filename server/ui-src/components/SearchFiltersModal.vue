@@ -304,7 +304,7 @@ export default {
 									</tr>
 									<tr>
 										<td><code>after:&lt;date&gt;</code></td>
-										<td>Messages after date (format: YYYY/MM/DD)</td>
+										<td>Messages on or after date (format: YYYY/MM/DD)</td>
 										<td>
 											<span
 												class="badge bg-secondary-subtle text-body border search-filter-badge"
@@ -318,7 +318,7 @@ export default {
 									</tr>
 									<tr>
 										<td><code>larger:&lt;size&gt;</code></td>
-										<td>Messages larger than size (K, KB, M, MB)</td>
+										<td>Messages at least this size (K, KB, M, MB)</td>
 										<td>
 											<span
 												class="badge bg-secondary-subtle text-body border search-filter-badge"

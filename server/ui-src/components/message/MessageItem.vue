@@ -3,13 +3,13 @@ import Attachments from "./MessageAttachments.vue";
 import Headers from "./MessageHeaders.vue";
 import HTMLCheck from "./HTMLCheck.vue";
 import LinkCheck from "./LinkCheck.vue";
-import SpamAssassin from "./SpamAssassin.vue";
+import SpamCheck from "./SpamCheck.vue";
 import Tags from "bootstrap5-tags";
 import { Tooltip } from "bootstrap";
 import commonMixins from "../../mixins/CommonMixins";
 import { mailbox } from "../../stores/mailbox";
 import { sanitizeHTML } from "../../utils/sanitize";
-import DOMPurify from "dompurify";
+import { textToHTML } from "../../utils/textToHTML";
 import hljs from "highlight.js/lib/core";
 import xml from "highlight.js/lib/languages/xml";
 
@@ -21,7 +21,7 @@ export default {
 		Headers,
 		HTMLCheck,
 		LinkCheck,
-		SpamAssassin,
+		SpamCheck,
 	},
 
 	mixins: [commonMixins],
@@ -49,6 +49,8 @@ export default {
 			linkCheckErrors: false,
 			spamScore: false,
 			spamScoreColor: false,
+			rspamdScore: false,
+			rspamdScoreColor: false,
 			showMobileButtons: false,
 			showUnsubscribe: false,
 			scaleHTMLPreview: "display",
@@ -62,11 +64,26 @@ export default {
 	},
 
 	computed: {
+		// both spam services are enabled, so tabs must identify which is which
+		showSpamServiceNames() {
+			return !!(mailbox.uiConfig.SpamAssassin && mailbox.uiConfig.Rspamd);
+		},
+
+		// number of check tabs which are shown, used to size the tab bar
+		enabledCheckCount() {
+			return (
+				(mailbox.showHTMLCheck && this.message.HTML ? 1 : 0) +
+				(mailbox.showLinkCheck ? 1 : 0) +
+				(mailbox.showSpamCheck && mailbox.uiConfig.SpamAssassin ? 1 : 0) +
+				(mailbox.showSpamCheck && mailbox.uiConfig.Rspamd ? 1 : 0)
+			);
+		},
+
 		hasAnyChecksEnabled() {
 			return (
 				(mailbox.showHTMLCheck && this.message.HTML) ||
 				mailbox.showLinkCheck ||
-				(mailbox.showSpamCheck && mailbox.uiConfig.SpamAssassin)
+				(mailbox.showSpamCheck && (mailbox.uiConfig.SpamAssassin || mailbox.uiConfig.Rspamd))
 			);
 		},
 
@@ -130,6 +147,12 @@ export default {
 	},
 
 	methods: {
+		spamTabLabel(name) {
+			return this.showSpamServiceNames ? name : "Spam Analysis";
+		},
+
+		textToHTML,
+
 		isHTMLTabSelected() {
 			this.showMobileButtons = this.$refs.navhtml && this.$refs.navhtml.classList.contains("active");
 		},
@@ -246,47 +269,6 @@ export default {
 			this.put(this.resolve("/api/v1/tags"), data, () => {
 				window.scrollInPlace = true;
 				this.$emit("loadMessages");
-			});
-		},
-
-		// Convert plain text to HTML including anchor links.
-		// Only <a> tags are permitted in the output (enforced by DOMPurify).
-		textToHTML(s) {
-			// Strip the Unicode placeholder characters used below so that attacker-
-			// controlled input cannot pre-inject fake HTML tags via those chars.
-			let html = s.replace(/(˱˱˱|ˠˠˠ|˲˲˲)/gu, "");
-
-			// RFC2396 appendix E states angle brackets are recommended for text/plain emails to
-			// recognize potential spaces in between the URL
-			// @see https://www.rfc-editor.org/rfc/rfc2396#appendix-E
-			const angleLinks = /<((https?|ftp):\/\/[-\w@:%_+'!.~#?,&//=; ][^>]+)>/gim;
-			html = html.replace(angleLinks, "<˱˱˱a href=ˠˠˠ$1ˠˠˠ target=_blank rel=noopener˲˲˲$1˱˱˱/a˲˲˲>");
-
-			// find links without angle brackets, starting with http(s) or ftp
-			const regularLinks = /([^ˠ˲]\b)(((https?|ftp):\/\/[-\w@:%_+'!.~#?,&//=;]+))/gim;
-			html = html.replace(regularLinks, "$1˱˱˱a href=ˠˠˠ$2ˠˠˠ target=_blank rel=noopener˲˲˲$2˱˱˱/a˲˲˲");
-
-			// plain www links without https?:// prefix
-			const shortLinks = /(^|[^/])(www\.[\S]+(\b|$))/gim;
-			html = html.replace(
-				shortLinks,
-				"$1˱˱˱a href=ˠˠˠhttp://$2ˠˠˠ target=ˠˠˠ_blankˠˠˠ rel=ˠˠˠnoopenerˠˠˠ˲˲˲$2˱˱˱/a˲˲˲",
-			);
-
-			// escape to HTML & convert <>" characters back
-			html = html
-				.replace(/&/g, "&amp;")
-				.replace(/</g, "&lt;")
-				.replace(/>/g, "&gt;")
-				.replace(/"/g, "&quot;")
-				.replace(/'/g, "&#039;")
-				.replace(/˱˱˱/g, "<")
-				.replace(/˲˲˲/g, ">")
-				.replace(/ˠˠˠ/g, '"');
-
-			return DOMPurify.sanitize(html, {
-				ALLOWED_TAGS: ["a"],
-				ALLOWED_ATTR: ["href", "target", "rel"],
 			});
 		},
 	},
@@ -505,7 +487,7 @@ export default {
 			</div>
 		</div>
 
-		<nav id="nav-tab" class="nav nav-tabs my-3 d-print-none" role="tablist">
+		<nav id="nav-tab" class="nav nav-tabs my-3 d-print-none" :class="'checks-' + enabledCheckCount" role="tablist">
 			<template v-if="message.HTML">
 				<div class="btn-group">
 					<button
@@ -596,7 +578,7 @@ export default {
 			>
 				Raw
 			</button>
-			<div v-show="hasAnyChecksEnabled" class="dropdown d-xl-none">
+			<div v-show="hasAnyChecksEnabled" class="dropdown checks-dropdown">
 				<button class="nav-link dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
 					Checks
 				</button>
@@ -653,7 +635,7 @@ export default {
 							aria-controls="nav-html"
 							aria-selected="false"
 						>
-							Spam Analysis
+							{{ spamTabLabel("SpamAssassin") }}
 							<span
 								v-if="spamScore !== false"
 								class="badge rounded-pill float-end"
@@ -663,12 +645,33 @@ export default {
 							</span>
 						</button>
 					</li>
+					<li v-if="mailbox.showSpamCheck && mailbox.uiConfig.Rspamd">
+						<button
+							id="nav-rspamd-check-tab"
+							class="dropdown-item"
+							data-bs-toggle="tab"
+							data-bs-target="#nav-rspamd-check"
+							type="button"
+							role="tab"
+							aria-controls="nav-html"
+							aria-selected="false"
+						>
+							{{ spamTabLabel("Rspamd") }}
+							<span
+								v-if="rspamdScore !== false"
+								class="badge rounded-pill float-end"
+								:class="rspamdScoreColor"
+							>
+								<small>{{ rspamdScore }}</small>
+							</span>
+						</button>
+					</li>
 				</ul>
 			</div>
 			<button
 				v-if="mailbox.showHTMLCheck && message.HTML != ''"
 				id="nav-html-check-tab"
-				class="d-none d-xl-inline-block nav-link position-relative"
+				class="check-tab nav-link position-relative"
 				data-bs-toggle="tab"
 				data-bs-target="#nav-html-check"
 				type="button"
@@ -684,7 +687,7 @@ export default {
 			<button
 				v-if="mailbox.showLinkCheck"
 				id="nav-link-check-tab"
-				class="d-none d-xl-inline-block nav-link"
+				class="check-tab nav-link"
 				data-bs-toggle="tab"
 				data-bs-target="#nav-link-check"
 				type="button"
@@ -701,7 +704,7 @@ export default {
 			<button
 				v-if="mailbox.showSpamCheck && mailbox.uiConfig.SpamAssassin"
 				id="nav-spam-check-tab"
-				class="d-none d-xl-inline-block nav-link position-relative"
+				class="check-tab nav-link position-relative"
 				data-bs-toggle="tab"
 				data-bs-target="#nav-spam-check"
 				type="button"
@@ -709,9 +712,25 @@ export default {
 				aria-controls="nav-html"
 				aria-selected="false"
 			>
-				Spam Analysis
+				{{ spamTabLabel("SpamAssassin") }}
 				<span v-if="spamScore !== false" class="badge rounded-pill" :class="spamScoreColor">
 					<small>{{ spamScore }}</small>
+				</span>
+			</button>
+			<button
+				v-if="mailbox.showSpamCheck && mailbox.uiConfig.Rspamd"
+				id="nav-rspamd-check-tab"
+				class="check-tab nav-link position-relative"
+				data-bs-toggle="tab"
+				data-bs-target="#nav-rspamd-check"
+				type="button"
+				role="tab"
+				aria-controls="nav-html"
+				aria-selected="false"
+			>
+				{{ spamTabLabel("Rspamd") }}
+				<span v-if="rspamdScore !== false" class="badge rounded-pill" :class="rspamdScoreColor">
+					<small>{{ rspamdScore }}</small>
 				</span>
 			</button>
 
@@ -739,6 +758,8 @@ export default {
 				tabindex="0"
 			>
 				<div id="responsive-view" :class="scaleHTMLPreview" :style="responsiveSizes[scaleHTMLPreview]">
+					<!-- allow-downloads is required for links to Content-Disposition: attachment URLs (#760).
+					Scripts remain disallowed and meta refresh is stripped, so downloads need a user click. -->
 					<iframe
 						id="preview-html"
 						target-blank=""
@@ -746,7 +767,7 @@ export default {
 						:srcdoc="sanitizedHTML"
 						frameborder="0"
 						style="width: 100%; height: 100%; background: #fff"
-						sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox"
+						sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-downloads"
 						@load="resizeIframe"
 					>
 					</iframe>
@@ -820,10 +841,27 @@ export default {
 				aria-labelledby="nav-spam-check-tab"
 				tabindex="0"
 			>
-				<SpamAssassin
+				<SpamCheck
+					:show-service-name="showSpamServiceNames"
 					:message="message"
 					@set-spam-score="(n) => (spamScore = n)"
 					@set-badge-style="(v) => (spamScoreColor = v)"
+				/>
+			</div>
+			<div
+				v-if="mailbox.showSpamCheck && mailbox.uiConfig.Rspamd"
+				id="nav-rspamd-check"
+				class="tab-pane fade"
+				role="tabpanel"
+				aria-labelledby="nav-rspamd-check-tab"
+				tabindex="0"
+			>
+				<SpamCheck
+					service="rspamd"
+					:show-service-name="showSpamServiceNames"
+					:message="message"
+					@set-spam-score="(n) => (rspamdScore = n)"
+					@set-badge-style="(v) => (rspamdScoreColor = v)"
 				/>
 			</div>
 			<div

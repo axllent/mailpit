@@ -14,6 +14,7 @@ import (
 	"github.com/axllent/ghru/v2"
 	"github.com/axllent/mailpit/internal/auth"
 	"github.com/axllent/mailpit/internal/logger"
+	"github.com/axllent/mailpit/internal/rspamd"
 	"github.com/axllent/mailpit/internal/smtpd/chaos"
 	"github.com/axllent/mailpit/internal/snakeoil"
 	"github.com/axllent/mailpit/internal/spamassassin"
@@ -217,6 +218,10 @@ var (
 	// EnableSpamAssassin must be either <host>:<port> or "postmark"
 	EnableSpamAssassin string
 
+	// EnableRspamd must be either <host>:<port> or a URL, optionally including the password
+	// as userinfo, eg: https://password@host:11334
+	EnableRspamd string
+
 	// HideDeleteAllButton hides the delete all button in the web UI
 	HideDeleteAllButton bool
 
@@ -265,6 +270,7 @@ type SMTPRelayConfigStruct struct {
 	Secret                  string         `yaml:"secret"`             // cram-md5
 	ReturnPath              string         `yaml:"return-path"`        // allow overriding the bounce address
 	OverrideFrom            string         `yaml:"override-from"`      // allow overriding of the from address
+	SubjectPrefix           string         `yaml:"subject-prefix"`     // text to prepend to the Subject
 	AllowedRecipients       string         `yaml:"allowed-recipients"` // regex, if set needs to match for mails to be relayed
 	AllowedRecipientsRegexp *regexp.Regexp // compiled regexp using AllowedRecipients
 	BlockedRecipients       string         `yaml:"blocked-recipients"` // regex, if set prevents relating to these addresses
@@ -290,6 +296,7 @@ type SMTPForwardConfigStruct struct {
 	Secret            string `yaml:"secret"`              // cram-md5
 	ReturnPath        string `yaml:"return-path"`         // allow overriding the bounce address
 	OverrideFrom      string `yaml:"override-from"`       // allow overriding of the from address
+	SubjectPrefix     string `yaml:"subject-prefix"`      // text to prepend to the Subject
 	ForwardSMTPErrors bool   `yaml:"forward-smtp-errors"` // whether to log smtp-errors or forward them to upstream-client
 }
 
@@ -584,6 +591,18 @@ func VerifyConfig() error {
 
 		if err := spamassassin.Ping(); err != nil {
 			logger.Log().Warnf("[spamassassin] ping: %s", err.Error())
+		}
+	}
+
+	if EnableRspamd != "" {
+		server, err := rspamd.SetService(EnableRspamd)
+		if err != nil {
+			return err
+		}
+		logger.Log().Infof("[rspamd] enabled via %s", server)
+
+		if err := rspamd.Ping(); err != nil {
+			logger.Log().Warnf("[rspamd] ping: %s", err.Error())
 		}
 	}
 

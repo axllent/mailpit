@@ -148,6 +148,13 @@ func Relay(from string, to []string, msg []byte) error {
 		from = config.SMTPRelayConfig.OverrideFrom
 	}
 
+	if config.SMTPRelayConfig.SubjectPrefix != "" {
+		msg, err = tools.PrefixSubject(msg, config.SMTPRelayConfig.SubjectPrefix)
+		if err != nil {
+			return fmt.Errorf("error prefixing Subject header: %s", err.Error())
+		}
+	}
+
 	if err = c.Mail(from); err != nil {
 		return errors.WithMessage(err, "error sending MAIL command")
 	}

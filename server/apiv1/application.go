@@ -68,6 +68,7 @@ func WebUIConfig(w http.ResponseWriter, _ *http.Request) {
 	}
 
 	conf.Body.SpamAssassin = config.EnableSpamAssassin != ""
+	conf.Body.Rspamd = config.EnableRspamd != ""
 	conf.Body.ChaosEnabled = chaos.Enabled
 	conf.Body.DuplicatesIgnored = config.IgnoreDuplicateIDs
 	conf.Body.HideDeleteAllButton = config.HideDeleteAllButton
