@@ -3,7 +3,7 @@ import Attachments from "./MessageAttachments.vue";
 import Headers from "./MessageHeaders.vue";
 import HTMLCheck from "./HTMLCheck.vue";
 import LinkCheck from "./LinkCheck.vue";
-import SpamAssassin from "./SpamAssassin.vue";
+import SpamCheck from "./SpamCheck.vue";
 import Tags from "bootstrap5-tags";
 import { Tooltip } from "bootstrap";
 import commonMixins from "../../mixins/CommonMixins";
@@ -21,7 +21,7 @@ export default {
 		Headers,
 		HTMLCheck,
 		LinkCheck,
-		SpamAssassin,
+		SpamCheck,
 	},
 
 	mixins: [commonMixins],
@@ -49,6 +49,8 @@ export default {
 			linkCheckErrors: false,
 			spamScore: false,
 			spamScoreColor: false,
+			rspamdScore: false,
+			rspamdScoreColor: false,
 			showMobileButtons: false,
 			showUnsubscribe: false,
 			scaleHTMLPreview: "display",
@@ -62,11 +64,16 @@ export default {
 	},
 
 	computed: {
+		// both spam services are enabled, so tabs must identify which is which
+		showSpamServiceNames() {
+			return !!(mailbox.uiConfig.SpamAssassin && mailbox.uiConfig.Rspamd);
+		},
+
 		hasAnyChecksEnabled() {
 			return (
 				(mailbox.showHTMLCheck && this.message.HTML) ||
 				mailbox.showLinkCheck ||
-				(mailbox.showSpamCheck && mailbox.uiConfig.SpamAssassin)
+				(mailbox.showSpamCheck && (mailbox.uiConfig.SpamAssassin || mailbox.uiConfig.Rspamd))
 			);
 		},
 
@@ -130,6 +137,10 @@ export default {
 	},
 
 	methods: {
+		spamTabLabel(name) {
+			return this.showSpamServiceNames ? name : "Spam Analysis";
+		},
+
 		textToHTML,
 
 		isHTMLTabSelected() {
@@ -557,7 +568,7 @@ export default {
 			>
 				Raw
 			</button>
-			<div v-show="hasAnyChecksEnabled" class="dropdown d-xl-none">
+			<div v-show="hasAnyChecksEnabled" class="dropdown d-xxl-none">
 				<button class="nav-link dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
 					Checks
 				</button>
@@ -614,7 +625,7 @@ export default {
 							aria-controls="nav-html"
 							aria-selected="false"
 						>
-							Spam Analysis
+							{{ spamTabLabel("SpamAssassin") }}
 							<span
 								v-if="spamScore !== false"
 								class="badge rounded-pill float-end"
@@ -624,12 +635,33 @@ export default {
 							</span>
 						</button>
 					</li>
+					<li v-if="mailbox.showSpamCheck && mailbox.uiConfig.Rspamd">
+						<button
+							id="nav-rspamd-check-tab"
+							class="dropdown-item"
+							data-bs-toggle="tab"
+							data-bs-target="#nav-rspamd-check"
+							type="button"
+							role="tab"
+							aria-controls="nav-html"
+							aria-selected="false"
+						>
+							{{ spamTabLabel("Rspamd") }}
+							<span
+								v-if="rspamdScore !== false"
+								class="badge rounded-pill float-end"
+								:class="rspamdScoreColor"
+							>
+								<small>{{ rspamdScore }}</small>
+							</span>
+						</button>
+					</li>
 				</ul>
 			</div>
 			<button
 				v-if="mailbox.showHTMLCheck && message.HTML != ''"
 				id="nav-html-check-tab"
-				class="d-none d-xl-inline-block nav-link position-relative"
+				class="d-none d-xxl-inline-block nav-link position-relative"
 				data-bs-toggle="tab"
 				data-bs-target="#nav-html-check"
 				type="button"
@@ -645,7 +677,7 @@ export default {
 			<button
 				v-if="mailbox.showLinkCheck"
 				id="nav-link-check-tab"
-				class="d-none d-xl-inline-block nav-link"
+				class="d-none d-xxl-inline-block nav-link"
 				data-bs-toggle="tab"
 				data-bs-target="#nav-link-check"
 				type="button"
@@ -662,7 +694,7 @@ export default {
 			<button
 				v-if="mailbox.showSpamCheck && mailbox.uiConfig.SpamAssassin"
 				id="nav-spam-check-tab"
-				class="d-none d-xl-inline-block nav-link position-relative"
+				class="d-none d-xxl-inline-block nav-link position-relative"
 				data-bs-toggle="tab"
 				data-bs-target="#nav-spam-check"
 				type="button"
@@ -670,9 +702,25 @@ export default {
 				aria-controls="nav-html"
 				aria-selected="false"
 			>
-				Spam Analysis
+				{{ spamTabLabel("SpamAssassin") }}
 				<span v-if="spamScore !== false" class="badge rounded-pill" :class="spamScoreColor">
 					<small>{{ spamScore }}</small>
+				</span>
+			</button>
+			<button
+				v-if="mailbox.showSpamCheck && mailbox.uiConfig.Rspamd"
+				id="nav-rspamd-check-tab"
+				class="d-none d-xxl-inline-block nav-link position-relative"
+				data-bs-toggle="tab"
+				data-bs-target="#nav-rspamd-check"
+				type="button"
+				role="tab"
+				aria-controls="nav-html"
+				aria-selected="false"
+			>
+				{{ spamTabLabel("Rspamd") }}
+				<span v-if="rspamdScore !== false" class="badge rounded-pill" :class="rspamdScoreColor">
+					<small>{{ rspamdScore }}</small>
 				</span>
 			</button>
 
@@ -783,10 +831,27 @@ export default {
 				aria-labelledby="nav-spam-check-tab"
 				tabindex="0"
 			>
-				<SpamAssassin
+				<SpamCheck
+					:show-service-name="showSpamServiceNames"
 					:message="message"
 					@set-spam-score="(n) => (spamScore = n)"
 					@set-badge-style="(v) => (spamScoreColor = v)"
+				/>
+			</div>
+			<div
+				v-if="mailbox.showSpamCheck && mailbox.uiConfig.Rspamd"
+				id="nav-rspamd-check"
+				class="tab-pane fade"
+				role="tabpanel"
+				aria-labelledby="nav-rspamd-check-tab"
+				tabindex="0"
+			>
+				<SpamCheck
+					service="rspamd"
+					:show-service-name="showSpamServiceNames"
+					:message="message"
+					@set-spam-score="(n) => (rspamdScore = n)"
+					@set-badge-style="(v) => (rspamdScoreColor = v)"
 				/>
 			</div>
 			<div

@@ -228,7 +228,7 @@ export default {
 									</label>
 								</div>
 							</div>
-							<div v-if="mailbox.uiConfig.SpamAssassin" class="mb-3">
+							<div v-if="mailbox.uiConfig.SpamAssassin || mailbox.uiConfig.Rspamd" class="mb-3">
 								<div class="form-check form-switch">
 									<input
 										id="spamCheck"

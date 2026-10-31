@@ -14,6 +14,7 @@ import (
 	"github.com/axllent/ghru/v2"
 	"github.com/axllent/mailpit/internal/auth"
 	"github.com/axllent/mailpit/internal/logger"
+	"github.com/axllent/mailpit/internal/rspamd"
 	"github.com/axllent/mailpit/internal/smtpd/chaos"
 	"github.com/axllent/mailpit/internal/snakeoil"
 	"github.com/axllent/mailpit/internal/spamassassin"
@@ -216,6 +217,10 @@ var (
 
 	// EnableSpamAssassin must be either <host>:<port> or "postmark"
 	EnableSpamAssassin string
+
+	// EnableRspamd must be either <host>:<port> or a URL, optionally including the password
+	// as userinfo, eg: https://password@host:11334
+	EnableRspamd string
 
 	// HideDeleteAllButton hides the delete all button in the web UI
 	HideDeleteAllButton bool
@@ -586,6 +591,18 @@ func VerifyConfig() error {
 
 		if err := spamassassin.Ping(); err != nil {
 			logger.Log().Warnf("[spamassassin] ping: %s", err.Error())
+		}
+	}
+
+	if EnableRspamd != "" {
+		server, err := rspamd.SetService(EnableRspamd)
+		if err != nil {
+			return err
+		}
+		logger.Log().Infof("[rspamd] enabled via %s", server)
+
+		if err := rspamd.Ping(); err != nil {
+			logger.Log().Warnf("[rspamd] ping: %s", err.Error())
 		}
 	}
 
