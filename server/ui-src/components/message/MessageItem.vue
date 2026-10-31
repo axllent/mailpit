@@ -69,6 +69,16 @@ export default {
 			return !!(mailbox.uiConfig.SpamAssassin && mailbox.uiConfig.Rspamd);
 		},
 
+		// number of check tabs which are shown, used to size the tab bar
+		enabledCheckCount() {
+			return (
+				(mailbox.showHTMLCheck && this.message.HTML ? 1 : 0) +
+				(mailbox.showLinkCheck ? 1 : 0) +
+				(mailbox.showSpamCheck && mailbox.uiConfig.SpamAssassin ? 1 : 0) +
+				(mailbox.showSpamCheck && mailbox.uiConfig.Rspamd ? 1 : 0)
+			);
+		},
+
 		hasAnyChecksEnabled() {
 			return (
 				(mailbox.showHTMLCheck && this.message.HTML) ||
@@ -477,7 +487,7 @@ export default {
 			</div>
 		</div>
 
-		<nav id="nav-tab" class="nav nav-tabs my-3 d-print-none" role="tablist">
+		<nav id="nav-tab" class="nav nav-tabs my-3 d-print-none" :class="'checks-' + enabledCheckCount" role="tablist">
 			<template v-if="message.HTML">
 				<div class="btn-group">
 					<button
@@ -568,7 +578,7 @@ export default {
 			>
 				Raw
 			</button>
-			<div v-show="hasAnyChecksEnabled" class="dropdown d-xxl-none">
+			<div v-show="hasAnyChecksEnabled" class="dropdown checks-dropdown">
 				<button class="nav-link dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
 					Checks
 				</button>
@@ -661,7 +671,7 @@ export default {
 			<button
 				v-if="mailbox.showHTMLCheck && message.HTML != ''"
 				id="nav-html-check-tab"
-				class="d-none d-xxl-inline-block nav-link position-relative"
+				class="check-tab nav-link position-relative"
 				data-bs-toggle="tab"
 				data-bs-target="#nav-html-check"
 				type="button"
@@ -677,7 +687,7 @@ export default {
 			<button
 				v-if="mailbox.showLinkCheck"
 				id="nav-link-check-tab"
-				class="d-none d-xxl-inline-block nav-link"
+				class="check-tab nav-link"
 				data-bs-toggle="tab"
 				data-bs-target="#nav-link-check"
 				type="button"
@@ -694,7 +704,7 @@ export default {
 			<button
 				v-if="mailbox.showSpamCheck && mailbox.uiConfig.SpamAssassin"
 				id="nav-spam-check-tab"
-				class="d-none d-xxl-inline-block nav-link position-relative"
+				class="check-tab nav-link position-relative"
 				data-bs-toggle="tab"
 				data-bs-target="#nav-spam-check"
 				type="button"
@@ -710,7 +720,7 @@ export default {
 			<button
 				v-if="mailbox.showSpamCheck && mailbox.uiConfig.Rspamd"
 				id="nav-rspamd-check-tab"
-				class="d-none d-xxl-inline-block nav-link position-relative"
+				class="check-tab nav-link position-relative"
 				data-bs-toggle="tab"
 				data-bs-target="#nav-rspamd-check"
 				type="button"

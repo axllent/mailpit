@@ -45,6 +45,36 @@
 	}
 }
 
+// The check tabs are shown inline when there is room for them, otherwise they
+// collapse into a dropdown. This is based on the width of the tab bar rather than
+// the viewport, as the bar is narrower than the viewport and its number of tabs varies.
+#nav-tab {
+	container: nav-tab / inline-size;
+
+	.check-tab {
+		display: none;
+	}
+}
+
+// width required by the message tabs and the preview size buttons, followed by the
+// approximate width of each check tab
+$nav-tab-base-width: 610px;
+$nav-tab-check-width: 130px;
+
+@for $n from 1 through 4 {
+	@container nav-tab (min-width: #{$nav-tab-base-width + $n * $nav-tab-check-width}) {
+		#nav-tab.checks-#{$n} {
+			.check-tab {
+				display: inline-block;
+			}
+
+			.checks-dropdown {
+				display: none;
+			}
+		}
+	}
+}
+
 :not(.text-view) > a:not(.no-icon) {
 	&[href^="http://"],
 	&[href^="https://"]
