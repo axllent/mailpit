@@ -8,7 +8,7 @@ require (
 	github.com/axllent/ghru/v2 v2.2.3
 	github.com/axllent/semver v1.0.0
 	github.com/goccy/go-yaml v1.19.2
-	github.com/gomarkdown/markdown v0.0.0-20261022144421-6c848fa1b723
+	github.com/gomarkdown/markdown v0.0.0-20261026184151-79e163b7b632
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/websocket v1.5.3
 	github.com/jhillyerd/enmime/v2 v2.5.0
@@ -22,7 +22,7 @@ require (
 	github.com/vanng822/go-premailer v1.37.0
 	golang.org/x/crypto v0.58.0
 	golang.org/x/image v0.47.0
-	golang.org/x/net v0.61.0
+	golang.org/x/net v0.62.0
 	golang.org/x/text v0.43.0
 	golang.org/x/time v0.16.0
 	modernc.org/sqlite v1.61.0
@@ -37,7 +37,7 @@ require (
 	github.com/clipperhouse/uax29/v2 v2.7.0 // indirect
 	github.com/dustin/go-humanize v1.1.0 // indirect
 	github.com/fatih/color v1.19.0 // indirect
-	github.com/goccy/go-json v0.11.2 // indirect
+	github.com/goccy/go-json v0.12.0 // indirect
 	github.com/gogs/chardet v0.0.0-20211120154057-b7413eaefb8f // indirect
 	github.com/gorilla/css v1.0.1 // indirect
 	github.com/inbucket/html2text v1.0.0 // indirect
@@ -56,7 +56,7 @@ require (
 	github.com/vanng822/css v1.0.1 // indirect
 	golang.org/x/mod v0.42.0 // indirect
 	golang.org/x/sys v0.49.0 // indirect
-	modernc.org/libc v1.79.0 // indirect
+	modernc.org/libc v1.79.1 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.12.1 // indirect
 )
