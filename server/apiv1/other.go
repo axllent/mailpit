@@ -9,6 +9,7 @@ import (
 	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/internal/htmlcheck"
 	"github.com/axllent/mailpit/internal/linkcheck"
+	"github.com/axllent/mailpit/internal/rspamd"
 	"github.com/axllent/mailpit/internal/spamassassin"
 	"github.com/axllent/mailpit/internal/storage"
 	"github.com/jhillyerd/enmime/v2"
@@ -175,6 +176,57 @@ func SpamAssassinCheck(w http.ResponseWriter, r *http.Request) {
 	}
 
 	summary, err := spamassassin.Check(msg)
+	if err != nil {
+		httpError(w, err.Error())
+		return
+	}
+
+	w.Header().Add("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(summary); err != nil {
+		httpError(w, err.Error())
+	}
+}
+
+// RspamdCheck returns a summary of Rspamd results (if enabled)
+func RspamdCheck(w http.ResponseWriter, r *http.Request) {
+	// swagger:route GET /api/v1/message/{ID}/rspamd-check other RspamdCheckParams
+	//
+	// # Rspamd check
+	//
+	// Returns the Rspamd summary (if enabled) of the message.
+	//
+	// The ID can be set to `latest` to return the latest message.
+	//
+	//	Produces:
+	//	  - application/json
+	//
+	//	Schemes: http, https
+	//
+	//	Responses:
+	//	  200: RspamdResponse
+	//    400: ErrorResponse
+	//    404: NotFoundResponse
+
+	id := r.PathValue("id")
+
+	if id == "latest" {
+		var err error
+		id, err = storage.LatestID(r)
+		if err != nil {
+			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+			w.WriteHeader(404)
+			_, _ = fmt.Fprint(w, err.Error()) // #nosec G705 -- served as text/plain
+			return
+		}
+	}
+
+	msg, err := storage.GetMessageRaw(id)
+	if err != nil {
+		fourOFour(w)
+		return
+	}
+
+	summary, err := rspamd.Check(msg)
 	if err != nil {
 		httpError(w, err.Error())
 		return

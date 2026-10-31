@@ -400,6 +400,15 @@ type spamAssassinCheckParams struct {
 	ID string
 }
 
+// swagger:parameters RspamdCheckParams
+type rspamdCheckParams struct {
+	// Message database ID or "latest"
+	//
+	// in: path
+	// required: true
+	ID string
+}
+
 // swagger:parameters ThumbnailParams
 type thumbnailParams struct {
 	// Message database ID or "latest"
