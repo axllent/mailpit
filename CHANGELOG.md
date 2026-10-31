@@ -2,6 +2,26 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.33.0]
+
+### Feature
+- Add optional Subject prefix for SMTP relay & forward ([#755](https://github.com/axllent/mailpit/issues/755))
+- Add optional Rspamd integration for spam checking
+
+### Chore
+- Implement dynamic check tabs for HTML, Link, and Spam checks in message view
+- Update Go dependencies
+- Update node dependencies
+- Update Github Actions dependencies
+
+### Fix
+- Limit envelope cache to messages with images and bound its memory ([#754](https://github.com/axllent/mailpit/issues/754))
+- Negated size and date searches miss or duplicate boundary messages ([#757](https://github.com/axllent/mailpit/issues/757))
+- Detect a link at the very start of a text/plain body in link check ([#759](https://github.com/axllent/mailpit/issues/759))
+- Detect a link at the very start of a text/plain body in Mailpit UI
+- Allow downloads from links in the HTML message preview ([#760](https://github.com/axllent/mailpit/issues/760))
+
+
 ## [v1.32.0]
 
 ### Security
