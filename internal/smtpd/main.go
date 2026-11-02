@@ -123,13 +123,7 @@ func SaveToDatabase(origin net.Addr, from string, to []string, data []byte, smtp
 
 	// add missing email addresses to Bcc (eg: Laravel doesn't include these in the headers)
 	if len(missingAddresses) > 0 {
-		bccVal := strings.Join(missingAddresses, ", ")
-		if hasBccHeader {
-			b := msg.Header.Get("Bcc")
-			bccVal = ", " + b
-		}
-
-		data, err = tools.SetMessageHeader(data, "Bcc", bccVal)
+		data, err = addBccAddresses(data, msg.Header, hasBccHeader, missingAddresses)
 		if err != nil {
 			return "", err
 		}
@@ -328,6 +322,17 @@ func cleanIP(i net.Addr) string {
 	parts := strings.Split(i.String(), ":")
 
 	return parts[0]
+}
+
+// addBccAddresses sets the Bcc header to include the addresses, appending them
+// to any existing Bcc value.
+func addBccAddresses(data []byte, h mail.Header, hasBccHeader bool, addresses []string) ([]byte, error) {
+	bccVal := strings.Join(addresses, ", ")
+	if hasBccHeader {
+		bccVal = h.Get("Bcc") + ", " + bccVal
+	}
+
+	return tools.SetMessageHeader(data, "Bcc", bccVal)
 }
 
 // Returns a list of all lowercased emails found in To, Cc and Bcc,

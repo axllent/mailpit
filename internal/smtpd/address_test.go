@@ -37,3 +37,44 @@ func TestScanAddressesInHeaderCharsets(t *testing.T) {
 		})
 	}
 }
+
+func TestAddBccAddresses(t *testing.T) {
+	tests := map[string]struct {
+		raw  string
+		want string
+	}{
+		// exploit: an existing Bcc header must be kept and the missing addresses appended
+		"existing Bcc": {
+			raw:  "To: to@example.com\r\nBcc: existing@example.com\r\n\r\nbody\r\n",
+			want: "existing@example.com, hidden1@example.com, hidden2@example.com",
+		},
+		// control: no existing Bcc header
+		"no Bcc": {
+			raw:  "To: to@example.com\r\n\r\nbody\r\n",
+			want: "hidden1@example.com, hidden2@example.com",
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			msg, err := mail.ReadMessage(strings.NewReader(tc.raw))
+			if err != nil {
+				t.Fatal(err)
+			}
+			_, hasBcc := scanAddressesInHeader(msg.Header)
+
+			out, err := addBccAddresses([]byte(tc.raw), msg.Header, hasBcc, []string{"hidden1@example.com", "hidden2@example.com"})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			parsed, err := mail.ReadMessage(strings.NewReader(string(out)))
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got := parsed.Header.Get("Bcc"); got != tc.want {
+				t.Errorf("Bcc = %q, want %q", got, tc.want)
+			}
+		})
+	}
+}
