@@ -123,8 +123,28 @@ func TestAPIv1Messages(t *testing.T) {
 	insertEmailData(t)
 	assertStatsEqual(t, ts.URL+"/api/v1/messages", 100, 100)
 
-	t.Log("Delete all messages with empty body")
+	// a body that cannot be decoded must not fall through to delete all
+	for _, body := range []string{`{ids:[abc]}`, `{"IDs":"abc"}`, `{"IDs":["abc"`, `ids=abc`} {
+		t.Logf("Delete with invalid body %s", body)
+		if _, err := clientDelete(ts.URL+"/api/v1/messages", body); err == nil {
+			t.Errorf("Expected an error for invalid body %s", body)
+		}
+		assertStatsEqual(t, ts.URL+"/api/v1/messages", 100, 100)
+	}
+
+	t.Log("Delete all messages with empty object")
 	_, err = clientDelete(ts.URL+"/api/v1/messages", "{}")
+	if err != nil {
+		t.Errorf("Expected nil, received %s", err.Error())
+	}
+	assertStatsEqual(t, ts.URL+"/api/v1/messages", 0, 0)
+
+	t.Log("Re-insert 100 messages")
+	insertEmailData(t)
+	assertStatsEqual(t, ts.URL+"/api/v1/messages", 100, 100)
+
+	t.Log("Delete all messages with empty body")
+	_, err = clientDelete(ts.URL+"/api/v1/messages", "")
 	if err != nil {
 		t.Errorf("Expected nil, received %s", err.Error())
 	}
