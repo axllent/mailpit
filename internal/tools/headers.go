@@ -12,10 +12,17 @@ import (
 	"strings"
 
 	"github.com/axllent/mailpit/internal/logger"
+	"github.com/jhillyerd/enmime/v2"
 )
 
 // reLeadingWhitespace matches lines starting with whitespace (continuation lines in headers)
 var reLeadingWhitespace = regexp.MustCompile(`^\s+`)
+
+// AddressList parses an address header. Unlike mail.Header.AddressList, it also
+// decodes names in charsets other than UTF-8, ISO-8859-1 and US-ASCII.
+func AddressList(h mail.Header, key string) ([]*mail.Address, error) {
+	return enmime.ParseAddressList(h.Get(key))
+}
 
 // RemoveMessageHeaders scans a message for headers, if found them removes them.
 // It will only remove a single instance of any given message header.

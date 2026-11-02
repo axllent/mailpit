@@ -336,19 +336,19 @@ func scanAddressesInHeader(h mail.Header) (map[string]bool, bool) {
 	emails := make(map[string]bool)
 	hasBccHeader := false
 
-	if recipients, err := h.AddressList("To"); err == nil {
+	if recipients, err := tools.AddressList(h, "To"); err == nil {
 		for _, r := range recipients {
 			emails[strings.ToLower(r.Address)] = true
 		}
 	}
 
-	if recipients, err := h.AddressList("Cc"); err == nil {
+	if recipients, err := tools.AddressList(h, "Cc"); err == nil {
 		for _, r := range recipients {
 			emails[strings.ToLower(r.Address)] = true
 		}
 	}
 
-	recipients, err := h.AddressList("Bcc")
+	recipients, err := tools.AddressList(h, "Bcc")
 	if err == nil {
 		for _, r := range recipients {
 			emails[strings.ToLower(r.Address)] = true

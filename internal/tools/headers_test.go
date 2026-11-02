@@ -268,3 +268,21 @@ func TestPrefixSubject_EmptyPrefix(t *testing.T) {
 		t.Fatalf("empty prefix should leave message untouched (err=%v)", err)
 	}
 }
+
+func TestAddressList(t *testing.T) {
+	h := mail.Header{
+		"To": {"=?ISO-2022-JP?B?GyRCOzNFREJATzobKEI=?= <to@example.com>"},
+	}
+
+	got, err := AddressList(h, "To")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(got) != 1 || got[0].Name != "山田太郎" || got[0].Address != "to@example.com" {
+		t.Fatalf("unexpected result: %+v", got)
+	}
+
+	if _, err := AddressList(h, "Cc"); err == nil {
+		t.Fatal("expected an error for a missing header")
+	}
+}

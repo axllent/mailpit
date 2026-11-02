@@ -11,6 +11,7 @@ import (
 
 	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/internal/logger"
+	"github.com/axllent/mailpit/internal/tools"
 	sendmail "github.com/axllent/mailpit/sendmail/cmd"
 	"github.com/spf13/cobra"
 )
@@ -85,17 +86,17 @@ The --recent flag will only consider files with a modification date within the l
 
 					recipients := []string{}
 					// get all recipients in To, Cc and Bcc
-					if to, err := msg.Header.AddressList("To"); err == nil {
+					if to, err := tools.AddressList(msg.Header, "To"); err == nil {
 						for _, a := range to {
 							recipients = append(recipients, a.Address)
 						}
 					}
-					if cc, err := msg.Header.AddressList("Cc"); err == nil {
+					if cc, err := tools.AddressList(msg.Header, "Cc"); err == nil {
 						for _, a := range cc {
 							recipients = append(recipients, a.Address)
 						}
 					}
-					if bcc, err := msg.Header.AddressList("Bcc"); err == nil {
+					if bcc, err := tools.AddressList(msg.Header, "Bcc"); err == nil {
 						for _, a := range bcc {
 							recipients = append(recipients, a.Address)
 						}
@@ -105,7 +106,7 @@ The --recent flag will only consider files with a modification date within the l
 					// Do NOT mutate the package-level sendmail.FromAddr — that
 					// is the CLI default and would leak across messages.
 					var msgFrom string
-					if fromAddresses, err := msg.Header.AddressList("From"); err == nil && len(fromAddresses) > 0 {
+					if fromAddresses, err := tools.AddressList(msg.Header, "From"); err == nil && len(fromAddresses) > 0 {
 						msgFrom = fromAddresses[0].Address
 					}
 
