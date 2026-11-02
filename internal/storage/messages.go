@@ -35,7 +35,8 @@ func Store(body *[]byte, username *string) (string, error) {
 	env, err := envelopeParser.ReadEnvelope(bytes.NewReader(*body))
 	if err != nil {
 		logger.Log().Warnf("[message] %s", err.Error())
-		return "", nil
+		// the message can never be parsed, so reject it permanently rather than have the client retry
+		return "", errors.New("554 5.6.0 Unable to parse message")
 	}
 
 	from := &mail.Address{}
