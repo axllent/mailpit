@@ -123,7 +123,7 @@ func ReleaseMessage(w http.ResponseWriter, r *http.Request) {
 	from := fromAddresses[0].Address
 
 	// if sender is used, then change from to the sender
-	if senders, err := tools.AddressList(m.Header, "Sender"); err == nil {
+	if senders, err := tools.AddressList(m.Header, "Sender"); err == nil && len(senders) > 0 {
 		from = senders[0].Address
 	}
 
