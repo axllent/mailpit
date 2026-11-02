@@ -29,6 +29,7 @@ import (
 
 	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/internal/logger"
+	"github.com/axllent/mailpit/internal/tools"
 	flag "github.com/spf13/pflag"
 )
 
@@ -177,17 +178,17 @@ func Run() {
 		addresses = recipients
 	} else {
 		// get all recipients in To, Cc and Bcc
-		if to, err := msg.Header.AddressList("To"); err == nil {
+		if to, err := tools.AddressList(msg.Header, "To"); err == nil {
 			for _, a := range to {
 				addresses = append(addresses, a.Address)
 			}
 		}
-		if cc, err := msg.Header.AddressList("Cc"); err == nil {
+		if cc, err := tools.AddressList(msg.Header, "Cc"); err == nil {
 			for _, a := range cc {
 				addresses = append(addresses, a.Address)
 			}
 		}
-		if bcc, err := msg.Header.AddressList("Bcc"); err == nil {
+		if bcc, err := tools.AddressList(msg.Header, "Bcc"); err == nil {
 			for _, a := range bcc {
 				addresses = append(addresses, a.Address)
 			}
