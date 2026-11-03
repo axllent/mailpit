@@ -2,6 +2,8 @@ package apiv1
 
 import (
 	"encoding/json"
+	"errors"
+	"io"
 	"net/http"
 	"strings"
 
@@ -188,8 +190,13 @@ func DeleteMessages(w http.ResponseWriter, r *http.Request) {
 	var data struct {
 		IDs []string
 	}
-	err := decoder.Decode(&data)
-	if err != nil || len(data.IDs) == 0 {
+	// an empty body (io.EOF) is a valid request to delete all messages
+	if err := decoder.Decode(&data); err != nil && !errors.Is(err, io.EOF) {
+		httpError(w, err.Error())
+		return
+	}
+
+	if len(data.IDs) == 0 {
 		if err := storage.DeleteAllMessages(); err != nil {
 			httpError(w, err.Error())
 			return
