@@ -10,6 +10,7 @@ import (
 
 	"github.com/axllent/mailpit/internal/html2text"
 	"github.com/axllent/mailpit/internal/logger"
+	"github.com/axllent/mailpit/internal/mimeparser"
 	"github.com/axllent/mailpit/internal/tools"
 	"github.com/jhillyerd/enmime/v2"
 )
@@ -24,7 +25,7 @@ var (
 	cleanStringRe = regexp.MustCompile(`(\r?\n|\t|>|<|"|\,|;|\(|\))`)
 
 	// envelopeParser is a shared enmime parser instance used for message parsing
-	envelopeParser = enmime.NewParser(enmime.DisableCharacterDetection(true), enmime.MaxMIMEParts(500))
+	envelopeParser = mimeparser.New()
 )
 
 // AddTempFile adds a file to the slice of files to delete on exit

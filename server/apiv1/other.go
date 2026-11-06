@@ -9,10 +9,10 @@ import (
 	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/internal/htmlcheck"
 	"github.com/axllent/mailpit/internal/linkcheck"
+	"github.com/axllent/mailpit/internal/mimeparser"
 	"github.com/axllent/mailpit/internal/rspamd"
 	"github.com/axllent/mailpit/internal/spamassassin"
 	"github.com/axllent/mailpit/internal/storage"
-	"github.com/jhillyerd/enmime/v2"
 )
 
 // HTMLCheck returns a summary of the HTML client support
@@ -54,7 +54,7 @@ func HTMLCheck(w http.ResponseWriter, r *http.Request) {
 
 	e := bytes.NewReader(raw)
 
-	parser := enmime.NewParser(enmime.DisableCharacterDetection(true), enmime.MaxMIMEParts(500))
+	parser := mimeparser.New()
 
 	msg, err := parser.ReadEnvelope(e)
 	if err != nil {
