@@ -182,3 +182,16 @@ func TestThumbnailBoundaryDimensions(t *testing.T) {
 		t.Fatalf("boundary-reject: Content-Type=%q", ct)
 	}
 }
+
+// TestThumbnailLatest verifies that the documented `latest` ID resolves to the newest message.
+func TestThumbnailLatest(t *testing.T) {
+	initTestDB(t)
+	_, partID := storeEmailWithPNG(t, "latest", solidRGBApng(16, 16))
+	rr := thumbnailRequest(t, "latest", partID)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("status=%d, want 200; body=%q", rr.Code, rr.Body.String())
+	}
+	if ct := rr.Header().Get("Content-Type"); ct != "image/jpeg" {
+		t.Fatalf("Content-Type=%q, want image/jpeg", ct)
+	}
+}
