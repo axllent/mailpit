@@ -3,7 +3,6 @@ package apiv1
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/mail"
 	"net/url"
@@ -32,17 +31,9 @@ func GetMessage(w http.ResponseWriter, r *http.Request) {
 	//    400: ErrorResponse
 	//    404: NotFoundResponse
 
-	id := r.PathValue("id")
-
-	if id == "latest" {
-		var err error
-		id, err = storage.LatestID(r)
-		if err != nil {
-			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-			w.WriteHeader(404)
-			_, _ = fmt.Fprint(w, err.Error()) // #nosec G705 -- served as text/plain
-			return
-		}
+	id, ok := resolveMessageID(w, r, r.PathValue("id"))
+	if !ok {
+		return
 	}
 
 	msg, err := storage.GetMessage(id)
@@ -77,17 +68,9 @@ func GetHeaders(w http.ResponseWriter, r *http.Request) {
 	//    400: ErrorResponse
 	//    404: NotFoundResponse
 
-	id := r.PathValue("id")
-
-	if id == "latest" {
-		var err error
-		id, err = storage.LatestID(r)
-		if err != nil {
-			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-			w.WriteHeader(404)
-			_, _ = fmt.Fprint(w, err.Error()) // #nosec G705 -- served as text/plain
-			return
-		}
+	id, ok := resolveMessageID(w, r, r.PathValue("id"))
+	if !ok {
+		return
 	}
 
 	data, err := storage.GetMessageRaw(id)
@@ -131,19 +114,11 @@ func DownloadAttachment(w http.ResponseWriter, r *http.Request) {
 	//    400: ErrorResponse
 	//    404: NotFoundResponse
 
-	id := r.PathValue("id")
-	partID := r.PathValue("partID")
-
-	if id == "latest" {
-		var err error
-		id, err = storage.LatestID(r)
-		if err != nil {
-			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-			w.WriteHeader(404)
-			_, _ = fmt.Fprint(w, err.Error()) // #nosec G705 -- served as text/plain
-			return
-		}
+	id, ok := resolveMessageID(w, r, r.PathValue("id"))
+	if !ok {
+		return
 	}
+	partID := r.PathValue("partID")
 
 	a, err := storage.GetAttachmentPart(id, partID)
 	if err != nil {
@@ -189,19 +164,12 @@ func DownloadRaw(w http.ResponseWriter, r *http.Request) {
 	//    400: ErrorResponse
 	//    404: NotFoundResponse
 
-	id := r.PathValue("id")
-	dl := r.FormValue("dl") // #nosec G120 -- GET request, FormValue only parses URL query string
-
-	if id == "latest" {
-		var err error
-		id, err = storage.LatestID(r)
-		if err != nil {
-			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-			w.WriteHeader(404)
-			_, _ = fmt.Fprint(w, err.Error()) // #nosec G705 -- served as text/plain
-			return
-		}
+	id, ok := resolveMessageID(w, r, r.PathValue("id"))
+	if !ok {
+		return
 	}
+
+	dl := r.FormValue("dl") // #nosec G120 -- GET request, FormValue only parses URL query string
 
 	data, err := storage.GetMessageRaw(id)
 	if err != nil {

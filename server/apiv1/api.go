@@ -10,6 +10,7 @@ import (
 	"github.com/araddon/dateparse"
 	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/internal/logger"
+	"github.com/axllent/mailpit/internal/storage"
 )
 
 // FourOFour returns a basic 404 message
@@ -19,6 +20,25 @@ func fourOFour(w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "text/plain")
 	w.WriteHeader(http.StatusNotFound)
 	_, _ = fmt.Fprint(w, "404 page not found")
+}
+
+// resolveMessageID returns id, resolving the special value "latest" to the ID of the newest message
+// (honouring any `query` and `tz` URL parameters). If it cannot be resolved a plain text 404 is
+// written and false is returned, in which case the caller must return.
+func resolveMessageID(w http.ResponseWriter, r *http.Request, id string) (string, bool) {
+	if id != "latest" {
+		return id, true
+	}
+
+	id, err := storage.LatestID(r)
+	if err != nil {
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		w.WriteHeader(http.StatusNotFound)
+		_, _ = fmt.Fprint(w, err.Error()) // #nosec G705 -- served as text/plain
+		return "", false
+	}
+
+	return id, true
 }
 
 // HTTPError returns a basic error message (400 response)

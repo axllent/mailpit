@@ -3,7 +3,6 @@ package apiv1
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/mail"
 	"strings"
@@ -45,17 +44,9 @@ func ReleaseMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id := r.PathValue("id")
-
-	if id == "latest" {
-		var err error
-		id, err = storage.LatestID(r)
-		if err != nil {
-			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-			w.WriteHeader(404)
-			_, _ = fmt.Fprint(w, err.Error()) // #nosec G705 -- served as text/plain
-			return
-		}
+	id, ok := resolveMessageID(w, r, r.PathValue("id"))
+	if !ok {
+		return
 	}
 
 	msg, err := storage.GetMessageRaw(id)

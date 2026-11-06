@@ -53,7 +53,7 @@ type jsonErrorResponse struct {
 	}
 }
 
-// Web UI configuration settings
+// WebUIConfiguration returns the Web UI configuration settings
 // swagger:model WebUIConfiguration
 type WebUIConfiguration struct {
 	// Optional label to identify this Mailpit instance
