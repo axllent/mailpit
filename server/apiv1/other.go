@@ -60,7 +60,7 @@ func HTMLCheck(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	checks, err := htmlcheck.RunTests(msg.HTML)
+	checks, err := htmlcheck.RunTests(r.Context(), msg.HTML)
 	if err != nil {
 		httpError(w, err.Error())
 		return
