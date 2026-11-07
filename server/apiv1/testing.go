@@ -38,17 +38,9 @@ func GetMessageHTML(w http.ResponseWriter, r *http.Request) {
 	//      404: NotFoundResponse
 
 	path := strings.TrimPrefix(r.URL.Path, config.Webroot+"view/")
-	id := strings.TrimSuffix(path, ".html")
-
-	if id == "latest" {
-		var err error
-		id, err = storage.LatestID(r)
-		if err != nil {
-			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-			w.WriteHeader(404)
-			_, _ = fmt.Fprint(w, err.Error()) // #nosec G705 -- served as text/plain
-			return
-		}
+	id, ok := resolveMessageID(w, r, strings.TrimSuffix(path, ".html"))
+	if !ok {
+		return
 	}
 
 	msg, err := storage.GetMessage(id)
@@ -136,17 +128,9 @@ func GetMessageText(w http.ResponseWriter, r *http.Request) {
 	//      404: NotFoundResponse
 
 	path := strings.TrimPrefix(r.URL.Path, config.Webroot+"view/")
-	id := strings.TrimSuffix(path, ".txt")
-
-	if id == "latest" {
-		var err error
-		id, err = storage.LatestID(r)
-		if err != nil {
-			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-			w.WriteHeader(404)
-			_, _ = fmt.Fprint(w, err.Error()) // #nosec G705 -- served as text/plain
-			return
-		}
+	id, ok := resolveMessageID(w, r, strings.TrimSuffix(path, ".txt"))
+	if !ok {
+		return
 	}
 
 	msg, err := storage.GetMessage(id)

@@ -6,16 +6,42 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"io"
 	"mime"
 	"net/mail"
 	"regexp"
 	"strings"
 
 	"github.com/axllent/mailpit/internal/logger"
+	"golang.org/x/text/encoding/htmlindex"
 )
 
 // reLeadingWhitespace matches lines starting with whitespace (continuation lines in headers)
 var reLeadingWhitespace = regexp.MustCompile(`^\s+`)
+
+// AddressList parses an address header. It is as strict as mail.Header.AddressList,
+// with the exception that it also decodes display names in charsets other than
+// UTF-8, ISO-8859-1 and US-ASCII. The address itself is never decoded.
+func AddressList(h mail.Header, key string) ([]*mail.Address, error) {
+	hdr := h.Get(key)
+	if hdr == "" {
+		return nil, mail.ErrHeaderNotPresent
+	}
+
+	parser := mail.AddressParser{WordDecoder: &mime.WordDecoder{CharsetReader: charsetReader}}
+
+	return parser.ParseList(hdr)
+}
+
+// charsetReader converts text in the named charset to UTF-8.
+func charsetReader(charset string, input io.Reader) (io.Reader, error) {
+	enc, err := htmlindex.Get(charset)
+	if err != nil {
+		return nil, err
+	}
+
+	return enc.NewDecoder().Reader(input), nil
+}
 
 // RemoveMessageHeaders scans a message for headers, if found them removes them.
 // It will only remove a single instance of any given message header.

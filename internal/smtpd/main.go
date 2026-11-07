@@ -123,13 +123,7 @@ func SaveToDatabase(origin net.Addr, from string, to []string, data []byte, smtp
 
 	// add missing email addresses to Bcc (eg: Laravel doesn't include these in the headers)
 	if len(missingAddresses) > 0 {
-		bccVal := strings.Join(missingAddresses, ", ")
-		if hasBccHeader {
-			b := msg.Header.Get("Bcc")
-			bccVal = ", " + b
-		}
-
-		data, err = tools.SetMessageHeader(data, "Bcc", bccVal)
+		data, err = addBccAddresses(data, msg.Header, hasBccHeader, missingAddresses)
 		if err != nil {
 			return "", err
 		}
@@ -330,25 +324,36 @@ func cleanIP(i net.Addr) string {
 	return parts[0]
 }
 
+// addBccAddresses sets the Bcc header to include the addresses, appending them
+// to any existing Bcc value.
+func addBccAddresses(data []byte, h mail.Header, hasBccHeader bool, addresses []string) ([]byte, error) {
+	bccVal := strings.Join(addresses, ", ")
+	if hasBccHeader {
+		bccVal = h.Get("Bcc") + ", " + bccVal
+	}
+
+	return tools.SetMessageHeader(data, "Bcc", bccVal)
+}
+
 // Returns a list of all lowercased emails found in To, Cc and Bcc,
 // as well as whether there is a Bcc field
 func scanAddressesInHeader(h mail.Header) (map[string]bool, bool) {
 	emails := make(map[string]bool)
 	hasBccHeader := false
 
-	if recipients, err := h.AddressList("To"); err == nil {
+	if recipients, err := tools.AddressList(h, "To"); err == nil {
 		for _, r := range recipients {
 			emails[strings.ToLower(r.Address)] = true
 		}
 	}
 
-	if recipients, err := h.AddressList("Cc"); err == nil {
+	if recipients, err := tools.AddressList(h, "Cc"); err == nil {
 		for _, r := range recipients {
 			emails[strings.ToLower(r.Address)] = true
 		}
 	}
 
-	recipients, err := h.AddressList("Bcc")
+	recipients, err := tools.AddressList(h, "Bcc")
 	if err == nil {
 		for _, r := range recipients {
 			emails[strings.ToLower(r.Address)] = true

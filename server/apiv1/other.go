@@ -3,16 +3,15 @@ package apiv1
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/internal/htmlcheck"
 	"github.com/axllent/mailpit/internal/linkcheck"
+	"github.com/axllent/mailpit/internal/mimeparser"
 	"github.com/axllent/mailpit/internal/rspamd"
 	"github.com/axllent/mailpit/internal/spamassassin"
 	"github.com/axllent/mailpit/internal/storage"
-	"github.com/jhillyerd/enmime/v2"
 )
 
 // HTMLCheck returns a summary of the HTML client support
@@ -35,15 +34,9 @@ func HTMLCheck(w http.ResponseWriter, r *http.Request) {
 	//    400: ErrorResponse
 	//    404: NotFoundResponse
 
-	id := r.PathValue("id")
-
-	if id == "latest" {
-		var err error
-		id, err = storage.LatestID(r)
-		if err != nil {
-			fourOFour(w)
-			return
-		}
+	id, ok := resolveMessageID(w, r, r.PathValue("id"))
+	if !ok {
+		return
 	}
 
 	raw, err := storage.GetMessageRaw(id)
@@ -54,7 +47,7 @@ func HTMLCheck(w http.ResponseWriter, r *http.Request) {
 
 	e := bytes.NewReader(raw)
 
-	parser := enmime.NewParser(enmime.DisableCharacterDetection(true), enmime.MaxMIMEParts(500))
+	parser := mimeparser.New()
 
 	msg, err := parser.ReadEnvelope(e)
 	if err != nil {
@@ -67,7 +60,7 @@ func HTMLCheck(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	checks, err := htmlcheck.RunTests(msg.HTML)
+	checks, err := htmlcheck.RunTests(r.Context(), msg.HTML)
 	if err != nil {
 		httpError(w, err.Error())
 		return
@@ -104,15 +97,9 @@ func LinkCheck(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id := r.PathValue("id")
-
-	if id == "latest" {
-		var err error
-		id, err = storage.LatestID(r)
-		if err != nil {
-			fourOFour(w)
-			return
-		}
+	id, ok := resolveMessageID(w, r, r.PathValue("id"))
+	if !ok {
+		return
 	}
 
 	msg, err := storage.GetMessage(id)
@@ -156,17 +143,9 @@ func SpamAssassinCheck(w http.ResponseWriter, r *http.Request) {
 	//    400: ErrorResponse
 	//    404: NotFoundResponse
 
-	id := r.PathValue("id")
-
-	if id == "latest" {
-		var err error
-		id, err = storage.LatestID(r)
-		if err != nil {
-			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-			w.WriteHeader(404)
-			_, _ = fmt.Fprint(w, err.Error()) // #nosec G705 -- served as text/plain
-			return
-		}
+	id, ok := resolveMessageID(w, r, r.PathValue("id"))
+	if !ok {
+		return
 	}
 
 	msg, err := storage.GetMessageRaw(id)
@@ -207,17 +186,9 @@ func RspamdCheck(w http.ResponseWriter, r *http.Request) {
 	//    400: ErrorResponse
 	//    404: NotFoundResponse
 
-	id := r.PathValue("id")
-
-	if id == "latest" {
-		var err error
-		id, err = storage.LatestID(r)
-		if err != nil {
-			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-			w.WriteHeader(404)
-			_, _ = fmt.Fprint(w, err.Error()) // #nosec G705 -- served as text/plain
-			return
-		}
+	id, ok := resolveMessageID(w, r, r.PathValue("id"))
+	if !ok {
+		return
 	}
 
 	msg, err := storage.GetMessageRaw(id)

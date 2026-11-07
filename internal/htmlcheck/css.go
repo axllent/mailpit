@@ -22,12 +22,16 @@ import (
 
 // Go cannot calculate any rendered CSS attributes, so we merge all styles
 // into the HTML and detect elements with styles containing the keywords.
-func runCSSTests(html string) ([]Warning, int, error) {
+func runCSSTests(ctx context.Context, html string) ([]Warning, int, error) {
 	results := []Warning{}
 	totalTests := 0
 
-	inlined, err := inlineRemoteCSS(html)
+	inlined, err := inlineRemoteCSS(ctx, html)
 	if err != nil {
+		// the request was cancelled (e.g. the client disconnected), so abort
+		if ctx.Err() != nil {
+			return results, totalTests, ctx.Err()
+		}
 		inlined = html
 	}
 
@@ -128,9 +132,23 @@ func mergeInlineCSS(html string) (string, error) {
 	return pre.Transform()
 }
 
+const (
+	// maxRemoteCSSBytes is the total number of bytes of remote CSS downloaded per HTML check.
+	maxRemoteCSSBytes int64 = 5 * 1024 * 1024
+
+	// maxRemoteCSSFiles is the maximum number of remote stylesheets requested per HTML check.
+	maxRemoteCSSFiles = 10
+)
+
 // InlineRemoteCSS searches the HTML for linked stylesheets, downloads the content, and
-// inserts new <style> blocks into the head, unless BlockRemoteCSSAndFonts is set
-func inlineRemoteCSS(h string) (string, error) {
+// inserts new <style> blocks into the head, unless BlockRemoteCSSAndFonts is set.
+// The number of stylesheets requested and the total bytes downloaded are both bounded,
+// whichever limit is reached first stops any further downloads.
+func inlineRemoteCSS(ctx context.Context, h string) (string, error) {
+	return inlineRemoteCSSWithLimits(ctx, h, maxRemoteCSSFiles, maxRemoteCSSBytes)
+}
+
+func inlineRemoteCSSWithLimits(ctx context.Context, h string, maxFiles int, maxBytes int64) (string, error) {
 	reader := strings.NewReader(h)
 
 	// Load the HTML document
@@ -138,6 +156,11 @@ func inlineRemoteCSS(h string) (string, error) {
 	if err != nil {
 		return h, err
 	}
+
+	seen := make(map[string]struct{})
+	requested := 0
+	remaining := maxBytes
+	limited := false
 
 	remoteCSS := doc.Find("link[rel=\"stylesheet\"]").Nodes
 	for _, link := range remoteCSS {
@@ -155,7 +178,22 @@ func inlineRemoteCSS(h string) (string, error) {
 					continue
 				}
 
-				resp, err := downloadCSSToBytes(a.Val)
+				if _, ok := seen[a.Val]; ok {
+					continue
+				}
+				seen[a.Val] = struct{}{}
+
+				if err := ctx.Err(); err != nil {
+					return h, err
+				}
+
+				if requested >= maxFiles || remaining <= 0 {
+					limited = true
+					continue
+				}
+				requested++
+
+				resp, err := downloadCSSToBytes(ctx, a.Val, remaining)
 				if err != nil {
 					logger.Log().Warnf("[html-check] %s", err.Error())
 					continue
@@ -172,9 +210,15 @@ func inlineRemoteCSS(h string) (string, error) {
 					Data: string(resp),
 				})
 
+				remaining -= int64(len(resp))
+
 				link.Parent.AppendChild(styleBlock)
 			}
 		}
+	}
+
+	if limited {
+		logger.Log().Warnf("[html-check] remote CSS limit reached (max %d files or %d bytes), skipping remaining stylesheets", maxFiles, maxBytes)
 	}
 
 	newDoc, err := doc.Html()
@@ -188,10 +232,10 @@ func inlineRemoteCSS(h string) (string, error) {
 
 // DownloadCSSToBytes returns a []byte slice from a URL.
 // It requires the HTTP response code to be 200 and the content-type to be text/css.
-// It will download a maximum of 5MB.
-func downloadCSSToBytes(url string) ([]byte, error) {
+// It will download a maximum of `limit` bytes.
+func downloadCSSToBytes(ctx context.Context, url string, limit int64) ([]byte, error) {
 	client := safeHTTPClient()
-	req, err := http.NewRequestWithContext(context.TODO(), http.MethodGet, url, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -216,8 +260,6 @@ func downloadCSSToBytes(url string) ([]byte, error) {
 		return nil, err
 	}
 
-	// set a limit on the number of bytes to read - max 5MB
-	limit := int64(5242880)
 	limitedReader := &io.LimitedReader{R: resp.Body, N: limit}
 
 	body, err := io.ReadAll(limitedReader)

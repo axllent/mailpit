@@ -10,8 +10,8 @@ import (
 	"os"
 
 	"github.com/axllent/mailpit/internal/logger"
+	"github.com/axllent/mailpit/internal/mimeparser"
 	"github.com/axllent/mailpit/internal/tools"
-	"github.com/jhillyerd/enmime/v2"
 	"github.com/leporo/sqlf"
 )
 
@@ -53,7 +53,7 @@ func ReindexAll() {
 		Metadata string
 	}
 
-	parser := enmime.NewParser(enmime.DisableCharacterDetection(true), enmime.MaxMIMEParts(500))
+	parser := mimeparser.New()
 
 	for _, ids := range chunks {
 		updates := []updateStruct{}

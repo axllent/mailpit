@@ -44,7 +44,10 @@ func ReleaseMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id := r.PathValue("id")
+	id, ok := resolveMessageID(w, r, r.PathValue("id"))
+	if !ok {
+		return
+	}
 
 	msg, err := storage.GetMessageRaw(id)
 	if err != nil {
@@ -109,7 +112,7 @@ func ReleaseMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fromAddresses, err := m.Header.AddressList("From")
+	fromAddresses, err := tools.AddressList(m.Header, "From")
 	if err != nil {
 		httpError(w, "Failed: unable to parse From header: "+err.Error())
 		return
@@ -123,7 +126,7 @@ func ReleaseMessage(w http.ResponseWriter, r *http.Request) {
 	from := fromAddresses[0].Address
 
 	// if sender is used, then change from to the sender
-	if senders, err := m.Header.AddressList("Sender"); err == nil {
+	if senders, err := tools.AddressList(m.Header, "Sender"); err == nil && len(senders) > 0 {
 		from = senders[0].Address
 	}
 

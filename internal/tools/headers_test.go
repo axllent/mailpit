@@ -268,3 +268,96 @@ func TestPrefixSubject_EmptyPrefix(t *testing.T) {
 		t.Fatalf("empty prefix should leave message untouched (err=%v)", err)
 	}
 }
+
+func TestAddressList(t *testing.T) {
+	h := mail.Header{
+		"To": {"=?ISO-2022-JP?B?GyRCOzNFREJATzobKEI=?= <to@example.com>"},
+	}
+
+	got, err := AddressList(h, "To")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(got) != 1 || got[0].Name != "山田太郎" || got[0].Address != "to@example.com" {
+		t.Fatalf("unexpected result: %+v", got)
+	}
+
+	if _, err := AddressList(h, "Cc"); err == nil {
+		t.Fatal("expected an error for a missing header")
+	}
+}
+
+func TestAddressList_Names(t *testing.T) {
+	tests := map[string]struct {
+		value string
+		name  string // expected display name of the first address
+		addrs []string
+	}{
+		// non-UTF-8 display names are decoded
+		"shift_jis name":   {"=?Shift_JIS?B?k/qWe4zq?= <a@example.com>", "日本語", []string{"a@example.com"}},
+		"iso-2022-jp name": {"=?ISO-2022-JP?B?GyRCRnxLXBsoQg==?= <a@example.com>", "日本", []string{"a@example.com"}},
+		// control: plain addresses behave like net/mail
+		"plain":    {"a@example.com, B <b@example.com>", "", []string{"a@example.com", "b@example.com"}},
+		"trailing": {"a@example.com,", "", []string{"a@example.com"}},
+	}
+
+	for label, tc := range tests {
+		t.Run(label, func(t *testing.T) {
+			list, err := AddressList(mail.Header{"To": []string{tc.value}}, "To")
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(list) != len(tc.addrs) {
+				t.Fatalf("got %d addresses, want %d", len(list), len(tc.addrs))
+			}
+			for i, a := range tc.addrs {
+				if list[i].Address != a {
+					t.Errorf("address %d = %q, want %q", i, list[i].Address, a)
+				}
+			}
+			if list[0].Name != tc.name {
+				t.Errorf("name = %q, want %q", list[0].Name, tc.name)
+			}
+		})
+	}
+}
+
+// TestAddressList_MatchesNetMail guards against the address being decoded or
+// the list being repaired: input that net/mail rejects, or returns verbatim,
+// must behave identically.
+func TestAddressList_MatchesNetMail(t *testing.T) {
+	values := []string{
+		// encoded word in the local part must not be decoded into a different address
+		"=?UTF-8?Q?victim=40evil.com?=@example.com",
+		"=?UTF-8?Q?a=0D=0Ab?=@example.com",
+		"=?UTF-8?Q?a=2Cb=40c.com?=@example.com",
+		// comma-less lists must not be split into extra recipients
+		"a@example.com b@example.com",
+		"Bob <a@example.com> c@example.com",
+		"garbage",
+	}
+
+	for _, v := range values {
+		t.Run(v, func(t *testing.T) {
+			h := mail.Header{"To": []string{v}}
+			want, wantErr := h.AddressList("To")
+			got, gotErr := AddressList(h, "To")
+
+			if (wantErr == nil) != (gotErr == nil) {
+				t.Fatalf("error mismatch: net/mail=%v, AddressList=%v", wantErr, gotErr)
+			}
+			if len(want) != len(got) {
+				t.Fatalf("got %d addresses, net/mail returned %d", len(got), len(want))
+			}
+			for i := range want {
+				if want[i].Address != got[i].Address {
+					t.Errorf("address %q differs from net/mail %q", got[i].Address, want[i].Address)
+				}
+			}
+		})
+	}
+
+	if _, err := AddressList(mail.Header{}, "To"); err != mail.ErrHeaderNotPresent {
+		t.Errorf("missing header: got %v, want ErrHeaderNotPresent", err)
+	}
+}

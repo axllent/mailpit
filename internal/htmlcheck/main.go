@@ -1,6 +1,7 @@
 package htmlcheck
 
 import (
+	"context"
 	"fmt"
 	"regexp"
 	"sort"
@@ -14,7 +15,7 @@ import (
 )
 
 // RunTests will run all tests on an HTML string
-func RunTests(html string) (Response, error) {
+func RunTests(ctx context.Context, html string) (Response, error) {
 	s := Response{}
 	s.Warnings = []Warning{}
 	if platforms, err := Platforms(); err == nil {
@@ -55,7 +56,7 @@ func RunTests(html string) (Response, error) {
 	s.Warnings = append(s.Warnings, htmlResults...)
 
 	// CSS tests
-	cssResults, totalTests, err := runCSSTests(html)
+	cssResults, totalTests, err := runCSSTests(ctx, html)
 	if err != nil {
 		return s, err
 	}

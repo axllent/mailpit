@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/internal/logger"
@@ -31,6 +32,11 @@ func pngChunk(kind string, data []byte) []byte {
 }
 
 func solidRGBApng(width, height int) []byte {
+	return solidColourPNG(width, height, [4]byte{})
+}
+
+// solidColourPNG returns a width x height PNG filled with the given RGBA colour.
+func solidColourPNG(width, height int, rgba [4]byte) []byte {
 	var out bytes.Buffer
 	out.Write([]byte{0x89, 'P', 'N', 'G', '\r', '\n', 0x1a, '\n'})
 	ihdr := make([]byte, 13)
@@ -42,6 +48,9 @@ func solidRGBApng(width, height int) []byte {
 	var compressed bytes.Buffer
 	zw := zlib.NewWriter(&compressed)
 	row := make([]byte, 1+width*4)
+	for x := range width {
+		copy(row[1+x*4:], rgba[:])
+	}
 	for range height {
 		_, _ = zw.Write(row)
 	}
@@ -180,5 +189,44 @@ func TestThumbnailBoundaryDimensions(t *testing.T) {
 	}
 	if ct := rr2.Header().Get("Content-Type"); ct != "image/jpeg" {
 		t.Fatalf("boundary-reject: Content-Type=%q", ct)
+	}
+}
+
+// TestThumbnailLatest verifies that the documented `latest` ID resolves to the newest message.
+func TestThumbnailLatest(t *testing.T) {
+	initTestDB(t)
+	oldID, oldPart := storeEmailWithPNG(t, "old", solidColourPNG(16, 16, [4]byte{255, 0, 0, 255}))
+	time.Sleep(10 * time.Millisecond) // Created is stored in milliseconds, keep the order unambiguous
+	newID, newPart := storeEmailWithPNG(t, "new", solidColourPNG(16, 16, [4]byte{0, 0, 255, 255}))
+
+	latest := thumbnailRequest(t, "latest", newPart)
+	if latest.Code != http.StatusOK {
+		t.Fatalf("status=%d, want 200; body=%q", latest.Code, latest.Body.String())
+	}
+	if ct := latest.Header().Get("Content-Type"); ct != "image/jpeg" {
+		t.Fatalf("Content-Type=%q, want image/jpeg", ct)
+	}
+
+	want := thumbnailRequest(t, newID, newPart).Body.Bytes()
+	other := thumbnailRequest(t, oldID, oldPart).Body.Bytes()
+
+	// control: the two messages must produce different thumbnails, otherwise the match below proves nothing
+	if bytes.Equal(want, other) {
+		t.Fatal("control failed: both messages produce identical thumbnails")
+	}
+	if !bytes.Equal(latest.Body.Bytes(), want) {
+		t.Fatal("latest did not resolve to the newest message")
+	}
+}
+
+// TestThumbnailLatestEmpty verifies that `latest` returns a plain text 404 when there are no messages.
+func TestThumbnailLatestEmpty(t *testing.T) {
+	initTestDB(t)
+	rr := thumbnailRequest(t, "latest", "2")
+	if rr.Code != http.StatusNotFound {
+		t.Fatalf("status=%d, want 404; body=%q", rr.Code, rr.Body.String())
+	}
+	if ct := rr.Header().Get("Content-Type"); !strings.HasPrefix(ct, "text/plain") {
+		t.Fatalf("Content-Type=%q, want text/plain", ct)
 	}
 }

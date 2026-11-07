@@ -2,6 +2,28 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.33.1]
+
+### Chore
+- Resolve the `latest` message ID in a single helper
+- Update Go dependencies
+- Update node dependencies
+
+### Fix
+- Parse address headers with non-UTF-8 display names ([#763](https://github.com/axllent/mailpit/issues/763))
+- Append missing recipients to an existing Bcc header
+- Keep address parsing strict when decoding non-UTF-8 display names
+- Guard against an empty Sender address list when releasing a message
+- Reject messages that cannot be parsed instead of discarding them silently ([#764](https://github.com/axllent/mailpit/issues/764))
+- Return 400 for an invalid DELETE /api/v1/messages body ([#766](https://github.com/axllent/mailpit/issues/766))
+- Decode RFC 2231 attachment file names in non-UTF-8 charsets ([#767](https://github.com/axllent/mailpit/issues/767))
+- Accept `latest` as the ID in the release and thumbnail endpoints ([#768](https://github.com/axllent/mailpit/issues/768))
+- Limit the number & total size of remote stylesheets fetched by HTML check (Kiseob Hong @Minerv4)
+
+### Test
+- Enhance thumbnail tests for `latest` ID handling and add empty case
+
+
 ## [v1.33.0]
 
 ### Feature

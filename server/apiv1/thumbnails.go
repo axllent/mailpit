@@ -35,7 +35,10 @@ func Thumbnail(w http.ResponseWriter, r *http.Request) {
 	//	  200: BinaryResponse
 	//    400: ErrorResponse
 
-	id := r.PathValue("id")
+	id, ok := resolveMessageID(w, r, r.PathValue("id"))
+	if !ok {
+		return
+	}
 	partID := r.PathValue("partID")
 
 	a, err := storage.GetAttachmentPart(id, partID)
