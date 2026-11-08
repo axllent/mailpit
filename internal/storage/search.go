@@ -353,7 +353,7 @@ func searchQueryBuilder(searchString, timezone string) *sqlf.Stmt {
 		}
 
 		if strings.HasPrefix(lw, "to:") {
-			w = cleanString(w[3:])
+			w = cleanFieldString(w[3:])
 			if w != "" {
 				if exclude {
 					q.Where("ToJSON NOT LIKE ? ESCAPE '\\'", "%"+escLikeChars(escJSONChars(w))+"%")
@@ -362,7 +362,7 @@ func searchQueryBuilder(searchString, timezone string) *sqlf.Stmt {
 				}
 			}
 		} else if strings.HasPrefix(lw, "from:") {
-			w = cleanString(w[5:])
+			w = cleanFieldString(w[5:])
 			if w != "" {
 				if exclude {
 					q.Where("FromJSON NOT LIKE ? ESCAPE '\\'", "%"+escLikeChars(escJSONChars(w))+"%")
@@ -371,7 +371,7 @@ func searchQueryBuilder(searchString, timezone string) *sqlf.Stmt {
 				}
 			}
 		} else if strings.HasPrefix(lw, "cc:") {
-			w = cleanString(w[3:])
+			w = cleanFieldString(w[3:])
 			if w != "" {
 				if exclude {
 					q.Where("CcJSON NOT LIKE ? ESCAPE '\\'", "%"+escLikeChars(escJSONChars(w))+"%")
@@ -380,7 +380,7 @@ func searchQueryBuilder(searchString, timezone string) *sqlf.Stmt {
 				}
 			}
 		} else if strings.HasPrefix(lw, "bcc:") {
-			w = cleanString(w[4:])
+			w = cleanFieldString(w[4:])
 			if w != "" {
 				if exclude {
 					q.Where("BccJSON NOT LIKE ? ESCAPE '\\'", "%"+escLikeChars(escJSONChars(w))+"%")
@@ -389,7 +389,7 @@ func searchQueryBuilder(searchString, timezone string) *sqlf.Stmt {
 				}
 			}
 		} else if strings.HasPrefix(lw, "reply-to:") {
-			w = cleanString(w[9:])
+			w = cleanFieldString(w[9:])
 			if w != "" {
 				if exclude {
 					q.Where("ReplyToJSON NOT LIKE ? ESCAPE '\\'", "%"+escLikeChars(escJSONChars(w))+"%")
@@ -398,7 +398,7 @@ func searchQueryBuilder(searchString, timezone string) *sqlf.Stmt {
 				}
 			}
 		} else if strings.HasPrefix(lw, "addressed:") {
-			w = cleanString(w[10:])
+			w = cleanFieldString(w[10:])
 			arg := "%" + escLikeChars(escJSONChars(w)) + "%"
 			if w != "" {
 				if exclude {

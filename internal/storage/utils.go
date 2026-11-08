@@ -104,6 +104,13 @@ func createSearchText(env *enmime.Envelope) string {
 
 // CleanString removes unwanted characters from stored search text and search queries
 func cleanString(str string) string {
+	return strings.ToLower(cleanFieldString(str))
+}
+
+// cleanFieldString removes unwanted characters from a field search term (eg: `from:`)
+// but keeps its case. SQLite's LIKE only folds ASCII case, so a lowercased term
+// would never match a header with an uppercase non-ASCII character (eg: `Ä`).
+func cleanFieldString(str string) string {
 	// replace \uFEFF with space, see https://github.com/golang/go/issues/42274#issuecomment-1017258184
 	str = strings.ReplaceAll(str, string('\uFEFF'), " ")
 
@@ -111,7 +118,7 @@ func cleanString(str string) string {
 	str = cleanStringRe.ReplaceAllString(str, " ")
 
 	// remove duplicate whitespace and trim
-	return strings.ToLower(strings.Join(strings.Fields(strings.TrimSpace(str)), " "))
+	return strings.Join(strings.Fields(strings.TrimSpace(str)), " ")
 }
 
 // LogMessagesDeleted logs the number of messages deleted

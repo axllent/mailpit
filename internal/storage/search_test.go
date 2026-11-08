@@ -383,6 +383,63 @@ func TestSearchJSONEscapedAddresses(t *testing.T) {
 	}
 }
 
+func TestSearchUnicodeAddresses(t *testing.T) {
+	setup("")
+	defer Close()
+
+	t.Log("Testing address searches for names with uppercase non-ASCII characters")
+
+	// SQLite's LIKE only folds ASCII case, so a field search must keep the
+	// case of non-ASCII characters to match the stored header.
+	names := []string{"Иван Петров", "Ärger Öl"}
+
+	for i, name := range names {
+		env, err := enmime.Builder().
+			From(name, fmt.Sprintf("from%d@example.com", i)).
+			To(name, fmt.Sprintf("to%d@example.com", i)).
+			CC(name, fmt.Sprintf("cc%d@example.com", i)).
+			Header("Bcc", (&mail.Address{Name: name, Address: fmt.Sprintf("bcc%d@example.com", i)}).String()).
+			ReplyTo(name, fmt.Sprintf("reply%d@example.com", i)).
+			Subject(name).
+			Text([]byte("body")).
+			Build()
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		buf := new(bytes.Buffer)
+		if err := env.Encode(buf); err != nil {
+			t.Fatal(err)
+		}
+
+		b := buf.Bytes()
+		if _, err := Store(&b, nil); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	for _, name := range names {
+		for _, prefix := range []string{"from:", "to:", "cc:", "bcc:", "reply-to:", "addressed:"} {
+			search := prefix + `"` + name + `"`
+			summaries, _, err := Search(search, "", 0, 0, 100)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(summaries) != 1 || summaries[0].Subject != name {
+				t.Errorf("search %s: expected [%s], got %q", search, name, subjects(summaries))
+			}
+
+			summaries, _, err = Search("-"+search, "", 0, 0, 100)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(summaries) != len(names)-1 || slices.Contains(subjects(summaries), name) {
+				t.Errorf("search -%s: expected all but [%s], got %q", search, name, subjects(summaries))
+			}
+		}
+	}
+}
+
 func TestSearchNegatedSizeAndDate(t *testing.T) {
 	setup("")
 	defer Close()
