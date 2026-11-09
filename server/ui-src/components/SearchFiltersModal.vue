@@ -34,7 +34,7 @@ export default {
 				<div class="modal-body">
 					<p class="text-muted small mb-3">
 						Filter messages using prefixes and special terms. Click any example to try it immediately. Terms
-						are case-insensitive (ASCII).
+						are case-insensitive.
 					</p>
 
 					<!-- Header & Address filters -->

@@ -79,6 +79,13 @@ func Store(body *[]byte, username *string) (string, error) {
 		return "", err
 	}
 
+	subject := env.GetHeader("Subject")
+
+	metaSearchText, err := createMetaSearchText(obj, subject)
+	if err != nil {
+		return "", err
+	}
+
 	// begin a transaction to ensure both the message
 	// and data are stored successfully
 	ctx := context.Background()
@@ -90,20 +97,19 @@ func Store(body *[]byte, username *string) (string, error) {
 	// roll back if it fails
 	defer func() { _ = tx.Rollback() }()
 
-	subject := env.GetHeader("Subject")
 	size := uint64(len(*body))
 	inline := len(env.Inlines)
 	attachments := len(env.Attachments)
 	snippet := tools.CreateSnippet(env.Text, env.HTML)
 
-	sql := fmt.Sprintf(`INSERT INTO %s 
-    	(Created, ID, MessageID, Subject, Metadata, Size, Inline, Attachments, SearchText, Read, Snippet) 
-	    VALUES(?,?,?,?,?,?,?,?,?,0,?)`,
+	sql := fmt.Sprintf(`INSERT INTO %s
+    	(Created, ID, MessageID, Subject, Metadata, Size, Inline, Attachments, SearchText, MetaSearchText, Read, Snippet)
+	    VALUES(?,?,?,?,?,?,?,?,?,?,0,?)`,
 		tenant("mailbox"),
 	) // #nosec
 
 	// insert mail summary data
-	_, err = tx.Exec(sql, created.UnixMilli(), id, messageID, subject, string(summaryJSON), size, inline, attachments, searchText, snippet)
+	_, err = tx.Exec(sql, created.UnixMilli(), id, messageID, subject, string(summaryJSON), size, inline, attachments, searchText, metaSearchText, snippet)
 	if err != nil {
 		return "", err
 	}

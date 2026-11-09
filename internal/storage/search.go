@@ -306,6 +306,14 @@ func SetSearchReadStatus(search, timezone string, read bool) error {
 	return nil
 }
 
+// MetaSearchTextField returns the SQL expression for a searchable address field (eg: To). It uses
+// the case-folded copy in MetaSearchText, as search terms are case-folded and SQLite's LIKE only
+// folds ASCII case. Messages without MetaSearchText (see backfillMetaSearchText) use the
+// original metadata.
+func metaSearchTextField(field string) string {
+	return fmt.Sprintf(`IFNULL(json_extract(m.MetaSearchText, '$.%[1]s'), IFNULL(json_extract(m.Metadata, '$.%[1]s'), '{}'))`, field)
+}
+
 // SearchParser returns the SQL syntax for the database search based on the search arguments
 func searchQueryBuilder(searchString, timezone string) *sqlf.Stmt {
 	// group strings with quotes as a single argument and remove quotes
@@ -323,11 +331,11 @@ func searchQueryBuilder(searchString, timezone string) *sqlf.Stmt {
 	q := sqlf.From(tenant("mailbox") + " m").
 		Select(`m.Created, m.ID, m.MessageID, m.Subject, m.Metadata, m.Size, m.Attachments, m.Read,
 			m.Snippet,
-			IFNULL(json_extract(Metadata, '$.To'), '{}') as ToJSON,
-			IFNULL(json_extract(Metadata, '$.From'), '{}') as FromJSON,
-			IFNULL(json_extract(Metadata, '$.Cc'), '{}') as CcJSON,
-			IFNULL(json_extract(Metadata, '$.Bcc'), '{}') as BccJSON,
-			IFNULL(json_extract(Metadata, '$.ReplyTo'), '{}') as ReplyToJSON
+			` + metaSearchTextField("To") + ` as ToJSON,
+			` + metaSearchTextField("From") + ` as FromJSON,
+			` + metaSearchTextField("Cc") + ` as CcJSON,
+			` + metaSearchTextField("Bcc") + ` as BccJSON,
+			` + metaSearchTextField("ReplyTo") + ` as ReplyToJSON
 		`).
 		OrderBy("m.Created DESC")
 
@@ -408,12 +416,13 @@ func searchQueryBuilder(searchString, timezone string) *sqlf.Stmt {
 				}
 			}
 		} else if strings.HasPrefix(lw, "subject:") {
-			w = w[8:]
+			w = foldCase(w[8:])
 			if w != "" {
+				// messages without MetaSearchText (see backfillMetaSearchText) use the original subject
 				if exclude {
-					q.Where("m.Subject NOT LIKE ? ESCAPE '\\'", "%"+escLikeChars(w)+"%")
+					q.Where("IFNULL(json_extract(m.MetaSearchText, '$.Subject'), m.Subject) NOT LIKE ? ESCAPE '\\'", "%"+escLikeChars(w)+"%")
 				} else {
-					q.Where("m.Subject LIKE ? ESCAPE '\\'", "%"+escLikeChars(w)+"%")
+					q.Where("IFNULL(json_extract(m.MetaSearchText, '$.Subject'), m.Subject) LIKE ? ESCAPE '\\'", "%"+escLikeChars(w)+"%")
 				}
 			}
 		} else if strings.HasPrefix(lw, "message-id:") {

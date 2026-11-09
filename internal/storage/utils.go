@@ -13,6 +13,7 @@ import (
 	"github.com/axllent/mailpit/internal/mimeparser"
 	"github.com/axllent/mailpit/internal/tools"
 	"github.com/jhillyerd/enmime/v2"
+	"golang.org/x/text/cases"
 )
 
 var (
@@ -111,7 +112,71 @@ func cleanString(str string) string {
 	str = cleanStringRe.ReplaceAllString(str, " ")
 
 	// remove duplicate whitespace and trim
-	return strings.ToLower(strings.Join(strings.Fields(strings.TrimSpace(str)), " "))
+	return foldCase(strings.Join(strings.Fields(strings.TrimSpace(str)), " "))
+}
+
+// FoldCase normalises the case of stored search text and search terms so they can be
+// compared case-insensitively, as SQLite's LIKE only folds ASCII case. Unicode case
+// folding also matches characters which lowercasing alone does not (eg: `ß` & `SS`,
+// Greek final sigma `ς` & `Σ`). The string is lowercased first so that Turkish `İ`
+// matches `i` (case folding alone turns it into `i` + a combining dot).
+//
+// Stored text must be normalised with this function too, see refoldSearchText for
+// existing messages.
+func foldCase(s string) string {
+	// a cases.Caser is stateful and must not be shared between goroutines
+	return cases.Fold().String(strings.ToLower(s))
+}
+
+// metaSearchText is a case-folded copy (see foldCase) of the message Metadata plus the
+// subject, stored as JSON in the mailbox MetaSearchText column for field searches (eg:
+// `from:`). SQLite's LIKE only folds ASCII case, so the values are folded in Go (as is
+// the search term) to make field searches case-insensitive for non-ASCII characters too.
+// Username is not currently searchable, but is included so the column mirrors Metadata.
+type metaSearchText struct {
+	From     *mail.Address
+	To       []*mail.Address
+	Cc       []*mail.Address
+	Bcc      []*mail.Address
+	ReplyTo  []*mail.Address
+	Username string
+	Subject  string
+}
+
+// createMetaSearchText returns the case-folded MetaSearchText JSON for a message
+func createMetaSearchText(meta Metadata, subject string) (string, error) {
+	foldAddress := func(a *mail.Address) *mail.Address {
+		if a == nil {
+			return nil
+		}
+		return &mail.Address{Name: foldCase(a.Name), Address: foldCase(a.Address)}
+	}
+
+	foldAddresses := func(addresses []*mail.Address) []*mail.Address {
+		if addresses == nil {
+			return nil
+		}
+		l := make([]*mail.Address, len(addresses))
+		for i, a := range addresses {
+			l[i] = foldAddress(a)
+		}
+		return l
+	}
+
+	b, err := json.Marshal(metaSearchText{
+		From:     foldAddress(meta.From),
+		To:       foldAddresses(meta.To),
+		Cc:       foldAddresses(meta.Cc),
+		Bcc:      foldAddresses(meta.Bcc),
+		ReplyTo:  foldAddresses(meta.ReplyTo),
+		Username: foldCase(meta.Username),
+		Subject:  foldCase(subject),
+	})
+	if err != nil {
+		return "", err
+	}
+
+	return string(b), nil
 }
 
 // LogMessagesDeleted logs the number of messages deleted

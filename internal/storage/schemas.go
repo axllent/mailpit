@@ -2,7 +2,10 @@ package storage
 
 import (
 	"bytes"
+	"context"
+	"database/sql"
 	"embed"
+	"encoding/json"
 	"log"
 	"path"
 	"sort"
@@ -11,6 +14,7 @@ import (
 
 	"github.com/axllent/mailpit/internal/logger"
 	"github.com/axllent/semver"
+	"github.com/leporo/sqlf"
 )
 
 //go:embed schemas/*
@@ -167,4 +171,201 @@ func dataMigrations() {
 	if SettingGet("DeletedSize") == "" {
 		_ = SettingPut("DeletedSize", "0")
 	}
+
+	if err := backfillMetaSearchText(); err != nil {
+		logger.Log().Errorf("[db] populating MetaSearchText: %s", err.Error())
+	}
+
+	if err := refoldSearchText(); err != nil {
+		logger.Log().Errorf("[db] case-folding SearchText: %s", err.Error())
+	}
+}
+
+// searchTextFoldedSetting is set once refoldSearchText has processed every message
+const searchTextFoldedSetting = "SearchTextFolded"
+
+// RefoldSearchText applies foldCase to the SearchText of messages stored before search
+// text was case-folded (v1.34.0), when it was only lowercased. Lowercasing is idempotent
+// so foldCase(storedText) is exactly what the message would now be indexed as, and no
+// messages need to be parsed. Only messages containing characters which case folding
+// changes (eg: `ß`, `ς`) are updated. It runs once, and is safe to re-run if interrupted.
+// Until a message is updated, general searches for words containing those characters
+// may not match it.
+func refoldSearchText() error {
+	if SettingGet(searchTextFoldedSetting) == "1" {
+		return nil
+	}
+
+	type update struct {
+		ID         string
+		SearchText string
+		Old        string
+	}
+
+	chunkSize := 1000
+	lastID := ""
+	checked := 0
+	updated := 0
+	logged := false
+
+	for {
+		updates := []update{}
+		var id, searchText string
+		rows := 0
+
+		err := sqlf.From(tenant("mailbox")).
+			Select("ID").To(&id).
+			Select("IFNULL(SearchText, '')").To(&searchText).
+			Where("ID > ?", lastID).
+			OrderBy("ID").
+			Limit(chunkSize).
+			QueryAndClose(context.TODO(), db, func(_ *sql.Rows) {
+				rows++
+				lastID = id
+
+				if folded := foldCase(searchText); folded != searchText {
+					updates = append(updates, update{id, folded, searchText})
+				}
+			})
+		if err != nil {
+			return err
+		}
+
+		if rows == 0 {
+			break
+		}
+
+		checked += rows
+
+		if !logged && checked >= chunkSize {
+			logger.Log().Info("[db] case-folding search text for existing messages")
+			logged = true
+		}
+
+		if len(updates) == 0 {
+			continue
+		}
+
+		tx, err := db.BeginTx(context.Background(), nil)
+		if err != nil {
+			return err
+		}
+
+		for _, u := range updates {
+			// a message reindexed in the meantime already has the current value
+			if _, err := tx.Exec(`UPDATE `+tenant("mailbox")+` SET SearchText = ? WHERE ID = ? AND SearchText = ?`, u.SearchText, u.ID, u.Old); err != nil {
+				_ = tx.Rollback()
+				return err
+			}
+		}
+
+		if err := tx.Commit(); err != nil {
+			return err
+		}
+
+		updated += len(updates)
+	}
+
+	if logged || updated > 0 {
+		logger.Log().Infof("[db] case-folded search text: checked %d messages, updated %d", checked, updated)
+	}
+
+	return SettingPut(searchTextFoldedSetting, "1")
+}
+
+// BackfillMetaSearchText populates the MetaSearchText column for messages stored before
+// it existed (schema 1.34.0). It uses the stored metadata & subject, so no messages
+// need to be parsed. Until a message is populated, field searches fall back to the
+// original columns, which are only case-insensitive for ASCII characters.
+func backfillMetaSearchText() error {
+	var pending float64 // use float64 for rqlite compatibility
+	if err := db.QueryRow(`SELECT COUNT(*) FROM ` + tenant("mailbox") + ` WHERE MetaSearchText IS NULL`).Scan(&pending); err != nil {
+		return err
+	}
+
+	if pending == 0 {
+		return nil
+	}
+
+	logger.Log().Infof("[db] populating MetaSearchText for %d messages", int(pending))
+
+	type update struct {
+		ID             string
+		MetaSearchText string
+	}
+
+	chunkSize := 1000
+	lastID := ""
+	done := 0
+	failed := 0
+
+	for {
+		updates := []update{}
+		var id, metadata, subject string
+		rows := 0
+
+		// walk by ID rather than re-selecting `MetaSearchText IS NULL`, so a message
+		// that cannot be processed is skipped instead of being selected forever
+		err := sqlf.From(tenant("mailbox")).
+			Select("ID").To(&id).
+			Select("IFNULL(Metadata, '{}')").To(&metadata).
+			Select("IFNULL(Subject, '')").To(&subject).
+			Where("MetaSearchText IS NULL AND ID > ?", lastID).
+			OrderBy("ID").
+			Limit(chunkSize).
+			QueryAndClose(context.TODO(), db, func(_ *sql.Rows) {
+				rows++
+				lastID = id
+
+				var meta Metadata
+				if err := json.Unmarshal([]byte(metadata), &meta); err != nil {
+					logger.Log().Warnf("[db] cannot populate MetaSearchText for message %s: %s", id, err.Error())
+					failed++
+					return
+				}
+
+				mst, err := createMetaSearchText(meta, subject)
+				if err != nil {
+					logger.Log().Warnf("[db] cannot populate MetaSearchText for message %s: %s", id, err.Error())
+					failed++
+					return
+				}
+
+				updates = append(updates, update{id, mst})
+			})
+		if err != nil {
+			return err
+		}
+
+		if rows == 0 {
+			break
+		}
+
+		tx, err := db.BeginTx(context.Background(), nil)
+		if err != nil {
+			return err
+		}
+
+		for _, u := range updates {
+			// a message stored or reindexed in the meantime already has the current value
+			if _, err := tx.Exec(`UPDATE `+tenant("mailbox")+` SET MetaSearchText = ? WHERE ID = ? AND MetaSearchText IS NULL`, u.MetaSearchText, u.ID); err != nil {
+				_ = tx.Rollback()
+				return err
+			}
+		}
+
+		if err := tx.Commit(); err != nil {
+			return err
+		}
+
+		done += len(updates)
+	}
+
+	if failed > 0 {
+		logger.Log().Warnf("[db] populated MetaSearchText for %d messages, %d failed", done, failed)
+	} else {
+		logger.Log().Infof("[db] populated MetaSearchText for %d messages", done)
+	}
+
+	return nil
 }

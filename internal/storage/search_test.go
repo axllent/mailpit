@@ -383,6 +383,337 @@ func TestSearchJSONEscapedAddresses(t *testing.T) {
 	}
 }
 
+// storeUnicodeTestMessage stores a message using name in every address field
+func storeUnicodeTestMessage(t *testing.T, i int, name, subject string) {
+	t.Helper()
+
+	env, err := enmime.Builder().
+		From(name, fmt.Sprintf("from%d@example.com", i)).
+		To(name, fmt.Sprintf("to%d@example.com", i)).
+		CC(name, fmt.Sprintf("cc%d@example.com", i)).
+		Header("Bcc", (&mail.Address{Name: name, Address: fmt.Sprintf("bcc%d@example.com", i)}).String()).
+		ReplyTo(name, fmt.Sprintf("reply%d@example.com", i)).
+		Subject(subject).
+		Text([]byte("body")).
+		Build()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	buf := new(bytes.Buffer)
+	if err := env.Encode(buf); err != nil {
+		t.Fatal(err)
+	}
+
+	b := buf.Bytes()
+	if _, err := Store(&b, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// forEachTestTenant runs fn as a subtest against an empty database, once without a
+// tenant and once for each of two tenant IDs
+func forEachTestTenant(t *testing.T, fn func(t *testing.T)) {
+	for _, tenantID := range []string{"", "MyServer 3", "host.example.com"} {
+		name := tenantID
+		if name == "" {
+			name = "no tenant"
+		}
+
+		t.Run(name, func(t *testing.T) {
+			setup(config.DBTenantID(tenantID))
+			defer Close()
+
+			fn(t)
+		})
+	}
+}
+
+func TestMetaSearchTextUnicodeCase(t *testing.T) {
+	forEachTestTenant(t, testMetaSearchTextUnicodeCase)
+}
+
+func testMetaSearchTextUnicodeCase(t *testing.T) {
+	t.Log("Testing field searches are case-insensitive for non-ASCII characters")
+
+	// SQLite's LIKE only folds ASCII case, so field searches match against a
+	// case-folded copy of the fields. Each message is matched by terms in any case,
+	// whether the stored value is capitalised or lowercase. The ASCII message is a
+	// control for the case-insensitivity LIKE already provided.
+	messages := []struct {
+		name    string
+		subject string
+		terms   []string
+	}{
+		{"Иван Петров", "Привет Мир", []string{"Иван", "иван", "ИВАН ПЕТРОВ", "иВАН пЕТРОВ"}},
+		{"ärger öl", "äpfel", []string{"ärger", "Ärger", "ÄRGER ÖL"}},
+		{"Jörg Straße", "Οδυσσεύς", []string{"STRASSE", "strasse", "Straße", "JÖRG STRAẞE"}},
+		{"John Smith", "Hello World", []string{"john", "JOHN SMITH"}},
+	}
+
+	for i, m := range messages {
+		storeUnicodeTestMessage(t, i, m.name, m.subject)
+	}
+
+	assertSearch := func(search string, expected []string) {
+		t.Helper()
+		summaries, _, err := Search(search, "", 0, 0, 100)
+		if err != nil {
+			t.Fatal(err)
+		}
+		got := subjects(summaries)
+		slices.Sort(got)
+		slices.Sort(expected)
+		if !slices.Equal(got, expected) {
+			t.Errorf("search %s: expected %q, got %q", search, expected, got)
+		}
+	}
+
+	allSubjects := []string{}
+	for _, m := range messages {
+		allSubjects = append(allSubjects, m.subject)
+	}
+
+	for _, m := range messages {
+		others := slices.DeleteFunc(slices.Clone(allSubjects), func(s string) bool { return s == m.subject })
+
+		for _, prefix := range []string{"from:", "to:", "cc:", "bcc:", "reply-to:", "addressed:"} {
+			for _, term := range m.terms {
+				search := prefix + `"` + term + `"`
+				assertSearch(search, []string{m.subject})
+				assertSearch("-"+search, others)
+			}
+		}
+
+		for _, term := range []string{m.subject, strings.ToLower(m.subject), strings.ToUpper(m.subject)} {
+			search := `subject:"` + term + `"`
+			assertSearch(search, []string{m.subject})
+			assertSearch("-"+search, others)
+		}
+	}
+
+	// control: a term that matches nothing still matches nothing
+	assertSearch(`from:"ÖLIVER"`, []string{})
+	assertSearch(`-from:"ÖLIVER"`, allSubjects)
+}
+
+func TestMetaSearchTextBackfill(t *testing.T) {
+	forEachTestTenant(t, testMetaSearchTextBackfill)
+}
+
+func testMetaSearchTextBackfill(t *testing.T) {
+	t.Log("Testing MetaSearchText is populated for existing messages")
+
+	storeUnicodeTestMessage(t, 0, "Ärger John", "Äpfel")
+	storeUnicodeTestMessage(t, 1, "Öl Jane", "Öl")
+
+	// simulate messages stored before the MetaSearchText column existed
+	if _, err := db.Exec(`UPDATE ` + tenant("mailbox") + ` SET MetaSearchText = NULL`); err != nil {
+		t.Fatal(err)
+	}
+
+	assertCount := func(search string, expected int) {
+		t.Helper()
+		summaries, _, err := Search(search, "", 0, 0, 100)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(summaries) != expected {
+			t.Errorf("search %s: expected %d results, got %q", search, expected, subjects(summaries))
+		}
+	}
+
+	pendingCount := func() int {
+		t.Helper()
+		var pending float64 // use float64 for rqlite compatibility
+		if err := db.QueryRow(`SELECT COUNT(*) FROM ` + tenant("mailbox") + ` WHERE MetaSearchText IS NULL`).Scan(&pending); err != nil {
+			t.Fatal(err)
+		}
+		return int(pending)
+	}
+
+	// before backfill, field searches fall back to the original metadata: ASCII is
+	// case-insensitive, non-ASCII is not, and the unpopulated messages are not
+	// dropped from negated searches
+	assertCount(`from:"JOHN"`, 1)
+	assertCount(`from:"ÄRGER"`, 0)
+	assertCount(`subject:"ÄPFEL"`, 0)
+	assertCount(`-from:"nobody"`, 2)
+
+	// metadata that is valid JSON but cannot be unmarshalled into Metadata, so the
+	// backfill must skip it rather than stop or select it forever (Search already
+	// omits such messages from results)
+	if _, err := db.Exec(`UPDATE `+tenant("mailbox")+` SET Metadata = '{"To":"invalid"}' WHERE Subject = ?`, "Öl"); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := backfillMetaSearchText(); err != nil {
+		t.Fatal(err)
+	}
+
+	assertCount(`from:"JOHN"`, 1)
+	assertCount(`from:"ÄRGER"`, 1)
+	assertCount(`from:"ärger"`, 1)
+	assertCount(`subject:"ÄPFEL"`, 1)
+	assertCount(`-from:"ÄRGER"`, 0)
+	assertCount(`-from:"nobody"`, 1)
+
+	if n := pendingCount(); n != 1 {
+		t.Errorf("expected 1 message without MetaSearchText, got %d", n)
+	}
+
+	// a second run terminates and leaves the unreadable message unpopulated
+	if err := backfillMetaSearchText(); err != nil {
+		t.Fatal(err)
+	}
+	if n := pendingCount(); n != 1 {
+		t.Errorf("expected 1 message without MetaSearchText, got %d", n)
+	}
+}
+
+func TestMetaSearchTextReindex(t *testing.T) {
+	forEachTestTenant(t, testMetaSearchTextReindex)
+}
+
+func testMetaSearchTextReindex(t *testing.T) {
+	t.Log("Testing reindexing regenerates MetaSearchText")
+
+	storeUnicodeTestMessage(t, 0, "Ärger Öl", "Äpfel")
+
+	// replace the stored value with one that no longer matches the message
+	if _, err := db.Exec(`UPDATE ` + tenant("mailbox") + ` SET MetaSearchText = '{"From":{"Name":"stale","Address":"stale@example.com"},"Subject":"stale"}'`); err != nil {
+		t.Fatal(err)
+	}
+
+	assertCount := func(search string, expected int) {
+		t.Helper()
+		summaries, _, err := Search(search, "", 0, 0, 100)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(summaries) != expected {
+			t.Errorf("search %s: expected %d results, got %q", search, expected, subjects(summaries))
+		}
+	}
+
+	// searches use the stale value until the message is reindexed
+	assertCount(`from:"stale"`, 1)
+	assertCount(`from:"ÄRGER"`, 0)
+
+	ReindexAll()
+
+	assertCount(`from:"stale"`, 0)
+	assertCount(`subject:"stale"`, 0)
+	assertCount(`from:"ÄRGER"`, 1)
+	assertCount(`from:"ärger öl"`, 1)
+	assertCount(`subject:"ÄPFEL"`, 1)
+}
+
+func TestSearchTextCaseFolding(t *testing.T) {
+	forEachTestTenant(t, testSearchTextCaseFolding)
+}
+
+func testSearchTextCaseFolding(t *testing.T) {
+	t.Log("Testing general searches use case folding")
+
+	storeUnicodeTestMessage(t, 0, "Jörg", "Straße Οδυσσεύς")
+	// control: same shape, no characters affected by case folding
+	storeUnicodeTestMessage(t, 1, "John", "Street Odysseus")
+
+	assertCount := func(search string, expected int) {
+		t.Helper()
+		summaries, _, err := Search(search, "", 0, 0, 100)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(summaries) != expected {
+			t.Errorf("search %s: expected %d results, got %q", search, expected, subjects(summaries))
+		}
+	}
+
+	for _, term := range []string{"straße", "STRASSE", "strasse", "STRAẞE", "οδυσσεύς", "ΟΔΥΣΣΕΎΣ", "οδυσσεύσ"} {
+		assertCount(term, 1)
+		assertCount("-"+term, 1)
+	}
+
+	assertCount("street", 1)
+	assertCount("ODYSSEUS", 1)
+	assertCount("strassen", 0)
+}
+
+func TestRefoldSearchText(t *testing.T) {
+	forEachTestTenant(t, testRefoldSearchText)
+}
+
+func testRefoldSearchText(t *testing.T) {
+	t.Log("Testing existing search text is case-folded")
+
+	storeUnicodeTestMessage(t, 0, "Jörg", "Straße")
+	storeUnicodeTestMessage(t, 1, "John", "Street")
+
+	// simulate search text stored before case folding, when it was only lowercased
+	const oldText = "jörg straße body"
+	if _, err := db.Exec(`UPDATE `+tenant("mailbox")+` SET SearchText = ? WHERE Subject = ?`, oldText, "Straße"); err != nil {
+		t.Fatal(err)
+	}
+	if err := SettingPut(searchTextFoldedSetting, ""); err != nil {
+		t.Fatal(err)
+	}
+
+	searchText := func(subject string) string {
+		t.Helper()
+		var s string
+		if err := db.QueryRow(`SELECT SearchText FROM `+tenant("mailbox")+` WHERE Subject = ?`, subject).Scan(&s); err != nil {
+			t.Fatal(err)
+		}
+		return s
+	}
+
+	assertCount := func(search string, expected int) {
+		t.Helper()
+		summaries, _, err := Search(search, "", 0, 0, 100)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(summaries) != expected {
+			t.Errorf("search %s: expected %d results, got %q", search, expected, subjects(summaries))
+		}
+	}
+
+	// search terms are folded, so the unfolded text is not matched until refolded
+	assertCount("STRASSE", 0)
+
+	controlBefore := searchText("Street")
+
+	if err := refoldSearchText(); err != nil {
+		t.Fatal(err)
+	}
+
+	if got := searchText("Straße"); got != "jörg strasse body" {
+		t.Errorf("expected refolded search text %q, got %q", "jörg strasse body", got)
+	}
+	if got := searchText("Street"); got != controlBefore {
+		t.Errorf("expected control search text to be unchanged, got %q", got)
+	}
+	if SettingGet(searchTextFoldedSetting) != "1" {
+		t.Errorf("expected %s setting to be set", searchTextFoldedSetting)
+	}
+
+	assertCount("STRASSE", 1)
+	assertCount("straße", 1)
+
+	// once complete, it does not run again
+	if _, err := db.Exec(`UPDATE `+tenant("mailbox")+` SET SearchText = ? WHERE Subject = ?`, oldText, "Straße"); err != nil {
+		t.Fatal(err)
+	}
+	if err := refoldSearchText(); err != nil {
+		t.Fatal(err)
+	}
+	if got := searchText("Straße"); got != oldText {
+		t.Errorf("expected search text to be left alone after completion, got %q", got)
+	}
+}
+
 func TestSearchNegatedSizeAndDate(t *testing.T) {
 	setup("")
 	defer Close()

@@ -51,6 +51,8 @@ func ReindexAll() {
 		Snippet string
 		// Metadata info
 		Metadata string
+		// MetaSearchText for field searches
+		MetaSearchText string
 	}
 
 	parser := mimeparser.New()
@@ -94,6 +96,12 @@ func ReindexAll() {
 				continue
 			}
 
+			metaSearchText, err := createMetaSearchText(meta, env.GetHeader("Subject"))
+			if err != nil {
+				logger.Log().Errorf("[message] %s", err.Error())
+				continue
+			}
+
 			searchText := createSearchText(env)
 			snippet := tools.CreateSnippet(env.Text, env.HTML)
 
@@ -102,6 +110,7 @@ func ReindexAll() {
 			u.SearchText = searchText
 			u.Snippet = snippet
 			u.Metadata = string(MetadataJSON)
+			u.MetaSearchText = metaSearchText
 
 			updates = append(updates, u)
 		}
@@ -118,7 +127,7 @@ func ReindexAll() {
 
 		// insert mail summary data
 		for _, u := range updates {
-			_, err = tx.Exec(fmt.Sprintf(`UPDATE %s SET SearchText = ?, Snippet = ?, Metadata = ? WHERE ID = ?`, tenant("mailbox")), u.SearchText, u.Snippet, u.Metadata, u.ID)
+			_, err = tx.Exec(fmt.Sprintf(`UPDATE %s SET SearchText = ?, Snippet = ?, Metadata = ?, MetaSearchText = ? WHERE ID = ?`, tenant("mailbox")), u.SearchText, u.Snippet, u.Metadata, u.MetaSearchText, u.ID)
 			if err != nil {
 				logger.Log().Errorf("[db] %s", err.Error())
 				continue
