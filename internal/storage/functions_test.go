@@ -29,7 +29,7 @@ func setup(tenantID string) {
 	var err error
 
 	// ensure DB is empty
-	if err := DeleteAllMessages(); err != nil {
+	if err := DeleteAllMessages(""); err != nil {
 		panic(err)
 	}
 
@@ -58,7 +58,7 @@ func assertEqual(t *testing.T, a any, b any, message string) {
 }
 
 func assertEqualStats(t *testing.T, total int, unread int) {
-	s := StatsGet()
+	s := StatsGet("")
 	if uint64(total) != s.Total {
 		t.Fatalf("Incorrect total mailbox stats: \"%v\" != \"%v\"", total, s.Total)
 	}

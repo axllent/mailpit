@@ -10,6 +10,7 @@ import (
 	"github.com/axllent/mailpit/internal/linkcheck"
 	"github.com/axllent/mailpit/internal/mimeparser"
 	"github.com/axllent/mailpit/internal/rspamd"
+	"github.com/axllent/mailpit/internal/segment"
 	"github.com/axllent/mailpit/internal/spamassassin"
 	"github.com/axllent/mailpit/internal/storage"
 )
@@ -39,7 +40,7 @@ func HTMLCheck(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	raw, err := storage.GetMessageRaw(id)
+	raw, err := storage.GetMessageRaw(segment.FromRequest(r), id)
 	if err != nil {
 		fourOFour(w)
 		return
@@ -102,7 +103,7 @@ func LinkCheck(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	msg, err := storage.GetMessage(id)
+	msg, err := storage.GetMessage(segment.FromRequest(r), id)
 	if err != nil {
 		fourOFour(w)
 		return
@@ -148,7 +149,7 @@ func SpamAssassinCheck(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	msg, err := storage.GetMessageRaw(id)
+	msg, err := storage.GetMessageRaw(segment.FromRequest(r), id)
 	if err != nil {
 		fourOFour(w)
 		return
@@ -191,7 +192,7 @@ func RspamdCheck(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	msg, err := storage.GetMessageRaw(id)
+	msg, err := storage.GetMessageRaw(segment.FromRequest(r), id)
 	if err != nil {
 		fourOFour(w)
 		return

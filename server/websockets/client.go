@@ -11,6 +11,7 @@ import (
 	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/internal/auth"
 	"github.com/axllent/mailpit/internal/logger"
+	"github.com/axllent/mailpit/internal/segment"
 	"github.com/gorilla/websocket"
 )
 
@@ -61,6 +62,14 @@ type Client struct {
 
 	// Buffered channel of outbound messages.
 	send chan *websocket.PreparedMessage
+
+	// The segment the client is connected to (based on the request Host)
+	segment string
+}
+
+// receives returns whether the client should receive a broadcast intended for a segment
+func (c *Client) receives(seg string) bool {
+	return seg == segment.All || !segment.Enabled() || c.segment == seg
 }
 
 // ReadPump is used here solely to monitor the connection, not to actually receive messages.
@@ -117,7 +126,12 @@ func (c *Client) writePump() {
 
 // ServeWs handles websocket requests from the peer.
 func ServeWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
-	if auth.UICredentials != nil {
+	if segment.AuthEnabled() {
+		if !segment.AuthenticateRequest(r) {
+			basicAuthResponse(w)
+			return
+		}
+	} else if auth.UICredentials != nil {
 		user, pass, ok := r.BasicAuth()
 
 		if !ok {
@@ -137,7 +151,7 @@ func ServeWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	client := &Client{hub: hub, conn: conn, send: make(chan *websocket.PreparedMessage, 256)}
+	client := &Client{hub: hub, conn: conn, send: make(chan *websocket.PreparedMessage, 256), segment: segment.FromRequest(r)}
 	client.hub.register <- client
 
 	// Allow collection of memory referenced by the caller by doing all work in new goroutines.

@@ -12,6 +12,7 @@ import (
 	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/internal/auth"
 	"github.com/axllent/mailpit/internal/logger"
+	"github.com/axllent/mailpit/internal/segment"
 	"github.com/axllent/mailpit/internal/shortuuid"
 	"github.com/axllent/mailpit/internal/stats"
 	"github.com/axllent/mailpit/internal/storage"
@@ -28,13 +29,14 @@ var (
 	errorResponse   = regexp.MustCompile(`^5\d\d `)
 )
 
-// MailHandler handles the incoming message to store in the database
+// MailHandler handles the incoming message to store in the database.
+// When segments are enabled the message is stored in the segment of the SMTP username.
 func mailHandler(origin net.Addr, from string, to []string, data []byte, smtpUser *string) (string, error) {
-	return SaveToDatabase(origin, from, to, data, smtpUser)
+	return SaveToDatabase(segment.FromUsername(smtpUser), origin, from, to, data, smtpUser)
 }
 
-// SaveToDatabase will attempt to save a message to the database
-func SaveToDatabase(origin net.Addr, from string, to []string, data []byte, smtpUser *string) (string, error) {
+// SaveToDatabase will attempt to save a message to the database segment
+func SaveToDatabase(seg string, origin net.Addr, from string, to []string, data []byte, smtpUser *string) (string, error) {
 	if !config.SMTPStrictRFCHeaders && bytes.Contains(data, []byte("\r\r\n")) {
 		// replace all <CR><CR><LF> (\r\r\n) with <CR><LF> (\r\n)
 		// @see https://github.com/axllent/mailpit/issues/87 & https://github.com/axllent/mailpit/issues/153
@@ -66,7 +68,7 @@ func SaveToDatabase(origin net.Addr, from string, to []string, data []byte, smtp
 		// add unique ID
 		data = append([]byte("Message-ID: <"+messageID+">\r\n"), data...)
 	} else if config.IgnoreDuplicateIDs {
-		if storage.MessageIDExists(messageID) {
+		if storage.MessageIDExists(seg, messageID) {
 			logger.Log().Debugf("[smtpd] duplicate message found, ignoring %s", messageID)
 			stats.LogSMTPIgnored()
 			return "", nil
@@ -131,7 +133,7 @@ func SaveToDatabase(origin net.Addr, from string, to []string, data []byte, smtp
 		logger.Log().Debugf("[smtpd] added missing addresses to Bcc header: %s", strings.Join(missingAddresses, ", "))
 	}
 
-	id, err := storage.Store(&data, smtpUser)
+	id, err := storage.Store(seg, &data, smtpUser)
 	if err != nil {
 		logger.Log().Errorf("[db] error storing message: %s", err.Error())
 		return "", err
@@ -145,6 +147,18 @@ func SaveToDatabase(origin net.Addr, from string, to []string, data []byte, smtp
 	logger.Log().Debugf("[smtpd] received (%s) from:%s subject:%q", cleanIP(origin), from, subject)
 
 	return id, err
+}
+
+// authHandlerSegment accepts a valid segment name as username with the shared segment password
+func authHandlerSegment(remoteAddr net.Addr, mechanism string, username []byte, password []byte, _ []byte) (bool, error) {
+	allow := segment.AuthenticateUser(string(username), string(password))
+	if allow {
+		logger.Log().Debugf("[smtpd] allow %s login:%q from:%s", mechanism, string(username), cleanIP(remoteAddr))
+	} else {
+		logger.Log().Warnf("[smtpd] deny %s login:%q from:%s", mechanism, string(username), cleanIP(remoteAddr))
+	}
+
+	return allow, nil
 }
 
 func authHandler(remoteAddr net.Addr, mechanism string, username []byte, password []byte, _ []byte) (bool, error) {
@@ -184,17 +198,21 @@ func handlerRcpt(remoteAddr net.Addr, from string, to string) bool {
 // Listen starts the SMTPD server
 func Listen() error {
 	if config.SMTPAuthAllowInsecure {
-		if auth.SMTPCredentials != nil {
+		if auth.SMTPCredentials != nil || segment.AuthEnabled() {
 			logger.Log().Info("[smtpd] enabling login authentication (insecure)")
 		} else if config.SMTPAuthAcceptAny {
 			logger.Log().Info("[smtpd] enabling any authentication (insecure)")
 		}
 	} else {
-		if auth.SMTPCredentials != nil {
+		if auth.SMTPCredentials != nil || segment.AuthEnabled() {
 			logger.Log().Info("[smtpd] enabling login authentication")
 		} else if config.SMTPAuthAcceptAny {
 			logger.Log().Info("[smtpd] enabling any authentication")
 		}
+	}
+
+	if segment.AuthEnabled() {
+		return listenAndServe(config.SMTPListen, mailHandler, authHandlerSegment)
 	}
 
 	return listenAndServe(config.SMTPListen, mailHandler, authHandler)
@@ -257,7 +275,7 @@ func listenAndServe(addr string, handler MsgIDHandler, authHandler AuthHandler) 
 		}
 	}
 
-	if auth.SMTPCredentials != nil {
+	if auth.SMTPCredentials != nil || segment.AuthEnabled() {
 		srv.AuthMechs = map[string]bool{
 			"CRAM-MD5": false,
 			"PLAIN":    true,
@@ -306,7 +324,7 @@ func listenAndServe(addr string, handler MsgIDHandler, authHandler AuthHandler) 
 				smtpType = "STARTTLS required"
 			} else {
 				smtpType = "STARTTLS optional"
-				if !config.SMTPAuthAllowInsecure && auth.SMTPCredentials != nil {
+				if !config.SMTPAuthAllowInsecure && (auth.SMTPCredentials != nil || segment.AuthEnabled()) {
 					smtpType = "STARTTLS required"
 				}
 			}

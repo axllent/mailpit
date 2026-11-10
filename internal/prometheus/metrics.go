@@ -13,6 +13,7 @@ import (
 
 	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/internal/logger"
+	"github.com/axllent/mailpit/internal/segment"
 	"github.com/axllent/mailpit/internal/stats"
 )
 
@@ -101,7 +102,7 @@ func initMetrics() {
 }
 
 func updateMetrics() {
-	info := stats.Load(false)
+	info := stats.Load(false, segment.All)
 
 	totalMessages.Set(float64(info.Messages))
 	unreadMessages.Set(float64(info.Unread))

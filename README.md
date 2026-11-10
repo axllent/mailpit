@@ -51,6 +51,7 @@ easily handling tens of thousands of emails, with automatic email pruning by vol
 - [Chaos](https://mailpit.axllent.org/docs/integration/chaos/) feature to enable configurable SMTP errors to test application resilience
 - `List-Unsubscribe` syntax validation
 - Optional [webhook](https://mailpit.axllent.org/docs/integration/webhook/) for received messages
+- Optional [segments per SMTP user](#segments-per-smtp-user), each served on its own subdomain, to share one Mailpit between projects
 
 
 ## Installation
@@ -107,6 +108,58 @@ If installed using homebrew, you may run `brew services start mailpit` to always
 ### Testing Mailpit
 
 Please refer to [the documentation](https://mailpit.axllent.org/docs/install/testing/) on how to easily test email delivery to Mailpit.
+
+
+### Segments per SMTP user
+
+One Mailpit can be shared by several projects without them seeing each other's mail. Set `--segment-domain` (or `MP_SEGMENT_DOMAIN`) to enable it:
+
+```shell
+mailpit --segment-domain mail.example.com --smtp-auth-accept-any --smtp-auth-allow-insecure
+```
+
+- A message is stored in the segment of the SMTP username the client authenticated with, so a project sending as `alpha` lands in segment `alpha`. Usernames are lowercased and every character other than `a-z`, `0-9` and `-` becomes a `-` (`Alpha.Project` becomes `alpha-project`). Mail sent without authentication goes to the default segment.
+- The web UI and the whole API (including the websocket, tags, search, delete, release, and the send API) only show and change the segment of the request `Host`: `alpha.mail.example.com` shows segment `alpha`. Any other host shows the default segment. This is enforced in the storage layer, so a message ID from another segment returns a 404.
+- POP3 users see the segment of their POP3 username.
+- `--max` applies per segment, so one busy project cannot push out the mail of another. `--max-age` applies to all messages.
+- Webhooks include a `Mailpit-Segment` header. Prometheus metrics and `mailpit dump` cover all segments.
+- Existing messages are kept in the default segment. Without `--segment-domain` nothing changes.
+
+#### Segment login (`--segment-password-env`)
+
+Together with `--segment-domain`, `--segment-password-env MAILBOX_PASSWORD` names an environment variable with one shared password and replaces the SMTP and UI password files:
+
+- SMTP: the username is the segment (only `a-z`, `0-9` and `-` are accepted, no other normalization) and the password must be the shared value. STARTTLS is required unless `--smtp-auth-allow-insecure` is set.
+- Web UI, API and websocket on `<segment>.<segment-domain>`: basic auth where the username must equal the segment of the host and the password is the shared value. A login for one segment never opens another. Hosts without a segment are refused.
+- It cannot be combined with `--smtp-auth-file`, `--ui-auth-file`, `--smtp-auth-accept-any`. Without the flag nothing changes.
+
+Without that flag, segments separate projects, they are not access control: anyone who can reach `beta.mail.example.com` sees segment `beta`. Use `--smtp-auth-file` for known usernames and put authentication in front of the web UI if that matters to you. Mailpit must receive the original `Host` header, and with `--allowed-hosts` the segment domain and its subdomains are allowed automatically.
+
+Point a wildcard DNS record (`*.mail.example.com`) to the server, then proxy the wildcard host to Mailpit. With Caddy (wildcard certificates need a DNS challenge):
+
+```
+*.mail.example.com, mail.example.com {
+	reverse_proxy 127.0.0.1:8025
+}
+```
+
+With nginx:
+
+```nginx
+server {
+	listen 443 ssl;
+	server_name mail.example.com *.mail.example.com;
+	# ssl_certificate / ssl_certificate_key for *.mail.example.com
+
+	location / {
+		proxy_pass http://127.0.0.1:8025;
+		proxy_set_header Host $host;
+		proxy_http_version 1.1;
+		proxy_set_header Upgrade $http_upgrade;
+		proxy_set_header Connection "upgrade";
+	}
+}
+```
 
 
 ### Configuring sendmail

@@ -339,7 +339,7 @@ func TestPOP3DotStuffing(t *testing.T) {
 	}
 
 	bufBytes := buf.Bytes()
-	_, err = storage.Store(&bufBytes, nil)
+	_, err = storage.Store("", &bufBytes, nil)
 	if err != nil {
 		t.Fatal("error storing message:", err)
 	}
@@ -413,7 +413,7 @@ func setup() {
 		panic(err)
 	}
 
-	if err := storage.DeleteAllMessages(); err != nil {
+	if err := storage.DeleteAllMessages(""); err != nil {
 		panic(err)
 	}
 
@@ -502,13 +502,13 @@ func insertEmailData(t *testing.T) {
 
 		bufBytes := buf.Bytes()
 
-		id, err := storage.Store(&bufBytes, nil)
+		id, err := storage.Store("", &bufBytes, nil)
 		if err != nil {
 			t.Log("error ", err)
 			t.Fail()
 		}
 
-		if _, err := storage.SetMessageTags(id, []string{fmt.Sprintf("Test tag %03d", i)}); err != nil {
+		if _, err := storage.SetMessageTags("", id, []string{fmt.Sprintf("Test tag %03d", i)}); err != nil {
 			t.Log("error ", err)
 			t.Fail()
 		}

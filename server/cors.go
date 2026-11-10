@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/axllent/mailpit/internal/logger"
+	"github.com/axllent/mailpit/internal/segment"
 )
 
 var (
@@ -89,6 +90,10 @@ func hostAccessControl(r *http.Request) bool {
 		bare = r.Host
 	}
 	if allowedHostsBare[asciiFoldString(bare)] {
+		return true
+	}
+	// segment hosts (<segment>.<segment-domain>) are always admitted when segments are enabled
+	if segment.HostAllowed(bare) {
 		return true
 	}
 	// Raw IP literals in the Host header cannot originate from a DNS-rebinding

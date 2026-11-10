@@ -9,6 +9,7 @@ import (
 
 	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/internal/logger"
+	"github.com/axllent/mailpit/internal/segment"
 	"github.com/axllent/mailpit/server/websockets"
 	"github.com/leporo/sqlf"
 )
@@ -68,7 +69,7 @@ func pruneMessages() {
 	var size float64 // use float64 for rqlite compatibility
 
 	// prune using `--max` if set
-	if config.MaxMessages > 0 && CountTotal() > uint64(config.MaxMessages) {
+	if config.MaxMessages > 0 && CountTotal(segment.All) > uint64(config.MaxMessages) {
 		offset := config.MaxMessages
 		if config.DemoMode {
 			offset = 500
@@ -78,6 +79,15 @@ func pruneMessages() {
 			OrderBy("Created DESC").
 			Limit(5000).
 			Offset(offset)
+
+		if segment.Enabled() {
+			// with segments enabled `--max` applies to each segment, so one busy segment
+			// cannot push the messages of other segments out
+			q = sqlf.Select("ID, Size").
+				From(`(SELECT ID, Size, ROW_NUMBER() OVER (PARTITION BY Segment ORDER BY Created DESC) AS RowNr FROM `+tenant("mailbox")+`)`).
+				Where("RowNr > ?", offset).
+				Limit(5000)
+		}
 
 		if err := q.QueryAndClose(
 			context.TODO(), db, func(row *sql.Rows) {

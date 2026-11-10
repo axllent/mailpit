@@ -19,6 +19,7 @@ import (
 	"github.com/PuerkitoBio/goquery"
 	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/internal/logger"
+	"github.com/axllent/mailpit/internal/segment"
 	"github.com/axllent/mailpit/internal/storage"
 	"github.com/axllent/mailpit/internal/tools"
 )
@@ -42,6 +43,8 @@ var (
 // MessageAssets represents assets linked in a message
 type MessageAssets struct {
 	ID string
+	// Segment the message belongs to
+	Segment string
 	// Created timestamp so we can expire old entries
 	Created time.Time
 	// Assets found in the message
@@ -98,7 +101,7 @@ func ProxyHandler(w http.ResponseWriter, r *http.Request) {
 	id := parts[0]
 	uri := parts[1]
 
-	found, err := hasAsset(id, uri)
+	found, err := hasAsset(segment.FromRequest(r), id, uri)
 	if err != nil {
 		httpError(w, "Error: invalid request")
 		return
@@ -263,18 +266,23 @@ func recordAsset(id, url string) {
 // building and caching the initial asset set from the stored message HTML on
 // first call. The check is case-insensitive to preserve the semantics of the
 // previous tools.InArray-based implementation.
-func hasAsset(id, url string) (bool, error) {
+func hasAsset(seg, id, url string) (bool, error) {
 	assetsMutex.Lock()
 	defer assetsMutex.Unlock()
 
 	result, ok := assets[id]
 	if !ok {
-		built, err := buildAssets(id)
+		built, err := buildAssets(seg, id)
 		if err != nil {
 			return false, err
 		}
 		assets[id] = built
 		result = built
+	}
+
+	// never proxy assets of a message in another segment
+	if result.Segment != seg {
+		return false, nil
 	}
 
 	_, found := result.index[strings.ToLower(url)]
@@ -283,8 +291,8 @@ func hasAsset(id, url string) (bool, error) {
 
 // buildAssets parses the stored message HTML and returns the initial set of
 // linked asset URLs. Callers must hold assetsMutex.
-func buildAssets(id string) (MessageAssets, error) {
-	msg, err := storage.GetMessage(id)
+func buildAssets(seg, id string) (MessageAssets, error) {
+	msg, err := storage.GetMessage(seg, id)
 	if err != nil {
 		return MessageAssets{}, err
 	}
@@ -343,6 +351,7 @@ func buildAssets(id string) (MessageAssets, error) {
 
 	return MessageAssets{
 		ID:      id,
+		Segment: seg,
 		Created: time.Now(),
 		Assets:  links,
 		index:   index,

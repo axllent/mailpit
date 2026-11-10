@@ -97,11 +97,11 @@ func storeEmailWithPNG(t *testing.T, subject string, png []byte) (msgID, partID 
 			"Content-Transfer-Encoding: base64\r\n\r\n%s\r\n--b--\r\n",
 		subject, wrapBase64(png),
 	)
-	id, err := storage.Store(&raw, nil)
+	id, err := storage.Store("", &raw, nil)
 	if err != nil {
 		t.Fatalf("Store: %v", err)
 	}
-	msg, err := storage.GetMessage(id)
+	msg, err := storage.GetMessage("", id)
 	if err != nil {
 		t.Fatalf("GetMessage: %v", err)
 	}

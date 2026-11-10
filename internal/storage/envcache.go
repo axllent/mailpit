@@ -181,7 +181,7 @@ func storeEnvelopeLocked(id string, env *enmime.Envelope, rawSize uint64) {
 
 // parseEnvelope fetches a raw message from the database and parses it with enmime.
 func parseEnvelope(id string) (*enmime.Envelope, uint64, error) {
-	raw, err := GetMessageRaw(id)
+	raw, err := getMessageRaw(id)
 	if err != nil {
 		return nil, 0, err
 	}

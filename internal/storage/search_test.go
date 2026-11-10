@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/axllent/mailpit/config"
+	"github.com/axllent/mailpit/internal/segment"
 	"github.com/jhillyerd/enmime/v2"
 )
 
@@ -52,7 +53,7 @@ func TestSearch(t *testing.T) {
 
 			bufBytes := buf.Bytes()
 
-			if _, err := Store(&bufBytes, nil); err != nil {
+			if _, err := Store("", &bufBytes, nil); err != nil {
 				t.Log("error ", err)
 				t.Fail()
 			}
@@ -81,7 +82,7 @@ func TestSearch(t *testing.T) {
 
 			search := uniqueSearches[searchIdx]
 
-			summaries, _, err := Search(search, "", 0, 0, 100)
+			summaries, _, err := Search("", search, "", 0, 0, 100)
 			if err != nil {
 				t.Log("error ", err)
 				t.Fail()
@@ -97,7 +98,7 @@ func TestSearch(t *testing.T) {
 		}
 
 		// search something that will return 200 results
-		summaries, _, err := Search("This is the email body", "", 0, 0, testRuns)
+		summaries, _, err := Search("", "This is the email body", "", 0, 0, testRuns)
 		if err != nil {
 			t.Log("error ", err)
 			t.Fail()
@@ -121,17 +122,17 @@ func TestSearchDelete100(t *testing.T) {
 		}
 
 		for range 100 {
-			if _, err := Store(&testTextEmail, nil); err != nil {
+			if _, err := Store("", &testTextEmail, nil); err != nil {
 				t.Log("error ", err)
 				t.Fail()
 			}
-			if _, err := Store(&testMimeEmail, nil); err != nil {
+			if _, err := Store("", &testMimeEmail, nil); err != nil {
 				t.Log("error ", err)
 				t.Fail()
 			}
 		}
 
-		_, total, err := Search("from:sender@example.com", "", 0, 0, 100)
+		_, total, err := Search("", "from:sender@example.com", "", 0, 0, 100)
 		if err != nil {
 			t.Log("error ", err)
 			t.Fail()
@@ -139,12 +140,12 @@ func TestSearchDelete100(t *testing.T) {
 
 		assertEqual(t, total, 100, "100 search results expected")
 
-		if err := DeleteSearch("from:sender@example.com", ""); err != nil {
+		if err := DeleteSearch("", "from:sender@example.com", ""); err != nil {
 			t.Log("error ", err)
 			t.Fail()
 		}
 
-		_, total, err = Search("from:sender@example.com", "", 0, 0, 100)
+		_, total, err = Search("", "from:sender@example.com", "", 0, 0, 100)
 		if err != nil {
 			t.Log("error ", err)
 			t.Fail()
@@ -162,13 +163,13 @@ func TestSearchDelete1100(t *testing.T) {
 
 	t.Log("Testing search delete of 1100 messages")
 	for range 1100 {
-		if _, err := Store(&testTextEmail, nil); err != nil {
+		if _, err := Store("", &testTextEmail, nil); err != nil {
 			t.Log("error ", err)
 			t.Fail()
 		}
 	}
 
-	_, total, err := Search("from:sender@example.com", "", 0, 0, 100)
+	_, total, err := Search("", "from:sender@example.com", "", 0, 0, 100)
 	if err != nil {
 		t.Log("error ", err)
 		t.Fail()
@@ -176,12 +177,12 @@ func TestSearchDelete1100(t *testing.T) {
 
 	assertEqual(t, total, 1100, "100 search results expected")
 
-	if err := DeleteSearch("from:sender@example.com", ""); err != nil {
+	if err := DeleteSearch("", "from:sender@example.com", ""); err != nil {
 		t.Log("error ", err)
 		t.Fail()
 	}
 
-	_, total, err = Search("from:sender@example.com", "", 0, 0, 100)
+	_, total, err = Search("", "from:sender@example.com", "", 0, 0, 100)
 	if err != nil {
 		t.Log("error ", err)
 		t.Fail()
@@ -233,7 +234,7 @@ func TestSearchLikeWildcards(t *testing.T) {
 		}
 
 		b := buf.Bytes()
-		if _, err := Store(&b, nil); err != nil {
+		if _, err := Store("", &b, nil); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -261,7 +262,7 @@ func TestSearchLikeWildcards(t *testing.T) {
 
 	for _, s := range searches {
 		// the search must match only the literal message
-		summaries, _, err := Search(s.search, "", 0, 0, 100)
+		summaries, _, err := Search("", s.search, "", 0, 0, 100)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -270,7 +271,7 @@ func TestSearchLikeWildcards(t *testing.T) {
 		}
 
 		// the negated search must exclude only the literal message
-		summaries, _, err = Search("-"+s.search, "", 0, 0, 100)
+		summaries, _, err = Search("", "-"+s.search, "", 0, 0, 100)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -280,10 +281,10 @@ func TestSearchLikeWildcards(t *testing.T) {
 	}
 
 	// deleting by search must only delete the literal match
-	if err := DeleteSearch("to:to_a", ""); err != nil {
+	if err := DeleteSearch("", "to:to_a", ""); err != nil {
 		t.Fatal(err)
 	}
-	if n := CountTotal(); n != uint64(len(messages)-1) {
+	if n := CountTotal(""); n != uint64(len(messages)-1) {
 		t.Errorf("DeleteSearch to:to_a: expected %d messages left, got %d", len(messages)-1, n)
 	}
 }
@@ -329,7 +330,7 @@ func TestSearchJSONEscapedAddresses(t *testing.T) {
 		}
 
 		b := buf.Bytes()
-		if _, err := Store(&b, nil); err != nil {
+		if _, err := Store("", &b, nil); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -357,7 +358,7 @@ func TestSearchJSONEscapedAddresses(t *testing.T) {
 	}
 
 	for _, s := range searches {
-		summaries, _, err := Search(s.search, "", 0, 0, 100)
+		summaries, _, err := Search("", s.search, "", 0, 0, 100)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -365,7 +366,7 @@ func TestSearchJSONEscapedAddresses(t *testing.T) {
 			t.Errorf("search %s: expected [%s], got %q", s.search, s.subject, subjects(summaries))
 		}
 
-		summaries, _, err = Search("-"+s.search, "", 0, 0, 100)
+		summaries, _, err = Search("", "-"+s.search, "", 0, 0, 100)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -375,10 +376,10 @@ func TestSearchJSONEscapedAddresses(t *testing.T) {
 	}
 
 	// deleting by a negated search must keep the matching message
-	if err := DeleteSearch(`-from:"from & co"`, ""); err != nil {
+	if err := DeleteSearch("", `-from:"from & co"`, ""); err != nil {
 		t.Fatal(err)
 	}
-	if n := CountTotal(); n != 1 {
+	if n := CountTotal(""); n != 1 {
 		t.Errorf(`DeleteSearch -from:"from & co": expected 1 message left, got %d`, n)
 	}
 }
@@ -406,7 +407,7 @@ func storeUnicodeTestMessage(t *testing.T, i int, name, subject string) {
 	}
 
 	b := buf.Bytes()
-	if _, err := Store(&b, nil); err != nil {
+	if _, err := Store(segment.Default, &b, nil); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -457,7 +458,7 @@ func testMetaSearchTextUnicodeCase(t *testing.T) {
 
 	assertSearch := func(search string, expected []string) {
 		t.Helper()
-		summaries, _, err := Search(search, "", 0, 0, 100)
+		summaries, _, err := Search(segment.Default, search, "", 0, 0, 100)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -514,7 +515,7 @@ func testMetaSearchTextBackfill(t *testing.T) {
 
 	assertCount := func(search string, expected int) {
 		t.Helper()
-		summaries, _, err := Search(search, "", 0, 0, 100)
+		summaries, _, err := Search(segment.Default, search, "", 0, 0, 100)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -587,7 +588,7 @@ func testMetaSearchTextReindex(t *testing.T) {
 
 	assertCount := func(search string, expected int) {
 		t.Helper()
-		summaries, _, err := Search(search, "", 0, 0, 100)
+		summaries, _, err := Search(segment.Default, search, "", 0, 0, 100)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -622,7 +623,7 @@ func testSearchTextCaseFolding(t *testing.T) {
 
 	assertCount := func(search string, expected int) {
 		t.Helper()
-		summaries, _, err := Search(search, "", 0, 0, 100)
+		summaries, _, err := Search(segment.Default, search, "", 0, 0, 100)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -671,7 +672,7 @@ func testRefoldSearchText(t *testing.T) {
 
 	assertCount := func(search string, expected int) {
 		t.Helper()
-		summaries, _, err := Search(search, "", 0, 0, 100)
+		summaries, _, err := Search(segment.Default, search, "", 0, 0, 100)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -749,13 +750,13 @@ func TestSearchNegatedSizeAndDate(t *testing.T) {
 		}
 
 		b := buf.Bytes()
-		if _, err := Store(&b, nil); err != nil {
+		if _, err := Store("", &b, nil); err != nil {
 			t.Fatal(err)
 		}
 	}
 
 	// use the size of the middle message, the boundary of the size searches below
-	all, _, err := Search("", "", 0, 0, 100)
+	all, _, err := Search("", "", "", 0, 0, 100)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -804,7 +805,7 @@ func TestSearchNegatedSizeAndDate(t *testing.T) {
 			t.Fatalf("timezone %s not available: %s", test.timezone, err)
 		}
 
-		summaries, _, err := Search(test.search, test.timezone, 0, 0, 100)
+		summaries, _, err := Search("", test.search, test.timezone, 0, 0, 100)
 		if err != nil {
 			t.Fatal(err)
 		}

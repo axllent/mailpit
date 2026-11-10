@@ -14,7 +14,7 @@ import (
 func storeSimpleEmail(t *testing.T, subject string) string {
 	t.Helper()
 	raw := []byte("From: a@example.test\r\nTo: b@example.test\r\nSubject: " + subject + "\r\n\r\nbody\r\n")
-	id, err := storage.Store(&raw, nil)
+	id, err := storage.Store("", &raw, nil)
 	if err != nil {
 		t.Fatalf("Store: %v", err)
 	}

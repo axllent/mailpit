@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/axllent/mailpit/internal/segment"
 	"github.com/axllent/mailpit/internal/storage"
 )
 
@@ -36,7 +37,7 @@ func GetMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	msg, err := storage.GetMessage(id)
+	msg, err := storage.GetMessage(segment.FromRequest(r), id)
 	if err != nil {
 		fourOFour(w)
 		return
@@ -73,7 +74,7 @@ func GetHeaders(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data, err := storage.GetMessageRaw(id)
+	data, err := storage.GetMessageRaw(segment.FromRequest(r), id)
 	if err != nil {
 		fourOFour(w)
 		return
@@ -120,7 +121,7 @@ func DownloadAttachment(w http.ResponseWriter, r *http.Request) {
 	}
 	partID := r.PathValue("partID")
 
-	a, err := storage.GetAttachmentPart(id, partID)
+	a, err := storage.GetAttachmentPart(segment.FromRequest(r), id, partID)
 	if err != nil {
 		fourOFour(w)
 		return
@@ -171,7 +172,7 @@ func DownloadRaw(w http.ResponseWriter, r *http.Request) {
 
 	dl := r.FormValue("dl") // #nosec G120 -- GET request, FormValue only parses URL query string
 
-	data, err := storage.GetMessageRaw(id)
+	data, err := storage.GetMessageRaw(segment.FromRequest(r), id)
 	if err != nil {
 		fourOFour(w)
 		return

@@ -21,7 +21,7 @@ import (
 // The search is broken up by segments (exact phrases can be quoted), and interprets specific terms such as:
 // is:read, is:unread, has:attachment, to:<term>, from:<term> & subject:<term>
 // Negative searches also also included by prefixing the search term with a `-` or `!`
-func Search(search, timezone string, start int, beforeTS int64, limit int) ([]MessageSummary, int, error) {
+func Search(seg, search, timezone string, start int, beforeTS int64, limit int) ([]MessageSummary, int, error) {
 	results := []MessageSummary{}
 	allResults := []MessageSummary{}
 	tsStart := time.Now()
@@ -30,7 +30,7 @@ func Search(search, timezone string, start int, beforeTS int64, limit int) ([]Me
 		limit = 50
 	}
 
-	q := searchQueryBuilder(search, timezone)
+	q := whereSegment(searchQueryBuilder(search, timezone), "m.Segment", seg)
 
 	if beforeTS > 0 {
 		q = q.Where(`m.Created < ?`, beforeTS)
@@ -110,10 +110,10 @@ func Search(search, timezone string, start int, beforeTS int64, limit int) ([]Me
 
 // SearchUnreadCount returns the number of unread messages matching a search.
 // This is run one at a time to allow connected browsers to be updated.
-func SearchUnreadCount(search, timezone string, beforeTS int64) (int64, error) {
+func SearchUnreadCount(seg, search, timezone string, beforeTS int64) (int64, error) {
 	tsStart := time.Now()
 
-	q := searchQueryBuilder(search, timezone)
+	q := whereSegment(searchQueryBuilder(search, timezone), "m.Segment", seg)
 
 	if beforeTS > 0 {
 		q = q.Where(`m.Created < ?`, beforeTS)
@@ -145,8 +145,8 @@ func SearchUnreadCount(search, timezone string, beforeTS int64) (int64, error) {
 // The search is broken up by segments (exact phrases can be quoted), and interprets specific terms such as:
 // is:read, is:unread, has:attachment, to:<term>, from:<term> & subject:<term>
 // Negative searches also also included by prefixing the search term with a `-` or `!`
-func DeleteSearch(search, timezone string) error {
-	q := searchQueryBuilder(search, timezone)
+func DeleteSearch(seg, search, timezone string) error {
+	q := whereSegment(searchQueryBuilder(search, timezone), "m.Segment", seg)
 
 	ids := []string{}
 	deleteSize := uint64(0)
@@ -245,13 +245,13 @@ func DeleteSearch(search, timezone string) error {
 
 		// broadcast changes
 		if len(ids) > 200 {
-			websockets.Broadcast("prune", nil)
+			websockets.BroadcastSegment(seg, "prune", nil)
 		} else {
 			for _, id := range ids {
 				d := struct {
 					ID string
 				}{ID: id}
-				websockets.Broadcast("delete", d)
+				websockets.BroadcastSegment(seg, "delete", d)
 			}
 		}
 
@@ -259,15 +259,15 @@ func DeleteSearch(search, timezone string) error {
 
 		logMessagesDeleted(total)
 
-		BroadcastMailboxStats()
+		BroadcastMailboxStats(seg)
 	}
 
 	return nil
 }
 
 // SetSearchReadStatus marks all messages matching the search as read or unread
-func SetSearchReadStatus(search, timezone string, read bool) error {
-	q := searchQueryBuilder(search, timezone).Where("m.Read = ?", !read)
+func SetSearchReadStatus(seg, search, timezone string, read bool) error {
+	q := whereSegment(searchQueryBuilder(search, timezone), "m.Segment", seg).Where("m.Read = ?", !read)
 
 	ids := []string{}
 
@@ -294,11 +294,11 @@ func SetSearchReadStatus(search, timezone string, read bool) error {
 	}
 
 	if read {
-		if err := MarkRead(ids); err != nil {
+		if err := MarkRead(seg, ids); err != nil {
 			return err
 		}
 	} else {
-		if err := MarkUnread(ids); err != nil {
+		if err := MarkUnread(seg, ids); err != nil {
 			return err
 		}
 	}

@@ -6,6 +6,7 @@ import (
 	"sync/atomic"
 
 	"github.com/axllent/mailpit/internal/logger"
+	"github.com/axllent/mailpit/internal/segment"
 	"github.com/gorilla/websocket"
 )
 
@@ -16,7 +17,7 @@ type Hub struct {
 	Clients map[*Client]bool
 
 	// Inbound messages from the clients.
-	Broadcast chan []byte
+	Broadcast chan Envelope
 
 	// Register requests from the clients.
 	register chan *Client
@@ -34,10 +35,18 @@ type WebsocketNotification struct {
 	Data any
 }
 
+// Envelope is a broadcast message together with the segment it is intended for
+type Envelope struct {
+	// Message is the JSON encoded WebsocketNotification
+	Message []byte
+	// Segment the message is intended for, segment.All for every connected client
+	Segment string
+}
+
 // NewHub returns a new hub configuration
 func NewHub() *Hub {
 	return &Hub{
-		Broadcast:  make(chan []byte),
+		Broadcast:  make(chan Envelope),
 		register:   make(chan *Client),
 		unregister: make(chan *Client),
 		Clients:    make(map[*Client]bool),
@@ -62,12 +71,15 @@ func (h *Hub) Run() {
 				h.clientCount.Add(-1)
 			}
 		case message := <-h.Broadcast:
-			prepared, err := websocket.NewPreparedMessage(websocket.TextMessage, message)
+			prepared, err := websocket.NewPreparedMessage(websocket.TextMessage, message.Message)
 			if err != nil {
 				logger.Log().Errorf("[websocket] error preparing message: %s", err.Error())
 				continue
 			}
 			for client := range h.Clients {
+				if !client.receives(message.Segment) {
+					continue
+				}
 				select {
 				case client.send <- prepared:
 				default:
@@ -80,8 +92,15 @@ func (h *Hub) Run() {
 	}
 }
 
-// Broadcast will spawn a broadcast message to all connected clients
+// Broadcast will spawn a broadcast message to all connected clients.
+// Use BroadcastSegment for anything that contains or refers to message data.
 func Broadcast(t string, msg any) {
+	BroadcastSegment(segment.All, t, msg)
+}
+
+// BroadcastSegment will spawn a broadcast message to the clients connected to a segment.
+// When segments are disabled the message is sent to all connected clients.
+func BroadcastSegment(seg, t string, msg any) {
 	if MessageHub == nil || MessageHub.clientCount.Load() == 0 {
 		return
 	}
@@ -96,7 +115,7 @@ func Broadcast(t string, msg any) {
 		return
 	}
 
-	go func() { MessageHub.Broadcast <- b }()
+	go func() { MessageHub.Broadcast <- Envelope{Message: b, Segment: seg} }()
 }
 
 // BroadCastClientError is a wrapper to broadcast client errors to the web UI
@@ -113,5 +132,6 @@ func BroadCastClientError(severity, errorType, ip, message string) {
 		message,
 	}
 
-	Broadcast("error", msg)
+	// client errors are not linked to a segment, and may contain client IP addresses
+	BroadcastSegment(segment.Default, "error", msg)
 }

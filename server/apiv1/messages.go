@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/axllent/mailpit/internal/segment"
 	"github.com/axllent/mailpit/internal/storage"
 	"github.com/axllent/mailpit/internal/tools"
 )
@@ -60,13 +61,13 @@ func GetMessages(w http.ResponseWriter, r *http.Request) {
 
 	start, beforeTS, limit := getStartLimit(r)
 
-	messages, err := storage.List(start, beforeTS, limit)
+	messages, err := storage.List(segment.FromRequest(r), start, beforeTS, limit)
 	if err != nil {
 		httpError(w, err.Error())
 		return
 	}
 
-	stats := storage.StatsGet()
+	stats := storage.StatsGet(segment.FromRequest(r))
 
 	var res MessagesSummary
 
@@ -129,20 +130,20 @@ func SetReadStatus(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if search != "" {
-		err := storage.SetSearchReadStatus(search, r.URL.Query().Get("tz"), data.Read)
+		err := storage.SetSearchReadStatus(segment.FromRequest(r), search, r.URL.Query().Get("tz"), data.Read)
 		if err != nil {
 			httpError(w, err.Error())
 			return
 		}
 	} else if len(ids) == 0 {
 		if data.Read {
-			err := storage.MarkAllRead()
+			err := storage.MarkAllRead(segment.FromRequest(r))
 			if err != nil {
 				httpError(w, err.Error())
 				return
 			}
 		} else {
-			err := storage.MarkAllUnread()
+			err := storage.MarkAllUnread(segment.FromRequest(r))
 			if err != nil {
 				httpError(w, err.Error())
 				return
@@ -150,12 +151,12 @@ func SetReadStatus(w http.ResponseWriter, r *http.Request) {
 		}
 	} else {
 		if data.Read {
-			if err := storage.MarkRead(ids); err != nil {
+			if err := storage.MarkRead(segment.FromRequest(r), ids); err != nil {
 				httpError(w, err.Error())
 				return
 			}
 		} else {
-			if err := storage.MarkUnread(ids); err != nil {
+			if err := storage.MarkUnread(segment.FromRequest(r), ids); err != nil {
 				httpError(w, err.Error())
 				return
 			}
@@ -197,12 +198,12 @@ func DeleteMessages(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(data.IDs) == 0 {
-		if err := storage.DeleteAllMessages(); err != nil {
+		if err := storage.DeleteAllMessages(segment.FromRequest(r)); err != nil {
 			httpError(w, err.Error())
 			return
 		}
 	} else {
-		if err := storage.DeleteMessages(data.IDs); err != nil {
+		if err := storage.DeleteMessages(segment.FromRequest(r), data.IDs); err != nil {
 			httpError(w, err.Error())
 			return
 		}
@@ -237,13 +238,13 @@ func Search(w http.ResponseWriter, r *http.Request) {
 
 	start, beforeTS, limit := getStartLimit(r)
 
-	messages, results, err := storage.Search(search, r.URL.Query().Get("tz"), start, beforeTS, limit)
+	messages, results, err := storage.Search(segment.FromRequest(r), search, r.URL.Query().Get("tz"), start, beforeTS, limit)
 	if err != nil {
 		httpError(w, err.Error())
 		return
 	}
 
-	stats := storage.StatsGet()
+	stats := storage.StatsGet(segment.FromRequest(r))
 
 	var res MessagesSummary
 
@@ -255,7 +256,7 @@ func Search(w http.ResponseWriter, r *http.Request) {
 	res.Unread = stats.Unread
 	res.Tags = stats.Tags
 
-	unread, err := storage.SearchUnreadCount(search, r.URL.Query().Get("tz"), beforeTS)
+	unread, err := storage.SearchUnreadCount(segment.FromRequest(r), search, r.URL.Query().Get("tz"), beforeTS)
 	if err != nil {
 		httpError(w, err.Error())
 		return
@@ -292,7 +293,7 @@ func DeleteSearch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := storage.DeleteSearch(search, r.URL.Query().Get("tz")); err != nil {
+	if err := storage.DeleteSearch(segment.FromRequest(r), search, r.URL.Query().Get("tz")); err != nil {
 		httpError(w, err.Error())
 		return
 	}

@@ -5,6 +5,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/axllent/mailpit/internal/segment"
 )
 
 // seedAssets replaces the global assets cache with a single entry for id
@@ -156,7 +158,7 @@ func TestHasAssetCaseInsensitive(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			got, err := hasAsset(id, tc.url)
+			got, err := hasAsset(segment.Default, id, tc.url)
 			if err != nil {
 				t.Fatalf("hasAsset returned error: %v", err)
 			}

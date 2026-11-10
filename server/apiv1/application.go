@@ -6,12 +6,13 @@ import (
 	"net/http"
 
 	"github.com/axllent/mailpit/config"
+	"github.com/axllent/mailpit/internal/segment"
 	"github.com/axllent/mailpit/internal/smtpd/chaos"
 	"github.com/axllent/mailpit/internal/stats"
 )
 
 // AppInfo returns some basic details about the running app including the latest release (unless disabled).
-func AppInfo(w http.ResponseWriter, _ *http.Request) {
+func AppInfo(w http.ResponseWriter, r *http.Request) {
 	// swagger:route GET /api/v1/info application AppInformation
 	//
 	// # Get application information
@@ -28,7 +29,7 @@ func AppInfo(w http.ResponseWriter, _ *http.Request) {
 	//		400: ErrorResponse
 
 	w.Header().Add("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(stats.Load(true)); err != nil {
+	if err := json.NewEncoder(w).Encode(stats.Load(true, segment.FromRequest(r))); err != nil {
 		httpError(w, err.Error())
 	}
 }

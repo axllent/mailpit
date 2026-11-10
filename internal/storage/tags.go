@@ -19,8 +19,12 @@ var (
 	addressPlusRe = regexp.MustCompile(`(?U)^(.*){1,}\+(.*)@`)
 )
 
-// SetMessageTags will set the tags for a given database ID, removing any not in the array
-func SetMessageTags(id string, tags []string) ([]string, error) {
+// SetMessageTags will set the tags for a given database ID within a segment, removing any not in the array
+func SetMessageTags(seg, id string, tags []string) ([]string, error) {
+	if !messageInSegment(seg, id) {
+		return []string{}, errMessageNotFound
+	}
+
 	// Clean and deduplicate incoming tags (case-insensitive)
 	seen := make(map[string]struct{})
 	applyTags := []string{}
@@ -81,7 +85,7 @@ func SetMessageTags(id string, tags []string) ([]string, error) {
 		Tags []string
 	}{ID: id, Tags: applyTags}
 
-	websockets.Broadcast("update", d)
+	websockets.BroadcastSegment(seg, "update", d)
 
 	return tagNames, nil
 }
@@ -159,10 +163,27 @@ func deleteMessageTag(id, name string) error {
 	return pruneUnusedTags()
 }
 
-// GetAllTags returns all used tags
-func GetAllTags() []string {
+// GetAllTags returns all used tags within a segment
+func GetAllTags(seg string) []string {
 	var tags = []string{}
 	var name string
+
+	if segmentFiltered(seg) {
+		if err := sqlf.
+			Select(`DISTINCT t.Name`).To(&name).
+			From(tenant("tags")+" t").
+			Join(tenant("message_tags")+" mt", "t.ID = mt.TagID").
+			Join(tenant("mailbox")+" m", "m.ID = mt.ID").
+			Where("m.Segment = ?", seg).
+			OrderBy("t.Name").
+			QueryAndClose(context.TODO(), db, func(_ *sql.Rows) {
+				tags = append(tags, name)
+			}); err != nil {
+			logger.Log().Errorf("[db] %s", err.Error())
+		}
+
+		return tags
+	}
 
 	if err := sqlf.
 		Select(`DISTINCT Name`).
@@ -177,11 +198,30 @@ func GetAllTags() []string {
 	return tags
 }
 
-// GetAllTagsCount returns all used tags with their total messages
-func GetAllTagsCount() map[string]int64 {
+// GetAllTagsCount returns all used tags within a segment with their total messages
+func GetAllTagsCount(seg string) map[string]int64 {
 	var tags = make(map[string]int64)
 	var name string
 	var total float64 // use float64 for rqlite compatibility
+
+	if segmentFiltered(seg) {
+		if err := sqlf.
+			Select(`t.Name`).To(&name).
+			Select(`COUNT(mt.ID) as total`).To(&total).
+			From(tenant("tags")+" t").
+			Join(tenant("message_tags")+" mt", "t.ID = mt.TagID").
+			Join(tenant("mailbox")+" m", "m.ID = mt.ID").
+			Where("m.Segment = ?", seg).
+			GroupBy("t.ID").
+			OrderBy("t.Name").
+			QueryAndClose(context.TODO(), db, func(_ *sql.Rows) {
+				tags[name] = int64(total)
+			}); err != nil {
+			logger.Log().Errorf("[db] %s", err.Error())
+		}
+
+		return tags
+	}
 
 	if err := sqlf.
 		Select(`Name`).To(&name).
@@ -199,8 +239,8 @@ func GetAllTagsCount() map[string]int64 {
 	return tags
 }
 
-// RenameTag renames a tag
-func RenameTag(from, to string) error {
+// RenameTag renames a tag within a segment
+func RenameTag(seg, from, to string) error {
 	to = tools.CleanTag(to)
 	if to == "" || !config.ValidTagRegexp.MatchString(to) {
 		return fmt.Errorf("invalid tag name: %s", to)
@@ -210,6 +250,68 @@ func RenameTag(from, to string) error {
 		return nil // ignore
 	}
 
+	if !segmentFiltered(seg) {
+		return renameTag(from, to)
+	}
+
+	ids, err := segmentTagMessageIDs(seg, from, true)
+	if err != nil {
+		return err
+	}
+	if len(ids) == 0 {
+		return fmt.Errorf("tag not found: %s", from)
+	}
+
+	caseChange := strings.EqualFold(from, to)
+
+	if !caseChange {
+		existing, err := segmentTagMessageIDs(seg, to, true)
+		if err != nil {
+			return err
+		}
+		if len(existing) > 0 {
+			return fmt.Errorf("tag already exists: %s", to)
+		}
+	}
+
+	shared, err := segmentTagMessageIDs(seg, from, false)
+	if err != nil {
+		return err
+	}
+
+	var toExists int
+	if err := sqlf.From(tenant("tags")).
+		Select("COUNT(*)").To(&toExists).
+		Where("Name = ?", to).
+		QueryRowAndClose(context.Background(), db); err != nil {
+		return err
+	}
+
+	// the tag is only used in this segment, so it can simply be renamed
+	if len(shared) == 0 && (toExists == 0 || caseChange) {
+		return renameTag(from, to)
+	}
+
+	// tags are case-insensitive and shared, so the casing cannot be changed for one segment only
+	if caseChange {
+		return nil
+	}
+
+	// move the messages of this segment to the new tag, leaving other segments untouched
+	for _, id := range ids {
+		if _, err := addMessageTag(id, to); err != nil {
+			return err
+		}
+		if err := deleteMessageTags(id, []string{from}); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// renameTag renames a tag for all messages
+func renameTag(from, to string) error {
 	var id, existsID int
 
 	q := sqlf.From(tenant("tags")).
@@ -240,8 +342,26 @@ func RenameTag(from, to string) error {
 	return err
 }
 
-// DeleteTag deleted a tag and removed all references to the tag
-func DeleteTag(tag string) error {
+// DeleteTag deleted a tag within a segment and removed all references to the tag
+func DeleteTag(seg, tag string) error {
+	if segmentFiltered(seg) {
+		ids, err := segmentTagMessageIDs(seg, tag, true)
+		if err != nil {
+			return err
+		}
+		if len(ids) == 0 {
+			return fmt.Errorf("tag not found: %s", tag)
+		}
+
+		for _, id := range ids {
+			if err := deleteMessageTags(id, []string{tag}); err != nil {
+				return fmt.Errorf("error deleting tag references: %s", err.Error())
+			}
+		}
+
+		return nil
+	}
+
 	var id int
 
 	q := sqlf.From(tenant("tags")).
@@ -483,4 +603,29 @@ func containsFold(haystack, needle []byte) bool {
 		}
 	}
 	return false
+}
+
+// segmentTagMessageIDs returns the IDs of messages with a tag, either within the
+// segment (inside = true) or within any other segment (inside = false).
+func segmentTagMessageIDs(seg, tag string, inside bool) ([]string, error) {
+	ids := []string{}
+	var id string
+
+	op := "="
+	if !inside {
+		op = "!="
+	}
+
+	err := sqlf.
+		Select("mt.ID").To(&id).
+		From(tenant("message_tags")+" mt").
+		Join(tenant("tags")+" t", "t.ID = mt.TagID").
+		Join(tenant("mailbox")+" m", "m.ID = mt.ID").
+		Where("t.Name = ?", tag).
+		Where("m.Segment "+op+" ?", seg).
+		QueryAndClose(context.TODO(), db, func(_ *sql.Rows) {
+			ids = append(ids, id)
+		})
+
+	return ids, err
 }

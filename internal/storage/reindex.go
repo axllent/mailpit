@@ -11,6 +11,7 @@ import (
 
 	"github.com/axllent/mailpit/internal/logger"
 	"github.com/axllent/mailpit/internal/mimeparser"
+	"github.com/axllent/mailpit/internal/segment"
 	"github.com/axllent/mailpit/internal/tools"
 	"github.com/leporo/sqlf"
 )
@@ -61,7 +62,7 @@ func ReindexAll() {
 		updates := []updateStruct{}
 
 		for _, id := range ids {
-			raw, err := GetMessageRaw(id)
+			raw, err := getMessageRaw(id)
 			if err != nil {
 				logger.Log().Error(err)
 				continue
@@ -75,7 +76,7 @@ func ReindexAll() {
 				continue
 			}
 
-			meta, _ := GetMetadata(id)
+			meta, _ := GetMetadata(segment.All, id)
 
 			fromJSON := addressToSlice(env, "From")
 			if len(fromJSON) > 0 {

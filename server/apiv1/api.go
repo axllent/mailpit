@@ -10,6 +10,7 @@ import (
 	"github.com/araddon/dateparse"
 	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/internal/logger"
+	"github.com/axllent/mailpit/internal/segment"
 	"github.com/axllent/mailpit/internal/storage"
 )
 
@@ -30,7 +31,7 @@ func resolveMessageID(w http.ResponseWriter, r *http.Request, id string) (string
 		return id, true
 	}
 
-	id, err := storage.LatestID(r)
+	id, err := storage.LatestID(segment.FromRequest(r), r)
 	if err != nil {
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		w.WriteHeader(http.StatusNotFound)

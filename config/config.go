@@ -59,6 +59,20 @@ var (
 	// allowing multiple isolated instances of Mailpit to share a database.
 	TenantID string
 
+	// SegmentDomain enables per SMTP user segments when set. Messages are stored in a
+	// segment named after the (normalized) SMTP username, and each segment is served
+	// on <segment>.<SegmentDomain> by the web UI and API.
+	SegmentDomain string
+
+	// SegmentPasswordEnv is the name of the environment variable holding the shared
+	// password for segment authentication (optional, requires SegmentDomain).
+	SegmentPasswordEnv string
+
+	// SegmentPassword is the shared password read from SegmentPasswordEnv. When set,
+	// SMTP and web UI authentication use the segment rules (see internal/segment) and
+	// the SMTP and UI auth files are not used.
+	SegmentPassword string
+
 	// Label to identify this Mailpit instance (optional).
 	// This gets applied to web UI, SMTP and optional POP3 server.
 	Label string
@@ -334,6 +348,29 @@ func VerifyConfig() error {
 		logger.Log().Infof("[db] using tenant \"%s\"", TenantID)
 	}
 
+	SegmentDomain = strings.Trim(strings.ToLower(strings.TrimSpace(SegmentDomain)), ".")
+	if SegmentDomain != "" {
+		logger.Log().Infof("[segments] storing messages per SMTP user, served on <segment>.%s", SegmentDomain)
+	}
+
+	SegmentPassword = ""
+	if SegmentPasswordEnv != "" {
+		if SegmentDomain == "" {
+			return errors.New("[segments] --segment-password-env requires --segment-domain")
+		}
+		if UIAuthFile != "" || SMTPAuthFile != "" || SMTPAuthAcceptAny || auth.UICredentials != nil || auth.SMTPCredentials != nil {
+			return errors.New("[segments] --segment-password-env cannot be combined with the SMTP or UI authentication options")
+		}
+		SegmentPassword = os.Getenv(SegmentPasswordEnv)
+		if SegmentPassword == "" {
+			return fmt.Errorf("[segments] environment variable %s is empty or not set", SegmentPasswordEnv)
+		}
+		if !SMTPAuthAllowInsecure {
+			SMTPRequireSTARTTLS = true
+		}
+		logger.Log().Infof("[segments] SMTP and web UI authentication use the segment name and the password in $%s", SegmentPasswordEnv)
+	}
+
 	re := regexp.MustCompile(`.*:\d+$`)
 	if _, _, isSocket := tools.UnixSocket(SMTPListen); !isSocket && !re.MatchString(SMTPListen) {
 		return errors.New("[smtp] bind should be in the format of <ip>:<port>")
@@ -506,7 +543,7 @@ func VerifyConfig() error {
 		return errors.New("[smtp] authentication cannot use both credentials and --smtp-auth-accept-any")
 	}
 
-	if SMTPTLSCert == "" && (auth.SMTPCredentials != nil || SMTPAuthAcceptAny) && !SMTPAuthAllowInsecure {
+	if SMTPTLSCert == "" && (auth.SMTPCredentials != nil || SMTPAuthAcceptAny || SegmentPassword != "") && !SMTPAuthAllowInsecure {
 		return errors.New("[smtp] authentication requires STARTTLS or TLS encryption, run with `--smtp-auth-allow-insecure` to allow insecure authentication")
 	}
 

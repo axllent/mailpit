@@ -10,6 +10,7 @@ import (
 
 	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/internal/logger"
+	"github.com/axllent/mailpit/internal/segment"
 	"golang.org/x/time/rate"
 )
 
@@ -28,8 +29,9 @@ var (
 	once sync.Once
 )
 
-// Send will post the MessageSummary to a webhook (if configured)
-func Send(msg any) {
+// Send will post the MessageSummary to a webhook (if configured).
+// When segments are enabled the segment of the message is set in the Mailpit-Segment header.
+func Send(seg string, msg any) {
 	if config.WebhookURL == "" {
 		return
 	}
@@ -67,6 +69,10 @@ func Send(msg any) {
 
 			if config.Label != "" {
 				req.Header.Set("Mailpit-Label", config.Label)
+			}
+
+			if segment.Enabled() {
+				req.Header.Set("Mailpit-Segment", seg)
 			}
 
 			client := &http.Client{Timeout: 5 * time.Second}

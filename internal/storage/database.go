@@ -190,12 +190,12 @@ func Ping() error {
 	return db.Ping()
 }
 
-// StatsGet returns the total/unread statistics for a mailbox
-func StatsGet() MailboxStats {
+// StatsGet returns the total/unread statistics for a mailbox segment
+func StatsGet(seg string) MailboxStats {
 	var (
-		total  = CountTotal()
-		unread = CountUnread()
-		tags   = GetAllTags()
+		total  = CountTotal(seg)
+		unread = CountUnread(seg)
+		tags   = GetAllTags(seg)
 	)
 
 	dbLastAction = time.Now()
@@ -207,37 +207,40 @@ func StatsGet() MailboxStats {
 	}
 }
 
-// CountTotal returns the number of emails in the database
-func CountTotal() uint64 {
+// CountTotal returns the number of emails in the database segment
+func CountTotal(seg string) uint64 {
 	var total float64 // use float64 for rqlite compatibility
 
-	_ = sqlf.From(tenant("mailbox")).
-		Select("COUNT(*)").To(&total).
-		QueryRowAndClose(context.TODO(), db)
+	q := sqlf.From(tenant("mailbox")).
+		Select("COUNT(*)").To(&total)
+
+	_ = whereSegment(q, "Segment", seg).QueryRowAndClose(context.TODO(), db)
 
 	return uint64(total)
 }
 
-// CountUnread returns the number of emails in the database that are unread.
-func CountUnread() uint64 {
+// CountUnread returns the number of emails in the database segment that are unread.
+func CountUnread(seg string) uint64 {
 	var total float64 // use float64 for rqlite compatibility
 
-	_ = sqlf.From(tenant("mailbox")).
+	q := sqlf.From(tenant("mailbox")).
 		Select("COUNT(*)").To(&total).
-		Where("Read = ?", 0).
-		QueryRowAndClose(context.TODO(), db)
+		Where("Read = ?", 0)
+
+	_ = whereSegment(q, "Segment", seg).QueryRowAndClose(context.TODO(), db)
 
 	return uint64(total)
 }
 
-// CountRead returns the number of emails in the database that are read.
-func CountRead() uint64 {
+// CountRead returns the number of emails in the database segment that are read.
+func CountRead(seg string) uint64 {
 	var total float64 // use float64 for rqlite compatibility
 
-	_ = sqlf.From(tenant("mailbox")).
+	q := sqlf.From(tenant("mailbox")).
 		Select("COUNT(*)").To(&total).
-		Where("Read = ?", 1).
-		QueryRowAndClose(context.TODO(), db)
+		Where("Read = ?", 1)
+
+	_ = whereSegment(q, "Segment", seg).QueryRowAndClose(context.TODO(), db)
 
 	return uint64(total)
 }
@@ -255,14 +258,15 @@ func DbSize() uint64 {
 	return uint64(total.Float64)
 }
 
-// MessageIDExists checks whether a Message-ID exists in the DB
-func MessageIDExists(id string) bool {
+// MessageIDExists checks whether a Message-ID exists in the DB segment
+func MessageIDExists(seg, id string) bool {
 	var total int
 
-	_ = sqlf.From(tenant("mailbox")).
+	q := sqlf.From(tenant("mailbox")).
 		Select("COUNT(*)").To(&total).
-		Where("MessageID = ?", id).
-		QueryRowAndClose(context.TODO(), db)
+		Where("MessageID = ?", id)
+
+	_ = whereSegment(q, "Segment", seg).QueryRowAndClose(context.TODO(), db)
 
 	return total != 0
 }

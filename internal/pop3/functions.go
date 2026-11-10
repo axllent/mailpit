@@ -32,10 +32,10 @@ func sendData(c net.Conn, m string) {
 	_, _ = fmt.Fprintf(c, "%s\r\n", m)
 }
 
-// Get the latest 100 messages
-func getMessages() ([]message, error) {
+// Get the latest 100 messages of a segment
+func getMessages(seg string) ([]message, error) {
 	messages := []message{}
-	list, err := storage.List(0, 0, 100)
+	list, err := storage.List(seg, 0, 0, 100)
 	if err != nil {
 		return messages, err
 	}
@@ -51,9 +51,9 @@ func getMessages() ([]message, error) {
 }
 
 // POP3 TOP command returns the headers, followed by the next x lines
-func getTop(id string, nr int) (string, string, error) {
+func getTop(seg, id string, nr int) (string, string, error) {
 	var header, body string
-	raw, err := storage.GetMessageRaw(id)
+	raw, err := storage.GetMessageRaw(seg, id)
 	if err != nil {
 		return header, body, errors.New("-ERR no such message")
 	}

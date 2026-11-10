@@ -6,6 +6,7 @@ import (
 	"path"
 	"strings"
 
+	"github.com/axllent/mailpit/internal/segment"
 	"github.com/axllent/mailpit/internal/storage"
 	"github.com/axllent/mailpit/internal/thumbnail"
 )
@@ -41,7 +42,7 @@ func Thumbnail(w http.ResponseWriter, r *http.Request) {
 	}
 	partID := r.PathValue("partID")
 
-	a, err := storage.GetAttachmentPart(id, partID)
+	a, err := storage.GetAttachmentPart(segment.FromRequest(r), id, partID)
 	if err != nil {
 		httpError(w, err.Error())
 		return

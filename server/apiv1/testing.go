@@ -9,6 +9,7 @@ import (
 
 	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/internal/logger"
+	"github.com/axllent/mailpit/internal/segment"
 	"github.com/axllent/mailpit/internal/storage"
 	"github.com/axllent/mailpit/internal/tools"
 	"golang.org/x/net/html"
@@ -43,7 +44,7 @@ func GetMessageHTML(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	msg, err := storage.GetMessage(id)
+	msg, err := storage.GetMessage(segment.FromRequest(r), id)
 	if err != nil {
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		w.WriteHeader(404)
@@ -133,7 +134,7 @@ func GetMessageText(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	msg, err := storage.GetMessage(id)
+	msg, err := storage.GetMessage(segment.FromRequest(r), id)
 	if err != nil {
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		w.WriteHeader(404)

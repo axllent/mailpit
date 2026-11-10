@@ -20,6 +20,7 @@ import (
 	"github.com/axllent/mailpit/internal/auth"
 	"github.com/axllent/mailpit/internal/connlimit"
 	"github.com/axllent/mailpit/internal/logger"
+	"github.com/axllent/mailpit/internal/segment"
 	"github.com/axllent/mailpit/internal/storage"
 	"github.com/axllent/mailpit/server/websockets"
 )
@@ -111,6 +112,7 @@ type message struct {
 func handleClient(conn net.Conn) {
 	var (
 		user         = ""
+		seg          = segment.Default
 		state        = AUTHORIZATION // Start with AUTHORIZATION state
 		toDelete     []string        // Track messages marked for deletion
 		messages     []message
@@ -120,11 +122,11 @@ func handleClient(conn net.Conn) {
 	defer func() {
 		if state == UPDATE {
 			if len(toDelete) > 0 {
-				if err := storage.DeleteMessages(toDelete); err != nil {
+				if err := storage.DeleteMessages(seg, toDelete); err != nil {
 					logger.Log().Errorf("[pop3] error deleting: %s", err.Error())
 				}
 				// Update web UI to remove deleted messages
-				websockets.Broadcast("prune", nil)
+				websockets.BroadcastSegment(seg, "prune", nil)
 			}
 		}
 
@@ -218,7 +220,9 @@ func handleClient(conn net.Conn) {
 				if authUser(user, pass) {
 					sendResponse(conn, "+OK signed in")
 					var err error
-					messages, err = getMessages()
+					// with segments enabled the POP3 user only sees the segment of the same name
+					seg = segment.FromUsername(&user)
+					messages, err = getMessages(seg)
 					if err != nil {
 						logger.Log().Errorf("[pop3] %s", err.Error())
 					}
@@ -237,7 +241,7 @@ func handleClient(conn net.Conn) {
 			}
 		case "STAT", "LIST", "UIDL", "RETR", "TOP", "NOOP", "DELE", "RSET":
 			if state == TRANSACTION {
-				handleTransactionCommand(conn, cmd, args, messages, &toDelete)
+				handleTransactionCommand(conn, seg, cmd, args, messages, &toDelete)
 			} else {
 				sendResponse(conn, "-ERR user not authenticated")
 			}
@@ -251,7 +255,7 @@ func handleClient(conn net.Conn) {
 	}
 }
 
-func handleTransactionCommand(conn net.Conn, cmd string, args []string, messages []message, toDelete *[]string) {
+func handleTransactionCommand(conn net.Conn, seg, cmd string, args []string, messages []message, toDelete *[]string) {
 	// isDeleted reports whether the 1-based message number has been
 	// marked for deletion in this session. Per RFC 1939, deleted
 	// messages must be invisible to all commands until RSET.
@@ -338,7 +342,7 @@ func handleTransactionCommand(conn net.Conn, cmd string, args []string, messages
 		}
 
 		m := messages[nr-1]
-		raw, err := storage.GetMessageRaw(m.ID)
+		raw, err := storage.GetMessageRaw(seg, m.ID)
 		if err != nil {
 			sendResponse(conn, "-ERR no such message")
 			return
@@ -379,7 +383,7 @@ func handleTransactionCommand(conn net.Conn, cmd string, args []string, messages
 		}
 
 		m := messages[nr-1]
-		headers, body, err := getTop(m.ID, lines)
+		headers, body, err := getTop(seg, m.ID, lines)
 		if err != nil {
 			sendResponse(conn, err.Error())
 			return

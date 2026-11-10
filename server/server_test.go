@@ -672,7 +672,7 @@ func TestAPIv1QuotedLocalPartStore(t *testing.T) {
 	// Store a raw message with quoted local-parts in the headers.
 	// This simulates what arrives via SMTP for addresses like "odd user"@example.com.
 	raw := []byte("From: <\"odd user\"@example.com>\r\nTo: <\"a@b\"@example.com>\r\nSubject: Quoted local-part test\r\nMIME-Version: 1.0\r\nContent-Type: text/plain\r\n\r\nTest body\r\n")
-	id, err := storage.Store(&raw, nil)
+	id, err := storage.Store("", &raw, nil)
 	if err != nil {
 		t.Fatalf("failed to store message: %s", err)
 	}
@@ -751,7 +751,7 @@ func setup() {
 		panic(err)
 	}
 
-	if err := storage.DeleteAllMessages(); err != nil {
+	if err := storage.DeleteAllMessages(""); err != nil {
 		panic(err)
 	}
 }
@@ -817,13 +817,13 @@ func insertEmailData(t *testing.T) {
 
 		bufBytes := buf.Bytes()
 
-		id, err := storage.Store(&bufBytes, nil)
+		id, err := storage.Store("", &bufBytes, nil)
 		if err != nil {
 			t.Log("error ", err)
 			t.Fail()
 		}
 
-		if _, err := storage.SetMessageTags(id, []string{fmt.Sprintf("Test tag %03d", i)}); err != nil {
+		if _, err := storage.SetMessageTags("", id, []string{fmt.Sprintf("Test tag %03d", i)}); err != nil {
 			t.Log("error ", err)
 			t.Fail()
 		}

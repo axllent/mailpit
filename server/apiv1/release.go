@@ -10,6 +10,7 @@ import (
 
 	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/internal/logger"
+	"github.com/axllent/mailpit/internal/segment"
 	"github.com/axllent/mailpit/internal/shortuuid"
 	"github.com/axllent/mailpit/internal/smtpd"
 	"github.com/axllent/mailpit/internal/storage"
@@ -49,7 +50,7 @@ func ReleaseMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	msg, err := storage.GetMessageRaw(id)
+	msg, err := storage.GetMessageRaw(segment.FromRequest(r), id)
 	if err != nil {
 		fourOFour(w)
 		return

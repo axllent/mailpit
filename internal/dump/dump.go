@@ -15,6 +15,7 @@ import (
 
 	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/internal/logger"
+	"github.com/axllent/mailpit/internal/segment"
 	"github.com/axllent/mailpit/internal/storage"
 	"github.com/axllent/mailpit/internal/tools"
 	"github.com/axllent/mailpit/server/apiv1"
@@ -136,7 +137,7 @@ func loadIDs() error {
 
 		start := 0
 		for {
-			page, err := storage.List(start, 0, pageSize)
+			page, err := storage.List(segment.All, start, 0, pageSize)
 			if err != nil {
 				return err
 			}
@@ -249,7 +250,7 @@ func saveMessages() error {
 			}
 		} else {
 			var err error
-			b, err = storage.GetMessageRaw(id)
+			b, err = storage.GetMessageRaw(segment.All, id)
 			if err != nil {
 				logger.Log().Errorf("error fetching message %s: %s", id, err.Error())
 				continue

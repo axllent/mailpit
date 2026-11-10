@@ -82,7 +82,7 @@ func getBackoff(errCount int) time.Duration {
 }
 
 // Load the current statistics
-func Load(detectLatestVersion bool) AppInformation {
+func Load(detectLatestVersion bool, seg string) AppInformation {
 	info := AppInformation{}
 	info.Version = config.Version
 
@@ -131,9 +131,9 @@ func Load(detectLatestVersion bool) AppInformation {
 
 	info.Database = config.Database
 	info.DatabaseSize = storage.DbSize()
-	info.Messages = storage.CountTotal()
-	info.Unread = storage.CountUnread()
-	info.Tags = storage.GetAllTagsCount()
+	info.Messages = storage.CountTotal(seg)
+	info.Unread = storage.CountUnread(seg)
+	info.Tags = storage.GetAllTagsCount(seg)
 
 	return info
 }

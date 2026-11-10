@@ -27,7 +27,7 @@ func TestTags(t *testing.T) {
 		ids := []string{}
 
 		for range 10 {
-			id, err := Store(&testMimeEmail, nil)
+			id, err := Store("", &testMimeEmail, nil)
 			if err != nil {
 				t.Log("error ", err)
 				t.Fail()
@@ -36,14 +36,14 @@ func TestTags(t *testing.T) {
 		}
 
 		for i := range 10 {
-			if _, err := SetMessageTags(ids[i], []string{fmt.Sprintf("Tag-%d", i)}); err != nil {
+			if _, err := SetMessageTags("", ids[i], []string{fmt.Sprintf("Tag-%d", i)}); err != nil {
 				t.Log("error ", err)
 				t.Fail()
 			}
 		}
 
 		for i := range 10 {
-			message, err := GetMessage(ids[i])
+			message, err := GetMessage("", ids[i])
 			if err != nil {
 				t.Log("error ", err)
 				t.Fail()
@@ -54,13 +54,13 @@ func TestTags(t *testing.T) {
 			}
 		}
 
-		if err := DeleteAllMessages(); err != nil {
+		if err := DeleteAllMessages(""); err != nil {
 			t.Log("error ", err)
 			t.Fail()
 		}
 
 		// test 20 tags
-		id, err := Store(&testMimeEmail, nil)
+		id, err := Store("", &testMimeEmail, nil)
 		if err != nil {
 			t.Log("error ", err)
 			t.Fail()
@@ -70,7 +70,7 @@ func TestTags(t *testing.T) {
 			// pad number with 0 to ensure they are returned alphabetically
 			newTags = append(newTags, fmt.Sprintf("AnotherTag %02d", i))
 		}
-		if _, err := SetMessageTags(id, newTags); err != nil {
+		if _, err := SetMessageTags("", id, newTags); err != nil {
 			t.Log("error ", err)
 			t.Fail()
 		}
@@ -94,7 +94,7 @@ func TestTags(t *testing.T) {
 		assertEqual(t, "", strings.Join(returnedTags, "|"), "Message tags should be empty")
 
 		// apply the same tag twice
-		if _, err := SetMessageTags(id, []string{"Duplicate Tag", "Duplicate Tag"}); err != nil {
+		if _, err := SetMessageTags("", id, []string{"Duplicate Tag", "Duplicate Tag"}); err != nil {
 			t.Log("error ", err)
 			t.Fail()
 		}
@@ -106,7 +106,7 @@ func TestTags(t *testing.T) {
 		}
 
 		// apply tag with invalid characters
-		if _, err := SetMessageTags(id, []string{"Dirty! \"Tag\""}); err != nil {
+		if _, err := SetMessageTags("", id, []string{"Dirty! \"Tag\""}); err != nil {
 			t.Log("error ", err)
 			t.Fail()
 		}
@@ -118,16 +118,16 @@ func TestTags(t *testing.T) {
 		}
 
 		// Check deleted message tags also prune the tags database
-		allTags := GetAllTags()
+		allTags := GetAllTags("")
 		assertEqual(t, "", strings.Join(allTags, "|"), "Tags did not delete as expected")
 
-		if err := DeleteAllMessages(); err != nil {
+		if err := DeleteAllMessages(""); err != nil {
 			t.Log("error ", err)
 			t.Fail()
 		}
 
 		// test 20 tags
-		id, err = Store(&testTagEmail, nil)
+		id, err = Store("", &testTagEmail, nil)
 		if err != nil {
 			t.Log("error ", err)
 			t.Fail()
@@ -152,11 +152,11 @@ func TestUsernameAutoTagging(t *testing.T) {
 
 	t.Run("Auto-tagging enabled", func(t *testing.T) {
 		config.TagsUsername = true
-		id, err := Store(&testTextEmail, &username)
+		id, err := Store("", &testTextEmail, &username)
 		if err != nil {
 			t.Fatalf("Store failed: %v", err)
 		}
-		msg, err := GetMessage(id)
+		msg, err := GetMessage("", id)
 		if err != nil {
 			t.Fatalf("GetMessage failed: %v", err)
 		}
@@ -168,11 +168,11 @@ func TestUsernameAutoTagging(t *testing.T) {
 
 	t.Run("Auto-tagging disabled", func(t *testing.T) {
 		config.TagsUsername = false
-		id, err := Store(&testTextEmail, &username)
+		id, err := Store("", &testTextEmail, &username)
 		if err != nil {
 			t.Fatalf("Store failed: %v", err)
 		}
-		msg, err := GetMessage(id)
+		msg, err := GetMessage("", id)
 		if err != nil {
 			t.Fatalf("GetMessage failed: %v", err)
 		}
