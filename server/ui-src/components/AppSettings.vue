@@ -184,7 +184,9 @@ export default {
 									data-allow-same="true"
 								>
 									<option disabled hidden value="">Select a timezone...</option>
-									<option v-for="t in timezones" :key="t" :value="t.tzCode">{{ t.label }}</option>
+									<option v-for="t in timezones" :key="t.tzCode" :value="t.tzCode">
+										{{ t.label }}
+									</option>
 								</select>
 							</div>
 							<div class="mb-3">
