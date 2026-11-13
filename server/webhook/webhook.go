@@ -4,6 +4,7 @@ package webhook
 import (
 	"bytes"
 	"encoding/json"
+	"io"
 	"net/http"
 	"sync"
 	"time"
@@ -26,7 +27,17 @@ var (
 	rl rate.Sometimes
 
 	once sync.Once
+
+	// client is shared so connections to the webhook endpoint are reused
+	client *http.Client
+
+	// sem limits the number of concurrent webhook requests. Requests over the limit
+	// wait for a free slot rather than being dropped.
+	sem chan struct{}
 )
+
+// maxConcurrent is the maximum number of concurrent webhook requests
+const maxConcurrent = 100
 
 // Send will post the MessageSummary to a webhook (if configured)
 func Send(msg any) {
@@ -41,6 +52,15 @@ func Send(msg any) {
 			// allow every request
 			rl = rate.Sometimes{Every: 1}
 		}
+
+		// the default transport only keeps 2 idle connections per host, so most
+		// connections would be closed after a single request
+		transport := http.DefaultTransport.(*http.Transport).Clone()
+		transport.MaxIdleConns = maxConcurrent
+		transport.MaxIdleConnsPerHost = maxConcurrent
+		client = &http.Client{Timeout: 5 * time.Second, Transport: transport}
+
+		sem = make(chan struct{}, maxConcurrent)
 	})
 
 	rl.Do(func() {
@@ -69,13 +89,19 @@ func Send(msg any) {
 				req.Header.Set("Mailpit-Label", config.Label)
 			}
 
-			client := &http.Client{Timeout: 5 * time.Second}
+			sem <- struct{}{}
+			defer func() { <-sem }()
+
 			resp, err := client.Do(req)
 			if err != nil {
 				logger.Log().Errorf("[webhook] error sending data: %s", err.Error())
 				return
 			}
-			defer func() { _ = resp.Body.Close() }()
+			defer func() {
+				// drain the body so the connection can be reused
+				_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, 1<<20))
+				_ = resp.Body.Close()
+			}()
 
 			if resp.StatusCode < 200 || resp.StatusCode > 299 {
 				logger.Log().Warnf("[webhook] %s returned a %d status", config.WebhookURL, resp.StatusCode)
