@@ -7,6 +7,7 @@ package mimeparser
 
 import (
 	"bytes"
+	"maps"
 	"net/url"
 	"sort"
 	"strconv"
@@ -35,10 +36,14 @@ func ParseMediaType(ctype string) (string, map[string]string, []string, error) {
 		return mtype, params, invalid, err
 	}
 
-	for name, value := range decodeExtendedParams(ctype) {
-		// overrides any partial value the standard library kept from later continuation sections
-		params[name] = value
+	// mediatype.Parse returns a nil map (and nil error) when the media type is unparseable,
+	// eg: a non-token character before the first ';'
+	if params == nil {
+		params = make(map[string]string)
 	}
+
+	// overrides any partial value the standard library kept from later continuation sections
+	maps.Copy(params, decodeExtendedParams(ctype))
 
 	return mtype, params, invalid, nil
 }
