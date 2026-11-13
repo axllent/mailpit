@@ -24,11 +24,7 @@ func CreateSnippet(text, html string) string {
 	if html != "" {
 		data, err := html2text.Strip(html, false)
 		if err == nil {
-			if len(data) <= limit {
-				return data
-			}
-
-			return truncate(data, limit) + "..."
+			return SnippetFromStripped(data)
 		}
 	}
 
@@ -44,6 +40,16 @@ func CreateSnippet(text, html string) string {
 	}
 
 	return ""
+}
+
+// SnippetFromStripped returns a message snippet from HTML already converted to plain text
+func SnippetFromStripped(data string) string {
+	limit := 200
+	if len(data) <= limit {
+		return data
+	}
+
+	return truncate(data, limit) + "..."
 }
 
 // Truncate a string allowing for multi-byte encoding.

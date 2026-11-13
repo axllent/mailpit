@@ -19,12 +19,13 @@ import (
 )
 
 // New returns an enmime parser with Mailpit's options and RFC 2231 charset support.
-func New() *enmime.Parser {
-	return enmime.NewParser(
+// Additional options are applied after Mailpit's defaults.
+func New(opts ...enmime.Option) *enmime.Parser {
+	return enmime.NewParser(append([]enmime.Option{
 		enmime.DisableCharacterDetection(true),
 		enmime.MaxMIMEParts(500),
 		enmime.SetCustomParseMediaType(ParseMediaType),
-	)
+	}, opts...)...)
 }
 
 // ParseMediaType wraps enmime's tolerant media type parser, adding back any RFC 2231

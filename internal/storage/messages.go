@@ -32,7 +32,7 @@ import (
 // Returns the database ID of the saved message.
 func Store(body *[]byte, username *string) (string, error) {
 	// Parse message body with enmime
-	env, err := envelopeParser.ReadEnvelope(bytes.NewReader(*body))
+	env, err := storeParser.ReadEnvelope(bytes.NewReader(*body))
 	if err != nil {
 		logger.Log().Warnf("[message] %s", err.Error())
 		// the message can never be parsed, so reject it permanently rather than have the client retry
@@ -68,8 +68,8 @@ func Store(body *[]byte, username *string) (string, error) {
 		}
 	}
 
-	// generate the search text
-	searchText := createSearchText(env)
+	// generate the search text & snippet
+	searchText, snippet := searchTextAndSnippet(env)
 
 	// generate unique ID
 	id := shortuuid.New()
@@ -100,7 +100,6 @@ func Store(body *[]byte, username *string) (string, error) {
 	size := uint64(len(*body))
 	inline := len(env.Inlines)
 	attachments := len(env.Attachments)
-	snippet := tools.CreateSnippet(env.Text, env.HTML)
 
 	sql := fmt.Sprintf(`INSERT INTO %s
     	(Created, ID, MessageID, Subject, Metadata, Size, Inline, Attachments, SearchText, MetaSearchText, Read, Snippet)

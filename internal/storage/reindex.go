@@ -11,7 +11,6 @@ import (
 
 	"github.com/axllent/mailpit/internal/logger"
 	"github.com/axllent/mailpit/internal/mimeparser"
-	"github.com/axllent/mailpit/internal/tools"
 	"github.com/leporo/sqlf"
 )
 
@@ -102,8 +101,7 @@ func ReindexAll() {
 				continue
 			}
 
-			searchText := createSearchText(env)
-			snippet := tools.CreateSnippet(env.Text, env.HTML)
+			searchText, snippet := searchTextAndSnippet(env)
 
 			u := updateStruct{}
 			u.ID = id
