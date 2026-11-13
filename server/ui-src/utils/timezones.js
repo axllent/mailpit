@@ -21,10 +21,28 @@ export function gmtOffset(timeZone, date = new Date()) {
 	}
 }
 
-// Map timezones-list entries to { tzCode, label } with the current offset in the label.
+// Convert "GMT+05:30" (or a bare "+05:30" / "-11:00") to minutes, or null if it cannot be parsed.
+function offsetMinutes(value) {
+	const m = /^(?:GMT)?([+-])(\d{1,2}):(\d{2})$/.exec(value || "");
+	if (!m) {
+		return null;
+	}
+	return (m[1] === "-" ? -1 : 1) * (parseInt(m[2], 10) * 60 + parseInt(m[3], 10));
+}
+
+// Map timezones-list entries to { tzCode, label } with the current offset in the label, sorted by
+// that offset (then by tzCode). The static list is ordered by its fixed offsets, which no longer
+// match the labels once daylight saving applies.
 export function timezoneOptions(timezones, date = new Date()) {
-	return timezones.map((t) => {
-		const offset = gmtOffset(t.tzCode, date);
-		return { tzCode: t.tzCode, label: offset ? `${t.tzCode} (${offset})` : t.label };
-	});
+	return timezones
+		.map((t) => {
+			const offset = gmtOffset(t.tzCode, date);
+			return {
+				tzCode: t.tzCode,
+				label: offset ? `${t.tzCode} (${offset})` : t.label,
+				minutes: offsetMinutes(offset) ?? offsetMinutes(t.utc) ?? 0,
+			};
+		})
+		.sort((a, b) => a.minutes - b.minutes || a.tzCode.localeCompare(b.tzCode))
+		.map(({ tzCode, label }) => ({ tzCode, label }));
 }

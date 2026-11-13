@@ -29,3 +29,22 @@ test("timezoneOptions: replaces the static offset and keeps the static label as 
 		{ tzCode: "Not/AZone", label: "Not/AZone (GMT+01:00)" },
 	]);
 });
+
+test("timezoneOptions: sorted by the current offset, not the static one", () => {
+	const list = [
+		{ tzCode: "Asia/Kolkata", label: "Asia/Kolkata (GMT+05:30)", utc: "+05:30" },
+		{ tzCode: "America/Toronto", label: "America/Toronto (GMT-05:00)", utc: "-05:00" },
+		{ tzCode: "America/Panama", label: "America/Panama (GMT-05:00)", utc: "-05:00" },
+		{ tzCode: "Not/AZone", label: "Not/AZone (GMT-11:00)", utc: "-11:00" },
+	];
+	// July: Toronto is -04:00, Panama -05:00. The unknown zone sorts by its static offset.
+	assert.deepEqual(
+		timezoneOptions(list, july).map((o) => o.tzCode),
+		["Not/AZone", "America/Panama", "America/Toronto", "Asia/Kolkata"],
+	);
+	// January: Toronto and Panama tie at -05:00 and fall back to tzCode order.
+	assert.deepEqual(
+		timezoneOptions(list, january).map((o) => o.tzCode),
+		["Not/AZone", "America/Panama", "America/Toronto", "Asia/Kolkata"],
+	);
+});
