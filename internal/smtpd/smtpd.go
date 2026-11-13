@@ -19,6 +19,7 @@ import (
 	"net/mail"
 	"os"
 	"regexp"
+	"runtime/debug"
 	"strconv"
 	"strings"
 	"sync"
@@ -404,6 +405,10 @@ func (s *session) serve() {
 	// pass the connection into the defer function to ensure it is closed,
 	// otherwise results in a 5s timeout for each connection
 	defer func(c net.Conn) { _ = c.Close() }(s.conn)
+	// a panic while handling one session (eg: a message parser bug) must not take down the
+	// whole process, so log it and drop only this connection. This is registered last so
+	// that it runs before the connection is closed.
+	defer s.recoverPanic()
 
 	var gotEHLO bool
 	var from string
@@ -860,6 +865,21 @@ loop:
 			s.writef("500 5.5.2 Syntax error, command unrecognized")
 		}
 	}
+}
+
+// recoverPanic recovers from a panic in the session, logs it with a stack trace, and makes a
+// best-effort attempt to tell the client to retry. It must be called directly via defer.
+func (s *session) recoverPanic() {
+	r := recover()
+	if r == nil {
+		return
+	}
+
+	logger.Log().Errorf("[smtpd] panic in session from %s: %v\n%s", s.remoteIP, r, debug.Stack())
+
+	// bound the write so a stalled client cannot hold this goroutine (and its connection slot)
+	_ = s.conn.SetWriteDeadline(time.Now().Add(5 * time.Second))
+	s.writef("451 4.3.0 Requested action aborted: local error in processing")
 }
 
 // Wrapper function for writing a complete line to the socket.
