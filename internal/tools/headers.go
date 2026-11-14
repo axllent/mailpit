@@ -2,22 +2,18 @@
 package tools
 
 import (
-	"bufio"
 	"bytes"
 	"errors"
 	"fmt"
 	"io"
 	"mime"
 	"net/mail"
-	"regexp"
+	"net/textproto"
 	"strings"
 
 	"github.com/axllent/mailpit/internal/logger"
 	"golang.org/x/text/encoding/htmlindex"
 )
-
-// reLeadingWhitespace matches lines starting with whitespace (continuation lines in headers)
-var reLeadingWhitespace = regexp.MustCompile(`^\s+`)
 
 // AddressList parses an address header. It is as strict as mail.Header.AddressList,
 // with the exception that it also decodes display names in charsets other than
@@ -43,120 +39,128 @@ func charsetReader(charset string, input io.Reader) (io.Reader, error) {
 	return enc.NewDecoder().Reader(input), nil
 }
 
-// RemoveMessageHeaders scans a message for headers, if found them removes them.
-// It will only remove a single instance of any given message header.
+// headerRange is the position of a header in a message: from the start of its first line to just
+// after its last line (including any folded lines and the final line break).
+type headerRange struct {
+	start, end int
+}
+
+// findHeaders returns the position of every header called name in the header block of msg, in
+// order. The message is read line by line, with CRLF or LF line endings, up to the first blank
+// line, so the positions are exactly where the header is, rather than where its text happens to
+// first appear in the message.
+func findHeaders(msg []byte, name string) []headerRange {
+	var found []headerRange
+
+	prefix := name + ":"
+	current := -1 // index in found of the header being read, which any folded lines belong to
+
+	for pos := 0; pos < len(msg); {
+		next := len(msg)
+		lineEnd := len(msg)
+		if i := bytes.IndexByte(msg[pos:], '\n'); i >= 0 {
+			lineEnd = pos + i
+			next = lineEnd + 1
+		}
+
+		line := bytes.TrimSuffix(msg[pos:lineEnd], []byte("\r"))
+		if len(line) == 0 {
+			// the end of the headers
+			break
+		}
+
+		switch {
+		case line[0] == ' ' || line[0] == '\t':
+			// a folded line belongs to the header before it
+			if current >= 0 {
+				found[current].end = next
+			}
+		case len(line) >= len(prefix) && strings.EqualFold(string(line[:len(prefix)]), prefix):
+			found = append(found, headerRange{start: pos, end: next})
+			current = len(found) - 1
+		default:
+			current = -1
+		}
+
+		pos = next
+	}
+
+	return found
+}
+
+// replaceHeaders returns msg with the first of the headers replaced by replacement (which may be
+// empty to remove it), and any others removed.
+func replaceHeaders(msg []byte, headers []headerRange, replacement []byte) []byte {
+	out := make([]byte, 0, len(msg)+len(replacement))
+	pos := 0
+
+	for i, h := range headers {
+		out = append(out, msg[pos:h.start]...)
+		if i == 0 {
+			out = append(out, replacement...)
+		}
+		pos = h.end
+	}
+
+	return append(out, msg[pos:]...)
+}
+
+// hasHeader returns whether the parsed headers have a header called name, even if its value is empty.
+func hasHeader(h mail.Header, name string) bool {
+	_, ok := h[textproto.CanonicalMIMEHeaderKey(name)]
+
+	return ok
+}
+
+// RemoveMessageHeaders scans a message for headers, and removes them if found. Every instance of
+// each header is removed, including the ones which are folded over several lines.
+//
+// It returns an error rather than the original message if a header is found by the parser but
+// cannot be located in the raw message.
 func RemoveMessageHeaders(msg []byte, headers []string) ([]byte, error) {
-	reader := bytes.NewReader(msg)
-	m, err := mail.ReadMessage(reader)
+	m, err := mail.ReadMessage(bytes.NewReader(msg))
 	if err != nil {
 		return nil, err
 	}
 
 	for _, name := range headers {
-		if m.Header.Get(name) == "" {
+		if !hasHeader(m.Header, name) {
 			continue
 		}
 
-		// case-insensitive
-		reHdr := regexp.MustCompile(`(?i)^` + regexp.QuoteMeta(name+":"))
-
-		// bound the scanner to the header block so long body content and
-		// oversized header lines can't silently truncate the scan.
-		headerBlockEnd := bytes.Index(msg, []byte("\r\n\r\n"))
-		if headerBlockEnd < 0 {
-			headerBlockEnd = len(msg)
-		}
-		headerBlock := msg[:headerBlockEnd]
-
-		scanner := bufio.NewScanner(bytes.NewReader(headerBlock))
-		scanner.Buffer(make([]byte, 0, 64*1024), len(headerBlock)+1)
-		found := false
-		hdr := []byte("")
-		for scanner.Scan() {
-			line := scanner.Bytes()
-			if !found && reHdr.Match(line) {
-				// add the first line starting with <header>:
-				hdr = append(hdr, line...)
-				hdr = append(hdr, []byte("\r\n")...)
-				found = true
-			} else if found && reLeadingWhitespace.Match(line) {
-				// add any following lines starting with a whitespace (tab or space)
-				hdr = append(hdr, line...)
-				hdr = append(hdr, []byte("\r\n")...)
-			} else if found {
-				// stop scanning, we have the full <header>
-				break
-			}
-		}
-		if err := scanner.Err(); err != nil {
-			return nil, fmt.Errorf("scanning message for %s header: %w", name, err)
-		}
-
-		if len(hdr) == 0 {
+		found := findHeaders(msg, name)
+		if len(found) == 0 {
 			// mail.ReadMessage saw the header but the raw pass could not locate
 			// it. Fail closed rather than silently returning the original message.
 			return nil, fmt.Errorf("%s header parsed but not located in raw message", name)
 		}
 
-		logger.Log().Debugf("[relay] removed %s header", hdr)
-		msg = bytes.Replace(msg, hdr, []byte(""), 1)
+		logger.Log().Debugf("[relay] removed %d %s header(s)", len(found), name)
+		msg = replaceHeaders(msg, found, nil)
 	}
 
 	return msg, nil
 }
 
 // SetMessageHeader scans a message for a header and updates its value if found.
-// It does not consider multiple instances of the same header.
+// It does not consider multiple instances of the same header (only the first is updated).
 // If not found it will add the header to the beginning of the message.
 func SetMessageHeader(msg []byte, header, value string) ([]byte, error) {
-	reader := bytes.NewReader(msg)
-	m, err := mail.ReadMessage(reader)
+	m, err := mail.ReadMessage(bytes.NewReader(msg))
 	if err != nil {
 		return nil, err
 	}
 
-	if m.Header.Get(header) != "" {
-		reHdr := regexp.MustCompile(`(?i)^` + regexp.QuoteMeta(header+":"))
-
-		// bound the scanner to the header block so long body content and
-		// oversized header lines can't silently truncate the scan.
-		headerBlockEnd := bytes.Index(msg, []byte("\r\n\r\n"))
-		if headerBlockEnd < 0 {
-			headerBlockEnd = len(msg)
-		}
-		headerBlock := msg[:headerBlockEnd]
-
-		scanner := bufio.NewScanner(bytes.NewReader(headerBlock))
-		scanner.Buffer(make([]byte, 0, 64*1024), len(headerBlock)+1)
-		found := false
-		hdr := []byte("")
-		for scanner.Scan() {
-			line := scanner.Bytes()
-			if !found && reHdr.Match(line) {
-				// add the first line starting with <header>:
-				hdr = append(hdr, line...)
-				hdr = append(hdr, []byte("\r\n")...)
-				found = true
-			} else if found && reLeadingWhitespace.Match(line) {
-				// add any following lines starting with a whitespace (tab or space)
-				hdr = append(hdr, line...)
-				hdr = append(hdr, []byte("\r\n")...)
-			} else if found {
-				// stop scanning, we have the full <header>
-				break
-			}
-		}
-		if err := scanner.Err(); err != nil {
-			return nil, fmt.Errorf("scanning message for %s header: %w", header, err)
-		}
-
-		if len(hdr) == 0 {
+	if hasHeader(m.Header, header) {
+		found := findHeaders(msg, header)
+		if len(found) == 0 {
 			// mail.ReadMessage saw the header but the raw pass could not locate
 			// it. Fail closed rather than silently returning the original message.
 			return nil, fmt.Errorf("%s header parsed but not located in raw message", header)
 		}
 
-		return bytes.Replace(msg, hdr, []byte(header+": "+value+"\r\n"), 1), nil
+		// only the first is replaced
+		return replaceHeaders(msg, found[:1], []byte(header+": "+value+"\r\n")), nil
 	}
 
 	// no header, so add one to beginning
@@ -164,78 +168,51 @@ func SetMessageHeader(msg []byte, header, value string) ([]byte, error) {
 }
 
 // OverrideFromHeader scans a message for the From header and replaces it with a different email address.
+// If the message has more than one From header the others are removed, so that the address is the only one.
 func OverrideFromHeader(msg []byte, address string) ([]byte, error) {
-	reader := bytes.NewReader(msg)
-	m, err := mail.ReadMessage(reader)
+	m, err := mail.ReadMessage(bytes.NewReader(msg))
 	if err != nil {
 		return nil, err
 	}
 
-	if m.Header.Get("From") != "" {
-		reHdr := regexp.MustCompile(`(?i)^` + regexp.QuoteMeta("From:"))
-
-		// bound the scanner to the header block so long body content and
-		// oversized header lines can't silently truncate the scan.
-		headerBlockEnd := bytes.Index(msg, []byte("\r\n\r\n"))
-		if headerBlockEnd < 0 {
-			headerBlockEnd = len(msg)
-		}
-		headerBlock := msg[:headerBlockEnd]
-
-		scanner := bufio.NewScanner(bytes.NewReader(headerBlock))
-		scanner.Buffer(make([]byte, 0, 64*1024), len(headerBlock)+1)
-		found := false
-		hdr := []byte("")
-		for scanner.Scan() {
-			line := scanner.Bytes()
-			if !found && reHdr.Match(line) {
-				// add the first line starting with <header>:
-				hdr = append(hdr, line...)
-				hdr = append(hdr, []byte("\r\n")...)
-				found = true
-			} else if found && reLeadingWhitespace.Match(line) {
-				// add any following lines starting with a whitespace (tab or space)
-				hdr = append(hdr, line...)
-				hdr = append(hdr, []byte("\r\n")...)
-			} else if found {
-				// stop scanning, we have the full <header>
-				break
-			}
-		}
-		if err := scanner.Err(); err != nil {
-			return nil, fmt.Errorf("scanning message for From header: %w", err)
-		}
-
-		if len(hdr) == 0 {
-			// mail.ReadMessage saw the From header but the raw pass could not
-			// locate it. Fail closed rather than silently returning the original
-			// message, which would leak an attacker-controlled From through the
-			// relay while the envelope carries the operator's address.
-			return nil, errors.New("From header parsed but not located in raw message")
-		}
-
-		originalFrom := strings.TrimRight(string(hdr[5:]), "\r\n")
-
-		from, err := mail.ParseAddress(originalFrom)
-		if err != nil {
-			// error parsing the from address, so just replace the whole line
-			msg = bytes.Replace(msg, hdr, []byte("From: "+address+"\r\n"), 1)
-		} else {
-			originalFrom = from.Address
-			// replace the from email, but keep the original name
-			from.Address = address
-			msg = bytes.Replace(msg, hdr, []byte("From: "+from.String()+"\r\n"), 1)
-		}
-
-		// insert the original From header as X-Original-From
-		msg = append([]byte("X-Original-From: "+originalFrom+"\r\n"), msg...)
-
-		logger.Log().Debugf("[relay] Replaced From email address with %s", address)
-	} else {
+	if !hasHeader(m.Header, "From") {
 		// no From header, so add one
 		msg = append([]byte("From: "+address+"\r\n"), msg...)
 		logger.Log().Debugf("[relay] Added From email: %s", address)
+
+		return msg, nil
 	}
+
+	found := findHeaders(msg, "From")
+	if len(found) == 0 {
+		// mail.ReadMessage saw the From header but the raw pass could not
+		// locate it. Fail closed rather than silently returning the original
+		// message, which would leak an attacker-controlled From through the
+		// relay while the envelope carries the operator's address.
+		return nil, errors.New("From header parsed but not located in raw message")
+	}
+
+	// the value is as parsed, so folded lines are joined
+	originalFrom := m.Header.Get("From")
+
+	replacement := "From: " + address + "\r\n"
+
+	if from, err := mail.ParseAddress(originalFrom); err == nil {
+		originalFrom = from.Address
+		// replace the from email, but keep the original name
+		from.Address = address
+		replacement = "From: " + from.String() + "\r\n"
+	}
+	// otherwise there is no address which can be kept, so the whole header is replaced
+
+	msg = replaceHeaders(msg, found, []byte(replacement))
+
+	// insert the original From header as X-Original-From
+	if originalFrom != "" {
+		msg = append([]byte("X-Original-From: "+originalFrom+"\r\n"), msg...)
+	}
+
+	logger.Log().Debugf("[relay] Replaced From email address with %s", address)
 
 	return msg, nil
 }
