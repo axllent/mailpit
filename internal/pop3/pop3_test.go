@@ -16,7 +16,6 @@ import (
 	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/internal/auth"
 	"github.com/axllent/mailpit/internal/logger"
-	"github.com/axllent/mailpit/internal/pop3client"
 	"github.com/axllent/mailpit/internal/storage"
 	"github.com/jhillyerd/enmime/v2"
 )
@@ -389,11 +388,9 @@ func TestPOP3DotStuffing(t *testing.T) {
 		t.Fatal("error reading RETR body:", err)
 	}
 
-	bodyStr := string(retrivedBody)
-	// The dot-stuffing should be transparent - the body should contain the original text
-	if !strings.Contains(bodyStr, ".This line starts with a dot") {
-		t.Errorf("RETR did not properly handle dot-stuffing: %s", bodyStr)
-	}
+	// The dot-stuffing must be transparent: every line comes back exactly as it was written. The
+	// client removes the stuffing, so a server which does not add it would return "This line..."
+	assertBodyLines(t, "RETR", string(retrivedBody))
 
 	// Test TOP command with dot-stuffing
 	t.Log("Testing TOP with dot-stuffing")
@@ -407,14 +404,41 @@ func TestPOP3DotStuffing(t *testing.T) {
 		t.Fatal("error reading TOP body:", err)
 	}
 
-	topBodyStr := string(topBody)
-	// The dot-stuffing should be transparent - the body should contain the original text
-	if !strings.Contains(topBodyStr, ".This line starts with a dot") {
-		t.Errorf("TOP did not properly handle dot-stuffing: %s", topBodyStr)
+	assertBodyLines(t, "TOP", string(topBody))
+}
+
+// assertBodyLines checks the lines of the dot-stuffing test message are exactly as written, as
+// whole lines. Substring checks are not enough: ".This line" is also a substring of the stuffed
+// "..This line", so they cannot tell a server that stuffs from one that does not.
+func assertBodyLines(t *testing.T, cmd, body string) {
+	t.Helper()
+
+	have := map[string]bool{}
+	for _, l := range strings.Split(strings.ReplaceAll(body, "\r\n", "\n"), "\n") {
+		have[l] = true
 	}
 
-	if !strings.Contains(topBodyStr, "..This line starts with two dots") {
-		t.Errorf("TOP did not properly handle double-dot-stuffing: %s", topBodyStr)
+	for _, want := range []string{
+		"Line 1",
+		".This line starts with a dot",
+		"..This line starts with two dots",
+		"Normal line",
+	} {
+		if !have[want] {
+			t.Errorf("%s did not return the line %q as written, got:\n%s", cmd, want, body)
+		}
+	}
+
+	// the lines as they would be if the stuffing was wrongly kept or wrongly removed
+	for _, wrong := range []string{
+		"..This line starts with a dot",
+		"...This line starts with two dots",
+		"This line starts with a dot",
+		".This line starts with two dots",
+	} {
+		if have[wrong] {
+			t.Errorf("%s returned the line %q, the byte-stuffing was not handled correctly", cmd, wrong)
+		}
 	}
 }
 
@@ -457,7 +481,7 @@ func setup() {
 }
 
 // connect and authenticate
-func connectAuth() (*pop3client.Conn, error) {
+func connectAuth() (*testConn, error) {
 	c, err := connect()
 	if err != nil {
 		return c, err
@@ -469,7 +493,7 @@ func connectAuth() (*pop3client.Conn, error) {
 }
 
 // connect and authenticate
-func connectBadAuth() (*pop3client.Conn, error) {
+func connectBadAuth() (*testConn, error) {
 	c, err := connect()
 	if err != nil {
 		return c, err
@@ -481,8 +505,8 @@ func connectBadAuth() (*pop3client.Conn, error) {
 }
 
 // connect but do not authenticate
-func connect() (*pop3client.Conn, error) {
-	p := pop3client.New(pop3client.Opt{
+func connect() (*testConn, error) {
+	p := newTestClient(testClientOpt{
 		Host:       "localhost",
 		Port:       testingPort,
 		TLSEnabled: false,
@@ -509,8 +533,8 @@ func portFree(port int) bool {
 	return true
 }
 
-func randRange(min, max int) int {
-	return rand.IntN(max-min) + min
+func randRange(lowerBound, upperBound int) int {
+	return rand.IntN(upperBound-lowerBound) + lowerBound
 }
 
 func insertEmailData(t *testing.T) {
