@@ -139,6 +139,9 @@ func Relay(from string, to []string, msg []byte) error {
 		}
 	}
 
+	// whatever is sent has <CR><LF> line breaks in the headers, as the receiving server may read others differently
+	msg, _ = tools.NormaliseHeaderLineBreaks(msg)
+
 	if config.SMTPRelayConfig.OverrideFrom != "" {
 		msg, err = tools.OverrideFromHeader(msg, config.SMTPRelayConfig.OverrideFrom)
 		if err != nil {

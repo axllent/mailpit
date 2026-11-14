@@ -35,10 +35,24 @@ func mailHandler(origin net.Addr, from string, to []string, data []byte, smtpUse
 
 // SaveToDatabase will attempt to save a message to the database
 func SaveToDatabase(origin net.Addr, from string, to []string, data []byte, smtpUser *string) (string, error) {
-	if !config.SMTPStrictRFCHeaders && bytes.Contains(data, []byte("\r\r\n")) {
-		// replace all <CR><CR><LF> (\r\r\n) with <CR><LF> (\r\n)
-		// @see https://github.com/axllent/mailpit/issues/87 & https://github.com/axllent/mailpit/issues/153
-		data = bytes.ReplaceAll(data, []byte("\r\r\n"), []byte("\r\n"))
+	if config.SMTPStrictRFCHeaders {
+		// reject headers with line breaks which are not <CR><LF>: <CR><CR><LF>, <LF> or <CR> on its own
+		if _, invalid := tools.NormaliseHeaderLineBreaks(data); invalid {
+			logger.Log().Warn("[smtpd] rejected message, the headers contain line breaks which are not <CR><LF>")
+			stats.LogSMTPRejected()
+
+			return "", errors.New("550 5.6.0 Message headers must use <CR><LF> line breaks")
+		}
+	} else {
+		if bytes.Contains(data, []byte("\r\r\n")) {
+			// replace all <CR><CR><LF> (\r\r\n) with <CR><LF> (\r\n)
+			// @see https://github.com/axllent/mailpit/issues/87 & https://github.com/axllent/mailpit/issues/153
+			data = bytes.ReplaceAll(data, []byte("\r\r\n"), []byte("\r\n"))
+		}
+
+		// fix the other line breaks of the headers (<LF> and <CR> on its own), so the headers
+		// are the same to everything which reads the message, including the SMTP server it is relayed to
+		data, _ = tools.NormaliseHeaderLineBreaks(data)
 	}
 
 	msg, err := mail.ReadMessage(bytes.NewReader(data))

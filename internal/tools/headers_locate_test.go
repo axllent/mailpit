@@ -268,7 +268,9 @@ func FuzzHeaderRewriting(f *testing.F) {
 	f.Add("From: <>\r\nfrom: b@c.test\r\n\r\n")
 
 	f.Fuzz(func(t *testing.T, s string) {
-		msg := []byte(s)
+		// the functions fix the line breaks of the headers first, so the message they are given is
+		// compared with what it is then. TestRewritingHeadersWithBareCR is for those which change.
+		msg, _ := NormaliseHeaderLineBreaks([]byte(s))
 		h0, body0, ok := parseMsg(t, msg)
 		if !ok {
 			return
@@ -351,7 +353,8 @@ func containsFold(list []string, s string) bool {
 	return false
 }
 
-// Only the headers are read, so the same text in the body is left alone.
+// Only the headers are read, so the same text in the body is left alone. The line breaks of the
+// headers are <CR><LF> afterwards, and the body is exactly as it was.
 func TestHeaderRewritingLeavesTheBodyAlone(t *testing.T) {
 	for _, nl := range []string{"\r\n", "\n"} {
 		body := "From: in-the-body@x.test" + nl + "Bcc: body@x.test" + nl
@@ -361,7 +364,7 @@ func TestHeaderRewritingLeavesTheBodyAlone(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if got := string(out); got != nl+body {
+		if got := string(out); got != "\r\n"+body {
 			t.Errorf("%q line endings: %q", nl, got)
 		}
 
@@ -369,7 +372,7 @@ func TestHeaderRewritingLeavesTheBodyAlone(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if !strings.HasSuffix(string(out), nl+nl+body) {
+		if !strings.HasSuffix(string(out), "\r\n\r\n"+body) {
 			t.Errorf("%q line endings, override: the body changed: %q", nl, out)
 		}
 	}

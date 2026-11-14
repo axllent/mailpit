@@ -39,6 +39,72 @@ func charsetReader(charset string, input io.Reader) (io.Reader, error) {
 	return enc.NewDecoder().Reader(input), nil
 }
 
+// NormaliseHeaderLineBreaks returns msg with every line break in the header block (up to the first
+// empty line) as <CR><LF>, and whether anything had to be changed. The line breaks which are replaced
+// are <LF> on its own, <CR> on its own, and <CR><CR><LF> (or more <CR>). The body is never changed.
+//
+// A <CR> on its own is a line break to some mail software, but part of the text to others (Go's
+// parser, for one). A message can therefore have different headers depending on which reads it, for
+// example a "Bcc" header which is hidden in the middle of another header's value. Normalising the
+// message first means that every reader sees the same headers. The message is not copied if there
+// is nothing to change.
+func NormaliseHeaderLineBreaks(msg []byte) ([]byte, bool) {
+	var out []byte // only made when something has to change
+	last := 0      // msg[:last] has been copied to out
+	lineLen := 0   // the length of the line being read
+
+	for i := 0; i < len(msg); {
+		c := msg[i]
+		if c != '\r' && c != '\n' {
+			lineLen++
+			i++
+
+			continue
+		}
+
+		// a line break: <CR>+<LF>, <LF> or a <CR> on its own
+		end := i + 1
+		compliant := false
+
+		switch c {
+		case '\n':
+			// <LF> on its own
+		default:
+			j := i
+			for j < len(msg) && msg[j] == '\r' {
+				j++
+			}
+			if j < len(msg) && msg[j] == '\n' {
+				end = j + 1
+				compliant = j-i == 1
+			}
+		}
+
+		if !compliant {
+			if out == nil {
+				out = make([]byte, 0, len(msg)+16)
+			}
+			out = append(out, msg[last:i]...)
+			out = append(out, '\r', '\n')
+			last = end
+		}
+
+		i = end
+
+		if lineLen == 0 {
+			// that was the empty line which ends the headers, the rest is the body
+			break
+		}
+		lineLen = 0
+	}
+
+	if out == nil {
+		return msg, false
+	}
+
+	return append(out, msg[last:]...), true
+}
+
 // headerRange is the position of a header in a message: from the start of its first line to just
 // after its last line (including any folded lines and the final line break).
 type headerRange struct {
@@ -113,11 +179,15 @@ func hasHeader(h mail.Header, name string) bool {
 }
 
 // RemoveMessageHeaders scans a message for headers, and removes them if found. Every instance of
-// each header is removed, including the ones which are folded over several lines.
+// each header is removed, including the ones which are folded over several lines. The line breaks of
+// the header block are made <CR><LF> first (see NormaliseHeaderLineBreaks), as are those of the
+// other functions which change headers.
 //
 // It returns an error rather than the original message if a header is found by the parser but
 // cannot be located in the raw message.
 func RemoveMessageHeaders(msg []byte, headers []string) ([]byte, error) {
+	msg, _ = NormaliseHeaderLineBreaks(msg)
+
 	m, err := mail.ReadMessage(bytes.NewReader(msg))
 	if err != nil {
 		return nil, err
@@ -146,6 +216,8 @@ func RemoveMessageHeaders(msg []byte, headers []string) ([]byte, error) {
 // It does not consider multiple instances of the same header (only the first is updated).
 // If not found it will add the header to the beginning of the message.
 func SetMessageHeader(msg []byte, header, value string) ([]byte, error) {
+	msg, _ = NormaliseHeaderLineBreaks(msg)
+
 	m, err := mail.ReadMessage(bytes.NewReader(msg))
 	if err != nil {
 		return nil, err
@@ -170,6 +242,8 @@ func SetMessageHeader(msg []byte, header, value string) ([]byte, error) {
 // OverrideFromHeader scans a message for the From header and replaces it with a different email address.
 // If the message has more than one From header the others are removed, so that the address is the only one.
 func OverrideFromHeader(msg []byte, address string) ([]byte, error) {
+	msg, _ = NormaliseHeaderLineBreaks(msg)
+
 	m, err := mail.ReadMessage(bytes.NewReader(msg))
 	if err != nil {
 		return nil, err
@@ -229,6 +303,8 @@ func PrefixSubject(msg []byte, prefix string) ([]byte, error) {
 	if strings.ContainsAny(prefix, "\r\n") {
 		return nil, errors.New("subject prefix must not contain line breaks")
 	}
+
+	msg, _ = NormaliseHeaderLineBreaks(msg)
 
 	m, err := mail.ReadMessage(bytes.NewReader(msg))
 	if err != nil {

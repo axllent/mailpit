@@ -193,7 +193,8 @@ var (
 	// SMTPForwardConfig to parse a yaml file and store config of the forwarding SMTP server
 	SMTPForwardConfig SMTPForwardConfigStruct
 
-	// SMTPStrictRFCHeaders will return an error if the email headers contain <CR><CR><LF> (\r\r\n)
+	// SMTPStrictRFCHeaders will return an error if the email headers contain line breaks which are not
+	// <CR><LF>: <CR><CR><LF> (\r\r\n), <LF> (\n) or <CR> (\r) on its own. Without it these are fixed.
 	// @see https://github.com/axllent/mailpit/issues/87 & https://github.com/axllent/mailpit/issues/153
 	SMTPStrictRFCHeaders bool
 

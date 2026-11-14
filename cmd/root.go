@@ -130,7 +130,7 @@ func init() {
 	rootCmd.Flags().BoolVar(&config.SMTPRequireSTARTTLS, "smtp-require-starttls", config.SMTPRequireSTARTTLS, "Require SMTP client use STARTTLS")
 	rootCmd.Flags().BoolVar(&config.SMTPRequireTLS, "smtp-require-tls", config.SMTPRequireTLS, "Require client use SSL/TLS")
 	rootCmd.Flags().BoolVar(&config.SMTPAuthAllowInsecure, "smtp-auth-allow-insecure", config.SMTPAuthAllowInsecure, "Allow insecure PLAIN & LOGIN SMTP authentication")
-	rootCmd.Flags().BoolVar(&config.SMTPStrictRFCHeaders, "smtp-strict-rfc-headers", config.SMTPStrictRFCHeaders, "Return SMTP error if message headers contain <CR><CR><LF>")
+	rootCmd.Flags().BoolVar(&config.SMTPStrictRFCHeaders, "smtp-strict-rfc-headers", config.SMTPStrictRFCHeaders, "Return SMTP error if message headers have line breaks other than <CR><LF>")
 	rootCmd.Flags().IntVar(&config.SMTPMaxRecipients, "smtp-max-recipients", config.SMTPMaxRecipients, "Maximum SMTP recipients allowed")
 	rootCmd.Flags().StringVar(&config.SMTPAllowedRecipients, "smtp-allowed-recipients", config.SMTPAllowedRecipients, "Only allow SMTP recipients matching a regular expression (default allow all)")
 	rootCmd.Flags().BoolVar(&config.SMTPIgnoreRejectedRecipients, "smtp-ignore-rejected-recipients", config.SMTPIgnoreRejectedRecipients, "Ignore rejected SMTP recipients with 2xx response")
