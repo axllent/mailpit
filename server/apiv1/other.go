@@ -191,13 +191,21 @@ func RspamdCheck(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	msg, err := storage.GetMessageRaw(id)
-	if err != nil {
+	// the message is only loaded if there is no recent result for it, and the number of
+	// messages sent to Rspamd at once is limited
+	notFound := false
+	summary, err := rspamd.CheckMessage(r.Context(), id, func() ([]byte, error) {
+		raw, err := storage.GetMessageRaw(id)
+		if err != nil {
+			notFound = true
+		}
+
+		return raw, err
+	})
+	if notFound {
 		fourOFour(w)
 		return
 	}
-
-	summary, err := rspamd.Check(msg)
 	if err != nil {
 		httpError(w, err.Error())
 		return

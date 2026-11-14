@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"net/url"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -31,6 +32,16 @@ var (
 
 	// optional controller password
 	password string
+
+	// client is used for all requests to Rspamd. It never follows a redirect, as the Rspamd API
+	// does not use them and following one would send the message, and the password in the
+	// Password header (which Go does not remove when the redirect is to another host), on to
+	// whatever the redirect names.
+	client = &http.Client{
+		CheckRedirect: func(*http.Request, []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
 )
 
 // Result is a Rspamd result
@@ -79,9 +90,13 @@ type rspamdResponse struct {
 // An optional password may be included as URL userinfo, eg: https://:password@host:11334
 // (special characters in the password must be percent-encoded). The returned string is the
 // server address without the password, suitable for logging.
+//
+// The address must be an http or https URL with a host, an optional port and an optional path.
+// Anything else, such as a query, a fragment or a different scheme, is rejected, as each request
+// is made by adding a path to it and a malformed address would make every request fail.
 func SetService(server string) (string, error) {
 	server = strings.TrimSpace(server)
-	if !strings.HasPrefix(server, "http://") && !strings.HasPrefix(server, "https://") {
+	if !strings.Contains(server, "://") {
 		server = "http://" + server
 	}
 
@@ -90,8 +105,19 @@ func SetService(server string) (string, error) {
 		// do not include the original error, as it contains the full URL (and password)
 		return "", errors.New("invalid Rspamd address")
 	}
-	if u.Host == "" {
+	if u.Scheme != "http" && u.Scheme != "https" {
+		return "", errors.New("invalid Rspamd address: the scheme must be http or https")
+	}
+	if u.Hostname() == "" {
 		return "", errors.New("invalid Rspamd address: missing host")
+	}
+	if port := u.Port(); port != "" {
+		if n, err := strconv.Atoi(port); err != nil || n < 1 || n > 65535 {
+			return "", errors.New("invalid Rspamd address: invalid port")
+		}
+	}
+	if u.RawQuery != "" || u.ForceQuery || u.Fragment != "" {
+		return "", errors.New("invalid Rspamd address: it must not include a query or a fragment")
 	}
 
 	password = ""
@@ -206,11 +232,15 @@ func do(method, path string, data []byte) ([]byte, int, error) {
 		req.Header.Set("Password", password)
 	}
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, 0, err
 	}
 	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode >= 300 && resp.StatusCode < 400 {
+		return nil, resp.StatusCode, fmt.Errorf("unexpected redirect from Rspamd (HTTP %d), redirects are not followed", resp.StatusCode)
+	}
 
 	body, err := io.ReadAll(io.LimitReader(resp.Body, maxResponseSize))
 	if err != nil {
@@ -222,5 +252,10 @@ func do(method, path string, data []byte) ([]byte, int, error) {
 
 // Round to two decimal places
 func round2dp(n float64) float64 {
+	// a number this large has no fractional part to round, and multiplying it would overflow to infinity
+	if math.Abs(n) >= 1<<53 {
+		return n
+	}
+
 	return math.Round(n*100) / 100
 }
