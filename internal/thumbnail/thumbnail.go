@@ -30,6 +30,11 @@ import (
 // At 4 bytes per RGBA pixel, 20 MP = 80 MB per decode.
 const maxDecodedPixels int64 = 20_000_000
 
+// maxProgressivePixels is the limit for progressive JPEGs, which need about 14 bytes per pixel
+// while decoding (all the DCT coefficients are kept until the last scan), against about 1.4 for
+// baseline JPEGs. 12.5 MP (a 4000x3000 photo) is about 180 MB, where 20 MP would be about 285 MB.
+const maxProgressivePixels int64 = 12_500_000
+
 // maxConcurrentDecodes is the number of images that are decoded at once. Each decode needs
 // memory in proportion to the image (up to about 150 MB at the pixel limit), so without a
 // limit the number of simultaneous requests decides how much is used. The others wait.
@@ -44,8 +49,8 @@ var decode = safeDecode
 // Generate produces a JPEG thumbnail of exactly width × height pixels
 // from the given image data, on a white background.
 //
-// If the data is not a recognised image, exceeds the pixel budget, or
-// cannot be decoded, a blank white JPEG of the requested dimensions is
+// If the data is not a recognised image, exceeds the pixel budget (which is lower for progressive
+// JPEGs, as they need more memory to decode), or cannot be decoded, a blank white JPEG of the requested dimensions is
 // returned with no error. This matches the UI expectation that the
 // endpoint always returns a displayable image.
 func Generate(data []byte, width, height int) (out []byte, err error) {
@@ -77,13 +82,18 @@ func Generate(data []byte, width, height int) (out []byte, err error) {
 // safeDecode decodes a single image frame after checking that the
 // declared dimensions fall within the pixel budget.
 func safeDecode(data []byte) (image.Image, error) {
-	cfg, _, err := image.DecodeConfig(bytes.NewReader(data))
+	cfg, format, err := image.DecodeConfig(bytes.NewReader(data))
 	if err != nil {
 		return nil, err
 	}
 
 	if int64(cfg.Width)*int64(cfg.Height) > maxDecodedPixels {
 		logger.Log().Warnf("[thumbnail] rejected oversized image dimensions %dx%d (exceeds %d pixel limit)", cfg.Width, cfg.Height, maxDecodedPixels)
+		return nil, nil
+	}
+
+	if format == "jpeg" && int64(cfg.Width)*int64(cfg.Height) > maxProgressivePixels && isProgressiveJPEG(data) {
+		logger.Log().Warnf("[thumbnail] rejected large progressive JPEG %dx%d (exceeds %d pixel limit for progressive images)", cfg.Width, cfg.Height, maxProgressivePixels)
 		return nil, nil
 	}
 

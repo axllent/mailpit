@@ -16,6 +16,15 @@ const (
 	jpegEOI          = 0xD9 // end of image
 	jpegSOS          = 0xDA // start of scan (entropy-coded data follows)
 	jpegAPP1         = 0xE1
+	jpegSOF0         = 0xC0 // baseline frame header (SOF0-SOF15 are frame headers)
+	jpegSOF2         = 0xC2 // progressive
+	jpegSOF6         = 0xC6 // differential progressive
+	jpegSOF10        = 0xCA // progressive, arithmetic coding
+	jpegSOF14        = 0xCE // differential progressive, arithmetic coding
+	jpegSOF15        = 0xCF
+	jpegDHT          = 0xC4 // not a frame header
+	jpegJPG          = 0xC8 // not a frame header
+	jpegDAC          = 0xCC // not a frame header
 	jpegTEM          = 0x01 // standalone, no length
 	jpegRSTMin       = 0xD0 // RSTn markers are standalone, no length
 	jpegRSTMax       = 0xD7
