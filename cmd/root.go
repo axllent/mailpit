@@ -2,6 +2,7 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 	"strconv"
 	"strings"
@@ -253,9 +254,7 @@ func initConfigFromEnv() {
 		config.Webroot = os.Getenv("MP_WEBROOT")
 	}
 	config.UIAuthFile = os.Getenv("MP_UI_AUTH_FILE")
-	if err := auth.SetUIAuth(os.Getenv("MP_UI_AUTH")); err != nil {
-		logger.Log().Error(err.Error())
-	}
+	setAuthFromEnv("MP_UI_AUTH", auth.SetUIAuth)
 	config.UITLSCert = os.Getenv("MP_UI_TLS_CERT")
 	config.UITLSKey = os.Getenv("MP_UI_TLS_KEY")
 	if len(os.Getenv("MP_API_CORS")) > 0 {
@@ -288,9 +287,7 @@ func initConfigFromEnv() {
 
 	// Send API
 	config.SendAPIAuthFile = os.Getenv("MP_SEND_API_AUTH_FILE")
-	if err := auth.SetSendAPIAuth(os.Getenv("MP_SEND_API_AUTH")); err != nil {
-		logger.Log().Error(err.Error())
-	}
+	setAuthFromEnv("MP_SEND_API_AUTH", auth.SetSendAPIAuth)
 	if getEnabledFromEnv("MP_SEND_API_AUTH_ACCEPT_ANY") {
 		config.SendAPIAuthAcceptAny = true
 	}
@@ -300,9 +297,7 @@ func initConfigFromEnv() {
 		config.SMTPListen = os.Getenv("MP_SMTP_BIND_ADDR")
 	}
 	config.SMTPAuthFile = os.Getenv("MP_SMTP_AUTH_FILE")
-	if err := auth.SetSMTPAuth(os.Getenv("MP_SMTP_AUTH")); err != nil {
-		logger.Log().Error(err.Error())
-	}
+	setAuthFromEnv("MP_SMTP_AUTH", auth.SetSMTPAuth)
 	if getEnabledFromEnv("MP_SMTP_AUTH_ACCEPT_ANY") {
 		config.SMTPAuthAcceptAny = true
 	}
@@ -388,9 +383,7 @@ func initConfigFromEnv() {
 		config.POP3Listen = os.Getenv("MP_POP3_BIND_ADDR")
 	}
 	config.POP3AuthFile = os.Getenv("MP_POP3_AUTH_FILE")
-	if err := auth.SetPOP3Auth(os.Getenv("MP_POP3_AUTH")); err != nil {
-		logger.Log().Error(err.Error())
-	}
+	setAuthFromEnv("MP_POP3_AUTH", auth.SetPOP3Auth)
 	config.POP3TLSCert = os.Getenv("MP_POP3_TLS_CERT")
 	config.POP3TLSKey = os.Getenv("MP_POP3_TLS_KEY")
 
@@ -465,6 +458,20 @@ func initDeprecatedConfigFromEnv() {
 }
 
 // Wrapper to get a boolean from an environment variable
+// setAuthFromEnv sets credentials from an environment variable, if set. Any error is
+// recorded and reported by config.VerifyConfig so that misconfigured credentials stop
+// Mailpit starting, rather than leaving the service running without authentication.
+func setAuthFromEnv(name string, set func(string) error) {
+	v := os.Getenv(name)
+	if v == "" {
+		return
+	}
+
+	if err := set(v); err != nil {
+		config.EnvAuthErrors = append(config.EnvAuthErrors, fmt.Errorf("%s: %w", name, err))
+	}
+}
+
 func getEnabledFromEnv(k string) bool {
 	if len(os.Getenv(k)) > 0 {
 		v := strings.ToLower(os.Getenv(k))

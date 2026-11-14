@@ -85,6 +85,9 @@ var (
 	// UIAuthFile for UI & API authentication
 	UIAuthFile string
 
+	// EnvAuthErrors holds errors from credentials supplied via environment variables, reported by VerifyConfig
+	EnvAuthErrors []error
+
 	// Webroot to define the base path for the UI and API
 	Webroot = "/"
 
@@ -302,6 +305,11 @@ type SMTPForwardConfigStruct struct {
 
 // VerifyConfig wil do some basic checking
 func VerifyConfig() error {
+	// credentials supplied via environment variables must not fail open
+	if len(EnvAuthErrors) > 0 {
+		return errors.Join(EnvAuthErrors...)
+	}
+
 	cssFontRestriction := "*"
 	if BlockRemoteCSSAndFonts {
 		cssFontRestriction = "'self'"
@@ -360,7 +368,7 @@ func VerifyConfig() error {
 		}
 
 		if err := auth.SetUIAuth(string(b)); err != nil {
-			return err
+			return fmt.Errorf("[ui] invalid password file %s: %w", UIAuthFile, err)
 		}
 	}
 
@@ -406,7 +414,7 @@ func VerifyConfig() error {
 		}
 
 		if err := auth.SetSendAPIAuth(string(b)); err != nil {
-			return err
+			return fmt.Errorf("[send-api] invalid password file %s: %w", SendAPIAuthFile, err)
 		}
 
 		logger.Log().Info("[send-api] enabling basic authentication")
@@ -486,7 +494,7 @@ func VerifyConfig() error {
 		}
 
 		if err := auth.SetSMTPAuth(string(b)); err != nil {
-			return err
+			return fmt.Errorf("[smtp] invalid password file %s: %w", SMTPAuthFile, err)
 		}
 
 		if !SMTPAuthAllowInsecure {
@@ -563,7 +571,7 @@ func VerifyConfig() error {
 		}
 
 		if err := auth.SetPOP3Auth(string(b)); err != nil {
-			return err
+			return fmt.Errorf("[pop3] invalid password file %s: %w", POP3AuthFile, err)
 		}
 	}
 
