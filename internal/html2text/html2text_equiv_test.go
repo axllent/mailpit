@@ -37,9 +37,11 @@ func refExtract(node *html.Node, buff *bytes.Buffer, includeLinks bool) {
 		buff.WriteString(node.Data)
 	}
 	for c := node.FirstChild; c != nil; c = c.NextSibling {
-		if _, shouldSkip := skip[c.Data]; !shouldSkip {
+		// only elements are skipped. The original compared the Data of every node, which for a text
+		// node is its text, so text which was only the name of a skipped element (eg: "link") was lost.
+		if c.Type != html.ElementNode || !skip[c.Data] {
 			refExtract(c, buff, includeLinks)
-			if includeLinks && c.Data == "a" {
+			if includeLinks && c.Type == html.ElementNode && c.Data == "a" {
 				for _, a := range c.Attr {
 					if a.Key == "href" && strings.HasPrefix(strings.ToLower(a.Val), "http") {
 						buff.WriteString(" " + a.Val + " ")

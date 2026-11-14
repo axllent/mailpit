@@ -47,44 +47,35 @@ func Strip(h string, includeLinks bool) (string, error) {
 // StripBoth converts a HTML string to plain text, returning both the text without
 // and with links, while only parsing the HTML once
 func StripBoth(h string) (plain, withLinks string, err error) {
-	plain, withLinks, _, err = stripBoth(h)
-
-	return plain, withLinks, err
-}
-
-// StripTrimmedAndFull returns the same as Strip(strings.TrimSpace(h), false) and
-// Strip(h, true), as used for message snippets and search text respectively.
-// Surrounding whitespace only changes the text without links in rare cases (an
-// incomplete trailing tag, or a text node which matches a skipped tag name, eg: "link"),
-// so the HTML is normally only parsed once.
-func StripTrimmedAndFull(h string) (trimmedPlain, withLinks string, err error) {
-	plain, withLinks, skipNameText, err := stripBoth(h)
-	t := strings.TrimSpace(h)
-	if err != nil || t == h || (strings.HasSuffix(t, ">") && !skipNameText) {
-		return plain, withLinks, err
-	}
-
-	trimmedPlain, err = Strip(t, false)
-
-	return trimmedPlain, withLinks, err
-}
-
-// stripBoth does the work for StripBoth, also returning whether any text node
-// (ignoring surrounding whitespace) matched a skipped tag name
-func stripBoth(h string) (plain, withLinks string, skipNameText bool, err error) {
 	h = spaceBlockTags(h)
 	h = replaceBr(h)
 	h = spaceImg(h)
 
 	doc, err := html.Parse(strings.NewReader(h))
 	if err != nil {
-		return "", "", false, fmt.Errorf("html2text: parsing HTML: %w", err)
+		return "", "", fmt.Errorf("html2text: parsing HTML: %w", err)
 	}
 
 	var plainBuf, linksBuf bytes.Buffer
-	extract(doc, &plainBuf, &linksBuf, &skipNameText)
+	extract(doc, &plainBuf, &linksBuf)
 
-	return clean(plainBuf.String()), clean(linksBuf.String()), skipNameText, nil
+	return clean(plainBuf.String()), clean(linksBuf.String()), nil
+}
+
+// StripTrimmedAndFull returns the same as Strip(strings.TrimSpace(h), false) and
+// Strip(h, true), as used for message snippets and search text respectively.
+// Surrounding whitespace only changes the text without links in rare cases (an
+// incomplete trailing tag), so the HTML is normally only parsed once.
+func StripTrimmedAndFull(h string) (trimmedPlain, withLinks string, err error) {
+	plain, withLinks, err := StripBoth(h)
+	t := strings.TrimSpace(h)
+	if err != nil || t == h || strings.HasSuffix(t, ">") {
+		return plain, withLinks, err
+	}
+
+	trimmedPlain, err = Strip(t, false)
+
+	return trimmedPlain, withLinks, err
 }
 
 // spaceBlockTags inserts a space between a closing block-level tag and a directly following
@@ -230,7 +221,10 @@ func spaceImg(h string) string {
 	return b.String()
 }
 
-func extract(node *html.Node, plain, withLinks *bytes.Buffer, skipNameText *bool) {
+// extract writes the text of the node and its children, without the content of the elements in skip.
+// Only elements are skipped: the name of an element is compared, never the text of a text node, as
+// text which is the same as a skipped element's name (eg: the link text "link") is still text.
+func extract(node *html.Node, plain, withLinks *bytes.Buffer) {
 	if node.Type == html.TextNode {
 		data := node.Data
 		if data != "" {
@@ -239,12 +233,9 @@ func extract(node *html.Node, plain, withLinks *bytes.Buffer, skipNameText *bool
 		}
 	}
 	for c := node.FirstChild; c != nil; c = c.NextSibling {
-		if c.Type == html.TextNode && skip[strings.TrimSpace(c.Data)] {
-			*skipNameText = true
-		}
-		if _, shouldSkip := skip[c.Data]; !shouldSkip {
-			extract(c, plain, withLinks, skipNameText)
-			if c.Data == "a" {
+		if c.Type != html.ElementNode || !skip[c.Data] {
+			extract(c, plain, withLinks)
+			if c.Type == html.ElementNode && c.Data == "a" {
 				for _, a := range c.Attr {
 					if a.Key == "href" && strings.HasPrefix(strings.ToLower(a.Val), "http") {
 						withLinks.WriteString(" " + a.Val + " ")
