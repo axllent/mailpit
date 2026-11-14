@@ -5,7 +5,8 @@ package thumbnail
 // or has no frame header before the image data, is not progressive.
 //
 // A progressive JPEG keeps every DCT coefficient in memory until the last scan has been read,
-// which takes about 14 bytes per pixel, against about 1.4 for a baseline JPEG.
+// which takes 7.5 bytes per pixel (15 with full colour resolution, 4:4:4), against 1.5 (3) for a
+// baseline JPEG, which is about five times as much.
 func isProgressiveJPEG(data []byte) bool {
 	if len(data) < 4 || data[0] != jpegMarkerPrefix || data[1] != jpegSOI {
 		return false

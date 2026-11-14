@@ -30,9 +30,10 @@ import (
 // At 4 bytes per RGBA pixel, 20 MP = 80 MB per decode.
 const maxDecodedPixels int64 = 20_000_000
 
-// maxProgressivePixels is the limit for progressive JPEGs, which need about 14 bytes per pixel
-// while decoding (all the DCT coefficients are kept until the last scan), against about 1.4 for
-// baseline JPEGs. 12.5 MP (a 4000x3000 photo) is about 180 MB, where 20 MP would be about 285 MB.
+// maxProgressivePixels is the limit for progressive JPEGs, which need 7.5 bytes per pixel while
+// decoding (15 with full colour resolution, 4:4:4), as all the DCT coefficients are kept until the
+// last scan. Baseline JPEGs need 1.5 (3). Measured: 12.5 MP (a 4000x3000 photo) takes 90 MB (179 MB
+// at 4:4:4), where 20 MP would take 143 MB (286 MB).
 const maxProgressivePixels int64 = 12_500_000
 
 // maxConcurrentDecodes is the number of images that are decoded at once. Each decode needs
