@@ -33,7 +33,14 @@ func refSearchTextAndSnippet(t testing.TB, raw []byte) (string, string) {
 		env.GetHeader("To") + " " + env.GetHeader("Cc") + " " + env.GetHeader("Bcc") + " " +
 		env.GetHeader("Reply-To") + " " + env.GetHeader("Return-Path") + " " + body + " " + attachmentNames(env.Attachments))
 
-	return searchText, tools.CreateSnippet(env.Text, env.HTML)
+	// The snippet falls back to the text part when the HTML has no text, but only to a real text part,
+	// not to the text which is made from the HTML when there is none (which env.Text is here).
+	textPart, err := mimeparser.New(enmime.DisableTextConversion(true)).ReadEnvelope(bytes.NewReader(raw))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return searchText, tools.CreateSnippet(textPart.Text, env.HTML)
 }
 
 func checkSearchTextAndSnippet(t testing.TB, raw []byte) {

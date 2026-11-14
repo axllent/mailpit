@@ -10,7 +10,7 @@ import (
 // spaceRe is used to normalize whitespace in text by replacing consecutive whitespace characters with a single space.
 var spaceRe = regexp.MustCompile(`\s+`)
 
-// CreateSnippet returns a message snippet. It will use the HTML version (if it exists)
+// CreateSnippet returns a message snippet. It will use the HTML version (if it has any text)
 // otherwise the text version.
 func CreateSnippet(text, html string) string {
 	text = strings.TrimSpace(text)
@@ -23,7 +23,8 @@ func CreateSnippet(text, html string) string {
 
 	if html != "" {
 		data, err := html2text.Strip(html, false)
-		if err == nil {
+		// HTML without any text (only images, for example) falls back to the text version
+		if err == nil && strings.TrimSpace(data) != "" {
 			return SnippetFromStripped(data)
 		}
 	}

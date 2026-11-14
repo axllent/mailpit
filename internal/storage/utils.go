@@ -79,7 +79,13 @@ func normalizeAddress(a *mail.Address) {
 func searchTextAndSnippet(env *enmime.Envelope) (string, string) {
 	if strings.TrimSpace(env.HTML) != "" {
 		if plain, withLinks, err := html2text.StripTrimmedAndFull(env.HTML); err == nil {
-			return createSearchText(env, withLinks), tools.SnippetFromStripped(plain)
+			snippet := tools.SnippetFromStripped(plain)
+			if strings.TrimSpace(snippet) == "" {
+				// the HTML has no text (only images, for example), so use the text part if there is one
+				snippet = tools.CreateSnippet(env.Text, "")
+			}
+
+			return createSearchText(env, withLinks), snippet
 		}
 	}
 
