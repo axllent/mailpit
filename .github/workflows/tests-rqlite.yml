@@ -41,6 +41,7 @@ jobs:
             ./internal/spamassassin \
             ./internal/spamassassin/spamc \
             ./internal/spamassassin/postmark \
+            ./internal/stats \
             ./internal/storage \
             ./internal/tools \
             ./server \

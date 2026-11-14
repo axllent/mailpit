@@ -5,7 +5,7 @@ import (
 	"net/mail"
 	"os"
 	"strings"
-	"sync"
+	"sync/atomic"
 
 	"github.com/axllent/mailpit/internal/html2text"
 	"github.com/axllent/mailpit/internal/logger"
@@ -17,10 +17,9 @@ import (
 )
 
 var (
-	// for stats to prevent import cycle
-	mu sync.RWMutex
-	// StatsDeleted for counting the number of messages deleted
-	StatsDeleted uint64
+	// StatsDeleted for counting the number of messages deleted, which is read by the stats
+	// package (it is here to prevent an import cycle)
+	StatsDeleted atomic.Uint64
 
 	// envelopeParser is a shared enmime parser instance used for message parsing
 	envelopeParser = mimeparser.New()
@@ -215,9 +214,7 @@ func createMetaSearchText(meta Metadata, subject string) (string, error) {
 
 // LogMessagesDeleted logs the number of messages deleted
 func logMessagesDeleted(n int) {
-	mu.Lock()
-	StatsDeleted = StatsDeleted + tools.SafeUint64(n)
-	mu.Unlock()
+	StatsDeleted.Add(tools.SafeUint64(n))
 }
 
 // IsFile returns whether a path is a file
