@@ -5,7 +5,6 @@ package spamassassin
 import (
 	"errors"
 	"math"
-	"strconv"
 	"strings"
 
 	"github.com/axllent/mailpit/internal/spamassassin/postmark"
@@ -57,20 +56,22 @@ func SetService(s string) {
 	}
 }
 
+// client returns the spamd client for the configured service.
+func client() *spamc.Client {
+	if path, ok := strings.CutPrefix(service, "unix:"); ok {
+		return spamc.NewUnix(path, timeout)
+	}
+
+	return spamc.NewTCP(service, timeout)
+}
+
 // Ping returns whether a service is active or not
 func Ping() error {
 	if service == "postmark" {
 		return nil
 	}
 
-	var client *spamc.Client
-	if strings.HasPrefix(service, "unix:") {
-		client = spamc.NewUnix(strings.TrimLeft(service, "unix:"))
-	} else {
-		client = spamc.NewTCP(service, timeout)
-	}
-
-	return client.Ping()
+	return client().Ping()
 }
 
 // Check will return a Result
@@ -87,16 +88,26 @@ func Check(msg []byte) (Result, error) {
 			r.Error = err.Error()
 			return r, nil
 		}
-		resFloat, err := strconv.ParseFloat(res.Score, 32)
-		if err == nil {
-			r.Score = round1dm(resFloat)
-			r.IsSpam = resFloat >= spamScore
-		}
+
 		r.Error = res.Message
+
+		if res.Score != "" || res.Success {
+			score, err := spamc.ParseScore(res.Score)
+			if err != nil {
+				r.Error = "Postmark returned an invalid score"
+				return r, nil
+			}
+			r.Score = round1dm(score)
+			r.IsSpam = score >= spamScore
+		}
+
+		if r.Error == "" && !res.Success {
+			r.Error = "Postmark did not return a result"
+		}
+
 		for _, pr := range res.Rules {
 			rule := Rule{}
-			value, err := strconv.ParseFloat(pr.Score, 32)
-			if err == nil {
+			if value, err := spamc.ParseScore(pr.Score); err == nil {
 				rule.Score = round1dm(value)
 			}
 			rule.Name = pr.Name
@@ -104,14 +115,7 @@ func Check(msg []byte) (Result, error) {
 			r.Rules = append(r.Rules, rule)
 		}
 	} else {
-		var client *spamc.Client
-		if strings.HasPrefix(service, "unix:") {
-			client = spamc.NewUnix(strings.TrimLeft(service, "unix:"))
-		} else {
-			client = spamc.NewTCP(service, timeout)
-		}
-
-		res, err := client.Report(msg)
+		res, err := client().Report(msg)
 		if err != nil {
 			r.Error = err.Error()
 			return r, nil
@@ -121,8 +125,7 @@ func Check(msg []byte) (Result, error) {
 		r.Rules = []Rule{}
 		for _, sr := range res.Rules {
 			rule := Rule{}
-			value, err := strconv.ParseFloat(sr.Points, 32)
-			if err == nil {
+			if value, err := spamc.ParseScore(sr.Points); err == nil {
 				rule.Score = round1dm(value)
 			}
 			rule.Name = sr.Name
@@ -134,7 +137,7 @@ func Check(msg []byte) (Result, error) {
 	return r, nil
 }
 
-// Round to one decimal place
+// Round down to one decimal place
 func round1dm(n float64) float64 {
 	return math.Floor(n*10) / 10
 }

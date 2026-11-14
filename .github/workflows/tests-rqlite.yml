@@ -38,6 +38,9 @@ jobs:
             ./internal/prometheus \
             ./internal/smtpd \
             ./internal/snakeoil \
+            ./internal/spamassassin \
+            ./internal/spamassassin/spamc \
+            ./internal/spamassassin/postmark \
             ./internal/storage \
             ./internal/tools \
             ./server \
