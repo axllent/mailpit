@@ -33,6 +33,8 @@ jobs:
       # https://olegk.dev/github-actions-and-go
       run: gofmt -s -w . && git diff --exit-code
     - name: Run Go tests
+      # use bash on all platforms: PowerShell (Windows default) does not support "\" line continuation
+      shell: bash
       run: |
         go test -p 1 \
           ./internal/auth \
