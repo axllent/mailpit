@@ -8,6 +8,8 @@ import (
 	"net"
 	"os"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -23,18 +25,37 @@ var (
 	testingPort int
 )
 
-// TestMain silences the logger before any test runs. The logger settings are read by every
-// goroutine that logs, including the servers started by earlier tests which are still
-// running during later ones, so they must not be changed once tests have started.
+// broadcasts counts the client errors that would have been sent to the web UI.
+var broadcasts atomic.Int64
+
+// TestMain silences the logger, sets the configuration shared by every test, and shortens the
+// timeouts and delays before any test runs.
+// These are read by every goroutine that serves a client, including the servers started by
+// earlier tests which are still running during later ones, so they must not be changed once
+// tests have started.
 func TestMain(m *testing.M) {
 	logger.NoLogging = true
-	os.Exit(m.Run())
+
+	// the storage cron job reads these every minute, and setup() runs for every test
+	config.MaxMessages = 0
+	config.Database = os.Getenv("MP_DATABASE")
+
+	failedLoginDelay = 250 * time.Millisecond
+	authTimeout = time.Second
+	handshakeTimeout = 1500 * time.Millisecond
+	writeTimeout = 500 * time.Millisecond
+	broadcastClientError = func(_, _, _, _ string) { broadcasts.Add(1) }
+
+	code := m.Run()
+	if setupRan.Load() {
+		storage.Close()
+	}
+	os.Exit(code)
 }
 
 func TestPOP3(t *testing.T) {
 	t.Log("Testing POP3 server")
 	setup()
-	defer storage.Close()
 
 	// connect with bad password
 	t.Log("Testing invalid login")
@@ -228,7 +249,6 @@ func TestAuthentication(t *testing.T) {
 
 	t.Log("Testing authenticated commands while not logged in")
 	setup()
-	defer storage.Close()
 
 	insertEmailData(t) // insert 50 messages
 
@@ -286,7 +306,6 @@ func TestAuthentication(t *testing.T) {
 func TestBruteForceDisconnect(t *testing.T) {
 	t.Log("Testing brute force login protection")
 	setup()
-	defer storage.Close()
 
 	c, err := connect()
 	if err != nil {
@@ -326,7 +345,6 @@ func TestPOP3DotStuffing(t *testing.T) {
 	// RFC 1939 requires that lines beginning with "." be escaped as ".."
 	t.Log("Testing POP3 dot-stuffing for TOP and RETR commands")
 	setup()
-	defer storage.Close()
 
 	// Create a message with content that has lines starting with dots
 	textBody := []byte("Line 1\n.This line starts with a dot\n..This line starts with two dots\nNormal line")
@@ -400,33 +418,42 @@ func TestPOP3DotStuffing(t *testing.T) {
 	}
 }
 
+var (
+	setupOnce sync.Once
+	setupRan  atomic.Bool
+)
+
+// setup starts the POP3 server and database on the first call, and gives every test an empty
+// mailbox. The server, database and their background goroutines run for the whole package, so
+// the global state they read is only set once.
 func setup() {
-	if err := auth.SetPOP3Auth("username:password"); err != nil {
-		panic(err)
-	}
-	config.MaxMessages = 0
-	config.Database = os.Getenv("MP_DATABASE")
-	var foundPort bool
-	for !foundPort {
-		testingPort = randRange(1111, 2000)
-		if portFree(testingPort) {
-			foundPort = true
+	setupOnce.Do(func() {
+		if err := auth.SetPOP3Auth("username:password"); err != nil {
+			panic(err)
 		}
-	}
+		var foundPort bool
+		for !foundPort {
+			testingPort = randRange(1111, 2000)
+			if portFree(testingPort) {
+				foundPort = true
+			}
+		}
 
-	config.POP3Listen = fmt.Sprintf("localhost:%d", testingPort)
+		config.POP3Listen = fmt.Sprintf("localhost:%d", testingPort)
 
-	if err := storage.InitDB(); err != nil {
-		panic(err)
-	}
+		if err := storage.InitDB(); err != nil {
+			panic(err)
+		}
+		setupRan.Store(true)
+
+		go Run()
+
+		time.Sleep(time.Second)
+	})
 
 	if err := storage.DeleteAllMessages(); err != nil {
 		panic(err)
 	}
-
-	go Run()
-
-	time.Sleep(time.Second)
 }
 
 // connect and authenticate

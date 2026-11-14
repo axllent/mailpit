@@ -33,6 +33,25 @@ const (
 	UPDATE = 3
 )
 
+// Timeouts and delays. They are variables so that the tests can shorten them, and must not
+// be changed once connections are being served.
+var (
+	// handshakeTimeout is how long a client has to complete the TLS handshake. The greeting
+	// is the first write, and on a TLS connection that is what performs the handshake.
+	handshakeTimeout = 30 * time.Second
+
+	// authTimeout is how long a client that has not logged in may be idle between commands.
+	authTimeout = 60 * time.Second
+
+	// sessionTimeout is how long a logged in client may be idle between commands. RFC 1939
+	// requires an inactivity timer to be at least 10 minutes.
+	sessionTimeout = 600 * time.Second
+
+	// failedLoginDelay is how long a failed login is held before the client is told, which
+	// limits how fast passwords can be guessed (and how much hashing can be requested).
+	failedLoginDelay = time.Second
+)
+
 // Run will start the POP3 server if enabled
 func Run() {
 	if auth.POP3Credentials == nil || config.POP3Listen == "" {
@@ -73,6 +92,11 @@ func Run() {
 
 // serve accepts connections on the listener, allowing at most maxConns concurrent clients.
 func serve(listener net.Listener, maxConns int) {
+	serveWith(listener, maxConns, handleClient)
+}
+
+// serveWith is serve with the function that handles each connection, so that tests can replace it.
+func serveWith(listener net.Listener, maxConns int, handle func(net.Conn)) {
 	limiter := connlimit.New("pop3", maxConns)
 
 	var backoff connlimit.Backoff
@@ -98,7 +122,16 @@ func serve(listener net.Listener, maxConns int) {
 		// run as goroutine
 		go func() {
 			defer limiter.Release()
-			handleClient(conn)
+
+			// a panic while serving one client must not take the whole process down
+			defer func() {
+				if r := recover(); r != nil {
+					logger.Log().Errorf("[pop3] recovered from panic: %v", r)
+					_ = conn.Close()
+				}
+			}()
+
+			handle(conn)
 		}()
 	}
 }
@@ -137,6 +170,19 @@ func handleClient(conn net.Conn) {
 
 	logger.Log().Debugf("[pop3] connection opened by %s", conn.RemoteAddr().String())
 
+	// A TLS connection does not handshake until it is first used, so do it now, within a
+	// time limit. Otherwise a client that connects and says nothing keeps its connection
+	// slot (and the greeting write blocked) for as long as it likes.
+	_ = conn.SetDeadline(time.Now().Add(handshakeTimeout))
+	if tlsConn, ok := conn.(*tls.Conn); ok {
+		if err := tlsConn.Handshake(); err != nil {
+			logger.Log().Debugf("[pop3] TLS handshake failed for %s: %s", conn.RemoteAddr().String(), err.Error())
+			return
+		}
+	}
+	// from here every read and write sets its own deadline
+	_ = conn.SetDeadline(time.Time{})
+
 	// First welcome the new connection
 	serverName := "Mailpit"
 	if config.Label != "" {
@@ -144,11 +190,12 @@ func handleClient(conn net.Conn) {
 	}
 	sendResponse(conn, fmt.Sprintf("+OK %s POP3 server", serverName))
 
-	// Set 10 minutes timeout according to RFC1939
-	timeoutDuration := 600 * time.Second
-
 	for {
-		// Set read deadline
+		// Set read deadline, which is shorter until the client has logged in
+		timeoutDuration := sessionTimeout
+		if state == AUTHORIZATION {
+			timeoutDuration = authTimeout
+		}
 		if err := conn.SetReadDeadline(time.Now().Add(timeoutDuration)); err != nil {
 			logger.Log().Errorf("[pop3] %s", err.Error())
 			return
@@ -165,7 +212,8 @@ func handleClient(conn net.Conn) {
 			return
 		}
 		if isPrefix {
-			// Command line exceeds RFC 1939's 255-octet limit; drain and reject.
+			// Command line exceeds the 512 byte buffer (RFC 1939 allows commands up to 255
+			// octets); drain the rest of the line without keeping it, and reject.
 			for isPrefix {
 				_, isPrefix, err = reader.ReadLine()
 				if err != nil {
@@ -225,6 +273,7 @@ func handleClient(conn net.Conn) {
 					state = TRANSACTION
 				} else {
 					failedLogins++
+					time.Sleep(failedLoginDelay)
 					sendResponse(conn, "-ERR invalid password")
 					logger.Log().Warnf("[pop3] failed login: %s", user)
 					if failedLogins >= 5 {
@@ -237,7 +286,11 @@ func handleClient(conn net.Conn) {
 			}
 		case "STAT", "LIST", "UIDL", "RETR", "TOP", "NOOP", "DELE", "RSET":
 			if state == TRANSACTION {
-				handleTransactionCommand(conn, cmd, args, messages, &toDelete)
+				if err := handleTransactionCommand(conn, cmd, args, messages, &toDelete); err != nil {
+					// the client has stopped reading or has gone
+					logger.Log().Debugf("[pop3] write error: %s", err.Error())
+					return
+				}
 			} else {
 				sendResponse(conn, "-ERR user not authenticated")
 			}
@@ -251,7 +304,9 @@ func handleClient(conn net.Conn) {
 	}
 }
 
-func handleTransactionCommand(conn net.Conn, cmd string, args []string, messages []message, toDelete *[]string) {
+// handleTransactionCommand handles the commands available once logged in. It returns an
+// error if a message could not be sent to the client, after which the connection should be closed.
+func handleTransactionCommand(conn net.Conn, cmd string, args []string, messages []message, toDelete *[]string) (sendErr error) {
 	// isDeleted reports whether the 1-based message number has been
 	// marked for deletion in this session. Per RFC 1939, deleted
 	// messages must be invisible to all commands until RSET.
@@ -352,7 +407,9 @@ func handleTransactionCommand(conn net.Conn, cmd string, args []string, messages
 		// begins with the termination octet, the line is "byte-stuffed" by
 		// pre-pending the termination octet to that line of the response.
 		// @see: https://www.ietf.org/rfc/rfc1939.txt
-		sendData(conn, strings.ReplaceAll(string(raw), "\n.", "\n.."))
+		if sendErr = sendMultiline(conn, raw); sendErr != nil {
+			return sendErr
+		}
 		sendResponse(conn, ".")
 	case "TOP":
 		arg, err := getSafeArg(args, 0)
@@ -379,16 +436,16 @@ func handleTransactionCommand(conn net.Conn, cmd string, args []string, messages
 		}
 
 		m := messages[nr-1]
-		headers, body, err := getTop(m.ID, lines)
+		top, err := getTop(m.ID, lines)
 		if err != nil {
 			sendResponse(conn, err.Error())
 			return
 		}
 
 		sendResponse(conn, "+OK top of message follows")
-		sendData(conn, strings.ReplaceAll(headers, "\n.", "\n.."))
-		sendData(conn, "\r\n")
-		sendData(conn, strings.ReplaceAll(body, "\n.", "\n.."))
+		if sendErr = sendMultiline(conn, top); sendErr != nil {
+			return sendErr
+		}
 		sendResponse(conn, ".")
 	case "NOOP":
 		sendResponse(conn, "+OK")
@@ -412,4 +469,6 @@ func handleTransactionCommand(conn net.Conn, cmd string, args []string, messages
 	default:
 		sendResponse(conn, "-ERR unknown command")
 	}
+
+	return nil
 }
