@@ -23,6 +23,14 @@ var (
 	testingPort int
 )
 
+// TestMain silences the logger before any test runs. The logger settings are read by every
+// goroutine that logs, including the servers started by earlier tests which are still
+// running during later ones, so they must not be changed once tests have started.
+func TestMain(m *testing.M) {
+	logger.NoLogging = true
+	os.Exit(m.Run())
+}
+
 func TestPOP3(t *testing.T) {
 	t.Log("Testing POP3 server")
 	setup()
@@ -396,7 +404,6 @@ func setup() {
 	if err := auth.SetPOP3Auth("username:password"); err != nil {
 		panic(err)
 	}
-	logger.NoLogging = true
 	config.MaxMessages = 0
 	config.Database = os.Getenv("MP_DATABASE")
 	var foundPort bool
