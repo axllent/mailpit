@@ -26,7 +26,6 @@ import (
 	"github.com/axllent/mailpit/internal/prometheus"
 	"github.com/axllent/mailpit/internal/shortuuid"
 	"github.com/axllent/mailpit/internal/snakeoil"
-	"github.com/axllent/mailpit/internal/stats"
 	"github.com/axllent/mailpit/internal/storage"
 	"github.com/axllent/mailpit/internal/tools"
 	"github.com/axllent/mailpit/server/apiv1"
@@ -61,7 +60,6 @@ func Listen() {
 
 	isReady := &atomic.Value{}
 	isReady.Store(false)
-	stats.Track()
 
 	websockets.MessageHub = websockets.NewHub()
 	websockets.SetCheckOriginFunc(corsOriginAccessControl)

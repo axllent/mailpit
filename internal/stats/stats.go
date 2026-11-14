@@ -43,8 +43,10 @@ var (
 	// Version cache storing the latest GitHub version
 	vCache versionCache
 
-	// StartedAt is set to the current ime when Mailpit starts
-	startedAt time.Time
+	// startedAt is when Mailpit started. It is set when the package is loaded and never changed,
+	// so it is set before anything (such as the Prometheus updater) reads it, and not written
+	// while it is being read.
+	startedAt = time.Now()
 
 	// versionMu protects vCache. It is never held while looking up the version.
 	versionMu sync.Mutex
@@ -146,7 +148,7 @@ func Load(detectLatestVersion bool) AppInformation {
 	runtime.ReadMemStats(&m)
 
 	info.RuntimeStats.Memory = m.Sys - m.HeapReleased
-	info.RuntimeStats.Uptime = uint64(time.Since(startedAt).Seconds())
+	info.RuntimeStats.Uptime = uptimeSeconds()
 	info.RuntimeStats.MessagesDeleted = storage.StatsDeleted.Load()
 	info.RuntimeStats.SMTPAccepted = smtpAccepted.Load()
 	info.RuntimeStats.SMTPAcceptedSize = smtpAcceptedSize.Load()
@@ -168,9 +170,9 @@ func Load(detectLatestVersion bool) AppInformation {
 	return info
 }
 
-// Track will start the statistics logging in memory
-func Track() {
-	startedAt = time.Now()
+// uptimeSeconds returns how long Mailpit has been running, in seconds
+func uptimeSeconds() uint64 {
+	return uint64(time.Since(startedAt).Seconds())
 }
 
 // LogSMTPAccepted logs a successful SMTP transaction

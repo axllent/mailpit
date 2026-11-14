@@ -210,7 +210,6 @@ func TestLoadWhileCounting(t *testing.T) {
 	}
 	// registered after TempDir, so it runs first: Windows cannot delete a database that is still open
 	t.Cleanup(storage.Close)
-	Track()
 
 	stop := make(chan struct{})
 	var wg sync.WaitGroup
@@ -242,4 +241,25 @@ func TestLoadWhileCounting(t *testing.T) {
 	}
 	close(stop)
 	wg.Wait()
+}
+
+// The start time used to be set by Track(), which is called when the web server starts. The
+// Prometheus updater takes its first snapshot before that, when the start time was still the zero
+// time, so the uptime was 292 years (the longest a duration can be) until the next update.
+func TestUptimeIsSetBeforeAnythingReadsIt(t *testing.T) {
+	if startedAt.IsZero() {
+		t.Fatal("the start time is not set")
+	}
+
+	// control: the time is how long the tests have been running, which is not long
+	if up := uptimeSeconds(); up > 3600 {
+		t.Fatalf("uptime is %d seconds", up)
+	}
+
+	// and it moves on
+	before := uptimeSeconds()
+	time.Sleep(1100 * time.Millisecond)
+	if after := uptimeSeconds(); after <= before {
+		t.Errorf("uptime did not move on: %d, then %d", before, after)
+	}
 }
