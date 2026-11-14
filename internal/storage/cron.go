@@ -26,8 +26,7 @@ func dbCron() {
 	for {
 		time.Sleep(60 * time.Second)
 
-		currentTime := time.Now()
-		sinceLastDbAction := currentTime.Sub(dbLastAction)
+		sinceLastDbAction := dbLastAction.since()
 
 		// only run the database has been idle for 5 minutes
 		if math.Floor(sinceLastDbAction.Minutes()) == 5 {
@@ -177,7 +176,7 @@ func pruneMessages() {
 	}
 
 	addDeletedSize(prunedSize)
-	dbLastAction = time.Now()
+	dbLastAction.touch()
 
 	elapsed := time.Since(start)
 	logger.Log().Debugf("[db] auto-pruned %d messages in %s", len(ids), elapsed)

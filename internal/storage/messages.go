@@ -209,7 +209,7 @@ func Store(body *[]byte, username *string) (string, error) {
 	websockets.Broadcast("new", c)
 	webhook.Send(c)
 
-	dbLastAction = time.Now()
+	dbLastAction.touch()
 
 	BroadcastMailboxStats()
 
@@ -301,7 +301,7 @@ func List(start int, beforeTS int64, limit int) ([]MessageSummary, error) {
 		}
 	}
 
-	dbLastAction = time.Now()
+	dbLastAction.touch()
 
 	elapsed := time.Since(tsStart)
 
@@ -420,7 +420,7 @@ func GetMessage(id string) (*Message, error) {
 		return &obj, err
 	}
 
-	dbLastAction = time.Now()
+	dbLastAction.touch()
 
 	return &obj, nil
 }
@@ -453,7 +453,7 @@ func GetMessageRaw(id string) ([]byte, error) {
 		data = []byte(msg)
 	}
 
-	dbLastAction = time.Now()
+	dbLastAction.touch()
 
 	if compressed == 1 {
 		raw, err := dbDecoder.DecodeAll(data, nil)
@@ -492,7 +492,7 @@ func GetAttachmentPart(id, partID string) (*enmime.Part, error) {
 		}
 	}
 
-	dbLastAction = time.Now()
+	dbLastAction.touch()
 
 	return nil, errors.New("attachment not found")
 }
@@ -652,7 +652,7 @@ func MarkUnread(ids []string) error {
 		return err
 	}
 
-	dbLastAction = time.Now()
+	dbLastAction.touch()
 
 	for _, id := range toUpdate {
 		logger.Log().Debugf("[db] marked message %s as unread", id)
@@ -687,7 +687,7 @@ func MarkAllRead() error {
 
 	BroadcastMailboxStats()
 
-	dbLastAction = time.Now()
+	dbLastAction.touch()
 
 	return nil
 }
@@ -712,7 +712,7 @@ func MarkAllUnread() error {
 
 	BroadcastMailboxStats()
 
-	dbLastAction = time.Now()
+	dbLastAction.touch()
 
 	return nil
 }
@@ -787,7 +787,7 @@ func DeleteMessages(ids []string) error {
 		return err
 	}
 
-	dbLastAction = time.Now()
+	dbLastAction.touch()
 	addDeletedSize(totalSize)
 
 	logMessagesDeleted(len(toDelete))
@@ -859,7 +859,7 @@ func DeleteAllMessages() error {
 
 	vacuumDb()
 
-	dbLastAction = time.Now()
+	dbLastAction.touch()
 	if err := SettingPut("DeletedSize", "0"); err != nil {
 		logger.Log().Warnf("[db] %s", err.Error())
 	}

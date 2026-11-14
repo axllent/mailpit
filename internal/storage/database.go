@@ -5,11 +5,13 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"math"
 	"os"
 	"os/signal"
 	"path"
 	"path/filepath"
 	"strings"
+	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -25,10 +27,36 @@ import (
 	_ "github.com/rqlite/gorqlite/stdlib"
 )
 
+// dbEpoch is the reference point for lastAction, so that it measures time with the monotonic
+// clock, unaffected by changes to the system time.
+var dbEpoch = time.Now()
+
+// lastAction records when the database was last used. It is updated by every database
+// operation, from any goroutine, so it is safe for concurrent use.
+type lastAction struct {
+	// nanoseconds since dbEpoch, plus one so that the zero value means it has never been used
+	nanos atomic.Int64
+}
+
+// touch records that the database has just been used.
+func (l *lastAction) touch() {
+	l.nanos.Store(int64(time.Since(dbEpoch)) + 1)
+}
+
+// since returns how long ago the database was last used, or the largest duration if it has not been.
+func (l *lastAction) since() time.Duration {
+	n := l.nanos.Load()
+	if n == 0 {
+		return time.Duration(math.MaxInt64)
+	}
+
+	return time.Since(dbEpoch) - time.Duration(n-1)
+}
+
 var (
 	db           *sql.DB
 	sqlDriver    string
-	dbLastAction time.Time
+	dbLastAction lastAction
 
 	// zstd compression encoder & decoder
 	dbEncoder    *zstd.Encoder
@@ -138,7 +166,7 @@ func InitDB() error {
 
 	LoadTagFilters()
 
-	dbLastAction = time.Now()
+	dbLastAction.touch()
 
 	sigs := make(chan os.Signal, 1)
 	// catch all signals since not explicitly listing
@@ -198,7 +226,7 @@ func StatsGet() MailboxStats {
 		tags   = GetAllTags()
 	)
 
-	dbLastAction = time.Now()
+	dbLastAction.touch()
 
 	return MailboxStats{
 		Total:  total,

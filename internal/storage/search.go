@@ -75,7 +75,7 @@ func Search(search, timezone string, start int, beforeTS int64, limit int) ([]Me
 		return results, nrResults, err
 	}
 
-	dbLastAction = time.Now()
+	dbLastAction.touch()
 
 	nrResults = len(allResults)
 
@@ -132,7 +132,7 @@ func SearchUnreadCount(search, timezone string, beforeTS int64) (int64, error) {
 
 	})
 
-	dbLastAction = time.Now()
+	dbLastAction.touch()
 
 	elapsed := time.Since(tsStart)
 
@@ -241,7 +241,7 @@ func DeleteSearch(search, timezone string) error {
 
 		logger.Log().Debugf("[db] deleted %d messages matching %s", total, search)
 
-		dbLastAction = time.Now()
+		dbLastAction.touch()
 
 		// broadcast changes
 		if len(ids) > 200 {
