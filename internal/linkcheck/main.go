@@ -5,16 +5,50 @@ import (
 	"context"
 	"regexp"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/PuerkitoBio/goquery"
+	"github.com/axllent/mailpit/internal/logger"
 	"github.com/axllent/mailpit/internal/storage"
 	"github.com/axllent/mailpit/internal/tools"
 )
 
-var linkRe = regexp.MustCompile(`(?im)\b(http|https):\/\/([\-\w@:%_\+'!.~#?,&\/\/=;]+)`)
+var (
+	linkRe = regexp.MustCompile(`(?im)\b(http|https):\/\/([\-\w@:%_\+'!.~#?,&\/\/=;]+)`)
 
-// maxUniqueLinks caps how many unique links will be tested per message.
-const maxUniqueLinks = 100
+	// a link may start the text, otherwise it must not follow a `<` (handled by bracketLinkRe below)
+	textLinkRe = regexp.MustCompile(`(?im)(\A|[^<]\b)((http|https):\/\/([\-\w@:%_\+'!.~#?,&\/\/=;]+))`)
+
+	// RFC2396 appendix E states angle brackets are recommended for text/plain emails to
+	// recognize potential spaces in between the URL
+	// @see https://www.rfc-editor.org/rfc/rfc2396#appendix-E
+	bracketLinkRe = regexp.MustCompile(`(?im)<((http|https):\/\/([\-\w@:%_\+'!.~#?,&\/\/=;][^>]+))>`)
+
+	// maxScanBytes is how much of the text and HTML body is scanned for links. Anything after
+	// this is ignored, bounding the CPU and memory used on very large messages.
+	// It is a variable so that tests can lower it.
+	maxScanBytes = 5 * 1024 * 1024
+)
+
+const (
+	// maxUniqueLinks caps how many unique links will be tested per message.
+	maxUniqueLinks = 100
+
+	// maxLinkLength is the longest link (in bytes) that will be requested. Longer links
+	// are reported as unchecked, as web servers reject request lines far shorter than this.
+	maxLinkLength = 8192
+)
+
+// limitScan returns at most the first maxScanBytes of s.
+func limitScan(s, part string) string {
+	if len(s) <= maxScanBytes {
+		return s
+	}
+
+	logger.Log().Warnf("[link-check] only scanning the first %d bytes of the message %s for links", maxScanBytes, part)
+
+	return s[:maxScanBytes]
+}
 
 // RunTests will run all tests on an HTML string
 func RunTests(ctx context.Context, msg *storage.Message, followRedirects bool) (Response, error) {
@@ -51,6 +85,13 @@ func (c *linkCollector) add(link string) bool {
 	if c.full() {
 		return false
 	}
+
+	// Keep at most one byte over the limit, which is enough for getHTTPStatuses to
+	// recognise an over-long link without holding on to (or fetching) all of it.
+	// The copy releases the memory of the (possibly huge) message it was sliced from.
+	if len(link) > maxLinkLength {
+		link = strings.Clone(link[:maxLinkLength+1])
+	}
 	if !c.seen[link] {
 		c.seen[link] = true
 		c.links = append(c.links, link)
@@ -63,18 +104,13 @@ func extractTextLinks(msg *storage.Message, c *linkCollector) {
 		return
 	}
 
-	// a link may start the text, otherwise it must not follow a `<` (handled by bracketLinkRe below)
-	testLinkRe := regexp.MustCompile(`(?im)(\A|[^<]\b)((http|https):\/\/([\-\w@:%_\+'!.~#?,&\/\/=;]+))`)
-	// RFC2396 appendix E states angle brackets are recommended for text/plain emails to
-	// recognize potential spaces in between the URL
-	// @see https://www.rfc-editor.org/rfc/rfc2396#appendix-E
-	bracketLinkRe := regexp.MustCompile(`(?im)<((http|https):\/\/([\-\w@:%_\+'!.~#?,&\/\/=;][^>]+))>`)
+	text := limitScan(msg.Text, "text")
 
 	// Cap the regex match count to bound work on very large bodies; the
 	// 3x multiplier leaves headroom for duplicates the collector will drop.
 	matchLimit := maxUniqueLinks * 3
 
-	matches := testLinkRe.FindAllStringSubmatch(msg.Text, matchLimit)
+	matches := textLinkRe.FindAllStringSubmatch(text, matchLimit)
 	for _, match := range matches {
 		if len(match) > 0 {
 			if !c.add(match[2]) {
@@ -83,7 +119,7 @@ func extractTextLinks(msg *storage.Message, c *linkCollector) {
 		}
 	}
 
-	angleMatches := bracketLinkRe.FindAllStringSubmatch(msg.Text, matchLimit)
+	angleMatches := bracketLinkRe.FindAllStringSubmatch(text, matchLimit)
 	for _, match := range angleMatches {
 		if len(match) > 0 {
 			link := strings.ReplaceAll(match[1], "\n", "")
@@ -99,7 +135,7 @@ func extractHTMLLinks(msg *storage.Message, c *linkCollector) {
 		return
 	}
 
-	reader := strings.NewReader(msg.HTML)
+	reader := strings.NewReader(limitScan(msg.HTML, "HTML"))
 
 	// Load the HTML document
 	doc, err := goquery.NewDocumentFromReader(reader)
@@ -122,4 +158,22 @@ func extractHTMLLinks(msg *storage.Message, c *linkCollector) {
 			}
 		}
 	}
+}
+
+// displayLink returns link shortened for display if it is longer than maxLinkLength.
+func displayLink(link string) string {
+	if len(link) <= maxLinkLength {
+		return link
+	}
+
+	// do not leave half of a multi-byte character at the cut (at most 3 bytes)
+	cut := link[:maxLinkLength]
+	for range utf8.UTFMax - 1 {
+		if r, size := utf8.DecodeLastRuneInString(cut); r != utf8.RuneError || size != 1 {
+			break
+		}
+		cut = cut[:len(cut)-1]
+	}
+
+	return cut + "..."
 }

@@ -17,12 +17,27 @@ import (
 	"github.com/axllent/mailpit/internal/tools"
 )
 
+// httpErrorRe extracts the final part of an HTTP error message
+var httpErrorRe = regexp.MustCompile(`.*: (.*)$`)
+
 func getHTTPStatuses(ctx context.Context, links []string, followRedirects bool) []Link {
 	results := make([]Link, len(links))
 	var wg sync.WaitGroup
 	var warnedDomains sync.Map
 
 	for i, l := range links {
+		// links over the length limit are not requested, but are reported rather than hidden
+		if len(l) > maxLinkLength {
+			results[i] = Link{URL: displayLink(l), StatusCode: 0, Status: "URL too long to check"}
+			continue
+		}
+
+		// invalid links are rejected before they use a rate limit slot or a cache entry
+		if !tools.IsValidLinkURL(l) {
+			results[i] = Link{URL: l, StatusCode: 0, Status: "Invalid URL"}
+			continue
+		}
+
 		if cached, ok := cachedLink(l); ok {
 			results[i] = cached
 			continue
@@ -54,7 +69,11 @@ func getHTTPStatuses(ctx context.Context, links []string, followRedirects bool) 
 				l.Status = http.StatusText(code)
 			}
 			results[idx] = l
-			storeLink(link, l)
+
+			// a result caused by the request being cancelled says nothing about the link
+			if ctx.Err() == nil {
+				storeLink(link, l)
+			}
 		}(i, l)
 	}
 
@@ -73,9 +92,14 @@ func doHead(ctx context.Context, link string, followRedirects bool) (int, error)
 		KeepAlive: 30 * time.Second,
 	}
 
+	// Every check uses its own transport and a single request, so connections are never
+	// reused. Without these a server that keeps the connection open would hold a file
+	// descriptor and goroutines for as long as it liked.
 	tr := &http.Transport{
-		DialContext: safeDialContext(dialer),
+		DialContext:       safeDialContext(dialer),
+		DisableKeepAlives: true,
 	}
+	defer tr.CloseIdleConnections()
 
 	if config.AllowUntrustedTLS {
 		// user has explicitly allowed untrusted TLS, so we will not verify it for link checks
@@ -110,11 +134,14 @@ func doHead(ctx context.Context, link string, followRedirects bool) (int, error)
 	res, err := client.Do(req)
 	if err != nil {
 		if res != nil {
+			_ = res.Body.Close()
+
 			return res.StatusCode, err
 		}
 
 		return 0, err
 	}
+	defer func() { _ = res.Body.Close() }()
 
 	return res.StatusCode, nil
 }
@@ -122,15 +149,13 @@ func doHead(ctx context.Context, link string, followRedirects bool) (int, error)
 // HTTP errors include a lot more info that just the actual error, so this
 // tries to take the final part of it, eg: `no such host`
 func httpErrorSummary(err error) string {
-	var re = regexp.MustCompile(`.*: (.*)$`)
-
 	e := err.Error()
-	if !re.MatchString(e) {
+	parts := httpErrorRe.FindStringSubmatch(e)
+	if parts == nil {
 		return e
 	}
-	parts := re.FindAllStringSubmatch(e, -1)
 
-	return parts[0][len(parts[0])-1]
+	return parts[len(parts)-1]
 }
 
 // SafeDialContext is a custom dialer that checks if the resolved IP addresses are internal before allowing the connection.
