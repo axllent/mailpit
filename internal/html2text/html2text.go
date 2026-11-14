@@ -101,9 +101,15 @@ func spaceBlockTags(h string) string {
 		}
 		start := i + j
 		i = start + 2
-		k := strings.IndexByte(h[i:], '>')
-		// the longest tag name is 10 bytes, allow for multi-byte case folds (eg: U+017F, U+212A)
-		if k < 1 || k > 32 || i+k+1 >= len(h) || h[i+k+1] != '<' || !isSpaceTag(h[i:i+k]) {
+		// the longest tag name is 10 bytes, allow for multi-byte case folds (eg: U+017F, U+212A).
+		// Only look for the closing ">" within that window, otherwise many "</" without a
+		// nearby ">" would make this quadratic.
+		w := h[i:]
+		if len(w) > 33 {
+			w = w[:33]
+		}
+		k := strings.IndexByte(w, '>')
+		if k < 1 || i+k+1 >= len(h) || h[i+k+1] != '<' || !isSpaceTag(h[i:i+k]) {
 			continue
 		}
 		end := i + k + 2 // after the following "<"
