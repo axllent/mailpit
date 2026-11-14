@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/mail"
+	"sort"
 	"strings"
 	"time"
 
@@ -139,15 +140,20 @@ func Store(body *[]byte, username *string) (string, error) {
 		return "", err
 	}
 
+	// The tags are collected in order of priority: the operator's own tag filters first, then the
+	// authenticated username, then plus-addresses and X-Tags last, as the content of a message is
+	// the least trusted source. A message can only have MaxTagsPerMessage tags, so the first
+	// ones are kept and anything a message adds beyond that cannot displace the tags above it.
+
 	// extract tags using pre-set tag filters, empty slice if not set
 	tags := findTagsInRawMessage(body)
 
-	if !config.TagsDisableXTags {
-		xTagsHdr := env.GetHeader("X-Tags")
-		if xTagsHdr != "" {
-			// extract tags from X-Tags header
-			tags = append(tags, tools.SetTagCasing(strings.Split(strings.TrimSpace(xTagsHdr), ","))...)
-		}
+	// extract tags from search matches
+	tags = append(tags, tagFilterMatches(id)...)
+
+	// auto-tag by username if enabled
+	if config.TagsUsername && username != nil && *username != "" {
+		tags = append(tags, *username)
 	}
 
 	if !config.TagsDisablePlus {
@@ -155,13 +161,25 @@ func Store(body *[]byte, username *string) (string, error) {
 		tags = append(tags, obj.tagsFromPlusAddresses()...)
 	}
 
-	// auto-tag by username if enabled
-	if config.TagsUsername && username != nil && *username != "" {
-		tags = append(tags, *username)
+	if !config.TagsDisableXTags {
+		xTagsHdr := env.GetHeader("X-Tags")
+		if xTagsHdr != "" {
+			// extract tags from X-Tags header, reading no more of it than could be kept
+			xTags := strings.Split(strings.TrimSpace(xTagsHdr), ",")
+			if len(xTags) > maxRawXTags {
+				xTags = xTags[:maxRawXTags]
+			}
+			tags = append(tags, tools.SetTagCasing(xTags)...)
+		}
 	}
 
-	// extract tags from search matches, and sort and extract unique tags
-	tags = sortedUniqueTags(append(tags, tagFilterMatches(id)...))
+	// remove invalid and duplicate tags, then keep the highest priority ones and sort them
+	tags = uniqueTags(tags)
+	if len(tags) > MaxTagsPerMessage {
+		logger.Log().Warnf("[tags] message %s has %d tags, only the first %d are kept", id, len(tags), MaxTagsPerMessage)
+		tags = tags[:MaxTagsPerMessage]
+	}
+	sort.Strings(tags)
 
 	setTags := []string{}
 	if len(tags) > 0 {

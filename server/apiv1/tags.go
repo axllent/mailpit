@@ -38,6 +38,7 @@ func SetMessageTags(w http.ResponseWriter, r *http.Request) {
 	// # Set message tags
 	//
 	// This will overwrite any existing tags for selected message database IDs. To remove all tags from a message, pass an empty tags array.
+	// A message can have at most 100 tags, passing more is an error.
 	//
 	//	Consumes:
 	//	  - application/json

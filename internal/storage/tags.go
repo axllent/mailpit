@@ -19,7 +19,20 @@ var (
 	addressPlusRe = regexp.MustCompile(`(?U)^(.*){1,}\+(.*)@`)
 )
 
-// SetMessageTags will set the tags for a given database ID, removing any not in the array
+const (
+	// MaxTagsPerMessage is the maximum number of tags a single message can have. Every tag is a
+	// database row (and a series in the Prometheus metrics), and tags come from message content,
+	// so without a limit one message can create tens of thousands.
+	MaxTagsPerMessage = 100
+
+	// maxRawXTags is how many entries of an X-Tags header are looked at. Entries are cleaned and
+	// de-duplicated, so this is a multiple of MaxTagsPerMessage, which stops a very long header
+	// costing more to read than the tags that can be kept.
+	maxRawXTags = MaxTagsPerMessage * 10
+)
+
+// SetMessageTags will set the tags for a given database ID, removing any not in the array.
+// A message can have at most MaxTagsPerMessage different tags, more is an error.
 func SetMessageTags(id string, tags []string) ([]string, error) {
 	// Clean and deduplicate incoming tags (case-insensitive)
 	seen := make(map[string]struct{})
@@ -35,6 +48,10 @@ func SetMessageTags(id string, tags []string) ([]string, error) {
 		}
 		seen[lc] = struct{}{}
 		applyTags = append(applyTags, t)
+	}
+
+	if len(applyTags) > MaxTagsPerMessage {
+		return []string{}, fmt.Errorf("a message can have at most %d tags, %d were given", MaxTagsPerMessage, len(applyTags))
 	}
 
 	// Fetch existing tags once and index by lowercase name for O(1) lookup
@@ -423,14 +440,11 @@ func getMessageTags(id string) []string {
 	return tags
 }
 
-// SortedUniqueTags will return a unique slice of normalised tags
-func sortedUniqueTags(s []string) []string {
+// uniqueTags cleans the tags, and removes any that are invalid or repeated (ignoring case),
+// keeping the first of each in the order given.
+func uniqueTags(s []string) []string {
 	tags := []string{}
 	added := make(map[string]bool)
-
-	if len(s) == 0 {
-		return tags
-	}
 
 	for _, p := range s {
 		w := tools.CleanTag(p)
@@ -448,6 +462,13 @@ func sortedUniqueTags(s []string) []string {
 			logger.Log().Debugf("[tags] ignoring invalid tag: %s", w)
 		}
 	}
+
+	return tags
+}
+
+// SortedUniqueTags will return a unique slice of normalised tags
+func sortedUniqueTags(s []string) []string {
+	tags := uniqueTags(s)
 
 	sort.Strings(tags)
 
