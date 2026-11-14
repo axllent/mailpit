@@ -6,15 +6,20 @@ import (
 	"embed"
 	"encoding/json"
 	"regexp"
+	"strings"
+	"sync"
 )
 
 //go:embed caniemail-data.json
 var embeddedFS embed.FS
 
 var (
-	cie = CanIEmail{}
+	// cie is populated exactly once by loadJSONData and must be treated as read-only afterwards
+	cie     = CanIEmail{}
+	cieOnce sync.Once
+	cieErr  error
 
-	noteMatch = regexp.MustCompile(` #(\d)+$`)
+	noteMatch = regexp.MustCompile(` #(\d+)$`)
 
 	// LimitFamilies will limit results to families if set
 	LimitFamilies = []string{}
@@ -57,18 +62,36 @@ type JSONResult struct {
 	NotesByNumber  map[string]string `json:"notes_by_num"`
 }
 
-// Load the JSON data
+// Load the JSON data. It is safe for concurrent use: the data is parsed once into a
+// local value and only published (to be read by all callers) after a successful parse,
+// and any error is returned to every caller.
 func loadJSONData() error {
-	if cie.APIVersion != "" {
-		return nil
+	cieOnce.Do(func() {
+		b, err := embeddedFS.ReadFile("caniemail-data.json")
+		if err != nil {
+			cieErr = err
+			return
+		}
+
+		var data CanIEmail
+		if err := json.Unmarshal(b, &data); err != nil {
+			cieErr = err
+			return
+		}
+
+		cie = data
+	})
+
+	return cieErr
+}
+
+// noteNumber returns the note number from a support string such as "y #12", or an empty
+// string if it has none.
+func noteNumber(support string) string {
+	m := noteMatch.FindStringSubmatch(support)
+	if len(m) != 2 {
+		return ""
 	}
 
-	b, err := embeddedFS.ReadFile("caniemail-data.json")
-	if err != nil {
-		return err
-	}
-
-	cie = CanIEmail{}
-
-	return json.Unmarshal(b, &cie)
+	return strings.TrimSpace(m[1])
 }
