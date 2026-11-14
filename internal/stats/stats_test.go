@@ -208,6 +208,8 @@ func TestLoadWhileCounting(t *testing.T) {
 	if err := storage.InitDB(); err != nil {
 		t.Fatal(err)
 	}
+	// registered after TempDir, so it runs first: Windows cannot delete a database that is still open
+	t.Cleanup(storage.Close)
 	Track()
 
 	stop := make(chan struct{})
