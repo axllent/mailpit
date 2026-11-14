@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -411,6 +412,10 @@ func TestIdleTimeoutBeforeLogin(t *testing.T) {
 
 func TestTLSHandshakeTimeout(t *testing.T) {
 	cert, key := snakeoil.Public("sans:localhost"), snakeoil.Private("sans:localhost")
+	t.Cleanup(func() {
+		_ = os.Remove(cert)
+		_ = os.Remove(key)
+	})
 	cer, err := tls.LoadX509KeyPair(cert, key)
 	if err != nil {
 		t.Fatal(err)
