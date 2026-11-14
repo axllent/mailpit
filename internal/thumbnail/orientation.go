@@ -2,111 +2,85 @@ package thumbnail
 
 import (
 	"image"
+	"image/color"
 )
 
 // fixOrientation reads the EXIF orientation tag from JPEG data and
-// applies the corresponding transform. For non-JPEG data or data
+// returns the image as it should be displayed. For non-JPEG data or data
 // without a valid orientation tag the image is returned unchanged.
 func fixOrientation(data []byte, img image.Image) image.Image {
 	o := readOrientation(data)
-
-	switch o {
-	case 2:
-		return flipH(img)
-	case 3:
-		return rotate180(img)
-	case 4:
-		return flipV(img)
-	case 5:
-		return transpose(img)
-	case 6:
-		return rotate270(img)
-	case 7:
-		return transverse(img)
-	case 8:
-		return rotate90(img)
-	default:
+	if o < 2 || o > 8 {
 		return img
 	}
+
+	return newOrientedImage(img, o)
 }
 
-// The eight EXIF orientation transforms below operate on generic
-// image.Image values. Each allocates an NRGBA target and copies
-// pixels with the appropriate coordinate mapping.
-
-func flipH(src image.Image) image.Image {
-	b := src.Bounds()
-	dst := image.NewNRGBA(image.Rect(0, 0, b.Dx(), b.Dy()))
-	for y := b.Min.Y; y < b.Max.Y; y++ {
-		for x := b.Min.X; x < b.Max.X; x++ {
-			dst.Set(b.Max.X-1-x, y-b.Min.Y, src.At(x, y))
-		}
-	}
-	return dst
+// orientedImage is a view of an image with an EXIF orientation (2-8) applied. It reads the
+// pixels of the source image as they are asked for, instead of making a rotated copy. A copy
+// of a large image is costly (80 MB for 20 megapixels, and about a second), while the
+// thumbnail only reads a few pixels per output pixel.
+type orientedImage struct {
+	src image.Image
+	o   int
+	// size of the source, and of the view (which has the sides swapped for orientations 5-8)
+	srcW, srcH int
+	w, h       int
 }
 
-func flipV(src image.Image) image.Image {
+func newOrientedImage(src image.Image, o int) *orientedImage {
 	b := src.Bounds()
-	dst := image.NewNRGBA(image.Rect(0, 0, b.Dx(), b.Dy()))
-	for y := b.Min.Y; y < b.Max.Y; y++ {
-		for x := b.Min.X; x < b.Max.X; x++ {
-			dst.Set(x-b.Min.X, b.Max.Y-1-y, src.At(x, y))
-		}
+	v := &orientedImage{src: src, o: o, srcW: b.Dx(), srcH: b.Dy()}
+
+	if o >= 5 {
+		v.w, v.h = v.srcH, v.srcW
+	} else {
+		v.w, v.h = v.srcW, v.srcH
 	}
-	return dst
+
+	return v
 }
 
-func rotate90(src image.Image) image.Image {
-	b := src.Bounds()
-	dst := image.NewNRGBA(image.Rect(0, 0, b.Dy(), b.Dx()))
-	for y := b.Min.Y; y < b.Max.Y; y++ {
-		for x := b.Min.X; x < b.Max.X; x++ {
-			dst.Set(y-b.Min.Y, b.Max.X-1-x, src.At(x, y))
-		}
-	}
-	return dst
+// ColorModel implements image.Image.
+func (v *orientedImage) ColorModel() color.Model {
+	return v.src.ColorModel()
 }
 
-func rotate180(src image.Image) image.Image {
-	b := src.Bounds()
-	dst := image.NewNRGBA(image.Rect(0, 0, b.Dx(), b.Dy()))
-	for y := b.Min.Y; y < b.Max.Y; y++ {
-		for x := b.Min.X; x < b.Max.X; x++ {
-			dst.Set(b.Max.X-1-x, b.Max.Y-1-y, src.At(x, y))
-		}
-	}
-	return dst
+// Bounds implements image.Image. The view starts at (0, 0).
+func (v *orientedImage) Bounds() image.Rectangle {
+	return image.Rect(0, 0, v.w, v.h)
 }
 
-func rotate270(src image.Image) image.Image {
-	b := src.Bounds()
-	dst := image.NewNRGBA(image.Rect(0, 0, b.Dy(), b.Dx()))
-	for y := b.Min.Y; y < b.Max.Y; y++ {
-		for x := b.Min.X; x < b.Max.X; x++ {
-			dst.Set(b.Max.Y-1-y, x-b.Min.X, src.At(x, y))
-		}
+// At implements image.Image. It returns the source pixel that is displayed at (x, y), which is
+// the inverse of the EXIF orientation transform. Points outside the view are transparent.
+func (v *orientedImage) At(x, y int) color.Color {
+	if x < 0 || y < 0 || x >= v.w || y >= v.h {
+		return color.Transparent
 	}
-	return dst
-}
 
-func transpose(src image.Image) image.Image {
-	b := src.Bounds()
-	dst := image.NewNRGBA(image.Rect(0, 0, b.Dy(), b.Dx()))
-	for y := b.Min.Y; y < b.Max.Y; y++ {
-		for x := b.Min.X; x < b.Max.X; x++ {
-			dst.Set(y-b.Min.Y, x-b.Min.X, src.At(x, y))
-		}
-	}
-	return dst
-}
+	var sx, sy int
 
-func transverse(src image.Image) image.Image {
-	b := src.Bounds()
-	dst := image.NewNRGBA(image.Rect(0, 0, b.Dy(), b.Dx()))
-	for y := b.Min.Y; y < b.Max.Y; y++ {
-		for x := b.Min.X; x < b.Max.X; x++ {
-			dst.Set(b.Max.Y-1-y, b.Max.X-1-x, src.At(x, y))
-		}
+	switch v.o {
+	case 2: // flip horizontally
+		sx, sy = v.srcW-1-x, y
+	case 3: // rotate 180
+		sx, sy = v.srcW-1-x, v.srcH-1-y
+	case 4: // flip vertically
+		sx, sy = x, v.srcH-1-y
+	case 5: // transpose
+		sx, sy = y, x
+	case 6: // rotate 90 clockwise
+		sx, sy = y, v.srcH-1-x
+	case 7: // transverse
+		sx, sy = v.srcW-1-y, v.srcH-1-x
+	case 8: // rotate 90 anticlockwise
+		sx, sy = v.srcW-1-y, x
+	default:
+		sx, sy = x, y
 	}
-	return dst
+
+	b := v.src.Bounds()
+
+	return v.src.At(b.Min.X+sx, b.Min.Y+sy)
 }

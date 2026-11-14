@@ -7,7 +7,9 @@ import (
 	"hash/crc32"
 	"image"
 	"image/jpeg"
+	"image/png"
 	"testing"
+	"time"
 )
 
 func pngChunk(kind string, data []byte) []byte {
@@ -200,4 +202,135 @@ func TestAPNGDecodesOnlyOneFrame(t *testing.T) {
 	if cfg.Width != 500 || cfg.Height != 500 {
 		t.Fatalf("DecodeConfig: %dx%d, want 500x500", cfg.Width, cfg.Height)
 	}
+}
+
+// pngBytes returns a small valid PNG.
+func pngBytes(t *testing.T) []byte {
+	t.Helper()
+
+	var buf bytes.Buffer
+	if err := png.Encode(&buf, testPattern(40, 30, image.Point{})); err != nil {
+		t.Fatal(err)
+	}
+
+	return buf.Bytes()
+}
+
+// checkThumbnail checks that data is a JPEG of the size requested.
+func checkThumbnail(t *testing.T, data []byte) {
+	t.Helper()
+
+	cfg, format, err := image.DecodeConfig(bytes.NewReader(data))
+	if err != nil || format != "jpeg" || cfg.Width != 180 || cfg.Height != 120 {
+		t.Fatalf("not a 180x120 JPEG: %v %q %v", cfg, format, err)
+	}
+}
+
+// Only a few images are decoded at once, and the others wait for one to finish.
+func TestDecodesAreLimited(t *testing.T) {
+	orig := decodeSlots
+	decodeSlots = make(chan struct{}, 2)
+	t.Cleanup(func() { decodeSlots = orig })
+
+	data := pngBytes(t)
+
+	// control: with a free slot an image is decoded at once
+	done := make(chan []byte, 1)
+	go func() { out, _ := Generate(data, 180, 120); done <- out }()
+	select {
+	case out := <-done:
+		checkThumbnail(t, out)
+	case <-time.After(5 * time.Second):
+		t.Fatal("a decode with free slots did not finish")
+	}
+
+	// exploit: with every slot in use a further image waits
+	decodeSlots <- struct{}{}
+	decodeSlots <- struct{}{}
+
+	go func() { out, _ := Generate(data, 180, 120); done <- out }()
+	select {
+	case <-done:
+		t.Fatal("an image was decoded while all the slots were in use")
+	case <-time.After(300 * time.Millisecond):
+	}
+
+	// something that is not an image needs no slot, so it is not held up
+	if out, err := Generate(nil, 180, 120); err != nil {
+		t.Fatal(err)
+	} else {
+		checkThumbnail(t, out)
+	}
+
+	// and it continues when one is released
+	<-decodeSlots
+	select {
+	case out := <-done:
+		checkThumbnail(t, out)
+	case <-time.After(5 * time.Second):
+		t.Fatal("the waiting image was not decoded once a slot was free")
+	}
+	<-decodeSlots
+}
+
+// A panic in a decoder gives a blank thumbnail, and does not keep a decode slot.
+func TestDecoderPanicIsRecovered(t *testing.T) {
+	orig := decode
+	t.Cleanup(func() { decode = orig })
+
+	data := pngBytes(t)
+
+	// control: the real decoder gives the image
+	out, err := Generate(data, 180, 120)
+	if err != nil {
+		t.Fatal(err)
+	}
+	checkThumbnail(t, out)
+	normal := out
+
+	// exploit: a decoder that panics
+	decode = func([]byte) (image.Image, error) { panic("decoder failure") }
+
+	out, err = Generate(data, 180, 120)
+	if err != nil {
+		t.Fatalf("a panic was returned as an error: %v", err)
+	}
+	checkThumbnail(t, out)
+	if bytes.Equal(out, normal) {
+		t.Error("the blank thumbnail is the same as the image's")
+	}
+	if len(decodeSlots) != 0 {
+		t.Errorf("%d decode slots still held after a panic", len(decodeSlots))
+	}
+}
+
+// Whatever the data is, the result is a JPEG of the size asked for, and any image that was
+// decoded is within the pixel limit.
+func FuzzGenerate(f *testing.F) {
+	var jb bytes.Buffer
+	_ = jpeg.Encode(&jb, testPattern(300, 200, image.Point{}), nil)
+
+	var pb bytes.Buffer
+	_ = png.Encode(&pb, testPattern(40, 30, image.Point{}))
+	f.Add(pb.Bytes())
+	f.Add(jb.Bytes())
+	f.Add(jpegWithOrientation(f, 6))
+	f.Add([]byte("GIF89a\x01\x00\x01\x00\x00\x00\x00,\x00\x00\x00\x00\x01\x00\x01\x00\x80\x00\x00\x00\x00\xff\xff\xff\x02\x02D\x01\x00;"))
+	f.Add([]byte("RIFF\x1a\x00\x00\x00WEBPVP8L\x0d\x00\x00\x00\x2f\x00\x00\x00\x10\x07\x10\x11\x11\x88\x88\xfe\x07\x00"))
+	f.Add([]byte{})
+
+	f.Fuzz(func(t *testing.T, data []byte) {
+		if img, err := safeDecode(data); err == nil && img != nil {
+			b := img.Bounds()
+			if int64(b.Dx())*int64(b.Dy()) > maxDecodedPixels {
+				t.Fatalf("decoded %v, over the pixel limit", b)
+			}
+		}
+
+		out, err := Generate(data, 180, 120)
+		if err != nil {
+			t.Fatal(err)
+		}
+		checkThumbnail(t, out)
+	})
 }

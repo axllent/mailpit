@@ -30,6 +30,17 @@ import (
 // At 4 bytes per RGBA pixel, 20 MP = 80 MB per decode.
 const maxDecodedPixels int64 = 20_000_000
 
+// maxConcurrentDecodes is the number of images that are decoded at once. Each decode needs
+// memory in proportion to the image (up to about 150 MB at the pixel limit), so without a
+// limit the number of simultaneous requests decides how much is used. The others wait.
+const maxConcurrentDecodes = 4
+
+// decodeSlots limits the number of simultaneous decodes. It is a variable for the tests.
+var decodeSlots = make(chan struct{}, maxConcurrentDecodes)
+
+// decode decodes an image within the pixel budget. It is a variable for the tests.
+var decode = safeDecode
+
 // Generate produces a JPEG thumbnail of exactly width × height pixels
 // from the given image data, on a white background.
 //
@@ -37,8 +48,23 @@ const maxDecodedPixels int64 = 20_000_000
 // cannot be decoded, a blank white JPEG of the requested dimensions is
 // returned with no error. This matches the UI expectation that the
 // endpoint always returns a displayable image.
-func Generate(data []byte, width, height int) ([]byte, error) {
-	img, err := safeDecode(data)
+func Generate(data []byte, width, height int) (out []byte, err error) {
+	if len(data) == 0 {
+		return encodeJPEG(whiteCanvas(width, height))
+	}
+
+	// a failure while decoding an image must not stop Mailpit, as the image comes from a message
+	defer func() {
+		if r := recover(); r != nil {
+			logger.Log().Errorf("[thumbnail] recovered from panic decoding an image: %v", r)
+			out, err = encodeJPEG(whiteCanvas(width, height))
+		}
+	}()
+
+	decodeSlots <- struct{}{}
+	defer func() { <-decodeSlots }()
+
+	img, err := decode(data)
 	if err != nil || img == nil {
 		return encodeJPEG(whiteCanvas(width, height))
 	}
