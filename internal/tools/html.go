@@ -65,6 +65,18 @@ func WalkHTML(n *html.Node, fn func(*html.Node)) {
 //
 // An error is returned if the HTML cannot be processed, so the caller can fail closed.
 func StripHTMLRedirects(htmlStr string) (string, error) {
+	// An element needs its "<base" or "<meta", whatever the parser makes of the rest, so a document
+	// without either has nothing to remove and is not tokenised or parsed (which for a large one
+	// takes seconds and about 25 times its size in memory).
+	if !mayContainRedirectElement(htmlStr) {
+		return htmlStr, nil
+	}
+
+	// Others wait while this many are being done, so many requests for large documents at once
+	// can not use all the memory.
+	redirectSlots <- struct{}{}
+	defer func() { <-redirectSlots }()
+
 	out, err := stripHTMLRedirectTags(htmlStr)
 	if err != nil {
 		return "", err
@@ -109,6 +121,35 @@ func StripHTMLRedirects(htmlStr string) (string, error) {
 	}
 
 	return out, nil
+}
+
+// maxConcurrentRedirectStrips is the number of documents which have their redirects removed at once.
+const maxConcurrentRedirectStrips = 4
+
+// redirectSlots limits the documents which are processed at once. It is a variable for the tests.
+var redirectSlots = make(chan struct{}, maxConcurrentRedirectStrips)
+
+// mayContainRedirectElement returns whether the HTML has "<base" or "<meta" (in any case), which
+// every `<base>` and `<meta>` element needs. It does not mean there is one, only that there may be.
+// Tag names are never made from character references, and a NUL in one is replaced, so the letters
+// are always together in the document.
+func mayContainRedirectElement(h string) bool {
+	for i := 0; i < len(h); {
+		j := strings.IndexByte(h[i:], '<')
+		if j < 0 {
+			return false
+		}
+		i += j + 1
+
+		if len(h)-i >= 4 {
+			switch strings.ToLower(h[i : i+4]) {
+			case "base", "meta":
+				return true
+			}
+		}
+	}
+
+	return false
 }
 
 // removeRedirectNodes replaces any `<base>` and `<meta http-equiv="refresh">` elements in the tree with

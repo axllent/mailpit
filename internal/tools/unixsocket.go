@@ -12,26 +12,25 @@ import (
 	"time"
 )
 
+var unixSocketRe = regexp.MustCompile(`^unix:(.*):(\d\d\d\d?)$`)
+
 // UnixSocket returns a path and a FileMode if the address is in
 // the format of unix:<path>:<permission>
 func UnixSocket(address string) (string, fs.FileMode, bool) {
-	re := regexp.MustCompile(`^unix:(.*):(\d\d\d\d?)$`)
-
 	var f fs.FileMode
 
-	if !re.MatchString(address) {
+	m := unixSocketRe.FindStringSubmatch(address)
+	if m == nil {
 		return "", f, false
 	}
 
-	m := re.FindAllStringSubmatch(address, 1)
-
-	modeVal, err := strconv.ParseUint(m[0][2], 8, 32)
+	modeVal, err := strconv.ParseUint(m[2], 8, 32)
 
 	if err != nil {
 		return "", f, false
 	}
 
-	return path.Clean(m[0][1]), fs.FileMode(modeVal), true
+	return path.Clean(m[1]), fs.FileMode(modeVal), true
 }
 
 // PrepareSocket makes the address available for a new socket. It returns an error if there is an

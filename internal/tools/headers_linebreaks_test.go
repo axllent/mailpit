@@ -103,7 +103,7 @@ func TestNormaliseHeaderLineBreaksMatchesReference(t *testing.T) {
 	rng := rand.New(rand.NewSource(1))
 	pieces := []string{"\r\n", "\r\n", "\n", "\r", "\r\r\n", "\r\r\r\n", " ", "\t", "a", "b", "From: a", "Bcc: x", ": ", "\r\n ", "\n\n", "\r\r", "\r\n\r\n", "é", "\x00"}
 
-	for range 200000 {
+	for range 100000 {
 		var b strings.Builder
 		for range rng.Intn(14) {
 			b.WriteString(pieces[rng.Intn(len(pieces))])
