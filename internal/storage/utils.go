@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"net/mail"
 	"os"
-	"regexp"
 	"strings"
 	"sync"
 
@@ -12,6 +11,7 @@ import (
 	"github.com/axllent/mailpit/internal/logger"
 	"github.com/axllent/mailpit/internal/mimeparser"
 	"github.com/axllent/mailpit/internal/tools"
+	enmimehtml2text "github.com/inbucket/html2text"
 	"github.com/jhillyerd/enmime/v2"
 	"golang.org/x/text/cases"
 )
@@ -22,11 +22,12 @@ var (
 	// StatsDeleted for counting the number of messages deleted
 	StatsDeleted uint64
 
-	// cleanStringRe is used to remove unwanted characters from stored search text and search queries
-	cleanStringRe = regexp.MustCompile(`(\r?\n|\t|>|<|"|\,|;|\(|\))`)
-
 	// envelopeParser is a shared enmime parser instance used for message parsing
 	envelopeParser = mimeparser.New()
+
+	// storeParser is used when storing new messages. The plain text version of a HTML-only
+	// message is not stored, so the (expensive) HTML to text down-conversion is skipped.
+	storeParser = mimeparser.New(enmime.DisableTextConversion(true))
 )
 
 // AddTempFile adds a file to the slice of files to delete on exit
@@ -74,9 +75,37 @@ func normalizeAddress(a *mail.Address) {
 	}
 }
 
+// searchTextAndSnippet returns the search text and snippet of a message,
+// stripping the HTML body (if any) only once for both
+func searchTextAndSnippet(env *enmime.Envelope) (string, string) {
+	if strings.TrimSpace(env.HTML) != "" {
+		if plain, withLinks, err := html2text.StripTrimmedAndFull(env.HTML); err == nil {
+			return createSearchText(env, withLinks), tools.SnippetFromStripped(plain)
+		}
+	}
+
+	return createSearchText(env, ""), tools.CreateSnippet(envelopeText(env), env.HTML)
+}
+
+// envelopeText returns the plain text body of a message. Messages parsed with
+// storeParser have no plain text body for HTML-only messages, so the HTML is
+// down-converted here (as enmime does) for the rare cases it is needed.
+func envelopeText(env *enmime.Envelope) string {
+	if env.Text != "" || env.HTML == "" {
+		return env.Text
+	}
+
+	text, err := enmimehtml2text.FromString(env.HTML)
+	if err != nil {
+		return ""
+	}
+
+	return text
+}
+
 // Generate the search text based on some header fields (to, from, subject etc)
 // and either the stripped HTML body (if exists) or text body
-func createSearchText(env *enmime.Envelope) string {
+func createSearchText(env *enmime.Envelope, strippedHTML string) string {
 	var b strings.Builder
 
 	_, _ = b.WriteString(env.GetHeader("From") + " ")
@@ -87,11 +116,10 @@ func createSearchText(env *enmime.Envelope) string {
 	_, _ = b.WriteString(env.GetHeader("Reply-To") + " ")
 	_, _ = b.WriteString(env.GetHeader("Return-Path") + " ")
 
-	h, _ := html2text.Strip(env.HTML, true)
-	if h != "" {
-		_, _ = b.WriteString(h + " ")
+	if strippedHTML != "" {
+		_, _ = b.WriteString(strippedHTML + " ")
 	} else {
-		_, _ = b.WriteString(env.Text + " ")
+		_, _ = b.WriteString(envelopeText(env) + " ")
 	}
 	// add attachment filenames
 	for _, a := range env.Attachments {
@@ -108,8 +136,14 @@ func cleanString(str string) string {
 	// replace \uFEFF with space, see https://github.com/golang/go/issues/42274#issuecomment-1017258184
 	str = strings.ReplaceAll(str, string('\uFEFF'), " ")
 
-	// remove/replace new lines
-	str = cleanStringRe.ReplaceAllString(str, " ")
+	// remove/replace new lines, tabs and some punctuation
+	str = strings.Map(func(r rune) rune {
+		switch r {
+		case '\n', '\t', '>', '<', '"', ',', ';', '(', ')':
+			return ' '
+		}
+		return r
+	}, str)
 
 	// remove duplicate whitespace and trim
 	return foldCase(strings.Join(strings.Fields(strings.TrimSpace(str)), " "))

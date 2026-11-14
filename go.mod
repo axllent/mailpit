@@ -11,6 +11,7 @@ require (
 	github.com/gomarkdown/markdown v0.0.0-20261107153045-a51d70be185e
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/websocket v1.5.3
+	github.com/inbucket/html2text v1.0.0
 	github.com/jhillyerd/enmime/v2 v2.5.0
 	github.com/klauspost/compress v1.20.3
 	github.com/leporo/sqlf v1.4.0
@@ -40,7 +41,6 @@ require (
 	github.com/goccy/go-json v0.12.0 // indirect
 	github.com/gogs/chardet v0.0.0-20211120154057-b7413eaefb8f // indirect
 	github.com/gorilla/css v1.0.1 // indirect
-	github.com/inbucket/html2text v1.0.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/mattn/go-colorable v0.1.16 // indirect
 	github.com/mattn/go-isatty v0.0.24 // indirect
