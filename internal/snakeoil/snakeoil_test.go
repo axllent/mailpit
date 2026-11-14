@@ -6,12 +6,22 @@ import (
 	"encoding/pem"
 	"errors"
 	"os"
+	"path/filepath"
+	"runtime"
 	"slices"
 	"strings"
 	"testing"
 
 	"github.com/axllent/mailpit/internal/logger"
 )
+
+// setTempDir points os.TempDir() at dir on every platform (Windows ignores TMPDIR).
+func setTempDir(t *testing.T, dir string) {
+	t.Helper()
+	t.Setenv("TMPDIR", dir)
+	t.Setenv("TMP", dir)
+	t.Setenv("TEMP", dir)
+}
 
 func TestMain(m *testing.M) {
 	logger.NoLogging = true
@@ -137,7 +147,8 @@ func TestGeneratedCertificate(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if st.Mode().Perm() != 0o600 {
+	// Windows does not implement Unix permission bits
+	if runtime.GOOS != "windows" && st.Mode().Perm() != 0o600 {
 		t.Errorf("private key mode %v", st.Mode().Perm())
 	}
 	if len(Certificates()) == 0 {
@@ -176,7 +187,7 @@ func TestInvalidInputGivesEmptyPath(t *testing.T) {
 // A failure after the first file is written must not leave it behind.
 func TestNoFilesLeftOnFailure(t *testing.T) {
 	dir := t.TempDir()
-	t.Setenv("TMPDIR", dir)
+	setTempDir(t, dir)
 
 	// control: success leaves exactly the two files
 	priv, pub, err := generate([]string{"localhost"})
@@ -206,11 +217,11 @@ func TestNoFilesLeftOnFailure(t *testing.T) {
 	createTemp = os.CreateTemp
 
 	// a file that cannot be written is removed
-	t.Setenv("TMPDIR", dir+"/missing")
+	setTempDir(t, filepath.Join(dir, "missing"))
 	if _, err := writeTemp("x-*", nil); err == nil {
 		t.Fatal("expected an error")
 	}
-	t.Setenv("TMPDIR", dir)
+	setTempDir(t, dir)
 	if entries, _ := os.ReadDir(dir); len(entries) != 0 {
 		t.Fatalf("%d files left", len(entries))
 	}
