@@ -177,21 +177,9 @@ func DeleteSearch(search, timezone string) error {
 	if len(ids) > 0 {
 		total := len(ids)
 
-		// split ids into chunks of 1000 ids
-		var chunks [][]string
-		if total > 1000 {
-			chunkSize := 1000
-			chunks = make([][]string, 0, (len(ids)+chunkSize-1)/chunkSize)
-			for chunkSize < len(ids) {
-				ids, chunks = ids[chunkSize:], append(chunks, ids[0:chunkSize:chunkSize])
-			}
-			if len(ids) > 0 {
-				// add remaining ids <= 1000
-				chunks = append(chunks, ids)
-			}
-		} else {
-			chunks = append(chunks, ids)
-		}
+		// split ids into chunks, as a statement can only have so many placeholders (this must not change
+		// ids, which are used again below)
+		chunks := chunkBy(ids, maxSQLVariables)
 
 		// begin a transaction to ensure both the message
 		// and data are deleted successfully
@@ -244,7 +232,7 @@ func DeleteSearch(search, timezone string) error {
 		dbLastAction.touch()
 
 		// broadcast changes
-		if len(ids) > 200 {
+		if total > 200 {
 			websockets.Broadcast("prune", nil)
 		} else {
 			for _, id := range ids {
@@ -253,6 +241,10 @@ func DeleteSearch(search, timezone string) error {
 				}{ID: id}
 				websockets.Broadcast("delete", d)
 			}
+		}
+
+		for _, id := range ids {
+			invalidateEnvelopeCache(id)
 		}
 
 		addDeletedSize(deleteSize)
