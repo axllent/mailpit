@@ -121,9 +121,14 @@ func ProxyHandler(w http.ResponseWriter, r *http.Request) {
 		KeepAlive: 30 * time.Second,
 	}
 
+	// Every request uses its own transport and a single request, so connections are never reused. Without these a
+	// server which keeps the connection open would hold a file descriptor and goroutines for as long as it liked
+	// (a transport has no idle timeout), and every request would add another.
 	tr := &http.Transport{
-		DialContext: safeDialContext(dialer),
+		DialContext:       safeDialContext(dialer),
+		DisableKeepAlives: true,
 	}
+	defer tr.CloseIdleConnections()
 
 	if config.AllowUntrustedTLS {
 		tr.TLSClientConfig = &tls.Config{InsecureSkipVerify: true} // #nosec
