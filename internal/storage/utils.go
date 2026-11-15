@@ -226,7 +226,7 @@ func logMessagesDeleted(n int) {
 // IsFile returns whether a path is a file
 func isFile(path string) bool {
 	info, err := os.Stat(path)
-	if os.IsNotExist(err) || !info.Mode().IsRegular() {
+	if err != nil || !info.Mode().IsRegular() {
 		return false
 	}
 

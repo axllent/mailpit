@@ -4,7 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"math"
 	"regexp"
 	"strconv"
 	"strings"
@@ -550,15 +552,20 @@ func searchQueryBuilder(searchString, timezone string) (*sqlf.Stmt, error) {
 	return q, nil
 }
 
+// sizeRe matches a size such as 2kb, 4MB or 1.5m
+var sizeRe = regexp.MustCompile(`^(\d+)(\.\d+)?\s?([a-z]{1,2})?$`)
+
 // Simple function to return a size in bytes, eg 2kb, 4MB or 1.5m.
 //
 // K, k, Kb, KB, kB and kb are treated as Kilobytes.
 // M, m, Mb, MB and mb are treated as Megabytes.
+//
+// A size is at most math.MaxInt64, which is more than any message can be and the most a database can
+// compare with (a larger number made the search fail).
 func sizeToBytes(v string) uint64 {
 	v = strings.ToLower(v)
-	re := regexp.MustCompile(`^(\d+)(\.\d+)?\s?([a-z]{1,2})?$`)
 
-	m := re.FindAllStringSubmatch(v, -1)
+	m := sizeRe.FindAllStringSubmatch(v, -1)
 	if len(m) == 0 {
 		return 0
 	}
@@ -567,21 +574,24 @@ func sizeToBytes(v string) uint64 {
 	unit := m[0][3]
 
 	i, err := strconv.ParseFloat(strings.TrimSpace(val), 64)
-	if err != nil {
+	if err != nil && !errors.Is(err, strconv.ErrRange) {
 		return 0
 	}
 
-	if unit == "" {
-		return uint64(i)
+	switch unit {
+	case "":
+	case "k", "kb":
+		i *= 1024
+	case "m", "mb":
+		i *= 1024 * 1024
+	default:
+		return 0
 	}
 
-	if unit == "k" || unit == "kb" {
-		return uint64(i * 1024)
+	// the float is converted only when it fits, as the result of converting one which does not is undefined
+	if i >= math.MaxInt64 {
+		return math.MaxInt64
 	}
 
-	if unit == "m" || unit == "mb" {
-		return uint64(i * 1024 * 1024)
-	}
-
-	return 0
+	return uint64(i)
 }

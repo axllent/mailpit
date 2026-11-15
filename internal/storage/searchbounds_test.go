@@ -151,3 +151,62 @@ func TestSearchPages(t *testing.T) {
 		t.Errorf("one match: %d results, total %d, error %v", len(few), total, err)
 	}
 }
+
+// A size which is larger than a database can compare with (more than MaxInt64 bytes) made the search fail
+// with "uint64 values with high bit set are not supported". It is the largest size instead, which is more
+// than any message.
+func TestSearchSizeIsClamped(t *testing.T) {
+	huge := strings.Repeat("9", 400)
+
+	for in, want := range map[string]uint64{
+		// controls: sizes which are not too large are as they were
+		"50":    50,
+		"1k":    1024,
+		"1.5mb": 1572864,
+		// exploit: sizes which are
+		"9223372036854775807":     math.MaxInt64,
+		"9223372036854775808":     math.MaxInt64,
+		"99999999999999999999":    math.MaxInt64,
+		"9999999999999999999999k": math.MaxInt64,
+		"99999999999999999999mb":  math.MaxInt64,
+		huge:                      math.MaxInt64, // beyond a float64, which ParseFloat reports as out of range
+		huge + "mb":               math.MaxInt64,
+		// not sizes
+		"1e30": 0,
+		"12x":  0,
+	} {
+		name := in
+		if len(name) > 30 {
+			name = fmt.Sprintf("%d digits", len(in))
+		}
+		if got := sizeToBytes(in); got != want {
+			t.Errorf("%s: %d, want %d", name, got, want)
+		}
+	}
+
+	setup("")
+	_ = DeleteAllMessages()
+	seedMessages(t, 20, false) // 100 bytes each
+
+	for _, tt := range []struct {
+		search string
+		want   int
+	}{
+		{"larger:50", 20},
+		{"larger:200", 0},
+		{"smaller:200", 20},
+		{"smaller:50", 0},
+		{"larger:99999999999999999999", 0},
+		{"smaller:99999999999999999999", 20},
+		{"larger:" + strings.Repeat("9", 400), 0},
+		{"smaller:" + strings.Repeat("9", 400) + "mb", 20},
+	} {
+		_, total, err := Search(tt.search, "", 0, 0, 50)
+		if err != nil || total != tt.want {
+			t.Errorf("%.40q: %d results, error %v, want %d", tt.search, total, err, tt.want)
+		}
+		if _, err := SearchUnreadCount(tt.search, "", 0); err != nil {
+			t.Errorf("%.40q: unread count: %v", tt.search, err)
+		}
+	}
+}

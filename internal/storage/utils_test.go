@@ -2,6 +2,9 @@ package storage
 
 import (
 	"net/mail"
+	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -86,5 +89,33 @@ func TestFoldCase(t *testing.T) {
 		if foldCase(s) != foldCase(foldCase(s)) {
 			t.Errorf("expected foldCase to be idempotent for %q", s)
 		}
+	}
+}
+
+// os.Stat can fail for other reasons than a missing file (eg: a parent which is a file), which has no FileInfo.
+// That used to be a nil pointer dereference, and a panic for an invalid --database path.
+func TestIsFile(t *testing.T) {
+	dir := t.TempDir()
+	file := filepath.Join(dir, "file.db")
+	if err := os.WriteFile(file, []byte("x"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	for name, tt := range map[string]struct {
+		path string
+		want bool
+	}{
+		"control: a file":                   {file, true},
+		"control: a directory":              {dir, false},
+		"control: a file which is missing":  {filepath.Join(dir, "missing.db"), false},
+		"exploit: below a file":             {filepath.Join(file, "x.db"), false},
+		"exploit: a name which is too long": {filepath.Join(dir, strings.Repeat("a", 5000)), false},
+		"empty":                             {"", false},
+	} {
+		t.Run(name, func(t *testing.T) {
+			if got := isFile(tt.path); got != tt.want {
+				t.Errorf("isFile(%.60q) = %v, want %v", tt.path, got, tt.want)
+			}
+		})
 	}
 }
