@@ -1030,7 +1030,7 @@
         }
       },
       "put": {
-        "description": "This will overwrite any existing tags for selected message database IDs. To remove all tags from a message, pass an empty tags array.",
+        "description": "This will overwrite any existing tags for selected message database IDs. To remove all tags from a message, pass an empty tags array.\nA message can have at most 100 tags, passing more is an error.",
         "consumes": [
           "application/json"
         ],
@@ -1990,20 +1990,20 @@
       "type": "object",
       "properties": {
         "Description": {
-          "description": "Rspamd symbol description",
+          "description": "SpamAssassin rule description",
           "type": "string"
         },
         "Name": {
-          "description": "Rspamd symbol name",
+          "description": "SpamAssassin rule name",
           "type": "string"
         },
         "Score": {
-          "description": "Symbol score",
+          "description": "Spam rule score",
           "type": "number",
           "format": "double"
         }
       },
-      "x-go-package": "github.com/axllent/mailpit/internal/rspamd"
+      "x-go-package": "github.com/axllent/mailpit/internal/spamassassin"
     },
     "SpamAssassinResponse": {
       "description": "Result is a SpamAssassin result",
@@ -2039,7 +2039,7 @@
       "x-go-package": "github.com/axllent/mailpit/internal/spamassassin"
     },
     "WebUIConfiguration": {
-      "description": "Web UI configuration settings",
+      "description": "WebUIConfiguration returns the Web UI configuration settings",
       "type": "object",
       "properties": {
         "ChaosEnabled": {
