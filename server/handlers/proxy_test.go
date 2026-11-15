@@ -40,6 +40,11 @@ func TestRecordAssetUniqueURLsScaleLinearly(t *testing.T) {
 	const id = "msg-quadratic"
 	const n = 100000
 
+	// the limit on what a stylesheet may add (see TestCSSAssetsAreLimited) is raised to test the speed of the rest
+	origMax := maxCSSAssets
+	maxCSSAssets = n + 1
+	t.Cleanup(func() { maxCSSAssets = origMax })
+
 	seedAssets(id)
 
 	start := time.Now()

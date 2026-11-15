@@ -39,10 +39,13 @@ func assetServer(t *testing.T) (*httptest.Server, *atomic.Int64) {
 	return srv, &open
 }
 
+func proxyData(id, uri string) string {
+	return base64.StdEncoding.EncodeToString([]byte(id + ":" + uri))
+}
+
 func proxyRequest(id, uri string) *httptest.ResponseRecorder {
-	data := base64.StdEncoding.EncodeToString([]byte(id + ":" + uri))
 	w := httptest.NewRecorder()
-	ProxyHandler(w, httptest.NewRequest("GET", "/proxy?data="+data, nil))
+	ProxyHandler(w, httptest.NewRequest("GET", "/proxy?data="+proxyData(id, uri), nil))
 
 	return w
 }
