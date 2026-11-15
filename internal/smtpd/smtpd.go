@@ -16,6 +16,7 @@
 //   - MAIL FROM parameters must be separated by a space. An unsupported optional parameter is ignored (#407), the
 //     SIZE and AUTH parameters are checked (#744).
 //   - HELO or EHLO is required before MAIL (#621), and MAIL can not start while a transaction is in progress (#623).
+//   - A MAIL command which is refused ends the transaction, so RCPT and DATA do not go on with the sender before it.
 //   - A handler is only called for a message which has a recipient which was accepted (one for which they were
 //     all rejected and dropped is acknowledged, and nothing more).
 //   - XCLIENT arguments which are not name=value are ignored.
@@ -650,6 +651,13 @@ loop:
 				break
 			}
 
+			// A MAIL command starts a new transaction, so nothing of the one before it is kept. If this one is
+			// refused there is none, and RCPT and DATA are not allowed (they used to go on with the earlier sender).
+			from = ""
+			gotFROM = false
+			to = nil
+			hasRejectedRecipients = false
+
 			match, err := extractAndValidateAddress(mailFromRE, args)
 			if match == nil {
 				if err != nil {
@@ -669,8 +677,6 @@ loop:
 					if authMatch := mailFromAuthRE.FindStringSubmatch(match[3]); authMatch != nil {
 						if !isValidAuthParam(authMatch[2]) {
 							s.writef("501 5.5.4 Syntax error in parameters or arguments (invalid AUTH parameter)")
-							to = nil
-							hasRejectedRecipients = false
 							break
 						}
 					}
@@ -680,15 +686,11 @@ loop:
 						size, err := strconv.Atoi(sizeMatch[2])
 						if err != nil { // Bad SIZE parameter
 							s.writef("501 5.5.4 Syntax error in parameters or arguments (invalid SIZE parameter)")
-							to = nil
-							hasRejectedRecipients = false
 							break
 						}
 						if s.srv.MaxSize > 0 && size > s.srv.MaxSize { // SIZE above maximum size, if set
 							err = maxSizeExceeded(s.srv.MaxSize)
 							s.writef("%s", err.Error())
-							to = nil
-							hasRejectedRecipients = false
 							break
 						}
 					}
@@ -702,9 +704,6 @@ loop:
 					s.writef("250 2.1.0 Ok")
 				}
 			}
-
-			to = nil
-			hasRejectedRecipients = false
 		case "RCPT":
 			if s.srv.TLSConfig != nil && s.srv.TLSRequired && !s.tls {
 				s.writef("530 5.7.0 Must issue a STARTTLS command first")
