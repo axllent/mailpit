@@ -140,6 +140,39 @@ type Server struct {
 	shutdownChan chan struct{} // let the sessions know we are shutting down
 
 	XClientAllowed []string // List of XCLIENT allowed IP addresses
+
+	// lookupAddr is the reverse DNS lookup, net.DefaultResolver.LookupAddr if nil (it is set by the tests).
+	lookupAddr func(ctx context.Context, ip string) ([]string, error)
+	// reverseDNSTimeout is how long a reverse DNS lookup may take, defaultReverseDNSTimeout if zero (it is set by the tests).
+	reverseDNSTimeout time.Duration
+}
+
+// defaultReverseDNSTimeout is how long a reverse DNS lookup may take before the remote host is "unknown".
+const defaultReverseDNSTimeout = 2 * time.Second
+
+// reverseLookup returns the host name of an IP address, or "unknown" if it has none or the lookup takes
+// longer than the timeout. The name comes from DNS the owner of the address controls, so how long it takes
+// is up to them.
+func (srv *Server) reverseLookup(ip string) string {
+	timeout := srv.reverseDNSTimeout
+	if timeout <= 0 {
+		timeout = defaultReverseDNSTimeout
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
+	lookup := srv.lookupAddr
+	if lookup == nil {
+		lookup = net.DefaultResolver.LookupAddr
+	}
+
+	names, err := lookup(ctx, ip)
+	if err != nil || len(names) == 0 {
+		return "unknown"
+	}
+
+	return names[0]
 }
 
 // ConfigureTLS creates a TLS configuration from certificate and key files.
@@ -292,13 +325,15 @@ type session struct {
 	conn          net.Conn
 	br            *bufio.Reader
 	bw            *bufio.Writer
-	remoteIP      string // Remote IP address
-	remoteHost    string // Remote hostname according to reverse DNS lookup
-	remoteName    string // Remote hostname as supplied with EHLO
-	xClient       string // Information string as supplied with XCLIENT
-	xClientADDR   string // Information string as supplied with XCLIENT ADDR
-	xClientNAME   string // Information string as supplied with XCLIENT NAME
-	xClientTrust  bool   // Trust XCLIENT from current IP address
+	remoteIP      string      // Remote IP address
+	remoteHost    string      // Remote hostname according to reverse DNS lookup
+	remoteHostCh  chan string // Result of the reverse DNS lookup which is still running, nil if there is none
+	remoteHostBy  time.Time   // When the lookup which is running gives up
+	remoteName    string      // Remote hostname as supplied with EHLO
+	xClient       string      // Information string as supplied with XCLIENT
+	xClientADDR   string      // Information string as supplied with XCLIENT ADDR
+	xClientNAME   string      // Information string as supplied with XCLIENT NAME
+	xClientTrust  bool        // Trust XCLIENT from current IP address
 	tls           bool
 	authenticated bool
 	username      *string // username, nil if not authenticated
@@ -318,16 +353,9 @@ func (srv *Server) newSession(conn net.Conn) (s *session) {
 	if s.remoteIP == "" {
 		s.remoteIP = "127.0.0.1"
 	}
-	if !s.srv.DisableReverseDNS {
-		names, err := net.LookupAddr(s.remoteIP)
-		if err == nil && len(names) > 0 {
-			s.remoteHost = names[0]
-		} else {
-			s.remoteHost = "unknown"
-		}
-	} else {
-		s.remoteHost = "unknown"
-	}
+	// The host name is looked up when the session starts (see startReverseLookup), not here: this runs in the
+	// accept loop, so a lookup which takes long would stop every other client from connecting.
+	s.remoteHost = "unknown"
 
 	// Set tls = true if TLS is already in use.
 	_, s.tls = s.conn.(*tls.Conn)
@@ -338,6 +366,55 @@ func (srv *Server) newSession(conn net.Conn) (s *session) {
 		}
 	}
 	return
+}
+
+// startReverseLookup looks up the host name of the client in the background, so the banner is not held up
+// by it. It is read by resolveRemoteHost when it is needed.
+func (s *session) startReverseLookup() {
+	if s.srv.DisableReverseDNS {
+		return
+	}
+
+	timeout := s.srv.reverseDNSTimeout
+	if timeout <= 0 {
+		timeout = defaultReverseDNSTimeout
+	}
+
+	// buffered, so the goroutine ends when the lookup does even if nobody reads the result
+	ch := make(chan string, 1)
+	s.remoteHostCh = ch
+	s.remoteHostBy = time.Now().Add(timeout)
+
+	// the goroutine must not touch the session, which is used by another goroutine
+	srv, ip := s.srv, s.remoteIP
+	go func() { ch <- srv.reverseLookup(ip) }()
+}
+
+// resolveRemoteHost sets the remote host from the lookup which was started, waiting for it if it is still
+// running (but not for longer than the lookup is allowed to take).
+func (s *session) resolveRemoteHost() {
+	ch := s.remoteHostCh
+	if ch == nil {
+		return
+	}
+	s.remoteHostCh = nil
+
+	select {
+	case host := <-ch:
+		s.remoteHost = host
+		return
+	default:
+	}
+
+	timer := time.NewTimer(max(time.Until(s.remoteHostBy), 0))
+	defer timer.Stop()
+
+	select {
+	case host := <-ch:
+		s.remoteHost = host
+	case <-timer.C:
+		s.remoteHost = "unknown"
+	}
 }
 
 func (srv *Server) getShutdownChan() <-chan struct{} {
@@ -421,6 +498,9 @@ func (s *session) serve() {
 	if s.srv.MaxRecipients == 0 {
 		s.srv.MaxRecipients = 100
 	}
+
+	// the lookup runs while the client is talking, it is needed for the Received header
+	s.startReverseLookup()
 
 	// Send banner.
 	s.writef("220 %s %s ESMTP Service ready", s.srv.Hostname, s.srv.AppName)
@@ -647,6 +727,7 @@ loop:
 			// Create Received header & write message body into buffer.
 			buffer.Reset()
 			if len(to) > 0 {
+				s.resolveRemoteHost()
 				buffer.Write(s.makeHeaders(to))
 			}
 			buffer.Write(data)
@@ -732,15 +813,14 @@ loop:
 				}
 				if len(s.xClientADDR) > 7 {
 					s.remoteIP = s.xClientADDR
+					// the lookup which was started is for the address the client connected from
+					s.remoteHostCh = nil
 					if len(s.xClientNAME) > 4 {
 						s.remoteHost = s.xClientNAME
+					} else if s.srv.DisableReverseDNS {
+						s.remoteHost = "unknown"
 					} else {
-						names, err := net.LookupAddr(s.remoteIP)
-						if err == nil && len(names) > 0 {
-							s.remoteHost = names[0]
-						} else {
-							s.remoteHost = "unknown"
-						}
+						s.remoteHost = s.srv.reverseLookup(s.remoteIP)
 					}
 				}
 			}
