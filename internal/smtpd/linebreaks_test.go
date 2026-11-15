@@ -3,6 +3,7 @@ package smtpd
 import (
 	"bufio"
 	"bytes"
+	"errors"
 	"net"
 	"net/mail"
 	"os"
@@ -333,4 +334,98 @@ func TestRelayAndForwardSendCRLFHeaderLineBreaks(t *testing.T) {
 			t.Fatal("nothing was sent")
 		}
 	})
+}
+
+// Headers which cannot be read were a temporary failure to the client (451, which it retries), as the
+// error was sent without a code. It is a permanent one (550), as sending it again can not work.
+func TestUnreadableHeadersAreAPermanentFailure(t *testing.T) {
+	messages := map[string]string{
+		"a line which is not a header": "From: a@b.test\r\nthis is not a header\r\n\r\nbody",
+		"a CR followed by text":        "From: a@b.test\r\nSubject: one\rtwo\r\n\r\nbody",
+		"a LF followed by text":        "From: a@b.test\r\nSubject: one\ntwo\r\n\r\nbody",
+	}
+
+	for _, strict := range []bool{false, true} {
+		for name, data := range messages {
+			t.Run(name, func(t *testing.T) {
+				strictRFC(t, strict)
+
+				before := storage.CountTotal()
+				conn := newConn(t, &Server{MsgIDHandler: SaveToDatabase})
+				defer conn.Close()
+
+				cmdCode(t, conn, "EHLO host.example.com", "250")
+				cmdCode(t, conn, "MAIL FROM:<a@b.test>", "250")
+				cmdCode(t, conn, "RCPT TO:<c@d.test>", "250")
+				cmdCode(t, conn, "DATA", "354")
+
+				resp := cmdCode(t, conn, data+"\r\n.", "550")
+				if !strings.HasPrefix(resp, "550 5.6.0 ") {
+					t.Errorf("response %q", resp)
+				}
+				if storage.CountTotal() != before {
+					t.Error("the message was stored")
+				}
+			})
+		}
+	}
+
+	// control: a message which is fine is accepted
+	strictRFC(t, false)
+	conn := newConn(t, &Server{MsgIDHandler: SaveToDatabase})
+	defer conn.Close()
+	cmdCode(t, conn, "EHLO host.example.com", "250")
+	cmdCode(t, conn, "MAIL FROM:<a@b.test>", "250")
+	cmdCode(t, conn, "RCPT TO:<c@d.test>", "250")
+	cmdCode(t, conn, "DATA", "354")
+	cmdCode(t, conn, "From: a@b.test\r\nTo: c@d.test\r\nSubject: fine\r\n\r\nbody\r\n.", "250")
+}
+
+// The parser's error can include text from the message, and it is sent in the response, so it must
+// be one line of printable ASCII, and not too long.
+func TestInvalidHeadersErrorIsOneSafeLine(t *testing.T) {
+	long := strings.Repeat("a", 1000)
+
+	for name, reason := range map[string]string{
+		"a response of its own": "bad\r\n250 2.0.0 Ok: queued as injected",
+		"line feeds":            "bad\n\nline",
+		"carriage returns":      "bad\rline",
+		"control characters":    "bad\x00\x01\x1b[31m\x7fline",
+		"tabs":                  "bad\tline",
+		"non-ASCII text":        "bad é 日本語 😀 line",
+		"invalid UTF-8":         "bad \xff\xfe line",
+		"a very long reason":    long,
+		"a long run of spaces":  "a" + strings.Repeat(" ", 500) + "b",
+		"nothing":               "",
+	} {
+		t.Run(name, func(t *testing.T) {
+			err := invalidHeadersError(errors.New(reason))
+			msg := err.Error()
+
+			if !strings.HasPrefix(msg, "550 5.6.0 Message headers could not be parsed: ") {
+				t.Errorf("message %q", msg)
+			}
+			for _, r := range msg {
+				if r < 0x20 || r > 0x7e {
+					t.Fatalf("%q has a character which is not printable ASCII: %U", msg, r)
+				}
+			}
+			if len(msg) > len("550 5.6.0 Message headers could not be parsed: ")+maxReasonLength+3 {
+				t.Errorf("the message is %d bytes", len(msg))
+			}
+			// without runs of spaces, or a space at the end
+			if strings.Contains(msg, "  ") || strings.HasSuffix(msg, " ") {
+				t.Errorf("%q has extra spaces", msg)
+			}
+			// and it is sent as the response, as one line
+			if !checkErrFormatRE.MatchString(msg) {
+				t.Errorf("%q is not sent as an SMTP response", msg)
+			}
+		})
+	}
+
+	// control: an ordinary reason is kept as it is
+	if got := invalidHeadersError(errors.New(`malformed header line: "two"`)).Error(); !strings.HasSuffix(got, `: malformed header line: "two"`) {
+		t.Errorf("got %q", got)
+	}
 }

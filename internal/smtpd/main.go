@@ -59,7 +59,8 @@ func SaveToDatabase(origin net.Addr, from string, to []string, data []byte, smtp
 	if err != nil {
 		logger.Log().Warnf("[smtpd] error parsing message: %s", err.Error())
 		stats.LogSMTPRejected()
-		return "", err
+
+		return "", invalidHeadersError(err)
 	}
 
 	// check / set the Return-Path based on SMTP from
@@ -67,7 +68,10 @@ func SaveToDatabase(origin net.Addr, from string, to []string, data []byte, smtp
 	if returnPath != from {
 		data, err = tools.SetMessageHeader(data, "Return-Path", "<"+from+">")
 		if err != nil {
-			return "", err
+			logger.Log().Warnf("[smtpd] error setting the Return-Path: %s", err.Error())
+			stats.LogSMTPRejected()
+
+			return "", invalidHeadersError(err)
 		}
 	}
 
@@ -139,7 +143,10 @@ func SaveToDatabase(origin net.Addr, from string, to []string, data []byte, smtp
 	if len(missingAddresses) > 0 {
 		data, err = addBccAddresses(data, msg.Header, hasBccHeader, missingAddresses)
 		if err != nil {
-			return "", err
+			logger.Log().Warnf("[smtpd] error adding the Bcc recipients: %s", err.Error())
+			stats.LogSMTPRejected()
+
+			return "", invalidHeadersError(err)
 		}
 
 		logger.Log().Debugf("[smtpd] added missing addresses to Bcc header: %s", strings.Join(missingAddresses, ", "))
@@ -159,6 +166,38 @@ func SaveToDatabase(origin net.Addr, from string, to []string, data []byte, smtp
 	logger.Log().Debugf("[smtpd] received (%s) from:%s subject:%q", cleanIP(origin), from, subject)
 
 	return id, err
+}
+
+// maxReasonLength is the longest reason (from the error of the parser) which is sent to the client.
+const maxReasonLength = 120
+
+// invalidHeadersError is the error for a message whose headers can not be read. It is a permanent
+// failure (550) as sending the same message again can not work. Without a code it was sent to the
+// client as a temporary failure (451), which a client retries.
+//
+// The reason is the parser's error, which can include text from the message, so it is cut down to
+// printable ASCII on a single line before it is sent in the response.
+func invalidHeadersError(err error) error {
+	reason := strings.Map(func(r rune) rune {
+		switch {
+		case r == '\t' || r == '\r' || r == '\n' || r < 0x20 || r == 0x7f:
+			return ' '
+		case r > 0x7e:
+			return '?'
+		}
+
+		return r
+	}, err.Error())
+
+	reason = strings.Join(strings.Fields(reason), " ")
+	if reason == "" {
+		reason = "unknown error"
+	}
+	if len(reason) > maxReasonLength {
+		reason = reason[:maxReasonLength] + "..."
+	}
+
+	return errors.New("550 5.6.0 Message headers could not be parsed: " + reason)
 }
 
 func authHandler(remoteAddr net.Addr, mechanism string, username []byte, password []byte, _ []byte) (bool, error) {
