@@ -25,8 +25,10 @@ import (
 
 const (
 	// maxProxyBodySize is the maximum number of bytes read from a proxied
-	// response body (fonts, images). Prevents OOM on oversized responses.
-	maxProxyBodySize = 50 * 1024 * 1024 // 50 MB
+	// response body (fonts, images), each of which is held in memory while it
+	// is sent. Prevents OOM on oversized responses. The fonts and images of
+	// an email are far smaller than this.
+	maxProxyBodySize = 10 * 1024 * 1024 // 10 MiB
 
 	// maxProxyCSSSize is the maximum number of bytes of a proxied stylesheet, which is also rewritten (each
 	// url() is looked at, made absolute, recorded and encoded): a 20 MiB one of many different urls took 5
