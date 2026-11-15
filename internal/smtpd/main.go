@@ -170,12 +170,13 @@ func SaveToDatabase(origin net.Addr, from string, to []string, data []byte, smtp
 }
 
 // ingestBudgetBytes is how many bytes of messages are parsed, indexed, compressed and stored at the same
-// time. Doing that takes about 7 times the size of a plain text message in memory and about 21 times that of
-// an HTML message made of many small tags, and nothing else limited how many were being done at once.
-// Measured with 4 HTML messages of 20 MiB arriving together, the peak memory of the process was 1774 MiB
-// without a limit (4.5 seconds) and 895 MiB with this one (5.8 seconds); 8 at once were enough to run a
-// machine with 15 GB out of memory. A message which is larger than the budget is stored on its own, and a
-// small one only waits when the budget is full.
+// time. Doing so needs about 7 times the size of a plain text message in memory, and about 21 times that of
+// an HTML message made of many small tags. Nothing else limited how many were in progress at once.
+//
+// With four 20 MiB HTML messages arriving together, the process peaked at 1774 MiB without a limit (4.5
+// seconds) and 895 MiB with this one (5.8 seconds). Eight at once ran a machine with 15 GB out of memory.
+// A message larger than the budget is stored on its own, and a smaller one only waits when the budget is
+// full.
 const ingestBudgetBytes = 20 << 20
 
 var (

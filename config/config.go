@@ -221,7 +221,7 @@ var (
 	// POP3TLSKey TLS certificate key
 	POP3TLSKey string
 
-	// EnableSpamAssassin must be either <host>:<port> or "postmark"
+	// EnableSpamAssassin must be <host>:<port>, unix:<path> or "postmark"
 	EnableSpamAssassin string
 
 	// EnableRspamd must be either <host>:<port> or a URL, optionally including the password
