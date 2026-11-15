@@ -17,27 +17,35 @@ import (
 	"github.com/leporo/sqlf"
 )
 
+// MaxSearchTerms is the maximum number of terms (words, or quoted phrases) in a search.
+const MaxSearchTerms = 100
+
 // Search will search a mailbox for search terms.
 // The search is broken up by segments (exact phrases can be quoted), and interprets specific terms such as:
 // is:read, is:unread, has:attachment, to:<term>, from:<term> & subject:<term>
 // Negative searches also also included by prefixing the search term with a `-` or `!`
 func Search(search, timezone string, start int, beforeTS int64, limit int) ([]MessageSummary, int, error) {
 	results := []MessageSummary{}
-	allResults := []MessageSummary{}
 	tsStart := time.Now()
 	nrResults := 0
 	if limit < 0 {
 		limit = 50
 	}
+	if start < 0 {
+		start = 0
+	}
 
-	q := searchQueryBuilder(search, timezone)
+	q, err := searchQueryBuilder(search, timezone)
+	if err != nil {
+		return results, nrResults, err
+	}
 
 	if beforeTS > 0 {
 		q = q.Where(`m.Created < ?`, beforeTS)
 	}
 
-	var err error
-
+	// Every match is counted, but only the messages of the page are kept: a search which matches most of a
+	// large mailbox would otherwise hold all of them (with their metadata) in memory for every request.
 	if err := q.QueryAndClose(context.TODO(), db, func(row *sql.Rows) {
 		var created float64 // use float64 for rqlite compatibility
 		var id string
@@ -56,6 +64,13 @@ func Search(search, timezone string, start int, beforeTS int64, limit int) ([]Me
 			return
 		}
 
+		position := nrResults
+		nrResults++
+
+		if position < start || position-start >= limit {
+			return
+		}
+
 		if err := json.Unmarshal([]byte(metadata), &em); err != nil {
 			logger.Log().Errorf("[db] %s", err.Error())
 			return
@@ -70,20 +85,12 @@ func Search(search, timezone string, start int, beforeTS int64, limit int) ([]Me
 		em.Read = read == 1
 		em.Snippet = snippet
 
-		allResults = append(allResults, em)
+		results = append(results, em)
 	}); err != nil {
-		return results, nrResults, err
+		return []MessageSummary{}, 0, err
 	}
 
 	dbLastAction.touch()
-
-	nrResults = len(allResults)
-
-	if nrResults > start {
-		end := min(nrResults, start+limit)
-
-		results = allResults[start:end]
-	}
 
 	// set tags for listed messages only
 	if len(results) > 0 {
@@ -113,7 +120,10 @@ func Search(search, timezone string, start int, beforeTS int64, limit int) ([]Me
 func SearchUnreadCount(search, timezone string, beforeTS int64) (int64, error) {
 	tsStart := time.Now()
 
-	q := searchQueryBuilder(search, timezone)
+	q, err := searchQueryBuilder(search, timezone)
+	if err != nil {
+		return 0, err
+	}
 
 	if beforeTS > 0 {
 		q = q.Where(`m.Created < ?`, beforeTS)
@@ -123,7 +133,7 @@ func SearchUnreadCount(search, timezone string, beforeTS int64) (int64, error) {
 
 	q = q.Where("m.Read = 0").Select(`COUNT(*)`)
 
-	err := q.QueryAndClose(context.TODO(), db, func(row *sql.Rows) {
+	err = q.QueryAndClose(context.TODO(), db, func(row *sql.Rows) {
 		var ignore sql.NullString
 		if err := row.Scan(&ignore, &ignore, &ignore, &ignore, &ignore, &ignore, &ignore, &ignore, &ignore, &ignore, &ignore, &ignore, &ignore, &ignore, &unread); err != nil {
 			logger.Log().Errorf("[db] %s", err.Error())
@@ -146,7 +156,10 @@ func SearchUnreadCount(search, timezone string, beforeTS int64) (int64, error) {
 // is:read, is:unread, has:attachment, to:<term>, from:<term> & subject:<term>
 // Negative searches also also included by prefixing the search term with a `-` or `!`
 func DeleteSearch(search, timezone string) error {
-	q := searchQueryBuilder(search, timezone)
+	q, err := searchQueryBuilder(search, timezone)
+	if err != nil {
+		return err
+	}
 
 	ids := []string{}
 	deleteSize := uint64(0)
@@ -259,7 +272,12 @@ func DeleteSearch(search, timezone string) error {
 
 // SetSearchReadStatus marks all messages matching the search as read or unread
 func SetSearchReadStatus(search, timezone string, read bool) error {
-	q := searchQueryBuilder(search, timezone).Where("m.Read = ?", !read)
+	q, err := searchQueryBuilder(search, timezone)
+	if err != nil {
+		return err
+	}
+
+	q = q.Where("m.Read = ?", !read)
 
 	ids := []string{}
 
@@ -307,9 +325,17 @@ func metaSearchTextField(field string) string {
 }
 
 // SearchParser returns the SQL syntax for the database search based on the search arguments
-func searchQueryBuilder(searchString, timezone string) *sqlf.Stmt {
+func searchQueryBuilder(searchString, timezone string) (*sqlf.Stmt, error) {
 	// group strings with quotes as a single argument and remove quotes
 	args := tools.ArgsParser(searchString)
+
+	// Every term is a condition of the query, which costs memory to build and time to run (and SQLite
+	// refuses more than a thousand levels of them anyway). This is an error rather than a limit on the
+	// terms which are used, because dropping terms from a search which deletes messages would delete more
+	// than was asked for.
+	if len(args) > MaxSearchTerms {
+		return nil, fmt.Errorf("a search can have at most %d terms, %d were given", MaxSearchTerms, len(args))
+	}
 
 	loc := time.Local
 	if timezone != "" {
@@ -521,7 +547,7 @@ func searchQueryBuilder(searchString, timezone string) *sqlf.Stmt {
 		}
 	}
 
-	return q
+	return q, nil
 }
 
 // Simple function to return a size in bytes, eg 2kb, 4MB or 1.5m.
