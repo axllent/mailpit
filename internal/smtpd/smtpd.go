@@ -31,6 +31,8 @@
 //   - At most 1000 connections (421 beyond), and an error accepting one (such as too many open files) is retried
 //     rather than ending the server.
 //   - A panic in a session ends that session (with 451), not the process.
+//   - Shutdown waits for the open sessions to end (for up to 30 seconds, or until its context is done), it used to
+//     return at once.
 //   - The TLS handshake of a client which must use TLS (and so has no STARTTLS) is within the timeout.
 //   - The reverse DNS lookup of a client is made in the background with a time limit, and is remembered for a
 //     while (see hostcache.go), so a slow one does not stop other clients from connecting.
@@ -534,12 +536,12 @@ func (srv *Server) Shutdown(ctx context.Context) error {
 			break
 		}
 
+		// this must wait (there is no default): with one the loop ends at once, as every pass is a check
 		select {
 		case <-timer.C:
 			timer.Reset(100 * time.Millisecond)
 		case <-ctx.Done():
 			return ctx.Err()
-		default:
 		}
 	}
 
