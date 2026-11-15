@@ -1,6 +1,7 @@
 package tools
 
 import (
+	"errors"
 	"io"
 	"net"
 	"os"
@@ -143,6 +144,17 @@ func TestPrepareSocketKeepsSocketItCannotCheck(t *testing.T) {
 
 	if err := os.Chmod(sock, 0); err != nil {
 		t.Fatal(err)
+	}
+
+	// Not every system keeps a socket to those who are allowed to use it: Windows has no such
+	// permissions, and some others do not check them. The test is of what is done when connecting is
+	// refused, so it needs it to be.
+	probe, err := net.Dial("unix", sock)
+	if err == nil {
+		_ = probe.Close()
+	}
+	if !errors.Is(err, os.ErrPermission) {
+		t.Skipf("connecting to a socket without permission is not refused on this system (%v)", err)
 	}
 
 	if err := PrepareSocket(sock); err == nil || !strings.Contains(err.Error(), "unable to tell") {
