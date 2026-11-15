@@ -37,9 +37,13 @@ const maxDecodedPixels int64 = 20_000_000
 const maxProgressivePixels int64 = 12_500_000
 
 // maxConcurrentDecodes is the number of images that are decoded at once. Each decode needs
-// memory in proportion to the image (up to about 150 MB at the pixel limit), so without a
+// memory in proportion to the image (up to about 180 MB at the pixel limit), so without a
 // limit the number of simultaneous requests decides how much is used. The others wait.
-const maxConcurrentDecodes = 4
+//
+// Measured with 8 of the largest progressive JPEGs at once (12.5 MP, 4:4:4), the peak memory of the
+// process was 1263 MB with 4 decodes at a time, 773 MB with 2 and 366 MB with 1, and 2 took no
+// longer than 4 (2.7 and 3.4 seconds) as the decoding is limited by the processor, not the waiting.
+const maxConcurrentDecodes = 2
 
 // decodeSlots limits the number of simultaneous decodes. It is a variable for the tests.
 var decodeSlots = make(chan struct{}, maxConcurrentDecodes)
