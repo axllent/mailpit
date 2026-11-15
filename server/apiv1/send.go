@@ -90,12 +90,7 @@ func SendMessageHandler(w http.ResponseWriter, r *http.Request) {
 // Send will validate the message structure and attempt to send to Mailpit.
 // It returns a sending summary or an error.
 func (d sendMessageParams) Send(remoteAddr string, httpAuthUser *string) (string, error) {
-	ip, _, err := net.SplitHostPort(remoteAddr)
-	if err != nil {
-		return "", fmt.Errorf("error parsing request RemoteAddr: %s", err.Error())
-	}
-
-	ipAddr := &net.IPAddr{IP: net.ParseIP(ip)}
+	ipAddr := originAddr(remoteAddr)
 
 	addresses := []string{}
 
@@ -215,6 +210,18 @@ func (d sendMessageParams) Send(remoteAddr string, httpAuthUser *string) (string
 	}
 
 	return smtpd.SaveToDatabase(ipAddr, d.Body.From.Email, addresses, buff.Bytes(), httpAuthUser)
+}
+
+// originAddr returns the address a request came from. A request which is not made over TCP, such as one made over
+// a Unix socket (where the address is "@" or the path of the client), has no IP address and port to split, and is
+// local.
+func originAddr(remoteAddr string) net.Addr {
+	ip, _, err := net.SplitHostPort(remoteAddr)
+	if err != nil {
+		return &net.IPAddr{IP: net.IPv4(127, 0, 0, 1)}
+	}
+
+	return &net.IPAddr{IP: net.ParseIP(ip)}
 }
 
 // validHeaderKey returns true if s is a valid RFC 5322 header field name.
