@@ -16,6 +16,13 @@ import (
 	"github.com/axllent/mailpit/internal/tools"
 )
 
+// envelopeAddress returns the address as it is sent in an SMTP command (without the angle brackets): only the
+// address, without a name or comments, and with the quotes of a local part which needs them (the address of the
+// parser has none, so "a b"@example.com is a b@example.com).
+func envelopeAddress(a *mail.Address) string {
+	return strings.TrimSuffix(strings.TrimPrefix((&mail.Address{Address: a.Address}).String(), "<"), ">")
+}
+
 // ReleaseMessage (method: POST) will release a message via a pre-configured external SMTP server.
 func ReleaseMessage(w http.ResponseWriter, r *http.Request) {
 	// swagger:route POST /api/v1/message/{ID}/release message ReleaseMessageParams
@@ -69,6 +76,11 @@ func ReleaseMessage(w http.ResponseWriter, r *http.Request) {
 	blocked := []string{}
 	notAllowed := []string{}
 
+	// The addresses which are sent to are the ones which were checked, as the parser read them. What was received
+	// (which can have a name, comments and quotes) is not sent as it is: another server could read it as another
+	// address than the allow and block lists were matched against.
+	recipients := make([]string, 0, len(data.To))
+
 	for _, to := range data.To {
 		address, err := mail.ParseAddress(to)
 
@@ -76,6 +88,8 @@ func ReleaseMessage(w http.ResponseWriter, r *http.Request) {
 			httpError(w, "Invalid email address: "+to)
 			return
 		}
+
+		recipients = append(recipients, envelopeAddress(address))
 
 		if config.SMTPRelayConfig.AllowedRecipientsRegexp != nil && !config.SMTPRelayConfig.AllowedRecipientsRegexp.MatchString(address.Address) {
 			notAllowed = append(notAllowed, to)
@@ -167,7 +181,7 @@ func ReleaseMessage(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if err := smtpd.Relay(from, data.To, msg); err != nil {
+	if err := smtpd.Relay(from, recipients, msg); err != nil {
 		logger.Log().Errorf("[smtp] error sending message: %s", err.Error())
 		httpError(w, "SMTP error: "+err.Error())
 		return
