@@ -31,6 +31,8 @@
 //   - At most 1000 connections (421 beyond), and an error accepting one (such as too many open files) is retried
 //     rather than ending the server.
 //   - A panic in a session ends that session (with 451), not the process.
+//   - Relaying and forwarding (relay.go, forward.go) have time limits for connecting and for a pause in the
+//     conversation (see smtpdial.go), so a server which does not answer does not hold the session of the sender.
 //   - Shutdown waits for the open sessions to end (for up to 30 seconds, or until its context is done), it used to
 //     return at once.
 //   - The TLS handshake of a client which must use TLS (and so has no STARTTLS) is within the timeout.

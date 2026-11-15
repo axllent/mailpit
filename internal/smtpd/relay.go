@@ -71,15 +71,9 @@ func createRelaySMTPClient(config config.SMTPRelayConfigStruct, addr string) (*s
 		tlsConf := &tls.Config{ServerName: config.Host} // #nosec
 		tlsConf.InsecureSkipVerify = config.AllowInsecure
 
-		conn, err := tls.Dial("tcp", addr, tlsConf)
+		client, err := dialSMTP(addr, config.Host, true, tlsConf)
 		if err != nil {
-			return nil, fmt.Errorf("TLS dial error: %v", err)
-		}
-
-		client, err := smtp.NewClient(conn, tlsConf.ServerName)
-		if err != nil {
-			_ = conn.Close()
-			return nil, fmt.Errorf("SMTP client error: %v", err)
+			return nil, err
 		}
 
 		// Set the hostname for HELO/EHLO
@@ -94,9 +88,9 @@ func createRelaySMTPClient(config config.SMTPRelayConfigStruct, addr string) (*s
 		return client, nil
 	}
 
-	client, err := smtp.Dial(addr)
+	client, err := dialSMTP(addr, config.Host, false, nil)
 	if err != nil {
-		return nil, fmt.Errorf("error connecting to %s: %v", addr, err)
+		return nil, err
 	}
 
 	// Set the hostname for HELO/EHLO
