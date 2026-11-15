@@ -1,7 +1,45 @@
 // Package smtpd implements a basic SMTP server.
 //
-// This is a modified version of https://github.com/mhale/smtpd to
-// add support for unix sockets and Mailpit Chaos.
+// This is a modified version of https://github.com/mhale/smtpd (v0.8.3, copied in October 2024) with these changes:
+//
+// Features
+//   - Listening on a Unix socket (Server.Protocol and Server.SocketPerm), where a client has no IP address (#373).
+//   - Mailpit Chaos: sender, recipient and authentication responses which fail on request (see the chaos package).
+//   - MsgIDHandler is given the username of an authenticated client (#521).
+//   - Server.IgnoreRejectedRecipients accepts a message for rejected recipients and drops it (#549).
+//   - EHLO also advertises 8BITMIME (#648) and SMTPUTF8 (#496).
+//
+// Protocol
+//   - MAIL FROM and RCPT TO are read more strictly, and an address is checked with net/mail: no control
+//     characters, whitespace only in a quoted local part (#731), and at most 1024 characters (#620). This stops
+//     header injection (GHSA-54wq-72mp-cq7c).
+//   - MAIL FROM parameters must be separated by a space. An unsupported optional parameter is ignored (#407), the
+//     SIZE and AUTH parameters are checked (#744).
+//   - HELO or EHLO is required before MAIL (#621), and MAIL can not start while a transaction is in progress (#623).
+//   - A handler is only called for a message which has a recipient which was accepted (one for which they were
+//     all rejected and dropped is acknowledged, and nothing more).
+//   - XCLIENT arguments which are not name=value are ignored.
+//   - The Received header is only made for a message which is passed on, and its date has no padded day.
+//
+// Limits and robustness
+//   - A command line is at most 2048 bytes (GHSA-w878-pj84-3j5v).
+//   - The size of the data is checked as it is read, so a very long line is refused early (GHSA-r553-m4fv-5v97).
+//     The rest of a message which is too large is read and dropped so it is not taken for commands.
+//   - A client which disconnects during DATA is logged, and its session ends without a response (#721).
+//   - A message is kept in pieces and put together once, and the bytes held by all the sessions at once are
+//     limited (452 4.3.1 beyond it), so many senders can not use up the memory.
+//   - At most 1000 connections (421 beyond), and an error accepting one (such as too many open files) is retried
+//     rather than ending the server.
+//   - A panic in a session ends that session (with 451), not the process.
+//   - The TLS handshake of a client which must use TLS (and so has no STARTTLS) is within the timeout.
+//   - The reverse DNS lookup of a client is made in the background with a time limit, and is remembered for a
+//     while (see hostcache.go), so a slow one does not stop other clients from connecting.
+//
+// Code
+//   - Server.Appname is Server.AppName, and writef returns nothing as nothing used what it returned.
+//   - ConfigureTLSWithPassphrase is removed (it used a deprecated function), and the counters are atomic types.
+//   - The patterns are built once, rather than for each message, and the data races found by the race detector
+//     are fixed.
 package smtpd
 
 import (
@@ -103,6 +141,14 @@ func (err maxSizeExceededError) Error() string {
 	return fmt.Sprintf("552 5.3.4 Requested mail action aborted: exceeded storage allocation (%d)", err.limit)
 }
 
+// insufficientStorageError is returned by readData when too many messages are being received at once. It is a
+// temporary failure, so the client is expected to try again.
+type insufficientStorageError struct{}
+
+func (insufficientStorageError) Error() string {
+	return "452 4.3.1 Insufficient system storage, too many messages are being received, please try again later"
+}
+
 // maxConnections is the maximum number of concurrent SMTP sessions.
 // It is a variable only so that tests can lower it.
 var maxConnections = connlimit.Max
@@ -147,7 +193,15 @@ type Server struct {
 	reverseDNSTimeout time.Duration
 	// hosts remembers the host names which were looked up for a while.
 	hosts hostCache
+	// receiving limits how many bytes of messages are held by sessions at once, nil for no limit (it is set by Serve
+	// if MaxSize is, and by the tests).
+	receiving *receiveLimit
 }
+
+// reverseDNSGrace is how much longer than the timeout of the lookup a session waits for its result, so the lookup
+// (which stops at the timeout, and keeps the failure in the cache) has finished first. A lookup which does not stop
+// is not waited for any longer than this.
+const reverseDNSGrace = 250 * time.Millisecond
 
 // defaultReverseDNSTimeout is how long a reverse DNS lookup may take before the remote host is "unknown".
 const defaultReverseDNSTimeout = 2 * time.Second
@@ -288,6 +342,11 @@ func (srv *Server) Serve(ln net.Listener) error {
 		srv.MaxRecipients = 100
 	}
 
+	// Without a maximum size a message has no limit, and neither does what is held for it.
+	if srv.receiving == nil && srv.MaxSize > 0 {
+		srv.receiving = newReceiveLimit(max(defaultReceiveBytes, 10*int64(srv.MaxSize)))
+	}
+
 	limiter := connlimit.New("smtpd", maxConnections)
 
 	var backoff connlimit.Backoff
@@ -346,7 +405,8 @@ type session struct {
 	xClientTrust  bool        // Trust XCLIENT from current IP address
 	tls           bool
 	authenticated bool
-	username      *string // username, nil if not authenticated
+	username      *string     // username, nil if not authenticated
+	held          *dataBuffer // the message which is being received or handled, so its part of the limit is given back
 }
 
 // Create new session from connection.
@@ -393,7 +453,7 @@ func (s *session) startReverseLookup() {
 	// buffered, so the goroutine ends when the lookup does even if nobody reads the result
 	ch := make(chan string, 1)
 	s.remoteHostCh = ch
-	s.remoteHostBy = time.Now().Add(timeout)
+	s.remoteHostBy = time.Now().Add(timeout + reverseDNSGrace)
 
 	// the goroutine must not touch the session, which is used by another goroutine
 	srv, ip := s.srv, s.remoteIP
@@ -495,6 +555,7 @@ func (s *session) serve() {
 	// a panic while handling one session (eg: a message parser bug) must not take down the
 	// whole process, so log it and drop only this connection. This is registered last so
 	// that it runs before the connection is closed.
+	defer s.releaseData()
 	defer s.recoverPanic()
 
 	var gotEHLO bool
@@ -502,7 +563,6 @@ func (s *session) serve() {
 	var gotFROM bool
 	var to []string
 	var hasRejectedRecipients bool
-	var buffer bytes.Buffer
 
 	// RFC 5321 specifies support for minimum of 100 recipients is required.
 	if s.srv.MaxRecipients == 0 {
@@ -558,7 +618,6 @@ loop:
 			gotFROM = false
 			to = nil
 			hasRejectedRecipients = false
-			buffer.Reset()
 		case "EHLO":
 			s.remoteName = args
 			s.writef("%s", s.makeEHLOResponse())
@@ -569,7 +628,6 @@ loop:
 			gotFROM = false
 			to = nil
 			hasRejectedRecipients = false
-			buffer.Reset()
 		case "MAIL":
 			if s.srv.TLSConfig != nil && s.srv.TLSRequired && !s.tls {
 				s.writef("530 5.7.0 Must issue a STARTTLS command first")
@@ -609,7 +667,6 @@ loop:
 							s.writef("501 5.5.4 Syntax error in parameters or arguments (invalid AUTH parameter)")
 							to = nil
 							hasRejectedRecipients = false
-							buffer.Reset()
 							break
 						}
 					}
@@ -621,7 +678,6 @@ loop:
 							s.writef("501 5.5.4 Syntax error in parameters or arguments (invalid SIZE parameter)")
 							to = nil
 							hasRejectedRecipients = false
-							buffer.Reset()
 							break
 						}
 						if s.srv.MaxSize > 0 && size > s.srv.MaxSize { // SIZE above maximum size, if set
@@ -629,7 +685,6 @@ loop:
 							s.writef("%s", err.Error())
 							to = nil
 							hasRejectedRecipients = false
-							buffer.Reset()
 							break
 						}
 					}
@@ -646,7 +701,6 @@ loop:
 
 			to = nil
 			hasRejectedRecipients = false
-			buffer.Reset()
 		case "RCPT":
 			if s.srv.TLSConfig != nil && s.srv.TLSRequired && !s.tls {
 				s.writef("530 5.7.0 Must issue a STARTTLS command first")
@@ -714,7 +768,7 @@ loop:
 			// On timeout, send a timeout message and return from serve().
 			// On net.Error, assume the client has gone away i.e. return from serve().
 			// On other errors, allow the client to try again.
-			data, err := s.readData()
+			data, err := s.readChunks()
 			if err != nil {
 				switch err := err.(type) {
 				case net.Error:
@@ -722,7 +776,7 @@ loop:
 						s.writef("421 4.4.2 %s %s ESMTP Service closing transmission channel after timeout exceeded", s.srv.Hostname, s.srv.AppName)
 					}
 					break loop
-				case maxSizeExceededError:
+				case maxSizeExceededError, insufficientStorageError:
 					s.writef("%s", err.Error())
 					continue
 				default:
@@ -747,17 +801,19 @@ loop:
 				}
 			}
 
-			// Create Received header & write message body into buffer.
-			buffer.Reset()
+			// Create Received header & put it and the message body together, which is only needed when it is going
+			// to be passed on. What the message takes of the limit is given back once it has been handled.
+			var msg []byte
 			if len(to) > 0 {
 				s.resolveRemoteHost()
-				buffer.Write(s.makeHeaders(to))
+				msg = data.join(s.makeHeaders(to))
 			}
-			buffer.Write(data)
 
 			// Pass mail on to handler only if there are valid recipients.
 			if len(to) > 0 && s.srv.Handler != nil {
-				err := s.srv.Handler(s.conn.RemoteAddr(), from, to, buffer.Bytes())
+				err := s.srv.Handler(s.conn.RemoteAddr(), from, to, msg)
+				msg = nil
+				s.releaseData()
 				if err != nil {
 					if checkErrFormatRE.MatchString(err.Error()) {
 						s.writef("%s", err.Error())
@@ -768,7 +824,9 @@ loop:
 				}
 				s.writef("250 2.0.0 Ok: queued")
 			} else if len(to) > 0 && s.srv.MsgIDHandler != nil {
-				msgID, err := s.srv.MsgIDHandler(s.conn.RemoteAddr(), from, to, buffer.Bytes(), s.username)
+				msgID, err := s.srv.MsgIDHandler(s.conn.RemoteAddr(), from, to, msg, s.username)
+				msg = nil
+				s.releaseData()
 				if err != nil {
 					if checkErrFormatRE.MatchString(err.Error()) {
 						s.writef("%s", err.Error())
@@ -784,6 +842,8 @@ loop:
 					s.writef("250 2.0.0 Ok: queued")
 				}
 			} else {
+				msg = nil
+				s.releaseData()
 				if hasRejectedRecipients && Debug {
 					if s.srv.LogWrite != nil {
 						s.srv.LogWrite(s.remoteIP, "DEBUG", "Message from sender silently dropped (rejected recipients)")
@@ -799,7 +859,6 @@ loop:
 			gotFROM = false
 			to = nil
 			hasRejectedRecipients = false
-			buffer.Reset()
 		case "QUIT":
 			s.writef("221 2.0.0 %s %s ESMTP Service closing transmission channel", s.srv.Hostname, s.srv.AppName)
 			break loop
@@ -813,7 +872,6 @@ loop:
 			gotFROM = false
 			to = nil
 			hasRejectedRecipients = false
-			buffer.Reset()
 		case "NOOP":
 			s.writef("250 2.0.0 Ok")
 		case "XCLIENT":
@@ -892,7 +950,6 @@ loop:
 			gotFROM = false
 			to = nil
 			hasRejectedRecipients = false
-			buffer.Reset()
 		case "AUTH":
 			if s.srv.TLSConfig != nil && s.srv.TLSRequired && !s.tls {
 				s.writef("530 5.7.0 Must issue a STARTTLS command first")
@@ -1057,48 +1114,82 @@ func (s *session) parseLine(line string) (verb string, args string) {
 
 // Read the message data following a DATA command.
 func (s *session) readData() ([]byte, error) {
-	var data []byte
+	data, err := s.readChunks()
+	if err != nil {
+		return nil, err
+	}
+	defer s.releaseData()
+
+	return data.join(nil), nil
+}
+
+// releaseData gives back what the message which is held takes of the limit, and drops it.
+func (s *session) releaseData() {
+	if s.held != nil {
+		s.held.release()
+		s.held = nil
+	}
+}
+
+// readChunks reads the message data following a DATA command, which is held in s.held until releaseData is called
+// (so it counts towards the limit while it is being handled).
+//
+// A line is not put together before it is stored, it is stored as it arrives: a long line (up to MaxSize) would
+// otherwise be copied each time it grows. So the end of the data (a line which is only a period) and the period
+// which is added to the start of a line (RFC 5321 section 4.5.2) are looked for at the start of a line.
+func (s *session) readChunks() (*dataBuffer, error) {
+	s.releaseData()
+
+	d := &dataBuffer{limit: s.srv.receiving}
+	s.held = d
+
+	fail := func(err error) (*dataBuffer, error) {
+		s.releaseData()
+		return nil, err
+	}
+
+	atLineStart := true
 	for {
 		if s.srv.Timeout > 0 {
 			_ = s.conn.SetReadDeadline(time.Now().Add(s.srv.Timeout))
 		}
 
-		// Read the line in buffer-sized chunks. On ErrBufferFull (no newline
-		// found yet) enforce MaxSize early so a single long line cannot force
-		// allocation of the whole over-limit payload before rejection.
-		var line []byte
-		for {
-			fragment, err := s.br.ReadSlice('\n')
-			line = append(line, fragment...)
-			if err == nil {
-				break // newline found, line is complete
+		// Read in buffer-sized pieces. ErrBufferFull means there was no newline in them yet, so the size is checked
+		// for each piece: a single long line can not make us hold the whole over-limit payload before it is refused.
+		fragment, err := s.br.ReadSlice('\n')
+		if err != nil && err != bufio.ErrBufferFull {
+			return fail(err)
+		}
+		complete := err == nil
+
+		if atLineStart {
+			// Handle end of data denoted by lone period (\r\n.\r\n)
+			if complete && bytes.Equal(fragment, []byte(".\r\n")) {
+				return d, nil
 			}
-			if err != bufio.ErrBufferFull {
-				return nil, err
-			}
-			// Buffer filled without a newline - check now before reading more.
-			if s.srv.MaxSize > 0 && len(data)+len(line) > s.srv.MaxSize {
-				s.drainData(false) // mid-line: buffer full without newline
-				return nil, maxSizeExceeded(s.srv.MaxSize)
+			// Remove leading period (RFC 5321 section 4.5.2)
+			if fragment[0] == '.' {
+				fragment = fragment[1:]
 			}
 		}
-		// Handle end of data denoted by lone period (\r\n.\r\n)
-		if bytes.Equal(line, []byte(".\r\n")) {
-			break
-		}
-		// Remove leading period (RFC 5321 section 4.5.2)
-		if line[0] == '.' {
-			line = line[1:]
-		}
-		// Precise size check against the completed, dot-removed line.
-		if s.srv.MaxSize > 0 && len(data)+len(line) > s.srv.MaxSize {
-			s.drainData(true) // line was complete (ended with \n)
+
+		// The size of what has been read with this piece, which is more than the message is going to be
+		if s.srv.MaxSize > 0 && d.size+len(fragment) > s.srv.MaxSize {
+			s.releaseData()
+			s.drainData(complete)
 			return nil, maxSizeExceeded(s.srv.MaxSize)
 		}
 
-		data = append(data, line...)
+		if !d.write(fragment) {
+			// too many messages are being received: the rest of this one is read (and not kept) so the client
+			// can try again, as it is for a message which is too large
+			s.releaseData()
+			s.drainData(complete)
+			return nil, insufficientStorageError{}
+		}
+
+		atLineStart = complete
 	}
-	return data, nil
 }
 
 // drainData reads and discards the remainder of a DATA stream up to
