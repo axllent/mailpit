@@ -8,21 +8,34 @@ import (
 	"fmt"
 	"math/big"
 	"strings"
+	"sync"
 
 	"github.com/axllent/mailpit/internal/logger"
 )
 
 var (
-	// Enabled is a flag to enable or disable support for chaos
+	// Enabled is a flag to enable or disable support for chaos. It is set when Mailpit starts (and by Set, only
+	// if it is not already set), as it is read by every SMTP session.
 	Enabled = false
 
-	// Config is the global Chaos configuration
-	Config = Triggers{
+	// mu protects triggers, which the API changes while SMTP sessions read it
+	mu sync.RWMutex
+
+	// triggers is the global Chaos configuration, read with Get
+	triggers = Triggers{
 		Sender:         Trigger{ErrorCode: 451, Probability: 0},
 		Recipient:      Trigger{ErrorCode: 451, Probability: 0},
 		Authentication: Trigger{ErrorCode: 535, Probability: 0},
 	}
 )
+
+// Get returns a copy of the current Chaos configuration.
+func Get() Triggers {
+	mu.RLock()
+	defer mu.RUnlock()
+
+	return triggers
+}
 
 // Triggers for the Chaos configuration
 //
@@ -51,7 +64,8 @@ type Trigger struct {
 	Probability int
 }
 
-// SetFromStruct will set a whole map of chaos configurations (ie: API)
+// SetFromStruct will set a whole map of chaos configurations (ie: API).
+// All of it is valid or none of it is used, and it is all changed at once.
 func SetFromStruct(c Triggers) error {
 	if c.Sender.ErrorCode == 0 {
 		c.Sender.ErrorCode = 451 // default
@@ -65,22 +79,34 @@ func SetFromStruct(c Triggers) error {
 		c.Authentication.ErrorCode = 535 // default
 	}
 
-	if err := Set("Sender", c.Sender.ErrorCode, c.Sender.Probability); err != nil {
-		return err
+	for _, t := range []Trigger{c.Sender, c.Recipient, c.Authentication} {
+		if err := validate(t.ErrorCode, t.Probability); err != nil {
+			return err
+		}
 	}
-	if err := Set("Recipient", c.Recipient.ErrorCode, c.Recipient.Probability); err != nil {
-		return err
-	}
-	if err := Set("Authentication", c.Authentication.ErrorCode, c.Authentication.Probability); err != nil {
-		return err
-	}
+
+	setEnabled()
+
+	mu.Lock()
+	triggers = c
+	mu.Unlock()
+
+	logger.Log().Infof("[chaos] Sender to return %d error with %d%% probability", c.Sender.ErrorCode, c.Sender.Probability)
+	logger.Log().Infof("[chaos] Recipient to return %d error with %d%% probability", c.Recipient.ErrorCode, c.Recipient.Probability)
+	logger.Log().Infof("[chaos] Authentication to return %d error with %d%% probability", c.Authentication.ErrorCode, c.Authentication.Probability)
 
 	return nil
 }
 
-// Set will set the chaos configuration for the given key (CLI & setMap())
-func Set(key string, errorCode int, probability int) error {
-	Enabled = true
+// setEnabled enables chaos. Enabled is only written if it is not set, which it already is when this is called
+// from the API (that is only possible when it is), as every SMTP session reads it.
+func setEnabled() {
+	if !Enabled {
+		Enabled = true
+	}
+}
+
+func validate(errorCode int, probability int) error {
 	if errorCode < 400 || errorCode > 599 {
 		return fmt.Errorf("error code must be between 400 and 599")
 	}
@@ -89,17 +115,31 @@ func Set(key string, errorCode int, probability int) error {
 		return fmt.Errorf("probability must be between 0 and 100")
 	}
 
+	return nil
+}
+
+// Set will set the chaos configuration for the given key (CLI & setMap())
+func Set(key string, errorCode int, probability int) error {
+	setEnabled()
+
+	if err := validate(errorCode, probability); err != nil {
+		return err
+	}
+
 	key = strings.ToLower(key)
+
+	mu.Lock()
+	defer mu.Unlock()
 
 	switch key {
 	case "sender":
-		Config.Sender = Trigger{ErrorCode: errorCode, Probability: probability}
+		triggers.Sender = Trigger{ErrorCode: errorCode, Probability: probability}
 		logger.Log().Infof("[chaos] Sender to return %d error with %d%% probability", errorCode, probability)
 	case "recipient", "recipients":
-		Config.Recipient = Trigger{ErrorCode: errorCode, Probability: probability}
+		triggers.Recipient = Trigger{ErrorCode: errorCode, Probability: probability}
 		logger.Log().Infof("[chaos] Recipient to return %d error with %d%% probability", errorCode, probability)
 	case "auth", "authentication":
-		Config.Authentication = Trigger{ErrorCode: errorCode, Probability: probability}
+		triggers.Authentication = Trigger{ErrorCode: errorCode, Probability: probability}
 		logger.Log().Infof("[chaos] Authentication to return %d error with %d%% probability", errorCode, probability)
 	default:
 		return fmt.Errorf("unknown key %s", key)

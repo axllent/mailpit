@@ -667,7 +667,7 @@ loop:
 				}
 			} else {
 				// Mailpit Chaos
-				if fail, code := chaos.Config.Sender.Trigger(); fail {
+				if fail, code := chaos.Get().Sender.Trigger(); fail {
 					s.writef("%d Chaos sender error", code)
 					break
 				}
@@ -727,7 +727,7 @@ loop:
 				}
 			} else {
 				// Mailpit Chaos
-				if fail, code := chaos.Config.Recipient.Trigger(); fail {
+				if fail, code := chaos.Get().Recipient.Trigger(); fail {
 					s.writef("%d Chaos recipient error", code)
 					break
 				}
@@ -991,7 +991,7 @@ loop:
 			}
 
 			// Mailpit Chaos
-			if fail, code := chaos.Config.Authentication.Trigger(); fail {
+			if fail, code := chaos.Get().Authentication.Trigger(); fail {
 				s.writef("%d Chaos authentication error", code)
 				break
 			}

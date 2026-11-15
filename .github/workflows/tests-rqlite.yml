@@ -37,6 +37,7 @@ jobs:
             ./internal/pop3 \
             ./internal/prometheus \
             ./internal/smtpd \
+            ./internal/smtpd/chaos \
             ./internal/snakeoil \
             ./internal/spamassassin \
             ./internal/spamassassin/spamc \

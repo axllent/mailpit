@@ -57,6 +57,7 @@ jobs:
           ./internal/rspamd \
           ./internal/shortuuid \
           ./internal/smtpd \
+          ./internal/smtpd/chaos \
           ./internal/snakeoil \
           ./internal/spamassassin \
           ./internal/spamassassin/spamc \

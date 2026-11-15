@@ -141,11 +141,9 @@ func TestCORSMiddlewarePathCheck(t *testing.T) {
 	// Save and restore global state.
 	origAllowOrigin := AccessControlAllowOrigin
 	origWebroot := config.Webroot
-	origRe := htmlPreviewRouteRe
 	defer func() {
 		AccessControlAllowOrigin = origAllowOrigin
 		config.Webroot = origWebroot
-		htmlPreviewRouteRe = origRe
 		setCORSOrigins()
 	}()
 
@@ -237,7 +235,7 @@ func TestCORSMiddlewarePathCheck(t *testing.T) {
 				wantStatus:  http.StatusOK,
 			},
 			{
-				// HTML preview route: htmlPreviewRouteRe matches this path so the
+				// HTML preview route: isHTMLPreviewRoute matches this path so the
 				// CORS gate must fire, using the decoded URL.Path and the webroot-
 				// anchored regex built from config.Webroot.
 				name:        "html preview route blocks cross-origin",
@@ -249,7 +247,7 @@ func TestCORSMiddlewarePathCheck(t *testing.T) {
 			{
 				// Encoded view segment: analogous to the %61pi API bypass but for
 				// the preview route. %76 = 'v'; decoded path is /view/abc123.html
-				// which matches htmlPreviewRouteRe, so CORS must fire.
+				// which matches isHTMLPreviewRoute, so CORS must fire.
 				name:        "encoded view segment in preview route blocks cross-origin",
 				rawURI:      wr + "%76iew/abc123.html",
 				decodedPath: wr + "view/abc123.html",
@@ -258,7 +256,7 @@ func TestCORSMiddlewarePathCheck(t *testing.T) {
 			},
 			{
 				// Encoded .html extension: %6c = 'l'; decoded path is
-				// /view/abc123.html which matches htmlPreviewRouteRe.
+				// /view/abc123.html which matches isHTMLPreviewRoute.
 				name:        "encoded html extension in preview route blocks cross-origin",
 				rawURI:      wr + "view/abc123.htm%6c",
 				decodedPath: wr + "view/abc123.html",
@@ -266,7 +264,7 @@ func TestCORSMiddlewarePathCheck(t *testing.T) {
 				wantStatus:  http.StatusForbidden,
 			},
 			{
-				// Non-preview /view/ path: does not match htmlPreviewRouteRe
+				// Non-preview /view/ path: does not match isHTMLPreviewRoute
 				// (no .html suffix), so the CORS gate does not apply.
 				name:        "non-preview view path not subject to CORS gate",
 				rawURI:      wr + "view/index",
@@ -290,7 +288,6 @@ func TestCORSMiddlewarePathCheck(t *testing.T) {
 	for _, wr := range roots {
 		t.Run(wr.name, func(t *testing.T) {
 			config.Webroot = wr.webroot
-			htmlPreviewRouteRe = nil // force recompile for new webroot
 
 			for _, tt := range casesFor(wr.webroot, wr.encodedWR) {
 				t.Run(tt.name, func(t *testing.T) {
@@ -403,12 +400,10 @@ func TestMiddlewareRejectsRebindingHost(t *testing.T) {
 	origAllowOrigin := AccessControlAllowOrigin
 	origAllowedHosts := AllowedHosts
 	origWebroot := config.Webroot
-	origRe := htmlPreviewRouteRe
 	defer func() {
 		AccessControlAllowOrigin = origAllowOrigin
 		AllowedHosts = origAllowedHosts
 		config.Webroot = origWebroot
-		htmlPreviewRouteRe = origRe
 		setCORSOrigins()
 		setAllowedHosts()
 	}()

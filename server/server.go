@@ -11,7 +11,6 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"regexp"
 	"strings"
 	"sync/atomic"
 	"text/template"
@@ -31,11 +30,6 @@ import (
 	"github.com/axllent/mailpit/server/apiv1"
 	"github.com/axllent/mailpit/server/handlers"
 	"github.com/axllent/mailpit/server/websockets"
-)
-
-var (
-	// htmlPreviewRouteRe is a regexp to match the HTML preview route
-	htmlPreviewRouteRe *regexp.Regexp
 )
 
 // skipUIAuthKey is a private context key used to signal that UI basic-auth
@@ -386,11 +380,7 @@ func middleWareFunc(fn http.HandlerFunc) http.HandlerFunc {
 
 		w.Header().Set("Content-Security-Policy", cspHeader)
 
-		if htmlPreviewRouteRe == nil {
-			htmlPreviewRouteRe = regexp.MustCompile(`^` + regexp.QuoteMeta(config.Webroot) + `view/[a-zA-Z0-9]+\.html$`)
-		}
-
-		if strings.HasPrefix(r.URL.Path, config.Webroot+"api/") || htmlPreviewRouteRe.MatchString(r.URL.Path) {
+		if strings.HasPrefix(r.URL.Path, config.Webroot+"api/") || isHTMLPreviewRoute(r.URL.Path) {
 			if allowed := corsOriginAccessControl(r); !allowed {
 				http.Error(w, "Blocked due to CORS violation", http.StatusForbidden)
 				return
@@ -435,6 +425,30 @@ func middleWareFunc(fn http.HandlerFunc) http.HandlerFunc {
 		gzr := gzipResponseWriter{Writer: gz, ResponseWriter: w}
 		fn(gzr, r)
 	}
+}
+
+// isHTMLPreviewRoute returns whether the path is the HTML preview of a message: the webroot, "view/", an ID of
+// letters and numbers and ".html". It has no state, as it is called by every request at once (it used to build a
+// regular expression the first time, which two requests could do together).
+func isHTMLPreviewRoute(path string) bool {
+	rest, ok := strings.CutPrefix(path, config.Webroot+"view/")
+	if !ok {
+		return false
+	}
+
+	id, ok := strings.CutSuffix(rest, ".html")
+	if !ok || id == "" {
+		return false
+	}
+
+	for i := 0; i < len(id); i++ {
+		c := id[i]
+		if (c < 'a' || c > 'z') && (c < 'A' || c > 'Z') && (c < '0' || c > '9') {
+			return false
+		}
+	}
+
+	return true
 }
 
 // Redirect to webroot

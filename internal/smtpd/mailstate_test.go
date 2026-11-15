@@ -103,20 +103,25 @@ func TestChaosRefusedMailEndsTheTransaction(t *testing.T) {
 	cl.cmd("EHLO x", "250")
 	cl.cmd("MAIL FROM:<first@b.test>", "250")
 
-	// the settings are global, so they are only changed while no other session runs
-	origEnabled, origSender := chaos.Enabled, chaos.Config.Sender
+	// the settings are global, so they are put back once the session has ended
+	origEnabled, origTriggers := chaos.Enabled, chaos.Get()
 	t.Cleanup(func() {
 		_ = cl.c.Close()
 		_ = srv.Close()
 		waitForSessions(srv, 0, 3*time.Second)
-		chaos.Enabled, chaos.Config.Sender = origEnabled, origSender
+		_ = chaos.SetFromStruct(origTriggers)
+		chaos.Enabled = origEnabled
 	})
-	chaos.Enabled = true
-	chaos.Config.Sender = chaos.Trigger{ErrorCode: 451, Probability: 100}
+
+	if err := chaos.Set("sender", 451, 100); err != nil {
+		t.Fatal(err)
+	}
 
 	cl.cmd("MAIL FROM:<second@b.test>", "451")
 
-	chaos.Config.Sender = chaos.Trigger{ErrorCode: 451, Probability: 0}
+	if err := chaos.Set("sender", 451, 0); err != nil {
+		t.Fatal(err)
+	}
 	cl.cmd("RCPT TO:<c@d.test>", "503")
 
 	cl.cmd("NOOP", "250")
