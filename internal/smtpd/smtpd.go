@@ -512,6 +512,19 @@ func (s *session) serve() {
 	// the lookup runs while the client is talking, it is needed for the Received header
 	s.startReverseLookup()
 
+	// A TLS connection (when TLS is required for every connection) is not handshaken until the first read or write,
+	// which would be the banner, and no deadline applies to it yet. A client which connects and says nothing would
+	// hold the connection (and its slot) for ever, so the handshake is done here, within the timeout.
+	if tlsConn, ok := s.conn.(*tls.Conn); ok {
+		if s.srv.Timeout > 0 {
+			_ = s.conn.SetDeadline(time.Now().Add(s.srv.Timeout))
+		}
+
+		if err := tlsConn.Handshake(); err != nil {
+			return
+		}
+	}
+
 	// Send banner.
 	s.writef("220 %s %s ESMTP Service ready", s.srv.Hostname, s.srv.AppName)
 
