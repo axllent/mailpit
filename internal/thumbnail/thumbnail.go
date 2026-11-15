@@ -8,6 +8,7 @@ package thumbnail
 
 import (
 	"bytes"
+	"context"
 	"image"
 	"image/color"
 	"image/draw"
@@ -58,7 +59,15 @@ var decode = safeDecode
 // JPEGs, as they need more memory to decode), or cannot be decoded, a blank white JPEG of the requested dimensions is
 // returned with no error. This matches the UI expectation that the
 // endpoint always returns a displayable image.
-func Generate(data []byte, width, height int) (out []byte, err error) {
+//
+// The context is the request's. If it is done (the client has gone, or it timed out) nothing more is
+// done and its error is returned, so a request which is waiting for a decode slot gives it up, and one
+// which has been abandoned does not take one. A decode which has started is not stopped.
+func Generate(ctx context.Context, data []byte, width, height int) (out []byte, err error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+
 	if len(data) == 0 {
 		return encodeJPEG(whiteCanvas(width, height))
 	}
@@ -71,12 +80,26 @@ func Generate(data []byte, width, height int) (out []byte, err error) {
 		}
 	}()
 
-	decodeSlots <- struct{}{}
+	select {
+	case decodeSlots <- struct{}{}:
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	}
 	defer func() { <-decodeSlots }()
+
+	// the slot and the end of the context can both be ready, and select then chooses either
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
 
 	img, err := decode(data)
 	if err != nil || img == nil {
 		return encodeJPEG(whiteCanvas(width, height))
+	}
+
+	// the decode could not be stopped, but the rest is not done for a client which has gone
+	if err := ctx.Err(); err != nil {
+		return nil, err
 	}
 
 	img = fixOrientation(data, img)

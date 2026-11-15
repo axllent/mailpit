@@ -2,6 +2,7 @@ package thumbnail
 
 import (
 	"bytes"
+	"context"
 	"encoding/binary"
 	"image"
 	"image/color"
@@ -191,7 +192,7 @@ func TestOrientationDoesNotCopyTheImage(t *testing.T) {
 		runtime.GC()
 		var m0, m1 runtime.MemStats
 		runtime.ReadMemStats(&m0)
-		if _, err := Generate(data, 180, 120); err != nil {
+		if _, err := Generate(context.Background(), data, 180, 120); err != nil {
 			t.Fatal(err)
 		}
 		runtime.ReadMemStats(&m1)

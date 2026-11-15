@@ -3,11 +3,14 @@ package thumbnail
 import (
 	"bytes"
 	"compress/zlib"
+	"context"
 	"encoding/binary"
+	"errors"
 	"hash/crc32"
 	"image"
 	"image/jpeg"
 	"image/png"
+	"sync/atomic"
 	"testing"
 	"time"
 )
@@ -109,7 +112,7 @@ func isValidJPEG(data []byte) bool {
 
 func TestGenerateSmallImage(t *testing.T) {
 	png := solidPNG(16, 16)
-	data, err := Generate(png, 180, 120)
+	data, err := Generate(context.Background(), png, 180, 120)
 	if err != nil {
 		t.Fatalf("Generate: %v", err)
 	}
@@ -121,7 +124,7 @@ func TestGenerateSmallImage(t *testing.T) {
 func TestGenerateOversizedImageRejected(t *testing.T) {
 	// 4500x4500 = 20,250,000 pixels, above the 20,000,000 limit.
 	png := solidPNG(4500, 4500)
-	data, err := Generate(png, 180, 120)
+	data, err := Generate(context.Background(), png, 180, 120)
 	if err != nil {
 		t.Fatalf("Generate: %v", err)
 	}
@@ -137,7 +140,7 @@ func TestGenerateOversizedImageRejected(t *testing.T) {
 func TestGenerateBoundaryDimensions(t *testing.T) {
 	// 4472x4472 = 19,998,784 pixels, just under 20,000,000.
 	accept := solidPNG(4472, 4472)
-	data, err := Generate(accept, 180, 120)
+	data, err := Generate(context.Background(), accept, 180, 120)
 	if err != nil {
 		t.Fatalf("accept: %v", err)
 	}
@@ -147,7 +150,7 @@ func TestGenerateBoundaryDimensions(t *testing.T) {
 
 	// 4473x4473 = 20,007,729 pixels, just over 20,000,000.
 	reject := solidPNG(4473, 4473)
-	data2, err := Generate(reject, 180, 120)
+	data2, err := Generate(context.Background(), reject, 180, 120)
 	if err != nil {
 		t.Fatalf("reject: %v", err)
 	}
@@ -157,9 +160,9 @@ func TestGenerateBoundaryDimensions(t *testing.T) {
 }
 
 func TestGenerateNilDataReturnsBlank(t *testing.T) {
-	data, err := Generate(nil, 180, 120)
+	data, err := Generate(context.Background(), nil, 180, 120)
 	if err != nil {
-		t.Fatalf("Generate(nil): %v", err)
+		t.Fatalf("Generate(context.Background(), nil): %v", err)
 	}
 	if !isValidJPEG(data) {
 		t.Fatal("output is not valid JPEG")
@@ -167,9 +170,9 @@ func TestGenerateNilDataReturnsBlank(t *testing.T) {
 }
 
 func TestGenerateInvalidDataReturnsBlank(t *testing.T) {
-	data, err := Generate([]byte("not an image"), 180, 120)
+	data, err := Generate(context.Background(), []byte("not an image"), 180, 120)
 	if err != nil {
-		t.Fatalf("Generate(garbage): %v", err)
+		t.Fatalf("Generate(context.Background(), garbage): %v", err)
 	}
 	if !isValidJPEG(data) {
 		t.Fatal("output is not valid JPEG")
@@ -185,7 +188,7 @@ func TestAPNGDecodesOnlyOneFrame(t *testing.T) {
 	// 500*500*4*50 = 50 MB. As a single frame it is 1 MB.
 	apng := solidAPNG(500, 500, 50)
 
-	data, err := Generate(apng, 180, 120)
+	data, err := Generate(context.Background(), apng, 180, 120)
 	if err != nil {
 		t.Fatalf("Generate APNG: %v", err)
 	}
@@ -236,7 +239,7 @@ func TestDecodesAreLimited(t *testing.T) {
 
 	// control: with a free slot an image is decoded at once
 	done := make(chan []byte, 1)
-	go func() { out, _ := Generate(data, 180, 120); done <- out }()
+	go func() { out, _ := Generate(context.Background(), data, 180, 120); done <- out }()
 	select {
 	case out := <-done:
 		checkThumbnail(t, out)
@@ -248,7 +251,7 @@ func TestDecodesAreLimited(t *testing.T) {
 	decodeSlots <- struct{}{}
 	decodeSlots <- struct{}{}
 
-	go func() { out, _ := Generate(data, 180, 120); done <- out }()
+	go func() { out, _ := Generate(context.Background(), data, 180, 120); done <- out }()
 	select {
 	case <-done:
 		t.Fatal("an image was decoded while all the slots were in use")
@@ -256,7 +259,7 @@ func TestDecodesAreLimited(t *testing.T) {
 	}
 
 	// something that is not an image needs no slot, so it is not held up
-	if out, err := Generate(nil, 180, 120); err != nil {
+	if out, err := Generate(context.Background(), nil, 180, 120); err != nil {
 		t.Fatal(err)
 	} else {
 		checkThumbnail(t, out)
@@ -281,7 +284,7 @@ func TestDecoderPanicIsRecovered(t *testing.T) {
 	data := pngBytes(t)
 
 	// control: the real decoder gives the image
-	out, err := Generate(data, 180, 120)
+	out, err := Generate(context.Background(), data, 180, 120)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -291,7 +294,7 @@ func TestDecoderPanicIsRecovered(t *testing.T) {
 	// exploit: a decoder that panics
 	decode = func([]byte) (image.Image, error) { panic("decoder failure") }
 
-	out, err = Generate(data, 180, 120)
+	out, err = Generate(context.Background(), data, 180, 120)
 	if err != nil {
 		t.Fatalf("a panic was returned as an error: %v", err)
 	}
@@ -327,10 +330,214 @@ func FuzzGenerate(f *testing.F) {
 			}
 		}
 
-		out, err := Generate(data, 180, 120)
+		out, err := Generate(context.Background(), data, 180, 120)
 		if err != nil {
 			t.Fatal(err)
 		}
 		checkThumbnail(t, out)
 	})
+}
+
+// countDecodes replaces the decoder with one which counts how often it is used.
+func countDecodes(t *testing.T) *atomic.Int32 {
+	t.Helper()
+
+	orig := decode
+	t.Cleanup(func() { decode = orig })
+
+	var n atomic.Int32
+	decode = func(data []byte) (image.Image, error) {
+		n.Add(1)
+		return orig(data)
+	}
+
+	return &n
+}
+
+// A request which is waiting for a decode slot gave up only when it had one, and then decoded, even
+// when its client had gone. It now stops waiting when the request is over.
+func TestGenerateStopsWaitingWhenTheRequestIsOver(t *testing.T) {
+	orig := decodeSlots
+	decodeSlots = make(chan struct{}, 1)
+	t.Cleanup(func() { decodeSlots = orig })
+	decodes := countDecodes(t)
+
+	data := pngBytes(t)
+	decodeSlots <- struct{}{} // every slot is in use
+
+	ctx, cancel := context.WithCancel(context.Background())
+	result := make(chan error, 1)
+	go func() { _, err := Generate(ctx, data, 180, 120); result <- err }()
+
+	select {
+	case err := <-result:
+		t.Fatalf("returned while waiting for a slot: %v", err)
+	case <-time.After(200 * time.Millisecond):
+	}
+
+	// exploit: the client goes away
+	cancel()
+	select {
+	case err := <-result:
+		if !errors.Is(err, context.Canceled) {
+			t.Errorf("error %v, want context.Canceled", err)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("still waiting after the request was over")
+	}
+
+	// a slot is free, and nothing is decoded for the request which has gone
+	<-decodeSlots
+	time.Sleep(100 * time.Millisecond)
+	if decodes.Load() != 0 {
+		t.Errorf("%d decodes for a request which was over", decodes.Load())
+	}
+	if len(decodeSlots) != 0 {
+		t.Errorf("%d slots held", len(decodeSlots))
+	}
+
+	// control: a request which is not over waits, and is decoded once there is a slot
+	decodeSlots <- struct{}{}
+	go func() { _, err := Generate(context.Background(), data, 180, 120); result <- err }()
+	select {
+	case <-result:
+		t.Fatal("returned while all the slots were in use")
+	case <-time.After(200 * time.Millisecond):
+	}
+	<-decodeSlots
+	select {
+	case err := <-result:
+		if err != nil {
+			t.Errorf("error %v", err)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("not decoded once a slot was free")
+	}
+	if decodes.Load() != 1 {
+		t.Errorf("%d decodes, want 1", decodes.Load())
+	}
+}
+
+// A request which is over before it starts is not decoded, even when there is a slot for it. Both
+// being ready is where a select would choose either, so it is tried many times.
+func TestGenerateDoesNotDecodeForARequestWhichIsOver(t *testing.T) {
+	decodes := countDecodes(t)
+	data := pngBytes(t)
+
+	cancelled, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	for range 300 {
+		out, err := Generate(cancelled, data, 180, 120)
+		if !errors.Is(err, context.Canceled) || out != nil {
+			t.Fatalf("got %d bytes and %v", len(out), err)
+		}
+	}
+	if decodes.Load() != 0 {
+		t.Fatalf("%d decodes", decodes.Load())
+	}
+	if len(decodeSlots) != 0 {
+		t.Fatalf("%d slots held", len(decodeSlots))
+	}
+
+	// nothing is made for a client which has gone, even the blank image for no data
+	if out, err := Generate(cancelled, nil, 180, 120); !errors.Is(err, context.Canceled) || out != nil {
+		t.Errorf("no data: got %d bytes and %v", len(out), err)
+	}
+
+	// a request which timed out, as well as one which was cancelled
+	expired, cancelExpired := context.WithTimeout(context.Background(), time.Nanosecond)
+	defer cancelExpired()
+	<-expired.Done()
+	if _, err := Generate(expired, data, 180, 120); !errors.Is(err, context.DeadlineExceeded) {
+		t.Errorf("error %v, want context.DeadlineExceeded", err)
+	}
+
+	// controls: a request which is not over is decoded, with a deadline which is not reached too
+	live, cancelLive := context.WithTimeout(context.Background(), time.Minute)
+	defer cancelLive()
+	for _, ctx := range []context.Context{context.Background(), live} {
+		out, err := Generate(ctx, data, 180, 120)
+		if err != nil {
+			t.Fatal(err)
+		}
+		checkThumbnail(t, out)
+	}
+	if decodes.Load() != 2 {
+		t.Errorf("%d decodes, want 2", decodes.Load())
+	}
+
+	// and an empty image is still a blank one for a request which is not over
+	out, err := Generate(context.Background(), nil, 180, 120)
+	if err != nil {
+		t.Fatal(err)
+	}
+	checkThumbnail(t, out)
+}
+
+// A decode which has begun cannot be stopped, but what follows it is not done for a client which has gone.
+func TestGenerateStopsAfterTheDecodeWhenTheRequestIsOver(t *testing.T) {
+	orig := decode
+	t.Cleanup(func() { decode = orig })
+
+	ctx, cancel := context.WithCancel(context.Background())
+	decode = func(data []byte) (image.Image, error) {
+		cancel() // the client goes away while the image is being decoded
+		return orig(data)
+	}
+
+	out, err := Generate(ctx, pngBytes(t), 180, 120)
+	if !errors.Is(err, context.Canceled) || out != nil {
+		t.Errorf("got %d bytes and %v", len(out), err)
+	}
+	if len(decodeSlots) != 0 {
+		t.Errorf("%d slots held", len(decodeSlots))
+	}
+}
+
+// endsAfterTheFirstCheck is a context which is not over the first time it is asked, and is over
+// (with its channel closed) from then on. That is the request ending between the start of Generate
+// and the wait for a slot, which a real context does at a moment which can not be chosen.
+type endsAfterTheFirstCheck struct {
+	context.Context
+	asked atomic.Int32
+	done  chan struct{}
+}
+
+func newEndsAfterTheFirstCheck() *endsAfterTheFirstCheck {
+	done := make(chan struct{})
+	close(done)
+
+	return &endsAfterTheFirstCheck{Context: context.Background(), done: done}
+}
+
+func (c *endsAfterTheFirstCheck) Done() <-chan struct{} { return c.done }
+
+func (c *endsAfterTheFirstCheck) Err() error {
+	if c.asked.Add(1) == 1 {
+		return nil
+	}
+
+	return context.Canceled
+}
+
+// The request is over when there is a slot, so a select could choose either the slot or the end of
+// the request. It must never decode, as the request was over before the slot was taken.
+func TestGenerateDoesNotDecodeWhenTheSlotAndTheEndOfTheRequestAreTogether(t *testing.T) {
+	decodes := countDecodes(t)
+	data := pngBytes(t)
+
+	for range 300 {
+		out, err := Generate(newEndsAfterTheFirstCheck(), data, 180, 120)
+		if !errors.Is(err, context.Canceled) || out != nil {
+			t.Fatalf("got %d bytes and %v", len(out), err)
+		}
+	}
+
+	if decodes.Load() != 0 {
+		t.Fatalf("%d decodes for requests which were over before the slot was taken", decodes.Load())
+	}
+	if len(decodeSlots) != 0 {
+		t.Fatalf("%d slots held", len(decodeSlots))
+	}
 }

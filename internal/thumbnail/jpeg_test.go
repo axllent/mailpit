@@ -2,6 +2,7 @@ package thumbnail
 
 import (
 	"bytes"
+	"context"
 	"image"
 	"image/jpeg"
 	"testing"
@@ -162,7 +163,7 @@ func TestProgressiveJPEGLimit(t *testing.T) {
 	}
 
 	// and a rejected image gives a blank thumbnail, not an error
-	out, err := Generate(patchFrame(t, large, jpegSOF2, 4000, 4000), 180, 120)
+	out, err := Generate(context.Background(), patchFrame(t, large, jpegSOF2, 4000, 4000), 180, 120)
 	if err != nil {
 		t.Fatal(err)
 	}

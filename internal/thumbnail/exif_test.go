@@ -2,6 +2,7 @@ package thumbnail
 
 import (
 	"bytes"
+	"context"
 	"encoding/binary"
 	"image"
 	"image/jpeg"
@@ -97,7 +98,7 @@ func TestReadOrientationIFDCycle(t *testing.T) {
 	// full pipeline
 	for name, data := range map[string][]byte{"control": control, "cycle": cycle} {
 		done := make(chan struct{})
-		go func() { _, _ = Generate(data, 180, 120); close(done) }()
+		go func() { _, _ = Generate(context.Background(), data, 180, 120); close(done) }()
 		select {
 		case <-done:
 		case <-time.After(5 * time.Second):
