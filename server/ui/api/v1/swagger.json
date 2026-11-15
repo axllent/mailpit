@@ -2028,6 +2028,11 @@
           "description": "Total spam score based on triggered rules",
           "type": "number",
           "format": "double"
+        },
+        "Threshold": {
+          "description": "Score at which a message is treated as spam: the required score of the SpamAssassin server\n(5 for Postmark)",
+          "type": "number",
+          "format": "double"
         }
       },
       "x-go-name": "Result",

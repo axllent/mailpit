@@ -6,7 +6,10 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
+
+	"github.com/axllent/mailpit/internal/spamassassin/postmark"
 )
 
 const report = "SPAMD/1.1 0 EX_OK\r\n\r\nSpam: False ; 0.7 / 5.0\r\n\r\n" +
@@ -140,5 +143,111 @@ func TestNoService(t *testing.T) {
 	use(t, "")
 	if _, err := Check([]byte("x")); err == nil {
 		t.Fatal("no error without a service")
+	}
+}
+
+func spamdReply(summary string) string {
+	return "SPAMD/1.1 0 EX_OK\r\n\r\n" + summary + "\r\n"
+}
+
+// SpamAssassin decides what is spam from the required score it is configured with, which is not always
+// 5. The verdict and the threshold used to be ignored, and 5 used instead.
+func TestCheckUsesTheServersThreshold(t *testing.T) {
+	tests := []struct {
+		name      string
+		summary   string
+		isSpam    bool
+		score     float64
+		threshold float64
+	}{
+		// a lower required score than 5, and a higher one
+		{"exploit: spam below 5", "Spam: True ; 3.5 / 3.0", true, 3.5, 3},
+		{"exploit: not spam above 5", "Spam: False ; 6.0 / 8.0", false, 6, 8},
+		{"exploit: a required score with decimals", "Spam: False ; 1.0 / 4.25", false, 1, 4.25},
+		{"exploit: spam just over a low score", "Spam: True ; 2.1 / 2.0", true, 2.1, 2},
+
+		// controls: the usual required score, where it makes no difference
+		{"control: spam at 5", "Spam: True ; 5.0 / 5.0", true, 5, 5},
+		{"control: not spam under 5", "Spam: False ; 4.9 / 5.0", false, 4.9, 5},
+		{"control: spam well over 5", "Spam: True ; 15.0 / 5.0", true, 15, 5},
+		{"control: nothing", "Spam: False ; 0.0 / 5.0", false, 0, 5},
+
+		// the words which spamd can use
+		{"yes", "Spam: Yes ; 9.0 / 5.0", true, 9, 5},
+		{"no", "Spam: No ; 1.0 / 5.0", false, 1, 5},
+		{"upper case", "Spam: TRUE ; 9.0 / 5.0", true, 9, 5},
+
+		// the threshold is shown, the verdict is the server's whatever it is
+		{"a threshold which can not be read", "Spam: True ; 7.0 / x", true, 7, 0},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			use(t, serve(t, "tcp", "127.0.0.1:0", spamdReply(tt.summary)))
+
+			r, err := Check([]byte("x"))
+			if err != nil || r.Error != "" {
+				t.Fatalf("%v %q", err, r.Error)
+			}
+			if r.IsSpam != tt.isSpam || r.Score != tt.score || r.Threshold != tt.threshold {
+				t.Errorf("IsSpam %v, Score %v, Threshold %v, want %v, %v, %v", r.IsSpam, r.Score, r.Threshold, tt.isSpam, tt.score, tt.threshold)
+			}
+		})
+	}
+
+	// the threshold is in the JSON, which the page uses for the score and the graph
+	use(t, serve(t, "tcp", "127.0.0.1:0", spamdReply("Spam: False ; 1.0 / 3.5")))
+	r, _ := Check([]byte("x"))
+	b, err := json.Marshal(r)
+	if err != nil || !strings.Contains(string(b), `"Threshold":3.5`) {
+		t.Errorf("%s, %v", b, err)
+	}
+}
+
+// A verdict which is not one which spamd uses is an error, and not a message which is not spam.
+func TestCheckRejectsAnUnknownVerdict(t *testing.T) {
+	for _, summary := range []string{"Spam: Maybe ; 9.0 / 5.0", "Spam: 1 ; 9.0 / 5.0", "Spam: spam ; 9.0 / 5.0"} {
+		use(t, serve(t, "tcp", "127.0.0.1:0", spamdReply(summary)))
+
+		r, err := Check([]byte("x"))
+		if err != nil || r.Error == "" || r.IsSpam {
+			t.Errorf("%q: err=%v Error=%q IsSpam=%v", summary, err, r.Error, r.IsSpam)
+		}
+	}
+}
+
+// Postmark does not say what its required score is, so it is the usual 5.
+func TestFromPostmark(t *testing.T) {
+	rules := []postmark.Rule{{Score: "0.7", Name: "FOO", Description: "Foo"}, {Score: "x", Name: "BAR"}}
+
+	tests := []struct {
+		name   string
+		res    postmark.Response
+		isSpam bool
+		score  float64
+		err    string
+	}{
+		{"spam at 5", postmark.Response{Success: true, Score: "5.0"}, true, 5, ""},
+		{"not spam under 5", postmark.Response{Success: true, Score: "4.9"}, false, 4.9, ""},
+		{"spam well over", postmark.Response{Success: true, Score: "12.3"}, true, 12.3, ""},
+		{"not a number", postmark.Response{Success: true, Score: "NaN"}, false, 0, "Postmark returned an invalid score"},
+		{"an error from Postmark", postmark.Response{Message: "Internal error"}, false, 0, "Internal error"},
+		{"no result", postmark.Response{}, false, 0, "Postmark did not return a result"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tt.res.Rules = rules
+			r := fromPostmark(tt.res)
+
+			if r.IsSpam != tt.isSpam || r.Score != tt.score || r.Error != tt.err || r.Threshold != 5 {
+				t.Errorf("IsSpam %v, Score %v, Error %q, Threshold %v", r.IsSpam, r.Score, r.Error, r.Threshold)
+			}
+		})
+	}
+
+	r := fromPostmark(postmark.Response{Success: true, Score: "1.0", Rules: rules})
+	if len(r.Rules) != 2 || r.Rules[0].Score != 0.7 || r.Rules[0].Name != "FOO" || r.Rules[1].Score != 0 {
+		t.Errorf("rules %+v", r.Rules)
 	}
 }

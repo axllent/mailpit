@@ -232,7 +232,16 @@ func (c *Client) parseOutput(output []string) (Result, error) {
 
 		// summary
 		if res := spamMainRe.FindStringSubmatch(row); len(res) == 4 {
-			result.Spam = tools.InArray(res[1], []string{"true", "yes"})
+			// the server's own verdict, which is by its configured required score. A word which is
+			// not one of those is an error, and not "not spam".
+			switch {
+			case tools.InArray(res[1], []string{"true", "yes"}):
+				result.Spam = true
+			case tools.InArray(res[1], []string{"false", "no"}):
+				result.Spam = false
+			default:
+				return Result{}, fmt.Errorf("spamd: unknown verdict %q", res[1])
+			}
 
 			score, err := ParseScore(res[2])
 			if err != nil {

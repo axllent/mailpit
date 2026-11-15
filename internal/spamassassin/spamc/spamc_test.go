@@ -79,6 +79,8 @@ func TestReportRejectsFailedResponses(t *testing.T) {
 		{"exploit: no summary", "SPAMD/1.1 0 EX_OK\r\n\r\n", false},
 		{"exploit: NaN score", "SPAMD/1.1 0 EX_OK\r\n\r\nSpam: True ; NaN / 5.0\r\n", false},
 		{"exploit: infinite score", "SPAMD/1.1 0 EX_OK\r\n\r\nSpam: True ; +Inf / 5.0\r\n", false},
+		{"exploit: a verdict which is not one spamd uses", "SPAMD/1.1 0 EX_OK\r\n\r\nSpam: Maybe ; 9.0 / 5.0\r\n", false},
+		{"control: the verdict No", "SPAMD/1.1 0 EX_OK\r\n\r\nSpam: No ; 1.0 / 5.0\r\n", true},
 		{"exploit: a later line looks like a header", "SPAMD/1.1 0 EX_OK\r\n\r\nSpam: False ; 1.0 / 5.0\r\nx/y 76 fail\r\n", true},
 	}
 
@@ -229,4 +231,28 @@ func FuzzParseOutput(f *testing.F) {
 			}
 		}
 	})
+}
+
+// The verdict and the required score of the server are what the reply says.
+func TestReportVerdictAndThreshold(t *testing.T) {
+	tests := []struct {
+		summary   string
+		spam      bool
+		score     float64
+		threshold float64
+	}{
+		{"Spam: True ; 3.5 / 3.0", true, 3.5, 3},
+		{"Spam: False ; 6.0 / 8.0", false, 6, 8},
+		{"Spam: yes ; 5.0 / 5.0", true, 5, 5},
+		{"Spam: NO ; 0.1 / 5.0", false, 0.1, 5},
+		{"Spam: False ; 1.0 / 4.25", false, 1, 4.25},
+	}
+
+	for _, tt := range tests {
+		addr := serve(t, "tcp", "127.0.0.1:0", "SPAMD/1.1 0 EX_OK\r\n\r\n"+tt.summary+"\r\n")
+		res, err := NewTCP(addr, 5).Report([]byte("x"))
+		if err != nil || res.Spam != tt.spam || res.Score != tt.score || res.Threshold != tt.threshold {
+			t.Errorf("%q: %+v, %v", tt.summary, res, err)
+		}
+	}
 }

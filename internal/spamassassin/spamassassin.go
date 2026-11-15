@@ -15,7 +15,8 @@ var (
 	// Service to use, either "<host>:<ip>" for self-hosted SpamAssassin or "postmark"
 	service string
 
-	// SpamScore is the score at which a message is determined to be spam
+	// spamScore is the score at which a message is determined to be spam when the service does not
+	// say (Postmark does not). SpamAssassin's own required score is used for that.
 	spamScore = 5.0
 
 	// Timeout in seconds
@@ -32,6 +33,9 @@ type Result struct {
 	Error string
 	// Total spam score based on triggered rules
 	Score float64
+	// Score at which a message is treated as spam: the required score of the SpamAssassin server
+	// (5 for Postmark)
+	Threshold float64
 	// Spam rules triggered
 	Rules []Rule
 }
@@ -89,38 +93,16 @@ func Check(msg []byte) (Result, error) {
 			return r, nil
 		}
 
-		r.Error = res.Message
-
-		if res.Score != "" || res.Success {
-			score, err := spamc.ParseScore(res.Score)
-			if err != nil {
-				r.Error = "Postmark returned an invalid score"
-				return r, nil
-			}
-			r.Score = round1dm(score)
-			r.IsSpam = score >= spamScore
-		}
-
-		if r.Error == "" && !res.Success {
-			r.Error = "Postmark did not return a result"
-		}
-
-		for _, pr := range res.Rules {
-			rule := Rule{}
-			if value, err := spamc.ParseScore(pr.Score); err == nil {
-				rule.Score = round1dm(value)
-			}
-			rule.Name = pr.Name
-			rule.Description = pr.Description
-			r.Rules = append(r.Rules, rule)
-		}
+		return fromPostmark(res), nil
 	} else {
 		res, err := client().Report(msg)
 		if err != nil {
 			r.Error = err.Error()
 			return r, nil
 		}
-		r.IsSpam = res.Score >= spamScore
+		// the server decides what is spam, by the required score it is configured with
+		r.IsSpam = res.Spam
+		r.Threshold = round2dp(res.Threshold)
 		r.Score = round1dm(res.Score)
 		r.Rules = []Rule{}
 		for _, sr := range res.Rules {
@@ -135,6 +117,43 @@ func Check(msg []byte) (Result, error) {
 	}
 
 	return r, nil
+}
+
+// fromPostmark returns the result from Postmark's response. Postmark does not return the score it
+// treats as spam, so it is the usual 5.
+func fromPostmark(res postmark.Response) Result {
+	r := Result{Threshold: spamScore, Error: res.Message}
+
+	if res.Score != "" || res.Success {
+		score, err := spamc.ParseScore(res.Score)
+		if err != nil {
+			r.Error = "Postmark returned an invalid score"
+			return r
+		}
+		r.Score = round1dm(score)
+		r.IsSpam = score >= spamScore
+	}
+
+	if r.Error == "" && !res.Success {
+		r.Error = "Postmark did not return a result"
+	}
+
+	for _, pr := range res.Rules {
+		rule := Rule{}
+		if value, err := spamc.ParseScore(pr.Score); err == nil {
+			rule.Score = round1dm(value)
+		}
+		rule.Name = pr.Name
+		rule.Description = pr.Description
+		r.Rules = append(r.Rules, rule)
+	}
+
+	return r
+}
+
+// round2dp rounds to the nearest two decimal places, which a required score can have (eg: 4.25)
+func round2dp(n float64) float64 {
+	return math.Round(n*100) / 100
 }
 
 // Round down to one decimal place
