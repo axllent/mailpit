@@ -145,6 +145,8 @@ type Server struct {
 	lookupAddr func(ctx context.Context, ip string) ([]string, error)
 	// reverseDNSTimeout is how long a reverse DNS lookup may take, defaultReverseDNSTimeout if zero (it is set by the tests).
 	reverseDNSTimeout time.Duration
+	// hosts remembers the host names which were looked up for a while.
+	hosts hostCache
 }
 
 // defaultReverseDNSTimeout is how long a reverse DNS lookup may take before the remote host is "unknown".
@@ -167,10 +169,18 @@ func (srv *Server) reverseLookup(ip string) string {
 		lookup = net.DefaultResolver.LookupAddr
 	}
 
+	if host, ok := srv.hosts.get(ip); ok {
+		return host
+	}
+
 	names, err := lookup(ctx, ip)
 	if err != nil || len(names) == 0 {
+		srv.hosts.put(ip, "unknown", false)
+
 		return "unknown"
 	}
+
+	srv.hosts.put(ip, names[0], true)
 
 	return names[0]
 }
