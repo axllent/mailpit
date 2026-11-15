@@ -123,3 +123,72 @@ func TestViewHTMLEmbedWaitsForASlot(t *testing.T) {
 		t.Fatal("the waiting request was not processed once a slot was free")
 	}
 }
+
+// A HTML part over the limit is not rendered, whatever the options are. The cap is of the HTML part, and the
+// limit itself is allowed.
+func TestViewHTMLTooLarge(t *testing.T) {
+	initTestDB(t)
+
+	id := storeHTMLEmail(t, `<html><body><p>Hello <a href="https://example.test/x">link</a></p></body></html>`)
+	msg, err := storage.GetMessage(id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	size := len(msg.HTML)
+
+	orig := maxRenderHTMLBytes
+	t.Cleanup(func() { maxRenderHTMLBytes = orig })
+
+	// control: the limit is the size of the HTML part, which is rendered
+	maxRenderHTMLBytes = size
+	for _, query := range []string{"", "?embed=1"} {
+		if rr := viewHTML(context.Background(), id, query); rr.Code != http.StatusOK || !strings.Contains(rr.Body.String(), "Hello") {
+			t.Errorf("%q at the limit: status %d: %.100q", query, rr.Code, rr.Body.String())
+		}
+	}
+
+	// exploit: one byte over
+	maxRenderHTMLBytes = size - 1
+	for _, query := range []string{"", "?embed=1"} {
+		rr := viewHTML(context.Background(), id, query)
+		if rr.Code != http.StatusRequestEntityTooLarge || !strings.Contains(rr.Body.String(), "too large to render") || strings.Contains(rr.Body.String(), "Hello") {
+			t.Errorf("%q over the limit: status %d: %.100q", query, rr.Code, rr.Body.String())
+		}
+		if ct := rr.Header().Get("Content-Type"); !strings.HasPrefix(ct, "text/plain") {
+			t.Errorf("%q: content type %q", query, ct)
+		}
+	}
+
+	// it is refused before anything which takes a slot, so it does not wait for one
+	var releases []func()
+	for {
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Millisecond)
+		release, err := tools.AcquireHTMLSlot(ctx)
+		cancel()
+		if err != nil {
+			break
+		}
+		releases = append(releases, release)
+	}
+	t.Cleanup(func() {
+		for _, r := range releases {
+			r()
+		}
+	})
+
+	done := make(chan *httptest.ResponseRecorder, 1)
+	go func() { done <- viewHTML(context.Background(), id, "?embed=1") }()
+	select {
+	case rr := <-done:
+		if rr.Code != http.StatusRequestEntityTooLarge {
+			t.Errorf("status %d", rr.Code)
+		}
+	case <-time.After(2 * time.Second):
+		t.Error("a message which is too large waited for a slot")
+	}
+
+	// and the message is still there to read in the UI and the API
+	if m, err := storage.GetMessage(id); err != nil || len(m.HTML) != size {
+		t.Errorf("the message is changed: %v", err)
+	}
+}

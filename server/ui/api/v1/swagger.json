@@ -1203,7 +1203,7 @@
     },
     "/view/{ID}.html": {
       "get": {
-        "description": "Renders just the message's HTML part which can be used for UI integration testing.\nAttached inline images are modified to link to the API provided they exist.\nNote that is the message does not contain a HTML part then an 404 error is returned.\n\nThe ID can be set to `latest` to return the latest message.",
+        "description": "Renders just the message's HTML part which can be used for UI integration testing.\nAttached inline images are modified to link to the API provided they exist.\nNote that is the message does not contain a HTML part then an 404 error is returned.\nA HTML part which is larger than 10 MiB is not rendered, and a 413 error is returned.\n\nThe ID can be set to `latest` to return the latest message.",
         "produces": [
           "text/html"
         ],

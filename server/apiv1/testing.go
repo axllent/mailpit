@@ -15,6 +15,11 @@ import (
 	"golang.org/x/net/html/atom"
 )
 
+// maxRenderHTMLBytes is the largest HTML part which is rendered. Rendering parses the whole document, which
+// takes about ten times its size in memory (more for a document of many small tags), and the largest HTML part
+// in a mailbox of 153,000 real messages was 1 MiB. It is a variable for the tests.
+var maxRenderHTMLBytes = 10 << 20
+
 // GetMessageHTML (method: GET) returns a rendered version of a message's HTML part
 func GetMessageHTML(w http.ResponseWriter, r *http.Request) {
 	// swagger:route GET /view/{ID}.html testing GetMessageHTMLParams
@@ -24,6 +29,7 @@ func GetMessageHTML(w http.ResponseWriter, r *http.Request) {
 	// Renders just the message's HTML part which can be used for UI integration testing.
 	// Attached inline images are modified to link to the API provided they exist.
 	// Note that is the message does not contain a HTML part then an 404 error is returned.
+	// A HTML part which is larger than 10 MiB is not rendered, and a 413 error is returned.
 	//
 	// The ID can be set to `latest` to return the latest message.
 	//
@@ -54,6 +60,13 @@ func GetMessageHTML(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		w.WriteHeader(404)
 		_, _ = fmt.Fprint(w, "This message does not contain a HTML part")
+		return
+	}
+
+	if len(msg.HTML) > maxRenderHTMLBytes {
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		w.WriteHeader(http.StatusRequestEntityTooLarge)
+		_, _ = fmt.Fprintf(w, "The HTML of this message is too large to render (the limit is %d MiB)", maxRenderHTMLBytes>>20)
 		return
 	}
 
