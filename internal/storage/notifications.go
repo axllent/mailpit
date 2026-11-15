@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"context"
 	"sync/atomic"
 	"time"
 
@@ -20,8 +21,14 @@ func BroadcastMailboxStats() {
 		return
 	}
 
-	go func() {
-		time.Sleep(250 * time.Millisecond)
+	goBackground(func(ctx context.Context) {
+		select {
+		case <-ctx.Done():
+			bcStatsDelay.Store(false)
+			return
+		case <-time.After(250 * time.Millisecond):
+		}
+
 		bcStatsDelay.Store(false)
 		b := struct {
 			Total   uint64
@@ -34,5 +41,5 @@ func BroadcastMailboxStats() {
 		}
 
 		websockets.Broadcast("stats", b)
-	}()
+	})
 }

@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"embed"
 	"encoding/json"
+	"errors"
 	"log"
 	"path"
 	"sort"
@@ -166,17 +167,17 @@ func dbApplySchemas() error {
 }
 
 // These functions are used to migrate data formats/structure on startup.
-func dataMigrations() {
+func dataMigrations(ctx context.Context) {
 	// ensure DeletedSize has a value if empty
 	if SettingGet("DeletedSize") == "" {
 		_ = SettingPut("DeletedSize", "0")
 	}
 
-	if err := backfillMetaSearchText(); err != nil {
+	if err := backfillMetaSearchText(ctx); err != nil && !errors.Is(err, context.Canceled) {
 		logger.Log().Errorf("[db] populating MetaSearchText: %s", err.Error())
 	}
 
-	if err := refoldSearchText(); err != nil {
+	if err := refoldSearchText(ctx); err != nil && !errors.Is(err, context.Canceled) {
 		logger.Log().Errorf("[db] case-folding SearchText: %s", err.Error())
 	}
 }
@@ -191,7 +192,7 @@ const searchTextFoldedSetting = "SearchTextFolded"
 // changes (eg: `ß`, `ς`) are updated. It runs once, and is safe to re-run if interrupted.
 // Until a message is updated, general searches for words containing those characters
 // may not match it.
-func refoldSearchText() error {
+func refoldSearchText(ctx context.Context) error {
 	if SettingGet(searchTextFoldedSetting) == "1" {
 		return nil
 	}
@@ -209,6 +210,10 @@ func refoldSearchText() error {
 	logged := false
 
 	for {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+
 		updates := []update{}
 		var id, searchText string
 		rows := 0
@@ -277,7 +282,7 @@ func refoldSearchText() error {
 // it existed (schema 1.34.0). It uses the stored metadata & subject, so no messages
 // need to be parsed. Until a message is populated, field searches fall back to the
 // original columns, which are only case-insensitive for ASCII characters.
-func backfillMetaSearchText() error {
+func backfillMetaSearchText(ctx context.Context) error {
 	var pending float64 // use float64 for rqlite compatibility
 	if err := db.QueryRow(`SELECT COUNT(*) FROM ` + tenant("mailbox") + ` WHERE MetaSearchText IS NULL`).Scan(&pending); err != nil {
 		return err
@@ -300,6 +305,10 @@ func backfillMetaSearchText() error {
 	failed := 0
 
 	for {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+
 		updates := []update{}
 		var id, metadata, subject string
 		rows := 0

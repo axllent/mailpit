@@ -2,6 +2,7 @@ package storage
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"math/rand/v2"
 	"net/mail"
@@ -547,7 +548,7 @@ func testMetaSearchTextBackfill(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := backfillMetaSearchText(); err != nil {
+	if err := backfillMetaSearchText(context.Background()); err != nil {
 		t.Fatal(err)
 	}
 
@@ -563,7 +564,7 @@ func testMetaSearchTextBackfill(t *testing.T) {
 	}
 
 	// a second run terminates and leaves the unreadable message unpopulated
-	if err := backfillMetaSearchText(); err != nil {
+	if err := backfillMetaSearchText(context.Background()); err != nil {
 		t.Fatal(err)
 	}
 	if n := pendingCount(); n != 1 {
@@ -685,7 +686,7 @@ func testRefoldSearchText(t *testing.T) {
 
 	controlBefore := searchText("Street")
 
-	if err := refoldSearchText(); err != nil {
+	if err := refoldSearchText(context.Background()); err != nil {
 		t.Fatal(err)
 	}
 
@@ -706,7 +707,7 @@ func testRefoldSearchText(t *testing.T) {
 	if _, err := db.Exec(`UPDATE `+tenant("mailbox")+` SET SearchText = ? WHERE Subject = ?`, oldText, "Straße"); err != nil {
 		t.Fatal(err)
 	}
-	if err := refoldSearchText(); err != nil {
+	if err := refoldSearchText(context.Background()); err != nil {
 		t.Fatal(err)
 	}
 	if got := searchText("Straße"); got != oldText {

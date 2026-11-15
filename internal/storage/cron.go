@@ -14,7 +14,7 @@ import (
 )
 
 // Database cron runs every minute
-func dbCron() {
+func dbCron(ctx context.Context) {
 	if config.DisableAutoVACUUM {
 		if sqlDriver == "rqlite" {
 			logger.Log().Warn("[db] disable-auto-vacuum has no effect as rqlite handles vacuuming automatically")
@@ -24,7 +24,11 @@ func dbCron() {
 	}
 
 	for {
-		time.Sleep(60 * time.Second)
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(60 * time.Second):
+		}
 
 		sinceLastDbAction := dbLastAction.since()
 

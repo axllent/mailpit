@@ -3,6 +3,7 @@ package storage
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/axllent/mailpit/config"
@@ -16,10 +17,36 @@ var (
 	testRuns      = 100
 )
 
+// testDatabase is the SQLite database the tests use when MP_DATABASE is not set. Without it every test
+// would have InitDB create a temporary database in the system's temp directory, which nothing removed.
+var testDatabase string
+
+func TestMain(m *testing.M) {
+	dir, err := os.MkdirTemp("", "storage-test")
+	if err != nil {
+		panic(err)
+	}
+	testDatabase = filepath.Join(dir, "mailpit.db")
+
+	code := m.Run()
+
+	Close()
+	_ = os.RemoveAll(dir)
+	os.Exit(code)
+}
+
 func setup(tenantID string) {
-	logger.NoLogging = true
+	// the background goroutines of the previous test read the configuration and the database
+	stopBackground()
+
+	if !logger.NoLogging {
+		logger.NoLogging = true
+	}
 	config.MaxMessages = 0
 	config.Database = os.Getenv("MP_DATABASE")
+	if config.Database == "" {
+		config.Database = testDatabase
+	}
 	config.TenantID = config.DBTenantID(tenantID)
 
 	if err := InitDB(); err != nil {

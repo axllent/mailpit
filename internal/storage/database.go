@@ -11,6 +11,7 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"syscall"
 	"time"
@@ -63,10 +64,58 @@ var (
 	dbDecoder, _ = zstd.NewReader(nil)
 
 	temporaryFiles = []string{}
+
+	// signalOnce makes sure only one goroutine handles the exit signals, however many times InitDB is called
+	signalOnce sync.Once
+
+	// background goroutines (the cron job, data migrations and delayed stats broadcasts) use the database
+	// and the configuration, so they are stopped, and waited for, before InitDB or Close change them
+	bgMu     sync.Mutex
+	bgCtx    context.Context
+	bgCancel context.CancelFunc
+	bgWG     sync.WaitGroup
 )
+
+// goBackground runs fn in a goroutine which stopBackground stops and waits for.
+func goBackground(fn func(ctx context.Context)) {
+	bgMu.Lock()
+	defer bgMu.Unlock()
+
+	if bgCtx == nil {
+		bgCtx, bgCancel = context.WithCancel(context.Background())
+	}
+
+	ctx := bgCtx
+
+	bgWG.Add(1)
+
+	go func() {
+		defer bgWG.Done()
+
+		fn(ctx)
+	}()
+}
+
+// stopBackground stops the goroutines started by goBackground and waits until they have finished. Goroutines
+// which are started later are not affected.
+func stopBackground() {
+	bgMu.Lock()
+	cancel := bgCancel
+	bgCtx, bgCancel = nil, nil
+	bgMu.Unlock()
+
+	if cancel != nil {
+		cancel()
+	}
+
+	bgWG.Wait()
+}
 
 // InitDB will initialise the database
 func InitDB() error {
+	// anything left running by an earlier call must be finished with the database and configuration
+	stopBackground()
+
 	// dbEncoder
 	var (
 		dsn string
@@ -168,24 +217,26 @@ func InitDB() error {
 
 	dbLastAction.touch()
 
-	sigs := make(chan os.Signal, 1)
-	// catch all signals since not explicitly listing
-	// Program that will listen to the SIGINT and SIGTERM
-	// SIGINT will listen to CTRL-C.
-	// SIGTERM will be caught if kill command executed
-	signal.Notify(sigs, os.Interrupt, syscall.SIGTERM)
-	// method invoked upon seeing signal
-	go func() {
-		s := <-sigs
-		fmt.Printf("[db] got %s signal, shutting down\n", s)
-		Close()
-		os.Exit(0)
-	}()
+	signalOnce.Do(func() {
+		sigs := make(chan os.Signal, 1)
+		// catch all signals since not explicitly listing
+		// Program that will listen to the SIGINT and SIGTERM
+		// SIGINT will listen to CTRL-C.
+		// SIGTERM will be caught if kill command executed
+		signal.Notify(sigs, os.Interrupt, syscall.SIGTERM)
+		// method invoked upon seeing signal
+		go func() {
+			s := <-sigs
+			fmt.Printf("[db] got %s signal, shutting down\n", s)
+			Close()
+			os.Exit(0)
+		}()
+	})
 
 	// auto-prune & delete
-	go dbCron()
+	goBackground(dbCron)
 
-	go dataMigrations()
+	goBackground(dataMigrations)
 
 	return nil
 }
@@ -199,6 +250,8 @@ func tenant(table string) string {
 func Close() {
 	// on a fatal exit (eg: ports blocked), allow Mailpit to run migration tasks before closing the DB
 	time.Sleep(200 * time.Millisecond)
+
+	stopBackground()
 
 	if db != nil {
 		if err := db.Close(); err != nil {
