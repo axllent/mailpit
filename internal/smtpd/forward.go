@@ -104,8 +104,9 @@ func forward(from string, msg []byte) error {
 		}
 	}
 
-	// whatever is sent has <CR><LF> line breaks in the headers, as the receiving server may read others differently
-	msg, _ = tools.NormaliseHeaderLineBreaks(msg)
+	// Whatever is sent has <CR><LF> line breaks only, as the receiving server may read others differently.
+	// A <CR> on its own is not changed by the SMTP client, and could end the message for the server.
+	msg, _ = tools.NormaliseLineBreaks(msg)
 
 	if config.SMTPForwardConfig.OverrideFrom != "" {
 		msg, err = tools.OverrideFromHeader(msg, config.SMTPForwardConfig.OverrideFrom)

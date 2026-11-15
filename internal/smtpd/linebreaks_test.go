@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/mail"
 	"os"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -182,8 +183,8 @@ func TestDefaultFixesHeaderLineBreaks(t *testing.T) {
 		}
 	}
 
-	// the body is not changed
-	body := "bare\rCR\nand\nLF\r\nafter\r\n"
+	// the body is not changed, whatever its line breaks are: it used to have its <CR><CR><LF> changed
+	body := "bare\rCR\nand\nLF\r\r\nafter\r\n"
 	id, err = save(t, "From: a@b.test\nSubject: one\n\n"+body)
 	if err != nil {
 		t.Fatal(err)
@@ -266,11 +267,9 @@ func fakeUpstream(t *testing.T) (string, int, <-chan []byte) {
 	return "127.0.0.1", addr.Port, got
 }
 
-// A bare CR in the headers was sent to the server as it was, where it may be a line break to that
-// server. It was sent however the message was stored, as nothing was changed when no header was
-// rewritten. The line breaks of the body are the SMTP client library's (it sends a LF as CRLF),
-// and are not changed here.
-func TestRelayAndForwardSendCRLFHeaderLineBreaks(t *testing.T) {
+// Every line break which is sent is <CR><LF>, in the body as well as the headers. A <CR> on its own was sent
+// as it was, where it may be a line break to the server (see TestRelayDoesNotSendWhatEndsTheMessage).
+func TestRelayAndForwardSendCRLFLineBreaks(t *testing.T) {
 	msg := "From: a@b.test\rSubject: one\nBcc: hidden@x.test\r\r\nTo: c@d.test\r\n\r\nbody\rwith\nbreaks\r\n"
 
 	check := func(t *testing.T, sent <-chan []byte) {
@@ -282,8 +281,8 @@ func TestRelayAndForwardSendCRLFHeaderLineBreaks(t *testing.T) {
 			if hasOddBreak(head) {
 				t.Errorf("the headers sent have a line break which is not CRLF: %q", data)
 			}
-			if body != "body\rwith\r\nbreaks\r\n" {
-				t.Errorf("the body sent changed: %q", body)
+			if body != "body\r\nwith\r\nbreaks\r\n" {
+				t.Errorf("the line breaks of the body sent are not CRLF: %q", body)
 			}
 		case <-time.After(10 * time.Second):
 			t.Fatal("nothing was sent")
@@ -427,5 +426,65 @@ func TestInvalidHeadersErrorIsOneSafeLine(t *testing.T) {
 	// control: an ordinary reason is kept as it is
 	if got := invalidHeadersError(errors.New(`malformed header line: "two"`)).Error(); !strings.HasSuffix(got, `: malformed header line: "two"`) {
 		t.Errorf("got %q", got)
+	}
+}
+
+// lenientLines splits what was sent into the lines which a server sees if it takes a <CR> or a <LF>
+// on its own as a line break, as some do.
+var lenientBreakRe = regexp.MustCompile(`\r\n|\r|\n`)
+
+func lenientLines(data []byte) []string {
+	return lenientBreakRe.Split(string(data), -1)
+}
+
+// The message is ended by a line which is only ".", and a "." at the start of a line is doubled. Go's SMTP
+// client does that only after a <CR><LF> (and it turns a <LF> into one), so a <CR> on its own before a
+// "." was sent as it was. To a server which takes a <CR> as a line break that is the end of the message,
+// and what follows is read as commands: it could send mail as whoever the message is relayed as.
+func TestRelayDoesNotSendWhatEndsTheMessage(t *testing.T) {
+	payload := "MAIL FROM:<evil@x.test>\r\nRCPT TO:<victim@y.test>\r\nDATA\r\nSubject: spoofed\r\n\r\nspoofed body\r\n"
+
+	for name, ending := range map[string]string{
+		"CR . CR LF":       "\r.\r\n",
+		"CR . LF":          "\r.\n",
+		"CR . CR":          "\r.\r",
+		"LF . LF":          "\n.\n",
+		"LF . CR LF":       "\n.\r\n",
+		"CR LF . LF":       "\r\n.\n",
+		"CR LF . CR":       "\r\n.\r",
+		"CR CR LF . CR LF": "\r\r\n.\r\n",
+		"CR LF . CR LF":    "\r\n.\r\n",
+	} {
+		t.Run(name, func(t *testing.T) {
+			host, port, sent := fakeUpstream(t)
+			orig := config.SMTPRelayConfig
+			config.SMTPRelayConfig = config.SMTPRelayConfigStruct{Host: host, Port: port}
+			t.Cleanup(func() { config.SMTPRelayConfig = orig })
+
+			msg := "From: a@b.test\r\nSubject: hi\r\n\r\nhello" + ending + payload
+
+			if err := Relay("a@b.test", []string{"c@d.test"}, []byte(msg)); err != nil {
+				t.Fatal(err)
+			}
+
+			select {
+			case data := <-sent:
+				// all of the message is sent as the message: it did not end where the payload begins
+				if !bytes.Contains(data, []byte("spoofed body")) || !bytes.Contains(data, []byte("MAIL FROM:<evil@x.test>")) {
+					t.Fatalf("the message ended early: %q", data)
+				}
+				// and no line is the end of the message to a server which takes a <CR> as a line break
+				for _, line := range lenientLines(data) {
+					if line == "." {
+						t.Errorf("a line of only a dot is sent (it ends the message to some servers): %q", data)
+					}
+				}
+				if hasOddBreak(string(data)) {
+					t.Errorf("a line break which is not CRLF is sent: %q", data)
+				}
+			case <-time.After(10 * time.Second):
+				t.Fatal("nothing was sent")
+			}
+		})
 	}
 }

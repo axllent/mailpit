@@ -44,14 +44,10 @@ func SaveToDatabase(origin net.Addr, from string, to []string, data []byte, smtp
 			return "", errors.New("550 5.6.0 Message headers must use <CR><LF> line breaks")
 		}
 	} else {
-		if bytes.Contains(data, []byte("\r\r\n")) {
-			// replace all <CR><CR><LF> (\r\r\n) with <CR><LF> (\r\n)
-			// @see https://github.com/axllent/mailpit/issues/87 & https://github.com/axllent/mailpit/issues/153
-			data = bytes.ReplaceAll(data, []byte("\r\r\n"), []byte("\r\n"))
-		}
-
-		// fix the other line breaks of the headers (<LF> and <CR> on its own), so the headers
-		// are the same to everything which reads the message, including the SMTP server it is relayed to
+		// Fix the line breaks of the headers: <CR><CR><LF> (@see https://github.com/axllent/mailpit/issues/87
+		// & https://github.com/axllent/mailpit/issues/153), and <LF> or <CR> on its own, so the headers are the
+		// same to everything which reads the message. The body is stored as it was received (it used to
+		// have its <CR><CR><LF> changed as well), and the line breaks are made <CR><LF> when it is sent on.
 		data, _ = tools.NormaliseHeaderLineBreaks(data)
 	}
 

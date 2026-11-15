@@ -49,18 +49,36 @@ func charsetReader(charset string, input io.Reader) (io.Reader, error) {
 // message first means that every reader sees the same headers. The message is not copied if there
 // is nothing to change.
 func NormaliseHeaderLineBreaks(msg []byte) ([]byte, bool) {
+	return normaliseLineBreaks(msg, true)
+}
+
+// NormaliseLineBreaks returns msg with every line break, in the body as well as the headers, as
+// <CR><LF>, and whether anything had to be changed. It is what is sent to another SMTP server.
+//
+// SMTP needs <CR><LF>, and a message which is sent with a <CR> on its own is a problem for the
+// server it is sent to, which may take it as a line break. The end of the message is "<CR><LF>.<CR><LF>",
+// and Go's SMTP client protects a "." at the start of a line only after a <CR><LF>, so a body with
+// "<CR>.<CR><LF>" in it would be sent as it is, and be the end of the message to a server which accepts a
+// <CR> as a line break. What follows would be read as commands (SMTP smuggling). Clients such as
+// Python's smtplib do this too. The message is not copied if there is nothing to change.
+func NormaliseLineBreaks(msg []byte) ([]byte, bool) {
+	return normaliseLineBreaks(msg, false)
+}
+
+func normaliseLineBreaks(msg []byte, headersOnly bool) ([]byte, bool) {
 	var out []byte // only made when something has to change
 	last := 0      // msg[:last] has been copied to out
 	lineLen := 0   // the length of the line being read
 
 	for i := 0; i < len(msg); {
-		c := msg[i]
-		if c != '\r' && c != '\n' {
-			lineLen++
-			i++
-
-			continue
+		// to the next line break
+		next := bytes.IndexAny(msg[i:], "\r\n")
+		if next < 0 {
+			break
 		}
+		lineLen += next
+		i += next
+		c := msg[i]
 
 		// a line break: <CR>+<LF>, <LF> or a <CR> on its own
 		end := i + 1
@@ -91,7 +109,7 @@ func NormaliseHeaderLineBreaks(msg []byte) ([]byte, bool) {
 
 		i = end
 
-		if lineLen == 0 {
+		if headersOnly && lineLen == 0 {
 			// that was the empty line which ends the headers, the rest is the body
 			break
 		}

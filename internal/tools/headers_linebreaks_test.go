@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestNormaliseHeaderLineBreaks(t *testing.T) {
@@ -228,5 +229,121 @@ func TestNormalisedHeadersAreTheSameToEveryReader(t *testing.T) {
 	// and the part of the message which is not headers is as it was
 	if !bytes.HasSuffix(out, []byte("\r\n\r\nbody\rmore\n")) {
 		t.Errorf("the body changed: %q", out)
+	}
+}
+
+// refNormaliseAll is another way of doing the same: every line break is found with an expression.
+func refNormaliseAll(in string) (string, bool) {
+	changed := false
+	out := refBreakRe.ReplaceAllStringFunc(in, func(br string) string {
+		if br != "\r\n" {
+			changed = true
+		}
+
+		return "\r\n"
+	})
+
+	return out, changed
+}
+
+func TestNormaliseLineBreaks(t *testing.T) {
+	tests := []struct {
+		name, in, want string
+		changed        bool
+	}{
+		{"control: CRLF", "From: a\r\n\r\nbody\r\nmore\r\n", "From: a\r\n\r\nbody\r\nmore\r\n", false},
+		{"control: no line breaks", "text", "text", false},
+		{"control: empty", "", "", false},
+
+		// the body as well as the headers
+		{"exploit: a CR in the body", "From: a\r\n\r\nbody\rmore", "From: a\r\n\r\nbody\r\nmore", true},
+		{"exploit: a LF in the body", "From: a\r\n\r\nbody\nmore", "From: a\r\n\r\nbody\r\nmore", true},
+		{"exploit: CR CR LF in the body", "From: a\r\n\r\nbody\r\r\nmore", "From: a\r\n\r\nbody\r\nmore", true},
+		{"exploit: a CR at the end", "From: a\r\n\r\nbody\r", "From: a\r\n\r\nbody\r\n", true},
+		{"exploit: a dot after a CR", "x\r.\r\ny", "x\r\n.\r\ny", true},
+		{"exploit: a dot after a LF", "x\n.\ny", "x\r\n.\r\ny", true},
+		{"exploit: every kind", "a\rb\nc\r\r\nd\r\ne", "a\r\nb\r\nc\r\nd\r\ne", true},
+		{"exploit: headers and body", "A: x\rB: y\n\n\rbody\n", "A: x\r\nB: y\r\n\r\n\r\nbody\r\n", true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			in := []byte(tt.in)
+			got, changed := NormaliseLineBreaks(in)
+
+			if string(got) != tt.want || changed != tt.changed {
+				t.Errorf("got %q, %v, want %q, %v", got, changed, tt.want, tt.changed)
+			}
+			if string(in) != tt.in {
+				t.Errorf("the input was changed: %q", in)
+			}
+			if again, changedAgain := NormaliseLineBreaks(got); changedAgain || !bytes.Equal(again, got) {
+				t.Errorf("not stable: %q, %v", again, changedAgain)
+			}
+			if !changed && len(in) > 0 && &got[0] != &in[0] {
+				t.Error("a message with nothing to change was copied")
+			}
+		})
+	}
+}
+
+func TestNormaliseLineBreaksMatchesReference(t *testing.T) {
+	rng := rand.New(rand.NewSource(11))
+	pieces := []string{"\r\n", "\r\n", "\n", "\r", "\r\r\n", "\r\r\r\n", " ", "a", "bc", ".", "\r\n.\r\n", "\r.\r\n", "\n.\n", "é", "\x00", "From: a", "\r\n\r\n"}
+
+	for range 100000 {
+		var b strings.Builder
+		for range rng.Intn(14) {
+			b.WriteString(pieces[rng.Intn(len(pieces))])
+		}
+		in := b.String()
+
+		got, changed := NormaliseLineBreaks([]byte(in))
+		want, wantChanged := refNormaliseAll(in)
+		if string(got) != want || changed != wantChanged {
+			t.Fatalf("%q: got %q, %v, want %q, %v", in, got, changed, want, wantChanged)
+		}
+	}
+}
+
+func FuzzNormaliseLineBreaks(f *testing.F) {
+	for _, s := range []string{"From: a\r\n\r\nbody\r.\r\nx", "a\rb\nc\r\r\nd", "", "\r", "\n.\n"} {
+		f.Add(s)
+	}
+
+	f.Fuzz(func(t *testing.T, in string) {
+		got, changed := NormaliseLineBreaks([]byte(in))
+		want, wantChanged := refNormaliseAll(in)
+		if string(got) != want || changed != wantChanged {
+			t.Fatalf("%q: got %q, %v, want %q, %v", in, got, changed, want, wantChanged)
+		}
+
+		// nothing but <CR><LF> is left
+		for i := 0; i < len(got); i++ {
+			if (got[i] == '\r' && (i+1 >= len(got) || got[i+1] != '\n')) || (got[i] == '\n' && (i == 0 || got[i-1] != '\r')) {
+				t.Fatalf("%q has a line break which is not CRLF: %q", in, got)
+			}
+		}
+	})
+}
+
+// The largest message is 50 MiB, and it is checked for every message which is sent on.
+func TestNormaliseLineBreaksLargeMessage(t *testing.T) {
+	for _, shape := range []struct{ name, line string }{
+		{"compliant", "a line of text which is fairly typical\r\n"},
+		{"bare LF", "a line of text which is fairly typical\n"},
+		{"bare CR", "a line of text which is fairly typical\r"},
+	} {
+		msg := []byte(strings.Repeat(shape.line, (50<<20)/len(shape.line)))
+
+		start := time.Now()
+		got, _ := NormaliseLineBreaks(msg)
+		// about a tenth of a second, and several times that with the race detector
+		if d := time.Since(start); d > 5*time.Second {
+			t.Errorf("%s: 50 MiB took %v", shape.name, d)
+		}
+		if len(got) < len(msg) {
+			t.Errorf("%s: the message is shorter", shape.name)
+		}
 	}
 }
