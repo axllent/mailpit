@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"os"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -52,12 +53,19 @@ func rdnsServer(t *testing.T, timeout time.Duration, lookup func(ctx context.Con
 }
 
 // dialFrom connects from a loopback address (127.0.0.2 is not 127.0.0.1, so a lookup can tell them apart).
+//
+// Only Linux and Windows have all of 127.0.0.0/8 by default. On macOS the address needs an alias on lo0
+// (`sudo ifconfig lo0 alias 127.0.0.2 up`), CI adds them. Elsewhere the test is skipped when the address is not
+// available, but in CI it fails so a broken setup cannot silently drop the coverage.
 func dialFrom(t *testing.T, from, addr string) net.Conn {
 	t.Helper()
 
 	d := net.Dialer{LocalAddr: &net.TCPAddr{IP: net.ParseIP(from)}}
 	c, err := d.Dial("tcp", addr)
 	if err != nil {
+		if os.Getenv("CI") == "" && strings.Contains(err.Error(), "can't assign requested address") {
+			t.Skipf("loopback address %s is not available: %v", from, err)
+		}
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = c.Close() })
