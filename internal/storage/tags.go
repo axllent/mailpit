@@ -377,28 +377,34 @@ func (d Metadata) tagsFromPlusAddresses() []string {
 	return tools.SetTagCasing(tags)
 }
 
-// getTagsForIDs fetches tags for a set of message IDs in a single query,
-// returning a map of message ID to tag names.
+// getTagsForIDs fetches tags for a set of message IDs, returning a map of message ID to tag names.
+// A long list of IDs is looked up in parts, as a query can only have so many placeholders.
 func getTagsForIDs(ids []string) map[string][]string {
 	result := make(map[string][]string, len(ids))
 	if len(ids) == 0 {
 		return result
 	}
 
-	args := make([]any, len(ids))
-	for i, id := range ids {
-		args[i] = id
+	for _, chunk := range chunkBy(ids, maxSQLVariables) {
+		query := fmt.Sprintf(
+			`SELECT mt.ID, t.Name FROM %s t JOIN %s mt ON t.ID = mt.TagID WHERE mt.ID IN %s ORDER BY mt.ID, t.Name`,
+			tenant("Tags"), tenant("message_tags"), inPlaceholders(len(chunk)),
+		) // #nosec
+
+		if !queryTags(query, idArgs(chunk), result) {
+			return result
+		}
 	}
 
-	query := fmt.Sprintf(
-		`SELECT mt.ID, t.Name FROM %s t JOIN %s mt ON t.ID = mt.TagID WHERE mt.ID IN (?%s) ORDER BY mt.ID, t.Name`,
-		tenant("Tags"), tenant("message_tags"), strings.Repeat(",?", len(ids)-1),
-	) // #nosec
+	return result
+}
 
+// queryTags adds the (message ID, tag name) rows of a query to result, and returns whether it succeeded.
+func queryTags(query string, args []any, result map[string][]string) bool {
 	rows, err := db.Query(query, args...)
 	if err != nil {
 		logger.Log().Errorf("[tags] %s", err.Error())
-		return result
+		return false
 	}
 	defer func() { _ = rows.Close() }()
 
@@ -406,16 +412,17 @@ func getTagsForIDs(ids []string) map[string][]string {
 		var id, name string
 		if err := rows.Scan(&id, &name); err != nil {
 			logger.Log().Errorf("[tags] %s", err.Error())
-			return result
+			return false
 		}
 		result[id] = append(result[id], name)
 	}
 
 	if err := rows.Err(); err != nil {
 		logger.Log().Errorf("[tags] %s", err.Error())
+		return false
 	}
 
-	return result
+	return true
 }
 
 // Get message tags from the database for a given database ID

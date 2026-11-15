@@ -564,119 +564,99 @@ func LatestID(r *http.Request) (string, error) {
 	return messages[0].ID, nil
 }
 
-// MarkRead will mark a message as read
-func MarkRead(ids []string) error {
-	if len(ids) == 0 {
-		return nil
-	}
+// maxSQLVariables is how many placeholders a statement with a list of IDs may have. SQLite refuses more than
+// 32,766 ("too many SQL variables"), and a message list can be as long as the mailbox, so longer lists
+// are split. It is a variable for the tests.
+var maxSQLVariables = 1000
 
-	args := make([]any, len(ids))
-	for i, id := range ids {
-		args[i] = id
-	}
-	placeholder := `(?` + strings.Repeat(",?", len(ids)-1) + `)`
-
-	// Find which messages are actually unread (will change state)
-	toUpdate := []string{}
-	rows, err := db.Query(fmt.Sprintf(`SELECT ID FROM %s WHERE Read = 0 AND ID IN %s`, tenant("mailbox"), placeholder), args...) // #nosec
-	if err != nil {
-		return err
-	}
-	for rows.Next() {
-		var id string
-		if err := rows.Scan(&id); err != nil {
-			_ = rows.Close()
-			return err
-		}
-		toUpdate = append(toUpdate, id)
-	}
-	err = rows.Err()
-	_ = rows.Close()
-	if err != nil {
-		return err
-	}
-
-	if len(toUpdate) == 0 {
-		return nil
-	}
-
-	updateArgs := make([]any, len(toUpdate))
-	for i, id := range toUpdate {
-		updateArgs[i] = id
-	}
-	updatePlaceholder := `(?` + strings.Repeat(",?", len(toUpdate)-1) + `)`
-
-	if _, err := db.Exec(fmt.Sprintf(`UPDATE %s SET Read = 1 WHERE ID IN %s`, tenant("mailbox"), updatePlaceholder), updateArgs...); err != nil { // #nosec
-		return err
-	}
-
-	for _, id := range toUpdate {
-		logger.Log().Debugf("[db] marked message %s as read", id)
-		websockets.Broadcast("update", struct {
-			ID   string
-			Read bool
-		}{ID: id, Read: true})
-	}
-
-	BroadcastMailboxStats()
-
-	return nil
+// inPlaceholders returns the placeholders for an IN clause of n values, eg: "(?,?,?)". n must be at least 1.
+func inPlaceholders(n int) string {
+	return "(?" + strings.Repeat(",?", n-1) + ")"
 }
 
-// MarkUnread will mark a message as unread
-func MarkUnread(ids []string) error {
-	if len(ids) == 0 {
-		return nil
-	}
-
+// idArgs returns the IDs as query arguments.
+func idArgs(ids []string) []any {
 	args := make([]any, len(ids))
 	for i, id := range ids {
 		args[i] = id
 	}
-	placeholder := `(?` + strings.Repeat(",?", len(ids)-1) + `)`
 
-	// Find which messages are actually read (will change state)
-	toUpdate := []string{}
-	rows, err := db.Query(fmt.Sprintf(`SELECT ID FROM %s WHERE Read = 1 AND ID IN %s`, tenant("mailbox"), placeholder), args...) // #nosec
-	if err != nil {
-		return err
-	}
-	for rows.Next() {
-		var id string
-		if err := rows.Scan(&id); err != nil {
-			_ = rows.Close()
-			return err
-		}
-		toUpdate = append(toUpdate, id)
-	}
-	err = rows.Err()
-	_ = rows.Close()
-	if err != nil {
-		return err
-	}
+	return args
+}
 
-	if len(toUpdate) == 0 {
+// MarkRead will mark messages as read
+func MarkRead(ids []string) error {
+	return setReadStatus(ids, true)
+}
+
+// MarkUnread will mark messages as unread
+func MarkUnread(ids []string) error {
+	return setReadStatus(ids, false)
+}
+
+// setReadStatus marks messages as read or unread, however many there are, and tells the web UI about the
+// ones which changed.
+func setReadStatus(ids []string, read bool) error {
+	if len(ids) == 0 {
 		return nil
 	}
 
-	updateArgs := make([]any, len(toUpdate))
-	for i, id := range toUpdate {
-		updateArgs[i] = id
+	from, to := 1, 0 // the status the messages have to be in to change, and the one they are set to
+	if read {
+		from, to = 0, 1
 	}
-	updatePlaceholder := `(?` + strings.Repeat(",?", len(toUpdate)-1) + `)`
 
-	if _, err := db.Exec(fmt.Sprintf(`UPDATE %s SET Read = 0 WHERE ID IN %s`, tenant("mailbox"), updatePlaceholder), updateArgs...); err != nil { // #nosec
-		return err
+	changed := []string{}
+
+	for _, chunk := range chunkBy(ids, maxSQLVariables) {
+		// Find which messages are actually in the other state (will change)
+		toUpdate := []string{}
+		rows, err := db.Query(fmt.Sprintf(`SELECT ID FROM %s WHERE Read = %d AND ID IN %s`, tenant("mailbox"), from, inPlaceholders(len(chunk))), idArgs(chunk)...) // #nosec
+		if err != nil {
+			return err
+		}
+		for rows.Next() {
+			var id string
+			if err := rows.Scan(&id); err != nil {
+				_ = rows.Close()
+				return err
+			}
+			toUpdate = append(toUpdate, id)
+		}
+		err = rows.Err()
+		_ = rows.Close()
+		if err != nil {
+			return err
+		}
+
+		if len(toUpdate) == 0 {
+			continue
+		}
+
+		if _, err := db.Exec(fmt.Sprintf(`UPDATE %s SET Read = %d WHERE ID IN %s`, tenant("mailbox"), to, inPlaceholders(len(toUpdate))), idArgs(toUpdate)...); err != nil { // #nosec
+			return err
+		}
+
+		changed = append(changed, toUpdate...)
+	}
+
+	if len(changed) == 0 {
+		return nil
 	}
 
 	dbLastAction.touch()
 
-	for _, id := range toUpdate {
-		logger.Log().Debugf("[db] marked message %s as unread", id)
+	status := "unread"
+	if read {
+		status = "read"
+	}
+
+	for _, id := range changed {
+		logger.Log().Debugf("[db] marked message %s as %s", id, status)
 		websockets.Broadcast("update", struct {
 			ID   string
 			Read bool
-		}{ID: id, Read: false})
+		}{ID: id, Read: read})
 	}
 
 	BroadcastMailboxStats()
@@ -742,35 +722,35 @@ func DeleteMessages(ids []string) error {
 
 	start := time.Now()
 
-	args := make([]any, len(ids))
-	for i, id := range ids {
-		args[i] = id
-	}
-
-	sql := fmt.Sprintf(`SELECT ID, Size FROM %s WHERE  ID IN (?%s)`, tenant("mailbox"), strings.Repeat(",?", len(args)-1)) // #nosec
-	rows, err := db.Query(sql, args...)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = rows.Close() }()
-
 	toDelete := []string{}
 	var totalSize uint64
 
-	for rows.Next() {
-		var id string
-		var size float64 // use float64 for rqlite compatibility
-
-		if err := rows.Scan(&id, &size); err != nil {
+	// only the messages which exist are counted, and a long list is looked up in parts
+	for _, chunk := range chunkBy(ids, maxSQLVariables) {
+		sql := fmt.Sprintf(`SELECT ID, Size FROM %s WHERE ID IN %s`, tenant("mailbox"), inPlaceholders(len(chunk))) // #nosec
+		rows, err := db.Query(sql, idArgs(chunk)...)
+		if err != nil {
 			return err
 		}
 
-		toDelete = append(toDelete, id)
-		totalSize = totalSize + uint64(size)
-	}
+		for rows.Next() {
+			var id string
+			var size float64 // use float64 for rqlite compatibility
 
-	if err = rows.Err(); err != nil {
-		return err
+			if err := rows.Scan(&id, &size); err != nil {
+				_ = rows.Close()
+				return err
+			}
+
+			toDelete = append(toDelete, id)
+			totalSize = totalSize + uint64(size)
+		}
+
+		err = rows.Err()
+		_ = rows.Close()
+		if err != nil {
+			return err
+		}
 	}
 
 	if len(toDelete) == 0 {
@@ -784,19 +764,17 @@ func DeleteMessages(ids []string) error {
 	// roll back if it fails
 	defer func() { _ = tx.Rollback() }()
 
-	args = make([]any, len(toDelete))
-	for i, id := range toDelete {
-		args[i] = id
-	}
-
 	tables := []string{"mailbox", "mailbox_data", "message_tags"}
 
-	for _, t := range tables {
-		sql = fmt.Sprintf(`DELETE FROM %s WHERE ID IN (?%s)`, tenant(t), strings.Repeat(",?", len(toDelete)-1))
+	for _, chunk := range chunkBy(toDelete, maxSQLVariables) {
+		args := idArgs(chunk)
 
-		_, err = tx.Exec(sql, args...) // #nosec
-		if err != nil {
-			return err
+		for _, t := range tables {
+			sql := fmt.Sprintf(`DELETE FROM %s WHERE ID IN %s`, tenant(t), inPlaceholders(len(chunk))) // #nosec
+
+			if _, err = tx.Exec(sql, args...); err != nil {
+				return err
+			}
 		}
 	}
 
