@@ -139,9 +139,10 @@ func Relay(from string, to []string, msg []byte) error {
 		}
 	}
 
-	// Whatever is sent has <CR><LF> line breaks only, as the receiving server may read others differently.
+	// Whatever is sent has <CR><LF> line breaks only, and no whitespace before the colon of a header, as the receiving
+	// server may read others differently.
 	// A <CR> on its own is not changed by the SMTP client, and could end the message for the server.
-	msg, _ = tools.NormaliseLineBreaks(msg)
+	msg, _ = tools.NormaliseForSending(msg)
 
 	if config.SMTPRelayConfig.OverrideFrom != "" {
 		msg, err = tools.OverrideFromHeader(msg, config.SMTPRelayConfig.OverrideFrom)

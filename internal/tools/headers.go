@@ -65,6 +65,85 @@ func NormaliseLineBreaks(msg []byte) ([]byte, bool) {
 	return normaliseLineBreaks(msg, false)
 }
 
+// NormaliseHeaders returns msg with its header block made the same to every reader: with <CR><LF> line
+// breaks (see NormaliseHeaderLineBreaks), and with no whitespace between the name of a header and its colon
+// (see normaliseHeaderNames), and whether anything had to be changed. The body is never changed.
+func NormaliseHeaders(msg []byte) ([]byte, bool) {
+	out, lineBreaks := NormaliseHeaderLineBreaks(msg)
+	out, names := normaliseHeaderNames(out)
+
+	return out, lineBreaks || names
+}
+
+// NormaliseForSending returns msg as it should be sent to another SMTP server: every line break as <CR><LF>
+// (see NormaliseLineBreaks), and no whitespace between the name of a header and its colon.
+func NormaliseForSending(msg []byte) ([]byte, bool) {
+	out, lineBreaks := NormaliseLineBreaks(msg)
+	out, names := normaliseHeaderNames(out)
+
+	return out, lineBreaks || names
+}
+
+// normaliseHeaderNames removes the whitespace between the name of a header and its colon ("From : a" becomes
+// "From: a"), in the header block, which must already have <CR><LF> line breaks. RFC 5322 only allows it in
+// its obsolete syntax (§4.5: "obs-optional = field-name *WSP ':'", and "From" *WSP ':' for the others), where
+// a parser is expected to read it as the header with that name. Postfix does, and removes "Bcc :" and
+// "Return-Path :" as it does the ones without the space. Go's parser (net/mail) takes the name as "From " with
+// the space, which is not "From", so the headers which are changed or removed by name were not found. Only a
+// valid name is changed (RFC 5322 §3.6.8: printable ASCII except the colon), so a line which is not a header
+// is left as it is, and so are the folded lines.
+func normaliseHeaderNames(msg []byte) ([]byte, bool) {
+	var out []byte // only made when something has to change
+	last := 0      // msg[:last] has been copied to out
+
+	for pos := 0; pos < len(msg); {
+		end, next := len(msg), len(msg)
+		if i := bytes.IndexByte(msg[pos:], '\n'); i >= 0 {
+			end = pos + i
+			next = end + 1
+		}
+
+		line := bytes.TrimSuffix(msg[pos:end], []byte("\r"))
+		if len(line) == 0 {
+			// the end of the headers
+			break
+		}
+
+		// a folded line belongs to the header before it
+		if line[0] != ' ' && line[0] != '\t' {
+			if colon := bytes.IndexByte(line, ':'); colon > 0 {
+				name := bytes.TrimRight(line[:colon], " \t")
+				if len(name) < colon && isFieldName(name) {
+					if out == nil {
+						out = make([]byte, 0, len(msg))
+					}
+					out = append(out, msg[last:pos+len(name)]...)
+					last = pos + colon
+				}
+			}
+		}
+
+		pos = next
+	}
+
+	if out == nil {
+		return msg, false
+	}
+
+	return append(out, msg[last:]...), true
+}
+
+// isFieldName returns whether b can be the name of a header: printable ASCII, without a space or a colon.
+func isFieldName(b []byte) bool {
+	for _, c := range b {
+		if c < 33 || c > 126 || c == ':' {
+			return false
+		}
+	}
+
+	return len(b) > 0
+}
+
 func normaliseLineBreaks(msg []byte, headersOnly bool) ([]byte, bool) {
 	var out []byte // only made when something has to change
 	last := 0      // msg[:last] has been copied to out
@@ -198,13 +277,13 @@ func hasHeader(h mail.Header, name string) bool {
 
 // RemoveMessageHeaders scans a message for headers, and removes them if found. Every instance of
 // each header is removed, including the ones which are folded over several lines. The line breaks of
-// the header block are made <CR><LF> first (see NormaliseHeaderLineBreaks), as are those of the
-// other functions which change headers.
+// the header block is normalised first (see NormaliseHeaders), as it is by the other functions which change
+// headers.
 //
 // It returns an error rather than the original message if a header is found by the parser but
 // cannot be located in the raw message.
 func RemoveMessageHeaders(msg []byte, headers []string) ([]byte, error) {
-	msg, _ = NormaliseHeaderLineBreaks(msg)
+	msg, _ = NormaliseHeaders(msg)
 
 	m, err := mail.ReadMessage(bytes.NewReader(msg))
 	if err != nil {
@@ -234,7 +313,7 @@ func RemoveMessageHeaders(msg []byte, headers []string) ([]byte, error) {
 // It does not consider multiple instances of the same header (only the first is updated).
 // If not found it will add the header to the beginning of the message.
 func SetMessageHeader(msg []byte, header, value string) ([]byte, error) {
-	msg, _ = NormaliseHeaderLineBreaks(msg)
+	msg, _ = NormaliseHeaders(msg)
 
 	m, err := mail.ReadMessage(bytes.NewReader(msg))
 	if err != nil {
@@ -260,7 +339,7 @@ func SetMessageHeader(msg []byte, header, value string) ([]byte, error) {
 // OverrideFromHeader scans a message for the From header and replaces it with a different email address.
 // If the message has more than one From header the others are removed, so that the address is the only one.
 func OverrideFromHeader(msg []byte, address string) ([]byte, error) {
-	msg, _ = NormaliseHeaderLineBreaks(msg)
+	msg, _ = NormaliseHeaders(msg)
 
 	m, err := mail.ReadMessage(bytes.NewReader(msg))
 	if err != nil {
@@ -322,7 +401,7 @@ func PrefixSubject(msg []byte, prefix string) ([]byte, error) {
 		return nil, errors.New("subject prefix must not contain line breaks")
 	}
 
-	msg, _ = NormaliseHeaderLineBreaks(msg)
+	msg, _ = NormaliseHeaders(msg)
 
 	m, err := mail.ReadMessage(bytes.NewReader(msg))
 	if err != nil {

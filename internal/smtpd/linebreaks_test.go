@@ -109,7 +109,7 @@ func TestStrictRFCHeadersRejectsOtherLineBreaks(t *testing.T) {
 	}
 
 	// the response the SMTP client gets is the error, as it is
-	if !checkErrFormatRE.MatchString("550 5.6.0 Message headers must use <CR><LF> line breaks") {
+	if !checkErrFormatRE.MatchString("550 5.6.0 Message headers must have <CR><LF> line breaks and no whitespace before the colon") {
 		t.Error("the error is not sent as an SMTP response")
 	}
 
@@ -486,5 +486,119 @@ func TestRelayDoesNotSendWhatEndsTheMessage(t *testing.T) {
 				t.Fatal("nothing was sent")
 			}
 		})
+	}
+}
+
+var obsoleteNameMessages = []struct{ name, data string }{
+	{"a space before the colon", "From: a@b.test\r\nSubject : one\r\nTo: c@d.test\r\n\r\nbody\r\n"},
+	{"a tab before the colon", "From: a@b.test\r\nSubject\t: one\r\nTo: c@d.test\r\n\r\nbody\r\n"},
+	{"the From header", "From : a@b.test\r\nSubject: one\r\nTo: c@d.test\r\n\r\nbody\r\n"},
+	{"a Bcc header", "From: a@b.test\r\nBcc : hidden@x.test\r\nTo: c@d.test\r\n\r\nbody\r\n"},
+}
+
+// RFC 5322 only allows whitespace before the colon in its obsolete syntax. Postfix reads it as the header, and Go's
+// parser does not, so it is an error in strict mode, and fixed otherwise.
+func TestStrictRFCHeadersRejectsWhitespaceBeforeTheColon(t *testing.T) {
+	strictRFC(t, true)
+
+	for _, tt := range obsoleteNameMessages {
+		t.Run(tt.name, func(t *testing.T) {
+			before := storage.CountTotal()
+			id, err := save(t, tt.data)
+			if err == nil || !strings.HasPrefix(err.Error(), "550 5.6.0 ") || id != "" {
+				t.Fatalf("id %q, error %v", id, err)
+			}
+			if storage.CountTotal() != before {
+				t.Error("the message was stored")
+			}
+		})
+	}
+
+	// controls: the same without it, and the same in the body
+	for _, data := range []string{
+		"From: a@b.test\r\nSubject: one\r\nTo: c@d.test\r\n\r\nbody\r\n",
+		"From: a@b.test\r\nSubject: one\r\nTo: c@d.test\r\n\r\nSubject : in the body\r\n",
+		"From: a@b.test\r\nSubject: a : b\r\nTo: c@d.test\r\n\r\nbody\r\n",
+	} {
+		if id, err := save(t, data); err != nil || id == "" {
+			t.Errorf("a message which is fine was rejected: %v: %q", err, data)
+		}
+	}
+}
+
+func TestDefaultFixesWhitespaceBeforeTheColon(t *testing.T) {
+	strictRFC(t, false)
+
+	for _, tt := range obsoleteNameMessages {
+		t.Run(tt.name, func(t *testing.T) {
+			id, err := save(t, tt.data)
+			if err != nil || id == "" {
+				t.Fatalf("id %q, error %v", id, err)
+			}
+
+			raw := stored(t, id)
+			if regexp.MustCompile(`(?m)^[^ \t:]+[ \t]+:`).MatchString(headerBlock(raw)) {
+				t.Errorf("a header still has whitespace before its colon: %q", raw)
+			}
+			m, err := mail.ReadMessage(strings.NewReader(raw))
+			if err != nil {
+				t.Fatal(err)
+			}
+			// it is the header with its name, which is what Postfix reads it as
+			for k := range m.Header {
+				if strings.ContainsAny(k, " \t") {
+					t.Errorf("a header is called %q", k)
+				}
+			}
+		})
+	}
+
+	// Nothing else rewrites the headers of a message which has the right Return-Path, a Message-ID and every
+	// recipient, so it has to be fixed when it is received
+	id, err := save(t, "Return-Path: <a@b.test>\r\nMessage-ID: <x@y.test>\r\nFrom : a@b.test\r\nTo: c@d.test\r\nSubject\t: one\r\n\r\nbody\r\n")
+	if err != nil || id == "" {
+		t.Fatalf("id %q, error %v", id, err)
+	}
+	if raw := stored(t, id); regexp.MustCompile(`(?m)^[^ \t:]+[ \t]+:`).MatchString(headerBlock(raw)) {
+		t.Errorf("a header still has whitespace before its colon: %q", raw)
+	}
+
+	// the Bcc header is the one which is found, so what is released has none
+	id, _ = save(t, obsoleteNameMessages[3].data)
+	if m, _ := mail.ReadMessage(strings.NewReader(stored(t, id))); m == nil || !strings.Contains(m.Header.Get("Bcc"), "hidden@x.test") {
+		t.Errorf("the Bcc header was not found as Bcc")
+	}
+
+	// the body is not changed
+	body := "From : in the body\r\nBcc : so is this\r\n"
+	id, err = save(t, "From : a@b.test\r\nTo: c@d.test\r\nSubject: one\r\n\r\n"+body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if raw := stored(t, id); !strings.HasSuffix(raw, "\r\n\r\n"+body) {
+		t.Errorf("the body changed: %q", raw)
+	}
+}
+
+// What is sent has no whitespace before the colon of a header, whatever the message is.
+func TestRelaySendsHeaderNamesWithoutWhitespaceBeforeTheColon(t *testing.T) {
+	host, port, sent := fakeUpstream(t)
+	orig := config.SMTPRelayConfig
+	config.SMTPRelayConfig = config.SMTPRelayConfigStruct{Host: host, Port: port}
+	t.Cleanup(func() { config.SMTPRelayConfig = orig })
+
+	msg := "From : a@b.test\r\nTo\t: c@d.test\r\nSubject : one\r\n\r\nSubject : in the body\r\n"
+	if err := Relay("a@b.test", []string{"c@d.test"}, []byte(msg)); err != nil {
+		t.Fatal(err)
+	}
+
+	select {
+	case data := <-sent:
+		want := "From: a@b.test\r\nTo: c@d.test\r\nSubject: one\r\n\r\nSubject : in the body\r\n"
+		if string(data) != want {
+			t.Errorf("sent %q, want %q", data, want)
+		}
+	case <-time.After(10 * time.Second):
+		t.Fatal("nothing was sent")
 	}
 }
