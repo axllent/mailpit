@@ -38,9 +38,9 @@ func mailHandler(origin net.Addr, from string, to []string, data []byte, smtpUse
 // SaveToDatabase will attempt to save a message to the database
 func SaveToDatabase(origin net.Addr, from string, to []string, data []byte, smtpUser *string) (string, error) {
 	if config.SMTPStrictRFCHeaders {
-		// reject headers which are not as RFC 5322 has them: line breaks which are not <CR><LF> (<CR><CR><LF>,
-		// <LF> or <CR> on its own), and whitespace between the name of a header and its colon
-		if _, invalid := tools.NormaliseHeaders(data); invalid {
+		// reject headers which are not as RFC 5322 has them: line breaks which are not <CR><LF> (<CR><CR><LF> or
+		// <LF>), a <CR> on its own, and whitespace between the name of a header and its colon
+		if _, invalid := tools.NormaliseHeaders(data); invalid || tools.HeadersHaveBareCR(data) {
 			logger.Log().Warn("[smtpd] rejected message, the headers have line breaks which are not <CR><LF>, or whitespace before a colon")
 			stats.LogSMTPRejected()
 
@@ -48,10 +48,11 @@ func SaveToDatabase(origin net.Addr, from string, to []string, data []byte, smtp
 		}
 	} else {
 		// Fix the line breaks of the headers: <CR><CR><LF> (@see https://github.com/axllent/mailpit/issues/87
-		// & https://github.com/axllent/mailpit/issues/153), and <LF> or <CR> on its own, and remove the
-		// whitespace before the colon of a header name, so the headers are the same to everything which reads
-		// the message. The body is stored as it was received (it used to have its <CR><CR><LF> changed as well),
-		// and the line breaks are made <CR><LF> when it is sent on.
+		// & https://github.com/axllent/mailpit/issues/153) and <LF> on its own, and remove the whitespace before
+		// the colon of a header name, so the headers are the same to everything which reads the message. A <CR> on
+		// its own is text, as it is to Go and Postfix, and is left (and replaced when it is sent on). The body is
+		// stored as it was received (it used to have its <CR><CR><LF> changed as well), and its line breaks are
+		// made <CR><LF> when it is sent on.
 		data, _ = tools.NormaliseHeaders(data)
 	}
 

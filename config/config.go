@@ -195,7 +195,8 @@ var (
 
 	// SMTPStrictRFCHeaders will return an error if the email headers contain line breaks which are not
 	// <CR><LF>: <CR><CR><LF> (\r\r\n), <LF> (\n) or <CR> (\r) on its own, or whitespace between the name of
-	// a header and its colon ("From : a"). Without it these are fixed.
+	// a header and its colon ("From : a"). Without it all but a <CR> on its own are fixed (which is text,
+	// as it is to Go and Postfix, and is replaced when a message is sent).
 	// @see https://github.com/axllent/mailpit/issues/87 & https://github.com/axllent/mailpit/issues/153
 	SMTPStrictRFCHeaders bool
 

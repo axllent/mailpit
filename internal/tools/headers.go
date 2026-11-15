@@ -39,30 +39,46 @@ func charsetReader(charset string, input io.Reader) (io.Reader, error) {
 	return enc.NewDecoder().Reader(input), nil
 }
 
-// NormaliseHeaderLineBreaks returns msg with every line break in the header block (up to the first
-// empty line) as <CR><LF>, and whether anything had to be changed. The line breaks which are replaced
-// are <LF> on its own, <CR> on its own, and <CR><CR><LF> (or more <CR>). The body is never changed.
+// NormaliseHeaderLineBreaks returns msg with every line break in the header block (up to the first empty
+// line) as <CR><LF>, and whether anything had to be changed. The line breaks which are replaced are <LF> on
+// its own, and <CR><CR><LF> (or more <CR>). The body is never changed.
 //
-// A <CR> on its own is a line break to some mail software, but part of the text to others (Go's
-// parser, for one). A message can therefore have different headers depending on which reads it, for
-// example a "Bcc" header which is hidden in the middle of another header's value. Normalising the
-// message first means that every reader sees the same headers. The message is not copied if there
-// is nothing to change.
+// A <CR> on its own is not a line break: RFC 5321 (§2.3.8) says that a conforming server must not take it as
+// one, and RFC 5322 (§2.3) that <CR> and <LF> only occur together. Go's parser and Postfix both read it as
+// part of the text, so a header which is written after one ("Subject: one<CR>Bcc: x") is part of the Subject
+// to them, and it is left as it is so that Mailpit reads the headers as they do (see HeadersHaveBareCR, and
+// NormaliseLineBreaks for what is sent). The message is not copied if there is nothing to change.
 func NormaliseHeaderLineBreaks(msg []byte) ([]byte, bool) {
-	return normaliseLineBreaks(msg, true)
+	out, changed, _ := normaliseLineBreaks(msg, headerBreaks)
+
+	return out, changed
 }
 
-// NormaliseLineBreaks returns msg with every line break, in the body as well as the headers, as
-// <CR><LF>, and whether anything had to be changed. It is what is sent to another SMTP server.
+// HeadersHaveBareCR returns whether the header block (up to the first empty line) has a <CR> which is not
+// followed by a <LF>, which RFC 5322 does not allow.
+func HeadersHaveBareCR(msg []byte) bool {
+	_, _, bare := normaliseLineBreaks(msg, headerBreaks)
+
+	return bare
+}
+
+// NormaliseLineBreaks returns msg with every line break, in the body as well as the headers, as <CR><LF>, and
+// whether anything had to be changed. It is what is sent to another SMTP server. A <CR> on its own in the
+// header block is not a line break there (see NormaliseHeaderLineBreaks), and is replaced with a space, so no
+// header can be made of what follows it, and none is for a server which takes it as a line break. In the body
+// it is a line break.
 //
-// SMTP needs <CR><LF>, and a message which is sent with a <CR> on its own is a problem for the
-// server it is sent to, which may take it as a line break. The end of the message is "<CR><LF>.<CR><LF>",
-// and Go's SMTP client protects a "." at the start of a line only after a <CR><LF>, so a body with
-// "<CR>.<CR><LF>" in it would be sent as it is, and be the end of the message to a server which accepts a
-// <CR> as a line break. What follows would be read as commands (SMTP smuggling). Clients such as
-// Python's smtplib do this too. The message is not copied if there is nothing to change.
+// SMTP needs <CR><LF> (RFC 5321 §2.3.8 says a client must not send a <CR> or <LF> on its own), and a message
+// which is sent with a <CR> on its own is a problem for the server it is sent to, which may take it as a line
+// break. The end of the message is "<CR><LF>.<CR><LF>", and Go's SMTP client protects a "." at the start of a
+// line only after a <CR><LF>, so a body with "<CR>.<CR><LF>" in it would be sent as it is, and be the end of
+// the message to a server which accepts a <CR> as a line break. What follows would be read as commands (SMTP
+// smuggling). Clients such as Python's smtplib make the body's <CR> a line break too. The message is not
+// copied if there is nothing to change.
 func NormaliseLineBreaks(msg []byte) ([]byte, bool) {
-	return normaliseLineBreaks(msg, false)
+	out, changed, _ := normaliseLineBreaks(msg, sendingBreaks)
+
+	return out, changed
 }
 
 // NormaliseHeaders returns msg with its header block made the same to every reader: with <CR><LF> line
@@ -144,10 +160,24 @@ func isFieldName(b []byte) bool {
 	return len(b) > 0
 }
 
-func normaliseLineBreaks(msg []byte, headersOnly bool) ([]byte, bool) {
-	var out []byte // only made when something has to change
-	last := 0      // msg[:last] has been copied to out
+// lineBreakMode is what normaliseLineBreaks does.
+type lineBreakMode int
+
+const (
+	// headerBreaks fixes the line breaks of the header block, and leaves a <CR> on its own in it as it is
+	headerBreaks lineBreakMode = iota
+	// sendingBreaks makes every line break <CR><LF>, in the body as well, and a <CR> on its own in the header
+	// block a space
+	sendingBreaks
+)
+
+// normaliseLineBreaks returns the message, whether it was changed, and whether the header block has a <CR>
+// which is not followed by a <LF>.
+func normaliseLineBreaks(msg []byte, mode lineBreakMode) (out []byte, changed bool, bareCR bool) {
+	var buf []byte // only made when something has to change
+	last := 0      // msg[:last] has been copied to buf
 	lineLen := 0   // the length of the line being read
+	inHeader := true
 
 	for i := 0; i < len(msg); {
 		// to the next line break
@@ -159,47 +189,67 @@ func normaliseLineBreaks(msg []byte, headersOnly bool) ([]byte, bool) {
 		i += next
 		c := msg[i]
 
-		// a line break: <CR>+<LF>, <LF> or a <CR> on its own
+		// a line break: <CR>+<LF>, <LF>, or in the body a <CR> on its own
 		end := i + 1
 		compliant := false
 
-		switch c {
-		case '\n':
-			// <LF> on its own
-		default:
+		if c == '\r' {
 			j := i
 			for j < len(msg) && msg[j] == '\r' {
 				j++
 			}
-			if j < len(msg) && msg[j] == '\n' {
+
+			switch {
+			case j < len(msg) && msg[j] == '\n':
 				end = j + 1
 				compliant = j-i == 1
+			case inHeader:
+				// <CR> on its own in the headers is text
+				bareCR = true
+				if mode == sendingBreaks {
+					if buf == nil {
+						buf = make([]byte, 0, len(msg)+16)
+					}
+					buf = append(buf, msg[last:i]...)
+					for k := i; k < j; k++ {
+						buf = append(buf, ' ')
+					}
+					last = j
+				}
+				lineLen += j - i
+				i = j
+
+				continue
 			}
 		}
 
 		if !compliant {
-			if out == nil {
-				out = make([]byte, 0, len(msg)+16)
+			if buf == nil {
+				buf = make([]byte, 0, len(msg)+16)
 			}
-			out = append(out, msg[last:i]...)
-			out = append(out, '\r', '\n')
+			buf = append(buf, msg[last:i]...)
+			buf = append(buf, '\r', '\n')
 			last = end
 		}
 
 		i = end
 
-		if headersOnly && lineLen == 0 {
-			// that was the empty line which ends the headers, the rest is the body
-			break
+		if inHeader && lineLen == 0 {
+			// that was the empty line which ends the headers
+			inHeader = false
+			if mode == headerBreaks {
+				// the rest is the body
+				break
+			}
 		}
 		lineLen = 0
 	}
 
-	if out == nil {
-		return msg, false
+	if buf == nil {
+		return msg, false, bareCR
 	}
 
-	return append(out, msg[last:]...), true
+	return append(buf, msg[last:]...), true, bareCR
 }
 
 // headerRange is the position of a header in a message: from the start of its first line to just

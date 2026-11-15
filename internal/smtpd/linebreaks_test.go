@@ -78,7 +78,20 @@ func hasOddBreak(s string) bool {
 	return false
 }
 
-// crHidingBcc has a Bcc header which is hidden inside the Subject by a CR.
+// hasBadStoredBreak returns whether there is a line break which is not CRLF, ignoring a CR on its own
+// (which is text, as it is to Go and Postfix), so a bare LF or a CR CR LF.
+func hasBadStoredBreak(s string) bool {
+	for i := 0; i < len(s); i++ {
+		if s[i] == '\n' && (i == 0 || s[i-1] != '\r' || (i >= 2 && s[i-2] == '\r')) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// crHidingBcc has what looks like a Bcc header, which a CR does not make one: it is part of the Subject
+// to Go and Postfix.
 const crHidingBcc = "From: a@b.test\r\nSubject: one\rBcc: hidden@x.test\r\nTo: c@d.test\r\n\r\nbody\r\n"
 
 var lineBreakMessages = []struct{ name, data string }{
@@ -136,7 +149,7 @@ func TestDefaultFixesHeaderLineBreaks(t *testing.T) {
 			}
 
 			raw := stored(t, id)
-			if hasOddBreak(headerBlock(raw)) {
+			if hasBadStoredBreak(headerBlock(raw)) {
 				t.Errorf("the headers still have a line break which is not CRLF: %q", raw)
 			}
 			if _, err := mail.ReadMessage(strings.NewReader(raw)); err != nil {
@@ -157,30 +170,44 @@ func TestDefaultFixesHeaderLineBreaks(t *testing.T) {
 		if err != nil || id == "" {
 			t.Fatalf("id %q, error %v for %q", id, err, data)
 		}
-		if raw := stored(t, id); hasOddBreak(headerBlock(raw)) {
+		if raw := stored(t, id); hasBadStoredBreak(headerBlock(raw)) {
 			t.Errorf("the headers still have a line break which is not CRLF: %q", raw)
 		}
 	}
 
-	// a header hidden by a CR is the header it is to other software
+	// a CR on its own is text: what follows it is part of the header, as it is to Go and Postfix, so it is
+	// not a Bcc header (and nothing is added for it), and the CR is kept in what is stored
 	id, _ := save(t, crHidingBcc)
-	m, err := mail.ReadMessage(strings.NewReader(stored(t, id)))
+	raw := stored(t, id)
+	m, err := mail.ReadMessage(strings.NewReader(raw))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if m.Header.Get("Subject") != "one\rBcc: hidden@x.test" || m.Header.Get("Bcc") != "" || !strings.Contains(raw, "Subject: one\rBcc: hidden@x.test\r\n") {
+		t.Errorf("Subject %q, Bcc %q, in %q", m.Header.Get("Subject"), m.Header.Get("Bcc"), raw)
+	}
+
+	// control: with a line break it is a Bcc header
+	id, _ = save(t, strings.Replace(crHidingBcc, "one\rBcc", "one\r\nBcc", 1))
+	m, err = mail.ReadMessage(strings.NewReader(stored(t, id)))
 	if err != nil {
 		t.Fatal(err)
 	}
 	if m.Header.Get("Subject") != "one" || !strings.Contains(m.Header.Get("Bcc"), "hidden@x.test") {
-		t.Errorf("Subject %q, Bcc %q", m.Header.Get("Subject"), m.Header.Get("Bcc"))
+		t.Errorf("control: Subject %q, Bcc %q", m.Header.Get("Subject"), m.Header.Get("Bcc"))
 	}
 
-	// a CR is a line break, so what follows it must be a header, as it must after a LF. Otherwise
-	// the message is refused, as it is with a LF there (which is how it already was).
+	// a LF is a line break, so what follows it must be a header. A message where it is not is refused
+	// (a CR on its own is text, so "one<CR>two" is a Subject, and is accepted)
 	for _, data := range []string{
-		"From: a@b.test\r\nSubject: one\rtwo\r\n\r\nbody\r\n",
 		"From: a@b.test\r\nSubject: one\ntwo\r\n\r\nbody\r\n",
 	} {
 		if id, err := save(t, data); err == nil || !strings.Contains(err.Error(), "malformed header") {
 			t.Errorf("id %q, error %v: want a malformed header error for %q", id, err, data)
 		}
+	}
+	if id, err := save(t, "From: a@b.test\r\nSubject: one\rtwo\r\n\r\nbody\r\n"); err != nil || id == "" {
+		t.Errorf("a CR followed by text was refused: %v", err)
 	}
 
 	// the body is not changed, whatever its line breaks are: it used to have its <CR><CR><LF> changed
@@ -340,7 +367,6 @@ func TestRelayAndForwardSendCRLFLineBreaks(t *testing.T) {
 func TestUnreadableHeadersAreAPermanentFailure(t *testing.T) {
 	messages := map[string]string{
 		"a line which is not a header": "From: a@b.test\r\nthis is not a header\r\n\r\nbody",
-		"a CR followed by text":        "From: a@b.test\r\nSubject: one\rtwo\r\n\r\nbody",
 		"a LF followed by text":        "From: a@b.test\r\nSubject: one\ntwo\r\n\r\nbody",
 	}
 
