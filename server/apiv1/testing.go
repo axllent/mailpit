@@ -59,43 +59,29 @@ func GetMessageHTML(w http.ResponseWriter, r *http.Request) {
 
 	htmlStr := linkInlineImages(msg)
 
-	// If embed=1 is set, then we will add target="_blank" and rel="noreferrer noopener" to all links
+	// If embed=1 is set, then we will add target="_blank" and rel="noreferrer noopener" to all links.
+	// This parses the whole document, so it waits for its turn (as removing the redirects does).
 	if r.URL.Query().Get("embed") == "1" {
-		doc, err := html.Parse(strings.NewReader(htmlStr))
+		release, err := tools.AcquireHTMLSlot(r.Context())
 		if err != nil {
-			logger.Log().Error(err.Error())
-		} else {
-			// Walk the entire HTML tree.
-			tools.WalkHTML(doc, func(n *html.Node) {
-				if n.Type == html.ElementNode && n.DataAtom == atom.A {
-					// Set attributes on all anchors with external links.
-					tools.SetHTMLAttributeVal(n, "target", "_blank")
-					tools.SetHTMLAttributeVal(n, "rel", "noreferrer noopener")
-				}
-			})
-
-			b := bytes.Buffer{}
-			_ = html.Render(&b, doc)
-			htmlStr = b.String()
-
-			nonce := r.Header.Get("mp-nonce")
-
-			js := `<script nonce="` + nonce + `">
-				if (typeof window.parent == "object") {
-					window.addEventListener('load', function () {
-						window.parent.postMessage({ messageHeight: document.body.scrollHeight}, "*")
-					})
-				}
-			</script>`
-
-			htmlStr = strings.ReplaceAll(htmlStr, "</body>", js+"</body>")
+			// the client has gone, so there is nobody to send anything to
+			return
 		}
+
+		htmlStr = embedLinks(htmlStr, r.Header.Get("mp-nonce"))
+
+		release()
 	}
 
 	// Remove <base> and <meta http-equiv="refresh"> tags, which CSP does not (fully) cover.
 	// This is done last so that it applies to exactly what is served, and fails closed.
-	htmlStr, err = tools.StripHTMLRedirects(htmlStr)
+	htmlStr, err = tools.StripHTMLRedirects(r.Context(), htmlStr)
 	if err != nil {
+		if r.Context().Err() != nil {
+			// the client has gone, so there is nobody to send anything to
+			return
+		}
+
 		logger.Log().Error(err.Error())
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		w.WriteHeader(500)
@@ -105,6 +91,39 @@ func GetMessageHTML(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Add("Content-Type", "text/html; charset=utf-8")
 	_, _ = w.Write([]byte(htmlStr)) // #nosec G705 -- intentionally renders stored email HTML for UI integration testing
+}
+
+// embedLinks adds target="_blank" and rel="noreferrer noopener" to the links of the HTML, and the script which
+// tells the page which embeds it how high it is. The HTML is returned as it was if it can not be parsed.
+func embedLinks(htmlStr, nonce string) string {
+	doc, err := html.Parse(strings.NewReader(htmlStr))
+	if err != nil {
+		logger.Log().Error(err.Error())
+		return htmlStr
+	}
+
+	// Walk the entire HTML tree.
+	tools.WalkHTML(doc, func(n *html.Node) {
+		if n.Type == html.ElementNode && n.DataAtom == atom.A {
+			// Set attributes on all anchors with external links.
+			tools.SetHTMLAttributeVal(n, "target", "_blank")
+			tools.SetHTMLAttributeVal(n, "rel", "noreferrer noopener")
+		}
+	})
+
+	b := bytes.Buffer{}
+	_ = html.Render(&b, doc)
+	htmlStr = b.String()
+
+	js := `<script nonce="` + nonce + `">
+				if (typeof window.parent == "object") {
+					window.addEventListener('load', function () {
+						window.parent.postMessage({ messageHeight: document.body.scrollHeight}, "*")
+					})
+				}
+			</script>`
+
+	return strings.ReplaceAll(htmlStr, "</body>", js+"</body>")
 }
 
 // GetMessageText (method: GET) returns a message's text part

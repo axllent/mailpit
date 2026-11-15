@@ -1,6 +1,7 @@
 package tools
 
 import (
+	"context"
 	"io/fs"
 	"math/rand"
 	"net"
@@ -250,7 +251,7 @@ func TestStripHTMLRedirectsStillRemovesWhatItShould(t *testing.T) {
 		`<noscript><base href=x></noscript>`,
 		`<svg><style><meta http-equiv=refresh content=0></style></svg>`,
 	} {
-		out, err := StripHTMLRedirects(in)
+		out, err := StripHTMLRedirects(context.Background(), in)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -260,10 +261,10 @@ func TestStripHTMLRedirectsStillRemovesWhatItShould(t *testing.T) {
 	}
 
 	// control: a meta which is not a refresh stays, and a document with neither is as it was
-	if out, _ := StripHTMLRedirects(`<meta charset="utf-8"><p>x</p>`); out != `<meta charset="utf-8"><p>x</p>` {
+	if out, _ := StripHTMLRedirects(context.Background(), `<meta charset="utf-8"><p>x</p>`); out != `<meta charset="utf-8"><p>x</p>` {
 		t.Errorf("a charset meta was changed: %q", out)
 	}
-	if out, _ := StripHTMLRedirects("<p>no redirect here</p>\n"); out != "<p>no redirect here</p>\n" {
+	if out, _ := StripHTMLRedirects(context.Background(), "<p>no redirect here</p>\n"); out != "<p>no redirect here</p>\n" {
 		t.Errorf("a document with nothing to remove was changed: %q", out)
 	}
 }
@@ -275,7 +276,7 @@ func TestStripHTMLRedirectsLargeDocumentWithoutRedirect(t *testing.T) {
 	big := strings.Repeat(chunk, (50<<20)/len(chunk))
 
 	start := time.Now()
-	out, err := StripHTMLRedirects(big)
+	out, err := StripHTMLRedirects(context.Background(), big)
 	if err != nil || out != big {
 		t.Fatalf("changed or failed: %v", err)
 	}
@@ -287,15 +288,15 @@ func TestStripHTMLRedirectsLargeDocumentWithoutRedirect(t *testing.T) {
 // Only a few documents which may have a redirect are processed at once. A document which has no
 // such element does not wait.
 func TestStripHTMLRedirectsIsLimited(t *testing.T) {
-	orig := redirectSlots
-	redirectSlots = make(chan struct{}, 2)
-	t.Cleanup(func() { redirectSlots = orig })
+	orig := htmlSlots
+	htmlSlots = make(chan struct{}, 2)
+	t.Cleanup(func() { htmlSlots = orig })
 
 	withMeta := `<meta charset="utf-8"><p>x</p>`
 
 	// control: with a free slot it is done at once
 	done := make(chan string, 1)
-	go func() { out, _ := StripHTMLRedirects(withMeta); done <- out }()
+	go func() { out, _ := StripHTMLRedirects(context.Background(), withMeta); done <- out }()
 	select {
 	case out := <-done:
 		if out != withMeta {
@@ -306,10 +307,10 @@ func TestStripHTMLRedirectsIsLimited(t *testing.T) {
 	}
 
 	// exploit: with every slot in use another waits
-	redirectSlots <- struct{}{}
-	redirectSlots <- struct{}{}
+	htmlSlots <- struct{}{}
+	htmlSlots <- struct{}{}
 
-	go func() { out, _ := StripHTMLRedirects(withMeta); done <- out }()
+	go func() { out, _ := StripHTMLRedirects(context.Background(), withMeta); done <- out }()
 	select {
 	case <-done:
 		t.Fatal("a document was processed while all the slots were in use")
@@ -317,11 +318,11 @@ func TestStripHTMLRedirectsIsLimited(t *testing.T) {
 	}
 
 	// one with nothing which could be removed is not held up
-	if out, err := StripHTMLRedirects("<p>nothing</p>"); err != nil || out != "<p>nothing</p>" {
+	if out, err := StripHTMLRedirects(context.Background(), "<p>nothing</p>"); err != nil || out != "<p>nothing</p>" {
 		t.Fatalf("%q, %v", out, err)
 	}
 
-	<-redirectSlots
+	<-htmlSlots
 	select {
 	case out := <-done:
 		if out != withMeta {
@@ -330,5 +331,5 @@ func TestStripHTMLRedirectsIsLimited(t *testing.T) {
 	case <-time.After(5 * time.Second):
 		t.Fatal("the waiting document was not processed once a slot was free")
 	}
-	<-redirectSlots
+	<-htmlSlots
 }
