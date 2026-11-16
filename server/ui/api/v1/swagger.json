@@ -801,7 +801,7 @@
     },
     "/api/v1/send": {
       "post": {
-        "description": "Send a message via the HTTP API.",
+        "description": "Send a message via the HTTP API.\n\nA message (and so a request) which is larger than the maximum message size is rejected with a 413 response, a\nrequest which says that it is too large is rejected without being read. If too many messages are being sent at once a\nrequest waits for its turn for a few seconds, and then gets a 503 response with a Retry-After header.",
         "consumes": [
           "application/json"
         ],
@@ -1000,6 +1000,12 @@
             "$ref": "#/responses/SendMessageResponse"
           },
           "400": {
+            "$ref": "#/responses/JSONErrorResponse"
+          },
+          "413": {
+            "$ref": "#/responses/JSONErrorResponse"
+          },
+          "503": {
             "$ref": "#/responses/JSONErrorResponse"
           }
         }
