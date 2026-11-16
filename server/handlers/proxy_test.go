@@ -1,7 +1,9 @@
 package handlers
 
 import (
+	"encoding/base64"
 	"fmt"
+	"net/url"
 	"strings"
 	"testing"
 	"time"
@@ -169,5 +171,24 @@ func TestHasAssetCaseInsensitive(t *testing.T) {
 				t.Fatalf("hasAsset(%q) = %v, want %v", tc.url, got, tc.want)
 			}
 		})
+	}
+}
+
+func TestRewriteCSSProxyQueryEncoding(t *testing.T) {
+	const id = "1234567890123456789012"
+	const asset = "https://example.test/~asset.png"
+	seedAssets(id)
+
+	css := string(rewriteCSS(id, "https://example.test/style.css", []byte("url("+asset+")")))
+	proxyURL, err := url.Parse(strings.TrimSuffix(strings.TrimPrefix(css, "url("), ")"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	data, err := base64.StdEncoding.DecodeString(proxyURL.Query().Get("data"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := id + ":" + asset; string(data) != want {
+		t.Fatalf("decoded proxy data = %q, want %q", data, want)
 	}
 }
