@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"net"
 	"net/mail"
+	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
@@ -13,6 +14,26 @@ import (
 
 	"github.com/axllent/mailpit/internal/smtpd"
 )
+
+// socketPath returns the path for a Unix socket which is short enough to be used. t.TempDir() is not: it has the name
+// of the test in it (and of the subtest), which with the temporary directory of macOS (about 50 bytes) is more than the
+// 104 which a socket path can be there (108 on Linux), and listening fails with "bind: invalid argument".
+func socketPath(t *testing.T) string {
+	t.Helper()
+
+	dir, err := os.MkdirTemp("", "mp")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.RemoveAll(dir) })
+
+	path := filepath.Join(dir, "s.sock")
+	if len(path) > 100 {
+		t.Skipf("the temporary directory is too long for the path of a Unix socket (%d bytes): %s", len(path), path)
+	}
+
+	return path
+}
 
 // recorder is an SMTP server which accepts a message, and records the MAIL and RCPT commands it was sent.
 type recorder struct {
@@ -136,7 +157,7 @@ Bcc: Hidden <"h h"@example.test>`))
 // What is sent is the sender and the recipients as they are used in a command, by TCP and over a Unix socket. The
 // sender was refused ("invalid from address") as it was parsed again after its quotes had gone.
 func TestSendUsesQuotedAddresses(t *testing.T) {
-	socket := filepath.Join(t.TempDir(), "smtp.sock")
+	socket := socketPath(t)
 
 	for name, newServer := range map[string]func() (string, *recorder){
 		"tcp":  func() (string, *recorder) { return newRecorder(t, "tcp", "127.0.0.1:0") },

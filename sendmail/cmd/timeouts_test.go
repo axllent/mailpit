@@ -3,7 +3,6 @@ package cmd
 import (
 	"bufio"
 	"net"
-	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -127,7 +126,7 @@ func servers(t *testing.T, b behaviour) map[string]string {
 
 	return map[string]string{
 		"tcp":  slowServer(t, "tcp", "127.0.0.1:0", b),
-		"unix": "unix:" + slowServer(t, "unix", filepath.Join(t.TempDir(), "smtp.sock"), b),
+		"unix": "unix:" + slowServer(t, "unix", socketPath(t), b),
 	}
 }
 
@@ -210,7 +209,7 @@ func TestSendToAServerWhichIsNotThere(t *testing.T) {
 	addr := ln.Addr().String()
 	_ = ln.Close()
 
-	for name, a := range map[string]string{"tcp": addr, "unix": "unix:" + filepath.Join(t.TempDir(), "none.sock")} {
+	for name, a := range map[string]string{"tcp": addr, "unix": "unix:" + socketPath(t)} {
 		err, took := send(t, a, 5*time.Second)
 		if err == nil || took > 2*time.Second {
 			t.Errorf("%s: %v after %v", name, err, took)
