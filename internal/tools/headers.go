@@ -377,10 +377,26 @@ func RemoveMessageHeaders(msg []byte, headers []string) ([]byte, error) {
 	return msg, nil
 }
 
+// ErrHeaderLineBreak is returned when a header name or value which is being written to a message has a <CR> or
+// <LF> in it, which would end the header line and start another (or the end of the header block).
+var ErrHeaderLineBreak = errors.New("header name or value must not contain line breaks")
+
+// HasLineBreak returns whether s has a <CR> or <LF> in it.
+func HasLineBreak(s string) bool {
+	return strings.ContainsAny(s, "\r\n")
+}
+
 // SetMessageHeader scans a message for a header and updates its value if found.
 // It does not consider multiple instances of the same header (only the first is updated).
 // If not found it will add the header to the beginning of the message.
+//
+// The header and value are written as they are, so it returns ErrHeaderLineBreak if either has a <CR> or <LF>
+// in it, rather than changing it: the caller has a value which is not what it should be.
 func SetMessageHeader(msg []byte, header, value string) ([]byte, error) {
+	if HasLineBreak(header) || HasLineBreak(value) {
+		return nil, ErrHeaderLineBreak
+	}
+
 	msg, _ = NormaliseHeaders(msg)
 
 	m, err := mail.ReadMessage(bytes.NewReader(msg))
@@ -407,6 +423,10 @@ func SetMessageHeader(msg []byte, header, value string) ([]byte, error) {
 // OverrideFromHeader scans a message for the From header and replaces it with a different email address.
 // If the message has more than one From header the others are removed, so that the address is the only one.
 func OverrideFromHeader(msg []byte, address string) ([]byte, error) {
+	if HasLineBreak(address) {
+		return nil, ErrHeaderLineBreak
+	}
+
 	msg, _ = NormaliseHeaders(msg)
 
 	m, err := mail.ReadMessage(bytes.NewReader(msg))

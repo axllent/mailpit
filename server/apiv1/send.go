@@ -228,10 +228,13 @@ func (d sendMessageParams) Send(remoteAddr string, httpAuthUser *string) (string
 	// RFC 5322 quoting itself. Use mail.ParseAddress to decode quoted
 	// local-parts like "odd user"@example.com into enmime's expected form,
 	// while keeping the original Email value for SMTP envelope use.
-	fromEmail := d.Body.From.Email
-	if parsed, err := mail.ParseAddress(d.Body.From.Email); err == nil {
-		fromEmail = parsed.Address
+	parsedFrom, err := mail.ParseAddress(d.Body.From.Email)
+	if err != nil {
+		// as the recipients are, and the address is the envelope sender and the Return-Path of the stored message
+		return "", fmt.Errorf("invalid From address: %s", d.Body.From.Email)
 	}
+
+	fromEmail := parsedFrom.Address
 
 	msg := enmime.Builder().
 		From(d.Body.From.Name, fromEmail).

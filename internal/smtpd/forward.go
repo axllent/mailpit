@@ -165,6 +165,10 @@ func forward(from string, msg []byte) error {
 // override-from, as receiving servers check the envelope sender (SPF / DMARC), not the
 // From header. Used for both relaying and forwarding so the two behave the same.
 func setReturnPath(msg []byte, returnPath string) ([]byte, error) {
+	if tools.HasLineBreak(returnPath) {
+		return nil, tools.ErrHeaderLineBreak
+	}
+
 	msg, err := tools.RemoveMessageHeaders(msg, []string{"Return-Path"})
 	if err != nil {
 		return nil, fmt.Errorf("error removing Return-Path header: %s", err.Error())
