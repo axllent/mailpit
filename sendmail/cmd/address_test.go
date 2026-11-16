@@ -18,6 +18,8 @@ import (
 type recorder struct {
 	mu       sync.Mutex
 	commands []string
+	data     []byte // the message, as it was sent (before its end)
+	after    string // the command which came after the end of the message
 }
 
 func (r *recorder) get() []string {
@@ -63,13 +65,26 @@ func newRecorder(t *testing.T, network, addr string) (string, *recorder) {
 						w("250 ok")
 					case cmd == "DATA":
 						w("354 go")
+						var data []byte
 						for {
 							d, err := r.ReadString('\n')
 							if err != nil || d == ".\r\n" {
 								break
 							}
+							data = append(data, d...)
 						}
+						rec.mu.Lock()
+						rec.data = data
+						rec.mu.Unlock()
 						w("250 queued")
+						// the command after it (one which is not QUIT would be what was in the message)
+						if next, err := r.ReadString('\n'); err == nil {
+							rec.mu.Lock()
+							rec.after = strings.TrimSpace(next)
+							rec.mu.Unlock()
+							w("221 bye")
+						}
+						return
 					case cmd == "QUIT":
 						w("221 bye")
 						return

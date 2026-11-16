@@ -15,6 +15,7 @@ package cmd
  */
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"net/mail"
@@ -155,20 +156,18 @@ func Run() {
 		return
 	}
 
-	const maxMessageSize = 1000 * 1024 * 1024
-	body, err := io.ReadAll(io.LimitReader(os.Stdin, maxMessageSize+1))
+	body, msg, err := readMessage(os.Stdin)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "error reading stdin")
-		os.Exit(11)
-	}
-	if len(body) > maxMessageSize {
-		fmt.Fprintf(os.Stderr, "message exceeds %d MiB size cap\n", maxMessageSize/(1024*1024))
-		os.Exit(11)
-	}
+		var tooLarge messageTooLargeError
 
-	msg, err := mail.ReadMessage(bytes.NewReader(body))
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "error parsing message body: %s\n", err)
+		switch {
+		case errors.As(err, &tooLarge):
+			fmt.Fprintf(os.Stderr, "message exceeds %d MiB size cap\n", tooLarge.limit/(1024*1024))
+		case errors.Is(err, errReadingInput):
+			fmt.Fprintln(os.Stderr, "error reading stdin")
+		default:
+			fmt.Fprintf(os.Stderr, "error parsing message body: %s\n", err)
+		}
 		os.Exit(11)
 	}
 
@@ -187,6 +186,42 @@ func Run() {
 		fmt.Fprintln(os.Stderr, "error sending mail")
 		logger.Log().Fatal(err)
 	}
+}
+
+// maxMessageSize is the largest message which is read. It is a variable for the tests.
+var maxMessageSize int64 = 1000 * 1024 * 1024
+
+var errReadingInput = errors.New("error reading the message")
+
+// messageTooLargeError is returned for a message which is larger than maxMessageSize.
+type messageTooLargeError struct{ limit int64 }
+
+func (e messageTooLargeError) Error() string {
+	return fmt.Sprintf("message exceeds %d MiB size cap", e.limit/(1024*1024))
+}
+
+// readMessage reads the message, which is at most maxMessageSize, and returns it as it is to be sent with the headers
+// of it read. The line breaks of the message are all <CR><LF> (and there is no space between the name of a header and
+// its colon), as they are for a message which is relayed: a <CR> on its own is not changed by the SMTP client, and could
+// end the message for a server which takes it as a line break, with what follows read as commands. The message is
+// changed before the headers are read, so that the recipients are the ones which a server would see.
+func readMessage(r io.Reader) ([]byte, *mail.Message, error) {
+	body, err := io.ReadAll(io.LimitReader(r, maxMessageSize+1))
+	if err != nil {
+		return nil, nil, fmt.Errorf("%w: %w", errReadingInput, err)
+	}
+	if int64(len(body)) > maxMessageSize {
+		return nil, nil, messageTooLargeError{limit: maxMessageSize}
+	}
+
+	body, _ = tools.NormaliseForSending(body)
+
+	msg, err := mail.ReadMessage(bytes.NewReader(body))
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return body, msg, nil
 }
 
 // envelopeSender returns the sender for the SMTP command from the address which is given (by -f or the
