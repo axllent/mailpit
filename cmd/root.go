@@ -33,12 +33,10 @@ Documentation:
   https://mailpit.axllent.org/docs/`,
 	Run: func(_ *cobra.Command, _ []string) {
 		if err := config.VerifyConfig(); err != nil {
-			logger.Log().Error(err.Error())
-			os.Exit(1)
+			logger.Log().Fatal(err.Error())
 		}
 		if err := storage.InitDB(); err != nil {
 			logger.Log().Fatal(err.Error())
-			os.Exit(1)
 		}
 
 		// Start Prometheus metrics if enabled
@@ -54,7 +52,6 @@ Documentation:
 		if err := smtpd.Listen(); err != nil {
 			storage.Close()
 			logger.Log().Fatal(err.Error())
-			os.Exit(1)
 		}
 	},
 }

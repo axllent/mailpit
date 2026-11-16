@@ -347,7 +347,7 @@ func VerifyConfig() error {
 		return errors.New("[ui] HTTP bind should be in the format of <ip>:<port>")
 	}
 
-	if MaxMessageSize == 0 {
+	if MaxMessageSize <= 0 {
 		logger.Log().Warnf("[smtpd] no message limit set, this is not recommended for network-reachable listeners")
 	}
 
