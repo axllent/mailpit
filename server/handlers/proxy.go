@@ -244,7 +244,7 @@ func ProxyHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		body = rewriteCSS(id, uri, body)
+		body = rewriteCSS(id, resp.Request.URL.String(), body)
 
 		release()
 	}
