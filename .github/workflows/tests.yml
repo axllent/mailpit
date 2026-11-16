@@ -69,6 +69,7 @@ jobs:
           ./server \
           ./server/apiv1 \
           ./server/handlers \
+          ./server/websockets \
           -v
     - name: Run Go benchmarking
       run: go test -p 1 ./internal/storage ./internal/html2text -bench=.

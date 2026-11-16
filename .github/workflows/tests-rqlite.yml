@@ -46,6 +46,7 @@ jobs:
             ./internal/storage \
             ./internal/tools \
             ./server \
+            ./server/websockets \
             -v
         env:
           # set Mailpit to use the rqlite service container
