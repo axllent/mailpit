@@ -85,8 +85,8 @@ var (
 	// UIAuthFile for UI & API authentication
 	UIAuthFile string
 
-	// EnvAuthErrors holds errors from credentials supplied via environment variables, reported by VerifyConfig
-	EnvAuthErrors []error
+	// EnvErrors holds errors from invalid settings supplied via environment variables, reported by VerifyConfig
+	EnvErrors []error
 
 	// Webroot to define the base path for the UI and API
 	Webroot = "/"
@@ -302,9 +302,9 @@ type SMTPForwardConfigStruct struct {
 
 // VerifyConfig wil do some basic checking
 func VerifyConfig() error {
-	// credentials supplied via environment variables must not fail open
-	if len(EnvAuthErrors) > 0 {
-		return errors.Join(EnvAuthErrors...)
+	// invalid settings supplied via environment variables must not fail open
+	if len(EnvErrors) > 0 {
+		return errors.Join(EnvErrors...)
 	}
 
 	cssFontRestriction := "*"

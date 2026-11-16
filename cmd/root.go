@@ -180,23 +180,17 @@ func initConfigFromEnv() {
 
 	config.DisableAutoVACUUM = getEnabledFromEnv("MP_DISABLE_AUTO_VACUUM")
 
-	if len(os.Getenv("MP_COMPRESSION")) > 0 {
-		config.Compression, _ = strconv.Atoi(os.Getenv("MP_COMPRESSION"))
-	}
+	setIntFromEnv("MP_COMPRESSION", &config.Compression)
 
 	config.TenantID = os.Getenv("MP_TENANT_ID")
 
 	config.Label = os.Getenv("MP_LABEL")
 
-	if len(os.Getenv("MP_MAX_MESSAGES")) > 0 {
-		config.MaxMessages, _ = strconv.Atoi(os.Getenv("MP_MAX_MESSAGES"))
-	}
+	setIntFromEnv("MP_MAX_MESSAGES", &config.MaxMessages)
 	if len(os.Getenv("MP_MAX_AGE")) > 0 {
 		config.MaxAge = os.Getenv("MP_MAX_AGE")
 	}
-	if len(os.Getenv("MP_MAX_MESSAGE_SIZE")) > 0 {
-		config.MaxMessageSize, _ = strconv.Atoi(os.Getenv("MP_MAX_MESSAGE_SIZE"))
-	}
+	setIntFromEnv("MP_MAX_MESSAGE_SIZE", &config.MaxMessageSize)
 	if getEnabledFromEnv("MP_USE_MESSAGE_DATES") {
 		config.UseMessageDates = true
 	}
@@ -285,9 +279,7 @@ func initConfigFromEnv() {
 	if getEnabledFromEnv("MP_SMTP_STRICT_RFC_HEADERS") {
 		config.SMTPStrictRFCHeaders = true
 	}
-	if len(os.Getenv("MP_SMTP_MAX_RECIPIENTS")) > 0 {
-		config.SMTPMaxRecipients, _ = strconv.Atoi(os.Getenv("MP_SMTP_MAX_RECIPIENTS"))
-	}
+	setIntFromEnv("MP_SMTP_MAX_RECIPIENTS", &config.SMTPMaxRecipients)
 	if len(os.Getenv("MP_SMTP_ALLOWED_RECIPIENTS")) > 0 {
 		config.SMTPAllowedRecipients = os.Getenv("MP_SMTP_ALLOWED_RECIPIENTS")
 	}
@@ -306,9 +298,7 @@ func initConfigFromEnv() {
 	config.SMTPRelayMatching = os.Getenv("MP_SMTP_RELAY_MATCHING")
 	config.SMTPRelayConfig = config.SMTPRelayConfigStruct{}
 	config.SMTPRelayConfig.Host = os.Getenv("MP_SMTP_RELAY_HOST")
-	if len(os.Getenv("MP_SMTP_RELAY_PORT")) > 0 {
-		config.SMTPRelayConfig.Port, _ = strconv.Atoi(os.Getenv("MP_SMTP_RELAY_PORT"))
-	}
+	setIntFromEnv("MP_SMTP_RELAY_PORT", &config.SMTPRelayConfig.Port)
 	config.SMTPRelayConfig.STARTTLS = getEnabledFromEnv("MP_SMTP_RELAY_STARTTLS")
 	config.SMTPRelayConfig.TLS = getEnabledFromEnv("MP_SMTP_RELAY_TLS")
 	config.SMTPRelayConfig.AllowInsecure = getEnabledFromEnv("MP_SMTP_RELAY_ALLOW_INSECURE")
@@ -328,9 +318,7 @@ func initConfigFromEnv() {
 	config.SMTPForwardConfigFile = os.Getenv("MP_SMTP_FORWARD_CONFIG")
 	config.SMTPForwardConfig = config.SMTPForwardConfigStruct{}
 	config.SMTPForwardConfig.Host = os.Getenv("MP_SMTP_FORWARD_HOST")
-	if len(os.Getenv("MP_SMTP_FORWARD_PORT")) > 0 {
-		config.SMTPForwardConfig.Port, _ = strconv.Atoi(os.Getenv("MP_SMTP_FORWARD_PORT"))
-	}
+	setIntFromEnv("MP_SMTP_FORWARD_PORT", &config.SMTPForwardConfig.Port)
 	config.SMTPForwardConfig.STARTTLS = getEnabledFromEnv("MP_SMTP_FORWARD_STARTTLS")
 	config.SMTPForwardConfig.TLS = getEnabledFromEnv("MP_SMTP_FORWARD_TLS")
 	config.SMTPForwardConfig.AllowInsecure = getEnabledFromEnv("MP_SMTP_FORWARD_ALLOW_INSECURE")
@@ -373,18 +361,13 @@ func initConfigFromEnv() {
 	if len(os.Getenv("MP_WEBHOOK_URL")) > 0 {
 		config.WebhookURL = os.Getenv("MP_WEBHOOK_URL")
 	}
-	if len(os.Getenv("MP_WEBHOOK_LIMIT")) > 0 {
-		webhook.RateLimit, _ = strconv.Atoi(os.Getenv("MP_WEBHOOK_LIMIT"))
-	}
-	if len(os.Getenv("MP_WEBHOOK_DELAY")) > 0 {
-		webhook.Delay, _ = strconv.Atoi(os.Getenv("MP_WEBHOOK_DELAY"))
-	}
+	setIntFromEnv("MP_WEBHOOK_LIMIT", &webhook.RateLimit)
+	setIntFromEnv("MP_WEBHOOK_DELAY", &webhook.Delay)
 
 	// Demo mode
 	config.DemoMode = getEnabledFromEnv("MP_DEMO_MODE")
 }
 
-// Wrapper to get a boolean from an environment variable
 // setAuthFromEnv sets credentials from an environment variable, if set. Any error is
 // recorded and reported by config.VerifyConfig so that misconfigured credentials stop
 // Mailpit starting, rather than leaving the service running without authentication.
@@ -395,10 +378,30 @@ func setAuthFromEnv(name string, set func(string) error) {
 	}
 
 	if err := set(v); err != nil {
-		config.EnvAuthErrors = append(config.EnvAuthErrors, fmt.Errorf("%s: %w", name, err))
+		config.EnvErrors = append(config.EnvErrors, fmt.Errorf("%s: %w", name, err))
 	}
 }
 
+// setIntFromEnv sets *p from an integer environment variable, if set. An invalid value
+// leaves *p unchanged and is recorded for config.VerifyConfig to report, so a typo such
+// as "10MB" stops Mailpit starting rather than silently replacing a default limit with
+// 0, which usually means unlimited.
+func setIntFromEnv(name string, p *int) {
+	v := os.Getenv(name)
+	if v == "" {
+		return
+	}
+
+	i, err := strconv.Atoi(v)
+	if err != nil {
+		config.EnvErrors = append(config.EnvErrors, fmt.Errorf("%s: invalid integer %q", name, v))
+		return
+	}
+
+	*p = i
+}
+
+// getEnabledFromEnv returns whether a boolean environment variable is set to 1, true or yes
 func getEnabledFromEnv(k string) bool {
 	if len(os.Getenv(k)) > 0 {
 		v := strings.ToLower(os.Getenv(k))
