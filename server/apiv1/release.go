@@ -150,19 +150,7 @@ func ReleaseMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// set the Return-Path and SMTP from
-	if config.SMTPRelayConfig.ReturnPath != "" {
-		if m.Header.Get("Return-Path") != "<"+config.SMTPRelayConfig.ReturnPath+">" {
-			msg, err = tools.RemoveMessageHeaders(msg, []string{"Return-Path"})
-			if err != nil {
-				httpError(w, err.Error())
-				return
-			}
-			msg = append([]byte("Return-Path: <"+config.SMTPRelayConfig.ReturnPath+">\r\n"), msg...)
-		}
-
-		from = config.SMTPRelayConfig.ReturnPath
-	}
+	// the Return-Path (if configured) is set by smtpd.Relay
 
 	// update message date
 	msg, err = tools.SetMessageHeader(msg, "Date", time.Now().Format(time.RFC1123Z))

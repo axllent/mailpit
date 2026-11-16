@@ -112,6 +112,16 @@ func forward(from string, msg []byte) error {
 		from = config.SMTPForwardConfig.OverrideFrom
 	}
 
+	// after override-from, so the return-path is the envelope sender
+	if config.SMTPForwardConfig.ReturnPath != "" {
+		msg, err = setReturnPath(msg, config.SMTPForwardConfig.ReturnPath)
+		if err != nil {
+			return err
+		}
+
+		from = config.SMTPForwardConfig.ReturnPath
+	}
+
 	if config.SMTPForwardConfig.SubjectPrefix != "" {
 		msg, err = tools.PrefixSubject(msg, config.SMTPForwardConfig.SubjectPrefix)
 		if err != nil {
@@ -148,6 +158,19 @@ func forward(from string, msg []byte) error {
 	}
 
 	return c.Quit()
+}
+
+// setReturnPath replaces any Return-Path header in msg with the given address. Callers
+// also use the address as the envelope sender (MAIL FROM), and do so after applying
+// override-from, as receiving servers check the envelope sender (SPF / DMARC), not the
+// From header. Used for both relaying and forwarding so the two behave the same.
+func setReturnPath(msg []byte, returnPath string) ([]byte, error) {
+	msg, err := tools.RemoveMessageHeaders(msg, []string{"Return-Path"})
+	if err != nil {
+		return nil, fmt.Errorf("error removing Return-Path header: %s", err.Error())
+	}
+
+	return append([]byte("Return-Path: <"+returnPath+">\r\n"), msg...), nil
 }
 
 // Return the SMTP forwarding authentication based on config

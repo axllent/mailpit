@@ -147,6 +147,16 @@ func Relay(from string, to []string, msg []byte) error {
 		from = config.SMTPRelayConfig.OverrideFrom
 	}
 
+	// after override-from, so the return-path is the envelope sender
+	if config.SMTPRelayConfig.ReturnPath != "" {
+		msg, err = setReturnPath(msg, config.SMTPRelayConfig.ReturnPath)
+		if err != nil {
+			return err
+		}
+
+		from = config.SMTPRelayConfig.ReturnPath
+	}
+
 	if config.SMTPRelayConfig.SubjectPrefix != "" {
 		msg, err = tools.PrefixSubject(msg, config.SMTPRelayConfig.SubjectPrefix)
 		if err != nil {
