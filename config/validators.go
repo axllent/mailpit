@@ -3,12 +3,14 @@ package config
 import (
 	"errors"
 	"fmt"
+	"math"
 	"net/mail"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/axllent/mailpit/internal/logger"
 	"github.com/axllent/mailpit/internal/smtpd/chaos"
@@ -26,10 +28,19 @@ func parseMaxAge() error {
 		return fmt.Errorf("max-age must be either <int>h for hours or <int>d for days: %s", MaxAge)
 	}
 
+	// the largest age that can be represented as a time.Duration (about 292 years). Larger
+	// values overflow when the prune cutoff is calculated, which can put the cutoff in the
+	// future and delete every message.
+	const maxHours = math.MaxInt64 / int64(time.Hour)
+	tooLarge := fmt.Errorf("max-age is too large: %s (maximum is %dh or %dd)", MaxAge, maxHours, maxHours/24)
+
 	if before, ok := strings.CutSuffix(MaxAge, "h"); ok {
 		hours, err := strconv.Atoi(before)
 		if err != nil {
-			return err
+			return tooLarge // the regexp allows only digits, so this can only be out of range
+		}
+		if int64(hours) > maxHours {
+			return tooLarge
 		}
 
 		MaxAgeInHours = hours
@@ -39,7 +50,11 @@ func parseMaxAge() error {
 
 	days, err := strconv.Atoi(strings.TrimSuffix(MaxAge, "d"))
 	if err != nil {
-		return err
+		return tooLarge // the regexp allows only digits, so this can only be out of range
+	}
+	// checked before multiplying, so days * 24 cannot overflow
+	if int64(days) > maxHours/24 {
+		return tooLarge
 	}
 
 	logger.Log().Debugf("[db] auto-deleting messages older than %s", MaxAge)

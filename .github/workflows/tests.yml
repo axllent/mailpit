@@ -43,6 +43,8 @@ jobs:
       shell: bash
       run: |
         go test -p 1 \
+          ./cmd \
+          ./config \
           ./internal/auth \
           ./internal/connlimit \
           ./internal/dump \

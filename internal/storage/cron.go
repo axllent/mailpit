@@ -57,6 +57,18 @@ func dbCron(ctx context.Context) {
 
 // PruneMessages will auto-delete the oldest messages if messages > config.MaxMessages.
 // Set config.MaxMessages to 0 to disable.
+// maxAgeCutoff returns the Unix timestamp (in milliseconds) before which messages are
+// older than the given number of hours. ok is false when hours is not positive, or is
+// too large to represent as a time.Duration: an overflowed duration can put the cutoff
+// in the future, which would delete every message.
+func maxAgeCutoff(now time.Time, hours int) (ts int64, ok bool) {
+	if hours <= 0 || int64(hours) > math.MaxInt64/int64(time.Hour) {
+		return 0, false
+	}
+
+	return now.Add(-time.Duration(hours) * time.Hour).UnixMilli(), true
+}
+
 func pruneMessages() {
 	if config.MaxMessages < 1 && config.MaxAgeInHours == 0 {
 		return
@@ -101,10 +113,11 @@ func pruneMessages() {
 	}
 
 	// prune using `--max-age` if set
-	if config.MaxAgeInHours > 0 {
-		// now() minus the number of hours
-		ts := time.Now().Add(time.Duration(-config.MaxAgeInHours) * time.Hour).UnixMilli()
-
+	ts, maxAgeOK := maxAgeCutoff(time.Now(), config.MaxAgeInHours)
+	if config.MaxAgeInHours > 0 && !maxAgeOK {
+		logger.Log().Errorf("[db] max-age of %d hours is out of range, skipping age-based pruning", config.MaxAgeInHours)
+	}
+	if maxAgeOK {
 		q := sqlf.Select("ID, Size").
 			From(tenant("mailbox")).
 			Where("Created < ?", ts).
