@@ -247,9 +247,6 @@ var (
 	// ChaosTriggers are parsed and set in the chaos module
 	ChaosTriggers string
 
-	// DisableHTMLCheck DEPRECATED 2024/04/13 - kept here to display console warning only
-	DisableHTMLCheck = false
-
 	// DisableVersionCheck disables version checking
 	DisableVersionCheck bool
 
@@ -283,9 +280,6 @@ type SMTPRelayConfigStruct struct {
 	BlockedRecipientsRegexp *regexp.Regexp // compiled regexp using BlockedRecipients
 	PreserveMessageIDs      bool           `yaml:"preserve-message-ids"` // preserve the original Message-ID when relaying
 	ForwardSMTPErrors       bool           `yaml:"forward-smtp-errors"`  // whether to log smtp-errors or forward them to upstream-client
-
-	// DEPRECATED 2024/03/12
-	RecipientAllowlist string `yaml:"recipient-allowlist"`
 }
 
 // SMTPForwardConfigStruct struct for parsing yaml & storing variables
@@ -589,11 +583,6 @@ func VerifyConfig() error {
 
 	if WebhookURL != "" && !isValidURL(WebhookURL) {
 		return fmt.Errorf("webhook URL does not appear to be a valid URL (%s)", WebhookURL)
-	}
-
-	// DEPRECATED 2024/04/13
-	if DisableHTMLCheck {
-		logger.Log().Warn("--disable-html-check has been deprecated and is no longer used")
 	}
 
 	if EnableSpamAssassin != "" {

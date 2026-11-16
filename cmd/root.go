@@ -78,9 +78,6 @@ func init() {
 	rootCmd.PersistentFlags().BoolP("help", "h", false, "This help")
 	rootCmd.PersistentFlags().Lookup("help").Hidden = true
 
-	// load and warn deprecated ENV vars
-	initDeprecatedConfigFromEnv()
-
 	// load environment variables
 	initConfigFromEnv()
 
@@ -168,33 +165,6 @@ func init() {
 	rootCmd.Flags().StringVar(&config.WebhookURL, "webhook-url", config.WebhookURL, "Send a webhook request for new messages")
 	rootCmd.Flags().IntVar(&webhook.RateLimit, "webhook-limit", webhook.RateLimit, "Limit webhook requests per second")
 	rootCmd.Flags().IntVar(&webhook.Delay, "webhook-delay", webhook.Delay, "Delay in seconds before sending webhook requests (default 0)")
-
-	// DEPRECATED FLAG 2024/04/12 - but will not be removed to maintain backwards compatibility
-	rootCmd.Flags().StringVar(&config.Database, "db-file", config.Database, "Database file to store persistent data")
-	rootCmd.Flags().Lookup("db-file").Hidden = true
-
-	// DEPRECATED FLAGS 2023/03/12
-	rootCmd.Flags().StringVar(&config.UITLSCert, "ui-ssl-cert", config.UITLSCert, "SSL certificate for web UI - requires ui-ssl-key")
-	rootCmd.Flags().StringVar(&config.UITLSKey, "ui-ssl-key", config.UITLSKey, "SSL key for web UI - requires ui-ssl-cert")
-	rootCmd.Flags().StringVar(&config.SMTPTLSCert, "smtp-ssl-cert", config.SMTPTLSCert, "SSL certificate for SMTP - requires smtp-ssl-key")
-	rootCmd.Flags().StringVar(&config.SMTPTLSKey, "smtp-ssl-key", config.SMTPTLSKey, "SSL key for SMTP - requires smtp-ssl-cert")
-	rootCmd.Flags().Lookup("ui-ssl-cert").Hidden = true
-	rootCmd.Flags().Lookup("ui-ssl-cert").Deprecated = "use --ui-tls-cert"
-	rootCmd.Flags().Lookup("ui-ssl-key").Hidden = true
-	rootCmd.Flags().Lookup("ui-ssl-key").Deprecated = "use --ui-tls-key"
-	rootCmd.Flags().Lookup("smtp-ssl-cert").Hidden = true
-	rootCmd.Flags().Lookup("smtp-ssl-cert").Deprecated = "use --smtp-tls-cert"
-	rootCmd.Flags().Lookup("smtp-ssl-key").Hidden = true
-	rootCmd.Flags().Lookup("smtp-ssl-key").Deprecated = "use --smtp-tls-key"
-
-	// DEPRECATED FLAGS 2024/03/16
-	rootCmd.Flags().BoolVar(&config.SMTPRequireSTARTTLS, "smtp-tls-required", config.SMTPRequireSTARTTLS, "smtp-require-starttls")
-	rootCmd.Flags().Lookup("smtp-tls-required").Hidden = true
-	rootCmd.Flags().Lookup("smtp-tls-required").Deprecated = "use --smtp-require-starttls"
-
-	// DEPRECATED FLAG 2024/04/13 - no longer used
-	rootCmd.Flags().BoolVar(&config.DisableHTMLCheck, "disable-html-check", config.DisableHTMLCheck, "Disable the HTML check functionality (web UI & API)")
-	rootCmd.Flags().Lookup("disable-html-check").Hidden = true
 }
 
 // Load settings from environment
@@ -412,49 +382,6 @@ func initConfigFromEnv() {
 
 	// Demo mode
 	config.DemoMode = getEnabledFromEnv("MP_DEMO_MODE")
-}
-
-// load deprecated settings from environment and warn
-func initDeprecatedConfigFromEnv() {
-	// deprecated 2024/04/12 - but will not be removed to maintain backwards compatibility
-	if len(os.Getenv("MP_DATA_FILE")) > 0 {
-		logger.Log().Warn("ENV MP_DATA_FILE has been deprecated, use MP_DATABASE")
-		config.Database = os.Getenv("MP_DATA_FILE")
-	}
-	// deprecated 2023/03/12
-	if len(os.Getenv("MP_UI_SSL_CERT")) > 0 {
-		logger.Log().Warn("ENV MP_UI_SSL_CERT has been deprecated, use MP_UI_TLS_CERT")
-		config.UITLSCert = os.Getenv("MP_UI_SSL_CERT")
-	}
-	// deprecated 2023/03/12
-	if len(os.Getenv("MP_UI_SSL_KEY")) > 0 {
-		logger.Log().Warn("ENV MP_UI_SSL_KEY has been deprecated, use MP_UI_TLS_KEY")
-		config.UITLSKey = os.Getenv("MP_UI_SSL_KEY")
-	}
-	// deprecated 2023/03/12
-	if len(os.Getenv("MP_SMTP_SSL_CERT")) > 0 {
-		logger.Log().Warn("ENV MP_SMTP_CERT has been deprecated, use MP_SMTP_TLS_CERT")
-		config.SMTPTLSCert = os.Getenv("MP_SMTP_SSL_CERT")
-	}
-	// deprecated 2023/03/12
-	if len(os.Getenv("MP_SMTP_SSL_KEY")) > 0 {
-		logger.Log().Warn("ENV MP_SMTP_KEY has been deprecated, use MP_SMTP_TLS_KEY")
-		config.SMTPTLSKey = os.Getenv("MP_SMTP_SMTP_KEY")
-	}
-	// deprecated 2023/12/10
-	if getEnabledFromEnv("MP_STRICT_RFC_HEADERS") {
-		logger.Log().Warn("ENV MP_STRICT_RFC_HEADERS has been deprecated, use MP_SMTP_STRICT_RFC_HEADERS")
-		config.SMTPStrictRFCHeaders = true
-	}
-	// deprecated 2024/03.16
-	if getEnabledFromEnv("MP_SMTP_TLS_REQUIRED") {
-		logger.Log().Warn("ENV MP_SMTP_TLS_REQUIRED has been deprecated, use MP_SMTP_REQUIRE_STARTTLS")
-		config.SMTPRequireSTARTTLS = true
-	}
-	if getEnabledFromEnv("MP_DISABLE_HTML_CHECK") {
-		logger.Log().Warn("ENV MP_DISABLE_HTML_CHECK has been deprecated and is no longer used")
-		config.DisableHTMLCheck = true
-	}
 }
 
 // Wrapper to get a boolean from an environment variable

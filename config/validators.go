@@ -73,14 +73,6 @@ func parseRelayConfig(c string) error {
 		return errors.New("[relay] host not set")
 	}
 
-	// DEPRECATED 2024/03/12
-	if SMTPRelayConfig.RecipientAllowlist != "" {
-		logger.Log().Warn("[relay] 'recipient-allowlist' is deprecated, use 'allowed-recipients' instead")
-		if SMTPRelayConfig.AllowedRecipients == "" {
-			SMTPRelayConfig.AllowedRecipients = SMTPRelayConfig.RecipientAllowlist
-		}
-	}
-
 	return nil
 }
 
