@@ -131,7 +131,7 @@ func Run() {
 			addr = socketAddr
 		}
 
-		conn, err := net.Dial(network, addr)
+		conn, err := net.DialTimeout(network, addr, dialTimeout)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)

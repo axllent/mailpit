@@ -6,6 +6,8 @@ import (
 	"net"
 	"net/smtp"
 	"time"
+
+	"github.com/axllent/mailpit/internal/tools"
 )
 
 var (
@@ -18,26 +20,6 @@ var (
 	// It is a variable for the tests.
 	relayIdleTimeout = time.Minute
 )
-
-// idleConn gives every read and write a deadline of its own. The SMTP client of the standard library has none, so a
-// server which accepts the connection and then says nothing would hold the session of the sender for ever (the
-// message is relayed before the sender is answered).
-type idleConn struct {
-	net.Conn
-	timeout time.Duration
-}
-
-func (c *idleConn) Read(p []byte) (int, error) {
-	_ = c.Conn.SetReadDeadline(time.Now().Add(c.timeout))
-
-	return c.Conn.Read(p)
-}
-
-func (c *idleConn) Write(p []byte) (int, error) {
-	_ = c.Conn.SetWriteDeadline(time.Now().Add(c.timeout))
-
-	return c.Conn.Write(p)
-}
 
 // dialSMTP connects to the server and reads its greeting, with the time limits above. If useTLS is set the
 // connection is TLS from the start (tlsConf is used), and host is the name the client knows the server by.
@@ -59,7 +41,7 @@ func dialSMTP(addr, host string, useTLS bool, tlsConf *tls.Config) (*smtp.Client
 		}
 	}
 
-	client, err := smtp.NewClient(&idleConn{Conn: conn, timeout: relayIdleTimeout}, host)
+	client, err := smtp.NewClient(tools.NewIdleConn(conn, relayIdleTimeout), host)
 	if err != nil {
 		_ = conn.Close()
 
