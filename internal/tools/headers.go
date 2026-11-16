@@ -29,6 +29,24 @@ func AddressList(h mail.Header, key string) ([]*mail.Address, error) {
 	return parser.ParseList(hdr)
 }
 
+// EnvelopeAddress returns the address as it is used in an SMTP command (without the angle brackets): the address
+// alone, with no name or comment, and with the quotes which its local part needs. The parser (and so the Address
+// field) has no quotes, so "a b"@example.com is a b@example.com, which a server refuses, and
+// "x@y.test"@example.com is x@y.test@example.com, which it can read as an address at either of the domains.
+func EnvelopeAddress(a *mail.Address) string {
+	if a == nil {
+		return ""
+	}
+
+	// there is nothing to quote (this is not what the parser gives, which has an @, but it is not for here to say)
+	if !strings.Contains(a.Address, "@") {
+		return a.Address
+	}
+
+	// the address is formatted without a name, which gives <local@domain> with the local part quoted if it has to be
+	return strings.TrimSuffix(strings.TrimPrefix((&mail.Address{Address: a.Address}).String(), "<"), ">")
+}
+
 // charsetReader converts text in the named charset to UTF-8.
 func charsetReader(charset string, input io.Reader) (io.Reader, error) {
 	enc, err := htmlindex.Get(charset)

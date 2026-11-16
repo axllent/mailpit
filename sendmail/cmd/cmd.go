@@ -172,39 +172,48 @@ func Run() {
 		os.Exit(11)
 	}
 
-	addresses := []string{}
-
-	if len(recipients) > 0 {
-		addresses = recipients
-	} else {
-		// get all recipients in To, Cc and Bcc
-		if to, err := tools.AddressList(msg.Header, "To"); err == nil {
-			for _, a := range to {
-				addresses = append(addresses, a.Address)
-			}
-		}
-		if cc, err := tools.AddressList(msg.Header, "Cc"); err == nil {
-			for _, a := range cc {
-				addresses = append(addresses, a.Address)
-			}
-		}
-		if bcc, err := tools.AddressList(msg.Header, "Bcc"); err == nil {
-			for _, a := range bcc {
-				addresses = append(addresses, a.Address)
-			}
-		}
+	addresses := recipients
+	if len(addresses) == 0 {
+		addresses = HeaderRecipients(msg.Header)
 	}
 
-	from, err := mail.ParseAddress(FromAddr)
+	from, err := envelopeSender(FromAddr)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "invalid from address")
 		os.Exit(11)
 	}
 
-	if err := Send(SMTPAddr, from.Address, addresses, body); err != nil {
+	if err := Send(SMTPAddr, from, addresses, body); err != nil {
 		fmt.Fprintln(os.Stderr, "error sending mail")
 		logger.Log().Fatal(err)
 	}
+}
+
+// envelopeSender returns the sender for the SMTP command from the address which is given (by -f or the
+// environment), with the quotes which its local part needs (see tools.EnvelopeAddress).
+func envelopeSender(from string) (string, error) {
+	a, err := mail.ParseAddress(from)
+	if err != nil {
+		return "", err
+	}
+
+	return tools.EnvelopeAddress(a), nil
+}
+
+// HeaderRecipients returns the recipients of a message from its To, Cc and Bcc headers, as they are used in an SMTP
+// command (see tools.EnvelopeAddress).
+func HeaderRecipients(h mail.Header) []string {
+	addresses := []string{}
+
+	for _, key := range []string{"To", "Cc", "Bcc"} {
+		if list, err := tools.AddressList(h, key); err == nil {
+			for _, a := range list {
+				addresses = append(addresses, tools.EnvelopeAddress(a))
+			}
+		}
+	}
+
+	return addresses
 }
 
 // HelpTemplate returns a string of the help

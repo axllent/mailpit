@@ -125,18 +125,11 @@ func init() {
 // defaultFrom is passed in rather than written to, as sendmail.FromAddr is shared
 // across every message ingested.
 func ingestEnvelope(h mail.Header, defaultFrom string) (string, []string) {
-	recipients := []string{}
-	for _, k := range []string{"To", "Cc", "Bcc"} {
-		if list, err := tools.AddressList(h, k); err == nil {
-			for _, a := range list {
-				recipients = append(recipients, a.Address)
-			}
-		}
-	}
+	recipients := sendmail.HeaderRecipients(h)
 
 	var msgFrom string
 	if fromAddresses, err := tools.AddressList(h, "From"); err == nil && len(fromAddresses) > 0 {
-		msgFrom = fromAddresses[0].Address
+		msgFrom = tools.EnvelopeAddress(fromAddresses[0])
 	}
 
 	sender := defaultFrom
@@ -147,7 +140,7 @@ func ingestEnvelope(h mail.Header, defaultFrom string) (string, []string) {
 	// Return-Path per RFC 5321 is "<addr>" (or "<>" for null). Use mail.ParseAddress
 	// so only the wrapping angle brackets are stripped, not stray "<"/">" inside.
 	if rp, err := mail.ParseAddress(h.Get("Return-Path")); err == nil && rp.Address != "" {
-		sender = rp.Address
+		sender = tools.EnvelopeAddress(rp)
 	}
 
 	if len(recipients) == 0 {

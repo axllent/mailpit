@@ -55,6 +55,20 @@ func TestIngestEnvelope(t *testing.T) {
 			wantSender: "from@example.com",
 			wantRcpts:  []string{"from@example.com"},
 		},
+		// a local part which needs quotes has them, as the parser gives the address without (it was refused:
+		// "odd user@example.com" is not an address)
+		{
+			name:       "quoted local parts",
+			headers:    "From: \"odd user\"@example.com\r\nTo: \"a b\"@example.com, \"x@y.test\"@example.com\r\nCc: Named <\"c c\"@example.com>\r\n",
+			wantSender: `"odd user"@example.com`,
+			wantRcpts:  []string{`"a b"@example.com`, `"x@y.test"@example.com`, `"c c"@example.com`},
+		},
+		{
+			name:       "quoted Return-Path",
+			headers:    "Return-Path: <\"bounce box\"@example.com>\r\nFrom: from@example.com\r\nTo: to@example.com\r\n",
+			wantSender: `"bounce box"@example.com`,
+			wantRcpts:  []string{"to@example.com"},
+		},
 		{
 			name:       "no recipients or From falls back to default",
 			headers:    "Subject: nothing\r\n",

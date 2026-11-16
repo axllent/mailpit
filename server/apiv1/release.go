@@ -16,13 +16,6 @@ import (
 	"github.com/axllent/mailpit/internal/tools"
 )
 
-// envelopeAddress returns the address as it is sent in an SMTP command (without the angle brackets): only the
-// address, without a name or comments, and with the quotes of a local part which needs them (the address of the
-// parser has none, so "a b"@example.com is a b@example.com).
-func envelopeAddress(a *mail.Address) string {
-	return strings.TrimSuffix(strings.TrimPrefix((&mail.Address{Address: a.Address}).String(), "<"), ">")
-}
-
 // ReleaseMessage (method: POST) will release a message via a pre-configured external SMTP server.
 func ReleaseMessage(w http.ResponseWriter, r *http.Request) {
 	// swagger:route POST /api/v1/message/{ID}/release message ReleaseMessageParams
@@ -89,7 +82,7 @@ func ReleaseMessage(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		recipients = append(recipients, envelopeAddress(address))
+		recipients = append(recipients, tools.EnvelopeAddress(address))
 
 		if config.SMTPRelayConfig.AllowedRecipientsRegexp != nil && !config.SMTPRelayConfig.AllowedRecipientsRegexp.MatchString(address.Address) {
 			notAllowed = append(notAllowed, to)

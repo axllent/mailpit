@@ -10,6 +10,8 @@ import (
 	"net/smtp"
 	"os"
 	"strings"
+
+	"github.com/axllent/mailpit/internal/tools"
 )
 
 // Send is a wrapper for smtp.SendMail() which also supports sending via unix sockets.
@@ -27,7 +29,10 @@ func Send(addr string, from string, to []string, msg []byte) error {
 		return fmt.Errorf("no To addresses specified")
 	}
 
-	if err := validateLine(fromAddress.Address); err != nil {
+	// the sender as it is used in the command, which keeps the quotes of a local part which has to have them
+	sender := tools.EnvelopeAddress(fromAddress)
+
+	if err := validateLine(sender); err != nil {
 		return err
 	}
 	for _, recipient := range to {
@@ -37,7 +42,7 @@ func Send(addr string, from string, to []string, msg []byte) error {
 	}
 
 	if !isSocket {
-		return sendMail(addr, nil, fromAddress.Address, to, msg)
+		return sendMail(addr, nil, sender, to, msg)
 	}
 
 	conn, err := net.Dial("unix", socketPath)
@@ -52,7 +57,7 @@ func Send(addr string, from string, to []string, msg []byte) error {
 	}
 	defer func() { _ = client.Close() }()
 
-	if err := client.Mail(fromAddress.Address); err != nil {
+	if err := client.Mail(sender); err != nil {
 		return fmt.Errorf("error setting sender: %w", err)
 	}
 

@@ -72,6 +72,7 @@ jobs:
           ./server/apiv1 \
           ./server/handlers \
           ./server/websockets \
+          ./sendmail/cmd \
           -v
     - name: Run Go benchmarking
       run: go test -p 1 ./internal/storage ./internal/html2text -bench=.
