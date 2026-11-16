@@ -84,52 +84,7 @@ The --recent flag will only consider files with a modification date within the l
 						return nil
 					}
 
-					recipients := []string{}
-					// get all recipients in To, Cc and Bcc
-					if to, err := tools.AddressList(msg.Header, "To"); err == nil {
-						for _, a := range to {
-							recipients = append(recipients, a.Address)
-						}
-					}
-					if cc, err := tools.AddressList(msg.Header, "Cc"); err == nil {
-						for _, a := range cc {
-							recipients = append(recipients, a.Address)
-						}
-					}
-					if bcc, err := tools.AddressList(msg.Header, "Bcc"); err == nil {
-						for _, a := range bcc {
-							recipients = append(recipients, a.Address)
-						}
-					}
-
-					// Parse the message's From: header once for this iteration.
-					// Do NOT mutate the package-level sendmail.FromAddr — that
-					// is the CLI default and would leak across messages.
-					var msgFrom string
-					if fromAddresses, err := tools.AddressList(msg.Header, "From"); err == nil && len(fromAddresses) > 0 {
-						msgFrom = fromAddresses[0].Address
-					}
-
-					if len(recipients) == 0 {
-						// Bcc — fall back to the message's own From, or the
-						// CLI-configured default if the message has none.
-						fallback := msgFrom
-						if fallback == "" {
-							fallback = sendmail.FromAddr
-						}
-						recipients = []string{fallback}
-					}
-
-					// Return-Path per RFC 5321 is "<addr>" (or "<>" for null).
-					// Use mail.ParseAddress so we only strip the wrapping
-					// angle brackets, not stray "<"/">" inside the value.
-					var returnPath string
-					if rp, err := mail.ParseAddress(msg.Header.Get("Return-Path")); err == nil {
-						returnPath = rp.Address
-					}
-					if returnPath == "" {
-						returnPath = msgFrom
-					}
+					returnPath, recipients := ingestEnvelope(msg.Header, sendmail.FromAddr)
 
 					err = sendmail.Send(sendmail.SMTPAddr, returnPath, recipients, body)
 					if err != nil {
@@ -161,6 +116,50 @@ func init() {
 	ingestCmd.Flags().StringVarP(&sendmail.SMTPAddr, "smtp-addr", "S", sendmail.SMTPAddr, "SMTP server address")
 	ingestCmd.Flags().IntVarP(&ingestRecent, "recent", "r", 0, "Only ingest messages from the last X days (default all)")
 	ingestCmd.Flags().IntVar(&config.MaxMessageSize, "max-message-size", config.MaxMessageSize, "Maximum message size in MB (0 = unlimited)")
+}
+
+// ingestEnvelope returns the envelope sender and recipients for an ingested message.
+// Recipients are taken from To, Cc and Bcc. The sender is the Return-Path, else the
+// first From address. When the message has no usable sender or recipients, both fall
+// back to defaultFrom (the CLI-configured sender) so the message can still be delivered.
+// defaultFrom is passed in rather than written to, as sendmail.FromAddr is shared
+// across every message ingested.
+func ingestEnvelope(h mail.Header, defaultFrom string) (string, []string) {
+	recipients := []string{}
+	for _, k := range []string{"To", "Cc", "Bcc"} {
+		if list, err := tools.AddressList(h, k); err == nil {
+			for _, a := range list {
+				recipients = append(recipients, a.Address)
+			}
+		}
+	}
+
+	var msgFrom string
+	if fromAddresses, err := tools.AddressList(h, "From"); err == nil && len(fromAddresses) > 0 {
+		msgFrom = fromAddresses[0].Address
+	}
+
+	sender := defaultFrom
+	if msgFrom != "" {
+		sender = msgFrom
+	}
+
+	// Return-Path per RFC 5321 is "<addr>" (or "<>" for null). Use mail.ParseAddress
+	// so only the wrapping angle brackets are stripped, not stray "<"/">" inside.
+	if rp, err := mail.ParseAddress(h.Get("Return-Path")); err == nil && rp.Address != "" {
+		sender = rp.Address
+	}
+
+	if len(recipients) == 0 {
+		// eg: Bcc-only messages with the header removed
+		if msgFrom != "" {
+			recipients = []string{msgFrom}
+		} else {
+			recipients = []string{defaultFrom}
+		}
+	}
+
+	return sender, recipients
 }
 
 // Format a an integer 10000 => 10,000
