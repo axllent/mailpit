@@ -300,7 +300,7 @@ type SMTPForwardConfigStruct struct {
 	ForwardSMTPErrors bool   `yaml:"forward-smtp-errors"` // whether to log smtp-errors or forward them to upstream-client
 }
 
-// VerifyConfig wil do some basic checking
+// VerifyConfig will do some basic checking
 func VerifyConfig() error {
 	// invalid settings supplied via environment variables must not fail open
 	if len(EnvErrors) > 0 {

@@ -100,6 +100,9 @@ func validateRelayConfig() error {
 	if SMTPRelayConfig.Port == 0 {
 		SMTPRelayConfig.Port = 25 // default
 	}
+	if SMTPRelayConfig.Port < 1 || SMTPRelayConfig.Port > 65535 {
+		return fmt.Errorf("[relay] port must be between 1 and 65535: %d", SMTPRelayConfig.Port)
+	}
 
 	SMTPRelayConfig.Auth = strings.ToLower(SMTPRelayConfig.Auth)
 
@@ -150,6 +153,15 @@ func validateRelayConfig() error {
 		}
 
 		SMTPRelayConfig.OverrideFrom = m.Address
+	}
+
+	if SMTPRelayConfig.ReturnPath != "" {
+		m, err := mail.ParseAddress(SMTPRelayConfig.ReturnPath)
+		if err != nil {
+			return fmt.Errorf("[relay] return-path is not a valid email address: %s", SMTPRelayConfig.ReturnPath)
+		}
+
+		SMTPRelayConfig.ReturnPath = m.Address
 	}
 
 	SMTPRelayConfig.SubjectPrefix = strings.TrimSpace(SMTPRelayConfig.SubjectPrefix)
@@ -205,6 +217,9 @@ func validateForwardConfig() error {
 	if SMTPForwardConfig.Port == 0 {
 		SMTPForwardConfig.Port = 25 // default
 	}
+	if SMTPForwardConfig.Port < 1 || SMTPForwardConfig.Port > 65535 {
+		return fmt.Errorf("[forward] port must be between 1 and 65535: %d", SMTPForwardConfig.Port)
+	}
 
 	SMTPForwardConfig.Auth = strings.ToLower(SMTPForwardConfig.Auth)
 
@@ -259,6 +274,15 @@ func validateForwardConfig() error {
 		SMTPForwardConfig.OverrideFrom = m.Address
 	}
 
+	if SMTPForwardConfig.ReturnPath != "" {
+		m, err := mail.ParseAddress(SMTPForwardConfig.ReturnPath)
+		if err != nil {
+			return fmt.Errorf("[forward] return-path is not a valid email address: %s", SMTPForwardConfig.ReturnPath)
+		}
+
+		SMTPForwardConfig.ReturnPath = m.Address
+	}
+
 	SMTPForwardConfig.SubjectPrefix = strings.TrimSpace(SMTPForwardConfig.SubjectPrefix)
 	if strings.ContainsAny(SMTPForwardConfig.SubjectPrefix, "\r\n") {
 		return fmt.Errorf("[forward] subject-prefix must not contain line breaks")
@@ -278,7 +302,7 @@ func parseChaosTriggers() error {
 		return nil
 	}
 
-	re := regexp.MustCompile(`^([a-zA-Z0-0]+):(\d\d\d):(\d+(\.\d)?)$`)
+	re := regexp.MustCompile(`^([a-zA-Z0-9]+):(\d\d\d):(\d+)$`)
 
 	parts := strings.SplitSeq(ChaosTriggers, ",")
 	for p := range parts {
