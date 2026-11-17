@@ -1,8 +1,12 @@
 package smtpd
 
 import (
+	"errors"
 	"net"
+	"slices"
+	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -125,4 +129,68 @@ func TestChaosRefusedMailEndsTheTransaction(t *testing.T) {
 	cl.cmd("RCPT TO:<c@d.test>", "503")
 
 	cl.cmd("NOOP", "250")
+}
+
+// A message which is refused after DATA (too large, or by the handler) ends the transaction, as one which is accepted
+// does (RFC 5321 section 4.1.1.4): RCPT and DATA are not allowed without a new MAIL, and a new MAIL is accepted. The
+// transaction used to be left as it was, so the next MAIL was refused with a 503 unless the client sent RSET first.
+// The control is a message which is accepted.
+func TestRefusedMessageEndsTheTransaction(t *testing.T) {
+	for _, tc := range []struct {
+		name  string
+		fail  error // what the handler returns for the first message
+		body  string
+		code  string
+		small bool // the maximum message size is 100 bytes
+	}{
+		{"control: accepted", nil, "Subject: s\r\n\r\nbody\r\n.\r\n", "250", false},
+		{"too large", nil, "Subject: s\r\n\r\n" + strings.Repeat("x", 200) + "\r\n.\r\n", "552", true},
+		{"refused by the handler", errors.New("550 5.7.1 refused"), "Subject: s\r\n\r\nbody\r\n.\r\n", "550", false},
+		{"handler error", errors.New("database is locked"), "Subject: s\r\n\r\nbody\r\n.\r\n", "451", false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			rec := &senderRecorder{}
+			var calls atomic.Int32
+			handler := func(addr net.Addr, from string, to []string, data []byte, user *string) (string, error) {
+				if calls.Add(1) == 1 && tc.fail != nil {
+					return "", tc.fail
+				}
+
+				return rec.handler(addr, from, to, data, user)
+			}
+
+			var options []func(*Server)
+			if tc.small {
+				options = append(options, func(s *Server) { s.MaxSize = 100 })
+			}
+			addr, _ := limitServer(t, nil, handler, options...)
+			cl := newSMTPClient(t, addr)
+
+			cl.cmd("EHLO x", "250")
+			cl.cmd("MAIL FROM:<first@b.test>", "250")
+			cl.cmd("RCPT TO:<c@d.test>", "250")
+			cl.cmd("DATA", "354")
+			_, _ = cl.c.Write([]byte(tc.body))
+			cl.expect(tc.code)
+
+			// the transaction is over
+			cl.cmd("RCPT TO:<c@d.test>", "503")
+			cl.cmd("DATA", "503")
+
+			// and a new one is accepted, without RSET
+			cl.cmd("MAIL FROM:<second@b.test>", "250")
+			cl.cmd("RCPT TO:<c@d.test>", "250")
+			cl.cmd("DATA", "354")
+			_, _ = cl.c.Write([]byte("Subject: s\r\n\r\nbody\r\n.\r\n"))
+			cl.expect("250")
+
+			want := []string{"second@b.test"}
+			if tc.code == "250" {
+				want = []string{"first@b.test", "second@b.test"}
+			}
+			if got := rec.get(); !slices.Equal(got, want) {
+				t.Fatalf("senders = %v, want %v", got, want)
+			}
+		})
+	}
 }

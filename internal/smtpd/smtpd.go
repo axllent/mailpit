@@ -569,6 +569,14 @@ func (s *session) serve() {
 	var to []string
 	var hasRejectedRecipients bool
 
+	// resetTransaction ends the mail transaction, if there is one.
+	resetTransaction := func() {
+		from = ""
+		gotFROM = false
+		to = nil
+		hasRejectedRecipients = false
+	}
+
 	// RFC 5321 specifies support for minimum of 100 recipients is required.
 	if s.srv.MaxRecipients == 0 {
 		s.srv.MaxRecipients = 100
@@ -767,6 +775,13 @@ loop:
 
 			s.writef("354 Start mail input; end with <CR><LF>.<CR><LF>")
 
+			// The transaction is over once the message has been handled, whether it was accepted or refused (RFC 5321
+			// section 4.1.1.4), so it is ended here, before any of the ways out below. It used to be ended only once a
+			// message was accepted, so after one which was refused (too large, or by the handler) the next MAIL was
+			// refused with a 503 unless the client sent RSET first.
+			msgFrom, msgTo, rejectedRecipients := from, to, hasRejectedRecipients
+			resetTransaction()
+
 			// Attempt to read message body from the socket.
 			// On timeout, send a timeout message and return from serve().
 			// On net.Error, assume the client has gone away i.e. return from serve().
@@ -807,14 +822,14 @@ loop:
 			// Create Received header & put it and the message body together, which is only needed when it is going
 			// to be passed on. What the message takes of the limit is given back once it has been handled.
 			var msg []byte
-			if len(to) > 0 {
+			if len(msgTo) > 0 {
 				s.resolveRemoteHost()
-				msg = data.join(s.makeHeaders(to))
+				msg = data.join(s.makeHeaders(msgTo))
 			}
 
 			// Pass mail on to handler only if there are valid recipients.
-			if len(to) > 0 && s.srv.Handler != nil {
-				err := s.srv.Handler(s.conn.RemoteAddr(), from, to, msg)
+			if len(msgTo) > 0 && s.srv.Handler != nil {
+				err := s.srv.Handler(s.conn.RemoteAddr(), msgFrom, msgTo, msg)
 				msg = nil
 				s.releaseData()
 				if err != nil {
@@ -826,8 +841,8 @@ loop:
 					break
 				}
 				s.writef("250 2.0.0 Ok: queued")
-			} else if len(to) > 0 && s.srv.MsgIDHandler != nil {
-				msgID, err := s.srv.MsgIDHandler(s.conn.RemoteAddr(), from, to, msg, s.username)
+			} else if len(msgTo) > 0 && s.srv.MsgIDHandler != nil {
+				msgID, err := s.srv.MsgIDHandler(s.conn.RemoteAddr(), msgFrom, msgTo, msg, s.username)
 				msg = nil
 				s.releaseData()
 				if err != nil {
@@ -847,7 +862,7 @@ loop:
 			} else {
 				msg = nil
 				s.releaseData()
-				if hasRejectedRecipients && Debug {
+				if rejectedRecipients && Debug {
 					if s.srv.LogWrite != nil {
 						s.srv.LogWrite(s.remoteIP, "DEBUG", "Message from sender silently dropped (rejected recipients)")
 					} else {
@@ -856,12 +871,6 @@ loop:
 				}
 				s.writef("250 2.0.0 Ok: queued")
 			}
-
-			// Reset for next mail.
-			from = ""
-			gotFROM = false
-			to = nil
-			hasRejectedRecipients = false
 		case "QUIT":
 			s.writef("221 2.0.0 %s %s ESMTP Service closing transmission channel", s.srv.Hostname, s.srv.AppName)
 			break loop
