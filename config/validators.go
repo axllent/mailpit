@@ -84,6 +84,17 @@ func parseRelayConfig(c string) error {
 		return err
 	}
 
+	// Removed keys are refused rather than ignored, as the YAML parser silently skips keys it does not know, which
+	// for recipient-allowlist would lift the restriction on who messages can be released to.
+	var keys map[string]any
+	if err := yaml.Unmarshal(data, &keys); err != nil {
+		return err
+	}
+
+	if _, ok := keys["recipient-allowlist"]; ok {
+		return errors.New("[relay] 'recipient-allowlist' is no longer supported, use 'allowed-recipients' instead")
+	}
+
 	if SMTPRelayConfig.Host == "" {
 		return errors.New("[relay] host not set")
 	}
