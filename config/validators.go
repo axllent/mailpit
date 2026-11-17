@@ -14,6 +14,7 @@ import (
 
 	"github.com/axllent/mailpit/internal/logger"
 	"github.com/axllent/mailpit/internal/smtpd/chaos"
+	"github.com/axllent/mailpit/internal/tools"
 	"github.com/goccy/go-yaml"
 )
 
@@ -172,7 +173,8 @@ func validateRelayConfig() error {
 			return fmt.Errorf("[relay] return-path is not a valid email address: %s", SMTPRelayConfig.ReturnPath)
 		}
 
-		SMTPRelayConfig.ReturnPath = m.Address
+		// as it is sent in MAIL FROM and the Return-Path header, with the local part quoted if it has to be
+		SMTPRelayConfig.ReturnPath = tools.EnvelopeAddress(m)
 	}
 
 	SMTPRelayConfig.SubjectPrefix = strings.TrimSpace(SMTPRelayConfig.SubjectPrefix)
@@ -291,7 +293,8 @@ func validateForwardConfig() error {
 			return fmt.Errorf("[forward] return-path is not a valid email address: %s", SMTPForwardConfig.ReturnPath)
 		}
 
-		SMTPForwardConfig.ReturnPath = m.Address
+		// as it is sent in MAIL FROM and the Return-Path header, with the local part quoted if it has to be
+		SMTPForwardConfig.ReturnPath = tools.EnvelopeAddress(m)
 	}
 
 	SMTPForwardConfig.SubjectPrefix = strings.TrimSpace(SMTPForwardConfig.SubjectPrefix)

@@ -109,8 +109,8 @@ func SetPOP3Auth(s string) error {
 	return nil
 }
 
-// load parses whitespace-separated "user:password" entries. It returns ErrNoCredentials
-// if there are none, and an error if any entry is malformed, so that a typo cannot
+// load parses whitespace-separated "user:password" entries, skipping comment lines. It returns
+// ErrNoCredentials if there are none, and an error if any entry is malformed, so that a typo cannot
 // silently drop a user. Errors never include the entry text as it may contain a password.
 func load(s string) (*Credentials, error) {
 	entries := credentialsFromString(s)
@@ -176,13 +176,22 @@ func validateEntry(entry string) (err error) {
 	return nil
 }
 
+// credentialsFromString returns the whitespace-separated entries of s. A line which starts with # (after any
+// whitespace) is a comment, as in an htpasswd file, and is skipped, so a commented-out entry is not loaded. A #
+// anywhere else is not a comment.
 func credentialsFromString(s string) []string {
-	// split string by any whitespace character
-	words := whitespaceRe.Split(s, -1)
 	credentials := []string{}
-	for _, w := range words {
-		if w != "" {
-			credentials = append(credentials, w)
+
+	for line := range strings.Lines(s) {
+		if strings.HasPrefix(strings.TrimSpace(line), "#") {
+			continue
+		}
+
+		// split the line by any whitespace character
+		for _, w := range whitespaceRe.Split(line, -1) {
+			if w != "" {
+				credentials = append(credentials, w)
+			}
 		}
 	}
 

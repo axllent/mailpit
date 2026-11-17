@@ -74,6 +74,9 @@ func TestValidateRelayAndForwardConfig(t *testing.T) {
 		{"plain return-path", 25, "bounce@example.com", "bounce@example.com", ""},
 		{"bracketed return-path", 25, "<bounce@example.com>", "bounce@example.com", ""},
 		{"named return-path", 25, "Bounce <bounce@example.com>", "bounce@example.com", ""},
+		// the quotes are kept, as the address is sent as it is in MAIL FROM (it used to be "a b@example.com")
+		{"quoted return-path", 25, `"a b"@example.com`, `"a b"@example.com`, ""},
+		{"bracketed quoted return-path", 25, `<"a b"@example.com>`, `"a b"@example.com`, ""},
 		{"return-path with line break", 25, "bounce@example.com\r\nX-Injected: 1", "", "return-path is not a valid"},
 		{"return-path not an address", 25, "bounce", "", "return-path is not a valid"},
 	}

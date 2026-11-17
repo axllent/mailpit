@@ -160,3 +160,38 @@ func TestCredentialsFromString(t *testing.T) {
 		t.Fatalf("got %v", got)
 	}
 }
+
+// A line which starts with # is a comment, as in an htpasswd file. A comment used to be split into words like any
+// other line: one with no colon in it stopped Mailpit starting, and a commented-out entry ("#bob:pass") was loaded as
+// a user called "#bob" who could log in. A # which does not start a line is not a comment (the controls), so a typo
+// there is still refused rather than silently dropping what follows it.
+func TestLoadComments(t *testing.T) {
+	c, err := load("# Mailpit users\r\n  # indented comment\nalice:secret\n#bob:pass\n\t#carol:pass dave:pass\n")
+	if err != nil {
+		t.Fatalf("a file with comments: %v", err)
+	}
+
+	for user, want := range map[string]bool{"alice": true, "#bob": false, "bob": false, "#carol": false, "dave": false} {
+		pass := "pass"
+		if user == "alice" {
+			pass = "secret"
+		}
+		if got := c.Match(user, pass); got != want {
+			t.Errorf("Match(%q) = %v, want %v", user, got, want)
+		}
+	}
+
+	// only comments is no credentials, as an empty file is
+	if c, err := load("# nobody yet\n"); !errors.Is(err, ErrNoCredentials) || c != nil {
+		t.Fatalf("only comments: c=%v err=%v", c, err)
+	}
+
+	// controls: a # which does not start a line is part of the entries
+	if _, err := load("alice:secret # a note\n"); err == nil {
+		t.Error("a # after an entry was skipped as a comment")
+	}
+	c, err = load("alice:#secret\n")
+	if err != nil || !c.Match("alice", "#secret") {
+		t.Errorf("a password starting with #: err=%v", err)
+	}
+}
