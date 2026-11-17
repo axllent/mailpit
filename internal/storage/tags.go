@@ -31,6 +31,19 @@ const (
 	maxRawXTags = MaxTagsPerMessage * 10
 )
 
+// xTagsFromHeader returns the first maxRawXTags comma-separated entries of an X-Tags header. The header is only
+// split as far as that, as splitting all of it makes a slice of every entry (16 bytes each, so a 40 MiB header of
+// commas was over 600 MiB) before any could be dropped.
+func xTagsFromHeader(hdr string) []string {
+	xTags := strings.SplitN(strings.TrimSpace(hdr), ",", maxRawXTags+1)
+	if len(xTags) > maxRawXTags {
+		// the last is the rest of the header, which is not split
+		xTags = xTags[:maxRawXTags]
+	}
+
+	return xTags
+}
+
 // SetMessageTags will set the tags for a given database ID, removing any not in the array.
 // A message can have at most MaxTagsPerMessage different tags, more is an error.
 func SetMessageTags(id string, tags []string) ([]string, error) {

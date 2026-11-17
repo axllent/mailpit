@@ -163,12 +163,7 @@ func Store(body *[]byte, username *string) (string, error) {
 	if !config.TagsDisableXTags {
 		xTagsHdr := env.GetHeader("X-Tags")
 		if xTagsHdr != "" {
-			// extract tags from X-Tags header, reading no more of it than could be kept
-			xTags := strings.Split(strings.TrimSpace(xTagsHdr), ",")
-			if len(xTags) > maxRawXTags {
-				xTags = xTags[:maxRawXTags]
-			}
-			tags = append(tags, tools.SetTagCasing(xTags)...)
+			tags = append(tags, tools.SetTagCasing(xTagsFromHeader(xTagsHdr))...)
 		}
 	}
 

@@ -147,6 +147,32 @@ func TestSetMessageTagsLimit(t *testing.T) {
 	}
 }
 
+// An X-Tags header is split only as far as the entries which are looked at. It used to be split in full before the
+// rest were dropped, which for a header of millions of commas made a slice of millions of entries (the size of which
+// shows in its capacity). Headers with up to maxRawXTags entries (the controls) give all of them, as before.
+func TestXTagsFromHeader(t *testing.T) {
+	huge := strings.Repeat(",", 2_000_000)
+	got := xTagsFromHeader("a," + huge)
+	if len(got) != maxRawXTags || cap(got) > maxRawXTags+1 {
+		t.Fatalf("a header of 2,000,000 entries: %d entries with room for %d, want %d with room for no more than %d",
+			len(got), cap(got), maxRawXTags, maxRawXTags+1)
+	}
+	if got[0] != "a" {
+		t.Fatalf("the first entry is %q", got[0])
+	}
+
+	for _, n := range []int{1, 3, maxRawXTags - 1, maxRawXTags, maxRawXTags + 1} {
+		want := numberedTags("tag", n)
+		got := xTagsFromHeader(" " + strings.Join(want, ",") + " ")
+		if n > maxRawXTags {
+			want = want[:maxRawXTags]
+		}
+		if !slices.Equal(got, want) {
+			t.Fatalf("%d entries: got %d entries, want %d (first %q, last %q)", n, len(got), len(want), got[0], got[len(got)-1])
+		}
+	}
+}
+
 // Reading and storing a huge X-Tags header must not cost more than the tags that can be kept.
 // 60,000 tags took almost 10 seconds to store before the limit.
 func TestHugeXTagsHeaderIsCheap(t *testing.T) {
