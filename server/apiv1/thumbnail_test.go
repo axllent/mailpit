@@ -3,6 +3,7 @@ package apiv1
 import (
 	"bytes"
 	"compress/zlib"
+	"context"
 	"encoding/base64"
 	"encoding/binary"
 	"fmt"
@@ -228,5 +229,36 @@ func TestThumbnailLatestEmpty(t *testing.T) {
 	}
 	if ct := rr.Header().Get("Content-Type"); !strings.HasPrefix(ct, "text/plain") {
 		t.Fatalf("Content-Type=%q, want text/plain", ct)
+	}
+}
+
+// A request whose client has gone is not decoded, and nothing is written for it. It used to be decoded
+// all the same (after waiting for a slot), as the decode was not given the request's context.
+func TestThumbnailForAClientWhichHasGone(t *testing.T) {
+	initTestDB(t)
+	msgID, partID := storeEmailWithPNG(t, "gone", solidRGBApng(16, 16))
+
+	request := func(ctx context.Context) *httptest.ResponseRecorder {
+		req := httptest.NewRequest(http.MethodGet, "/api/v1/message/"+msgID+"/part/"+partID+"/thumb", nil).WithContext(ctx)
+		req.SetPathValue("id", msgID)
+		req.SetPathValue("partID", partID)
+		rr := httptest.NewRecorder()
+		Thumbnail(rr, req)
+
+		return rr
+	}
+
+	gone, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	rr := request(gone)
+	if rr.Body.Len() != 0 || rr.Header().Get("Content-Type") != "" {
+		t.Errorf("something was written for a client which had gone: %d bytes, content type %q", rr.Body.Len(), rr.Header().Get("Content-Type"))
+	}
+
+	// control: the same request with a client which is still there
+	rr = request(context.Background())
+	if rr.Code != http.StatusOK || rr.Header().Get("Content-Type") != "image/jpeg" || rr.Body.Len() == 0 {
+		t.Errorf("status %d, content type %q, %d bytes", rr.Code, rr.Header().Get("Content-Type"), rr.Body.Len())
 	}
 }

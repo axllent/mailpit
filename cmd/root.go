@@ -2,6 +2,7 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 	"strconv"
 	"strings"
@@ -32,12 +33,10 @@ Documentation:
   https://mailpit.axllent.org/docs/`,
 	Run: func(_ *cobra.Command, _ []string) {
 		if err := config.VerifyConfig(); err != nil {
-			logger.Log().Error(err.Error())
-			os.Exit(1)
+			logger.Log().Fatal(err.Error())
 		}
 		if err := storage.InitDB(); err != nil {
 			logger.Log().Fatal(err.Error())
-			os.Exit(1)
 		}
 
 		// Start Prometheus metrics if enabled
@@ -53,7 +52,6 @@ Documentation:
 		if err := smtpd.Listen(); err != nil {
 			storage.Close()
 			logger.Log().Fatal(err.Error())
-			os.Exit(1)
 		}
 	},
 }
@@ -76,9 +74,6 @@ func init() {
 	// hide help flag
 	rootCmd.PersistentFlags().BoolP("help", "h", false, "This help")
 	rootCmd.PersistentFlags().Lookup("help").Hidden = true
-
-	// load and warn deprecated ENV vars
-	initDeprecatedConfigFromEnv()
 
 	// load environment variables
 	initConfigFromEnv()
@@ -110,7 +105,7 @@ func init() {
 	rootCmd.Flags().BoolVar(&config.BlockRemoteCSSAndFonts, "block-remote-css-and-fonts", config.BlockRemoteCSSAndFonts, "Block access to remote CSS & fonts")
 	rootCmd.Flags().BoolVar(&config.AllowInternalHTTPRequests, "allow-internal-http-requests", config.AllowInternalHTTPRequests, "Allow link checker, HTML checker & screenshots to access internal IP addresses")
 	rootCmd.Flags().BoolVar(&config.DisableLinkCheckRateLimit, "disable-link-check-rate-limit", config.DisableLinkCheckRateLimit, "Disable the per-domain rate limiter and result cache used by the link checker")
-	rootCmd.Flags().StringVar(&config.EnableSpamAssassin, "enable-spamassassin", config.EnableSpamAssassin, "Enable integration with SpamAssassin (<host>:<port>)")
+	rootCmd.Flags().StringVar(&config.EnableSpamAssassin, "enable-spamassassin", config.EnableSpamAssassin, "Enable integration with SpamAssassin (<host>:<port>, unix:<path> or postmark)")
 	rootCmd.Flags().StringVar(&config.EnableRspamd, "enable-rspamd", config.EnableRspamd, "Enable integration with Rspamd (https://<password>@<host>:<port>)")
 	rootCmd.Flags().BoolVar(&config.AllowUntrustedTLS, "allow-untrusted-tls", config.AllowUntrustedTLS, "Do not verify HTTPS certificates (link checker & screenshots)")
 	rootCmd.Flags().BoolVar(&config.DisableHTTPCompression, "disable-http-compression", config.DisableHTTPCompression, "Disable HTTP compression support (web UI & API)")
@@ -129,7 +124,7 @@ func init() {
 	rootCmd.Flags().BoolVar(&config.SMTPRequireSTARTTLS, "smtp-require-starttls", config.SMTPRequireSTARTTLS, "Require SMTP client use STARTTLS")
 	rootCmd.Flags().BoolVar(&config.SMTPRequireTLS, "smtp-require-tls", config.SMTPRequireTLS, "Require client use SSL/TLS")
 	rootCmd.Flags().BoolVar(&config.SMTPAuthAllowInsecure, "smtp-auth-allow-insecure", config.SMTPAuthAllowInsecure, "Allow insecure PLAIN & LOGIN SMTP authentication")
-	rootCmd.Flags().BoolVar(&config.SMTPStrictRFCHeaders, "smtp-strict-rfc-headers", config.SMTPStrictRFCHeaders, "Return SMTP error if message headers contain <CR><CR><LF>")
+	rootCmd.Flags().BoolVar(&config.SMTPStrictRFCHeaders, "smtp-strict-rfc-headers", config.SMTPStrictRFCHeaders, "Return SMTP error for non-RFC 5322 message headers (eg: bare <LF>)")
 	rootCmd.Flags().IntVar(&config.SMTPMaxRecipients, "smtp-max-recipients", config.SMTPMaxRecipients, "Maximum SMTP recipients allowed")
 	rootCmd.Flags().StringVar(&config.SMTPAllowedRecipients, "smtp-allowed-recipients", config.SMTPAllowedRecipients, "Only allow SMTP recipients matching a regular expression (default allow all)")
 	rootCmd.Flags().BoolVar(&config.SMTPIgnoreRejectedRecipients, "smtp-ignore-rejected-recipients", config.SMTPIgnoreRejectedRecipients, "Ignore rejected SMTP recipients with 2xx response")
@@ -167,33 +162,6 @@ func init() {
 	rootCmd.Flags().StringVar(&config.WebhookURL, "webhook-url", config.WebhookURL, "Send a webhook request for new messages")
 	rootCmd.Flags().IntVar(&webhook.RateLimit, "webhook-limit", webhook.RateLimit, "Limit webhook requests per second")
 	rootCmd.Flags().IntVar(&webhook.Delay, "webhook-delay", webhook.Delay, "Delay in seconds before sending webhook requests (default 0)")
-
-	// DEPRECATED FLAG 2024/04/12 - but will not be removed to maintain backwards compatibility
-	rootCmd.Flags().StringVar(&config.Database, "db-file", config.Database, "Database file to store persistent data")
-	rootCmd.Flags().Lookup("db-file").Hidden = true
-
-	// DEPRECATED FLAGS 2023/03/12
-	rootCmd.Flags().StringVar(&config.UITLSCert, "ui-ssl-cert", config.UITLSCert, "SSL certificate for web UI - requires ui-ssl-key")
-	rootCmd.Flags().StringVar(&config.UITLSKey, "ui-ssl-key", config.UITLSKey, "SSL key for web UI - requires ui-ssl-cert")
-	rootCmd.Flags().StringVar(&config.SMTPTLSCert, "smtp-ssl-cert", config.SMTPTLSCert, "SSL certificate for SMTP - requires smtp-ssl-key")
-	rootCmd.Flags().StringVar(&config.SMTPTLSKey, "smtp-ssl-key", config.SMTPTLSKey, "SSL key for SMTP - requires smtp-ssl-cert")
-	rootCmd.Flags().Lookup("ui-ssl-cert").Hidden = true
-	rootCmd.Flags().Lookup("ui-ssl-cert").Deprecated = "use --ui-tls-cert"
-	rootCmd.Flags().Lookup("ui-ssl-key").Hidden = true
-	rootCmd.Flags().Lookup("ui-ssl-key").Deprecated = "use --ui-tls-key"
-	rootCmd.Flags().Lookup("smtp-ssl-cert").Hidden = true
-	rootCmd.Flags().Lookup("smtp-ssl-cert").Deprecated = "use --smtp-tls-cert"
-	rootCmd.Flags().Lookup("smtp-ssl-key").Hidden = true
-	rootCmd.Flags().Lookup("smtp-ssl-key").Deprecated = "use --smtp-tls-key"
-
-	// DEPRECATED FLAGS 2024/03/16
-	rootCmd.Flags().BoolVar(&config.SMTPRequireSTARTTLS, "smtp-tls-required", config.SMTPRequireSTARTTLS, "smtp-require-starttls")
-	rootCmd.Flags().Lookup("smtp-tls-required").Hidden = true
-	rootCmd.Flags().Lookup("smtp-tls-required").Deprecated = "use --smtp-require-starttls"
-
-	// DEPRECATED FLAG 2024/04/13 - no longer used
-	rootCmd.Flags().BoolVar(&config.DisableHTMLCheck, "disable-html-check", config.DisableHTMLCheck, "Disable the HTML check functionality (web UI & API)")
-	rootCmd.Flags().Lookup("disable-html-check").Hidden = true
 }
 
 // Load settings from environment
@@ -209,23 +177,17 @@ func initConfigFromEnv() {
 
 	config.DisableAutoVACUUM = getEnabledFromEnv("MP_DISABLE_AUTO_VACUUM")
 
-	if len(os.Getenv("MP_COMPRESSION")) > 0 {
-		config.Compression, _ = strconv.Atoi(os.Getenv("MP_COMPRESSION"))
-	}
+	setIntFromEnv("MP_COMPRESSION", &config.Compression)
 
 	config.TenantID = os.Getenv("MP_TENANT_ID")
 
 	config.Label = os.Getenv("MP_LABEL")
 
-	if len(os.Getenv("MP_MAX_MESSAGES")) > 0 {
-		config.MaxMessages, _ = strconv.Atoi(os.Getenv("MP_MAX_MESSAGES"))
-	}
+	setIntFromEnv("MP_MAX_MESSAGES", &config.MaxMessages)
 	if len(os.Getenv("MP_MAX_AGE")) > 0 {
 		config.MaxAge = os.Getenv("MP_MAX_AGE")
 	}
-	if len(os.Getenv("MP_MAX_MESSAGE_SIZE")) > 0 {
-		config.MaxMessageSize, _ = strconv.Atoi(os.Getenv("MP_MAX_MESSAGE_SIZE"))
-	}
+	setIntFromEnv("MP_MAX_MESSAGE_SIZE", &config.MaxMessageSize)
 	if getEnabledFromEnv("MP_USE_MESSAGE_DATES") {
 		config.UseMessageDates = true
 	}
@@ -253,9 +215,7 @@ func initConfigFromEnv() {
 		config.Webroot = os.Getenv("MP_WEBROOT")
 	}
 	config.UIAuthFile = os.Getenv("MP_UI_AUTH_FILE")
-	if err := auth.SetUIAuth(os.Getenv("MP_UI_AUTH")); err != nil {
-		logger.Log().Error(err.Error())
-	}
+	setAuthFromEnv("MP_UI_AUTH", auth.SetUIAuth)
 	config.UITLSCert = os.Getenv("MP_UI_TLS_CERT")
 	config.UITLSKey = os.Getenv("MP_UI_TLS_KEY")
 	if len(os.Getenv("MP_API_CORS")) > 0 {
@@ -288,9 +248,7 @@ func initConfigFromEnv() {
 
 	// Send API
 	config.SendAPIAuthFile = os.Getenv("MP_SEND_API_AUTH_FILE")
-	if err := auth.SetSendAPIAuth(os.Getenv("MP_SEND_API_AUTH")); err != nil {
-		logger.Log().Error(err.Error())
-	}
+	setAuthFromEnv("MP_SEND_API_AUTH", auth.SetSendAPIAuth)
 	if getEnabledFromEnv("MP_SEND_API_AUTH_ACCEPT_ANY") {
 		config.SendAPIAuthAcceptAny = true
 	}
@@ -300,9 +258,7 @@ func initConfigFromEnv() {
 		config.SMTPListen = os.Getenv("MP_SMTP_BIND_ADDR")
 	}
 	config.SMTPAuthFile = os.Getenv("MP_SMTP_AUTH_FILE")
-	if err := auth.SetSMTPAuth(os.Getenv("MP_SMTP_AUTH")); err != nil {
-		logger.Log().Error(err.Error())
-	}
+	setAuthFromEnv("MP_SMTP_AUTH", auth.SetSMTPAuth)
 	if getEnabledFromEnv("MP_SMTP_AUTH_ACCEPT_ANY") {
 		config.SMTPAuthAcceptAny = true
 	}
@@ -320,9 +276,7 @@ func initConfigFromEnv() {
 	if getEnabledFromEnv("MP_SMTP_STRICT_RFC_HEADERS") {
 		config.SMTPStrictRFCHeaders = true
 	}
-	if len(os.Getenv("MP_SMTP_MAX_RECIPIENTS")) > 0 {
-		config.SMTPMaxRecipients, _ = strconv.Atoi(os.Getenv("MP_SMTP_MAX_RECIPIENTS"))
-	}
+	setIntFromEnv("MP_SMTP_MAX_RECIPIENTS", &config.SMTPMaxRecipients)
 	if len(os.Getenv("MP_SMTP_ALLOWED_RECIPIENTS")) > 0 {
 		config.SMTPAllowedRecipients = os.Getenv("MP_SMTP_ALLOWED_RECIPIENTS")
 	}
@@ -341,9 +295,7 @@ func initConfigFromEnv() {
 	config.SMTPRelayMatching = os.Getenv("MP_SMTP_RELAY_MATCHING")
 	config.SMTPRelayConfig = config.SMTPRelayConfigStruct{}
 	config.SMTPRelayConfig.Host = os.Getenv("MP_SMTP_RELAY_HOST")
-	if len(os.Getenv("MP_SMTP_RELAY_PORT")) > 0 {
-		config.SMTPRelayConfig.Port, _ = strconv.Atoi(os.Getenv("MP_SMTP_RELAY_PORT"))
-	}
+	setIntFromEnv("MP_SMTP_RELAY_PORT", &config.SMTPRelayConfig.Port)
 	config.SMTPRelayConfig.STARTTLS = getEnabledFromEnv("MP_SMTP_RELAY_STARTTLS")
 	config.SMTPRelayConfig.TLS = getEnabledFromEnv("MP_SMTP_RELAY_TLS")
 	config.SMTPRelayConfig.AllowInsecure = getEnabledFromEnv("MP_SMTP_RELAY_ALLOW_INSECURE")
@@ -363,9 +315,7 @@ func initConfigFromEnv() {
 	config.SMTPForwardConfigFile = os.Getenv("MP_SMTP_FORWARD_CONFIG")
 	config.SMTPForwardConfig = config.SMTPForwardConfigStruct{}
 	config.SMTPForwardConfig.Host = os.Getenv("MP_SMTP_FORWARD_HOST")
-	if len(os.Getenv("MP_SMTP_FORWARD_PORT")) > 0 {
-		config.SMTPForwardConfig.Port, _ = strconv.Atoi(os.Getenv("MP_SMTP_FORWARD_PORT"))
-	}
+	setIntFromEnv("MP_SMTP_FORWARD_PORT", &config.SMTPForwardConfig.Port)
 	config.SMTPForwardConfig.STARTTLS = getEnabledFromEnv("MP_SMTP_FORWARD_STARTTLS")
 	config.SMTPForwardConfig.TLS = getEnabledFromEnv("MP_SMTP_FORWARD_TLS")
 	config.SMTPForwardConfig.AllowInsecure = getEnabledFromEnv("MP_SMTP_FORWARD_ALLOW_INSECURE")
@@ -388,9 +338,7 @@ func initConfigFromEnv() {
 		config.POP3Listen = os.Getenv("MP_POP3_BIND_ADDR")
 	}
 	config.POP3AuthFile = os.Getenv("MP_POP3_AUTH_FILE")
-	if err := auth.SetPOP3Auth(os.Getenv("MP_POP3_AUTH")); err != nil {
-		logger.Log().Error(err.Error())
-	}
+	setAuthFromEnv("MP_POP3_AUTH", auth.SetPOP3Auth)
 	config.POP3TLSCert = os.Getenv("MP_POP3_TLS_CERT")
 	config.POP3TLSKey = os.Getenv("MP_POP3_TLS_KEY")
 
@@ -410,61 +358,47 @@ func initConfigFromEnv() {
 	if len(os.Getenv("MP_WEBHOOK_URL")) > 0 {
 		config.WebhookURL = os.Getenv("MP_WEBHOOK_URL")
 	}
-	if len(os.Getenv("MP_WEBHOOK_LIMIT")) > 0 {
-		webhook.RateLimit, _ = strconv.Atoi(os.Getenv("MP_WEBHOOK_LIMIT"))
-	}
-	if len(os.Getenv("MP_WEBHOOK_DELAY")) > 0 {
-		webhook.Delay, _ = strconv.Atoi(os.Getenv("MP_WEBHOOK_DELAY"))
-	}
+	setIntFromEnv("MP_WEBHOOK_LIMIT", &webhook.RateLimit)
+	setIntFromEnv("MP_WEBHOOK_DELAY", &webhook.Delay)
 
 	// Demo mode
 	config.DemoMode = getEnabledFromEnv("MP_DEMO_MODE")
 }
 
-// load deprecated settings from environment and warn
-func initDeprecatedConfigFromEnv() {
-	// deprecated 2024/04/12 - but will not be removed to maintain backwards compatibility
-	if len(os.Getenv("MP_DATA_FILE")) > 0 {
-		logger.Log().Warn("ENV MP_DATA_FILE has been deprecated, use MP_DATABASE")
-		config.Database = os.Getenv("MP_DATA_FILE")
+// setAuthFromEnv sets credentials from an environment variable, if set. Any error is
+// recorded and reported by config.VerifyConfig so that misconfigured credentials stop
+// Mailpit starting, rather than leaving the service running without authentication.
+func setAuthFromEnv(name string, set func(string) error) {
+	v := os.Getenv(name)
+	if v == "" {
+		return
 	}
-	// deprecated 2023/03/12
-	if len(os.Getenv("MP_UI_SSL_CERT")) > 0 {
-		logger.Log().Warn("ENV MP_UI_SSL_CERT has been deprecated, use MP_UI_TLS_CERT")
-		config.UITLSCert = os.Getenv("MP_UI_SSL_CERT")
-	}
-	// deprecated 2023/03/12
-	if len(os.Getenv("MP_UI_SSL_KEY")) > 0 {
-		logger.Log().Warn("ENV MP_UI_SSL_KEY has been deprecated, use MP_UI_TLS_KEY")
-		config.UITLSKey = os.Getenv("MP_UI_SSL_KEY")
-	}
-	// deprecated 2023/03/12
-	if len(os.Getenv("MP_SMTP_SSL_CERT")) > 0 {
-		logger.Log().Warn("ENV MP_SMTP_CERT has been deprecated, use MP_SMTP_TLS_CERT")
-		config.SMTPTLSCert = os.Getenv("MP_SMTP_SSL_CERT")
-	}
-	// deprecated 2023/03/12
-	if len(os.Getenv("MP_SMTP_SSL_KEY")) > 0 {
-		logger.Log().Warn("ENV MP_SMTP_KEY has been deprecated, use MP_SMTP_TLS_KEY")
-		config.SMTPTLSKey = os.Getenv("MP_SMTP_SMTP_KEY")
-	}
-	// deprecated 2023/12/10
-	if getEnabledFromEnv("MP_STRICT_RFC_HEADERS") {
-		logger.Log().Warn("ENV MP_STRICT_RFC_HEADERS has been deprecated, use MP_SMTP_STRICT_RFC_HEADERS")
-		config.SMTPStrictRFCHeaders = true
-	}
-	// deprecated 2024/03.16
-	if getEnabledFromEnv("MP_SMTP_TLS_REQUIRED") {
-		logger.Log().Warn("ENV MP_SMTP_TLS_REQUIRED has been deprecated, use MP_SMTP_REQUIRE_STARTTLS")
-		config.SMTPRequireSTARTTLS = true
-	}
-	if getEnabledFromEnv("MP_DISABLE_HTML_CHECK") {
-		logger.Log().Warn("ENV MP_DISABLE_HTML_CHECK has been deprecated and is no longer used")
-		config.DisableHTMLCheck = true
+
+	if err := set(v); err != nil {
+		config.EnvErrors = append(config.EnvErrors, fmt.Errorf("%s: %w", name, err))
 	}
 }
 
-// Wrapper to get a boolean from an environment variable
+// setIntFromEnv sets *p from an integer environment variable, if set. An invalid value
+// leaves *p unchanged and is recorded for config.VerifyConfig to report, so a typo such
+// as "10MB" stops Mailpit starting rather than silently replacing a default limit with
+// 0, which usually means unlimited.
+func setIntFromEnv(name string, p *int) {
+	v := os.Getenv(name)
+	if v == "" {
+		return
+	}
+
+	i, err := strconv.Atoi(v)
+	if err != nil {
+		config.EnvErrors = append(config.EnvErrors, fmt.Errorf("%s: invalid integer %q", name, v))
+		return
+	}
+
+	*p = i
+}
+
+// getEnabledFromEnv returns whether a boolean environment variable is set to 1, true or yes
 func getEnabledFromEnv(k string) bool {
 	if len(os.Getenv(k)) > 0 {
 		v := strings.ToLower(os.Getenv(k))

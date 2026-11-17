@@ -300,8 +300,7 @@ export default {
 										<template v-if="isRspamd">
 											Rspamd recommends an action (such as "add header" or "reject") based on the
 											score. Mailpit treats the message as spam once the score reaches the
-											<code>add header</code> threshold (currently <code>{{ threshold }}</code
-											>).
+											<code>add header</code> threshold (currently <code>{{ threshold }}</code>).
 										</template>
 										<template v-else>
 											The default spam threshold is <code>5</code>, meaning any score lower than 5

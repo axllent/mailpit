@@ -72,7 +72,9 @@ func RunTests(ctx context.Context, html string) (Response, error) {
 	unsupported = 0
 
 	for _, w := range s.Warnings {
-		if w.Score.Found == 0 {
+		// with no nodes there is nothing to weight against (and dividing by zero
+		// would produce a non-finite score which cannot be encoded as JSON)
+		if w.Score.Found == 0 || s.Total.Nodes == 0 {
 			continue
 		}
 
@@ -95,10 +97,11 @@ func RunTests(ctx context.Context, html string) (Response, error) {
 	s.Total.Partial = partial
 	s.Total.Unsupported = unsupported
 
-	// sort slice to get lowest scores first
-	sort.Slice(s.Warnings, func(i, j int) bool {
-		return (s.Warnings[i].Score.Unsupported+s.Warnings[i].Score.Partial)*float32(s.Warnings[i].Score.Found)/float32(s.Total.Nodes) >
-			(s.Warnings[j].Score.Unsupported+s.Warnings[j].Score.Partial)*float32(s.Warnings[j].Score.Found)/float32(s.Total.Nodes)
+	// sort slice to get lowest scores first. The node count is the same for every
+	// warning so it does not affect the order, and is omitted to avoid dividing by zero.
+	sort.SliceStable(s.Warnings, func(i, j int) bool {
+		return (s.Warnings[i].Score.Unsupported+s.Warnings[i].Score.Partial)*float32(s.Warnings[i].Score.Found) >
+			(s.Warnings[j].Score.Unsupported+s.Warnings[j].Score.Partial)*float32(s.Warnings[j].Score.Found)
 	})
 
 	return s, nil
@@ -164,11 +167,7 @@ func (c CanIEmail) getTest(k string) (Warning, error) {
 					p++
 					s.Support = "partial"
 
-					noteIDs := noteMatch.FindStringSubmatch(fmt.Sprintf("%s", support))
-
-					for _, id := range noteIDs {
-						s.NoteNumber = id
-					}
+					s.NoteNumber = noteNumber(fmt.Sprintf("%s", support))
 				}
 
 				warning.Results = append(warning.Results, s)

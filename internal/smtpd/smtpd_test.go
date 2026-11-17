@@ -467,6 +467,52 @@ func TestCmdDATAWithHandlerError(t *testing.T) {
 	}
 }
 
+// A panic in the handler must only terminate that session, not the process. The exploit case
+// panics in the handler, the control shows a well-behaved handler on the same server.
+func TestSessionPanicRecovered(t *testing.T) {
+	panicking := func(_ net.Addr, _ string, _ []string, _ []byte) error {
+		panic("boom")
+	}
+	conn := newConn(t, &Server{Handler: panicking})
+	br := bufio.NewReader(conn)
+	send := func(cmd string) string {
+		_, _ = fmt.Fprintf(conn, "%s\r\n", cmd)
+		// read a complete (possibly multi-line) reply, eg: "250-..." until "250 ..."
+		for {
+			resp, err := br.ReadString('\n')
+			if err != nil {
+				t.Fatalf("Failed to read response to %q: %v", cmd, err)
+			}
+			if len(resp) < 4 || resp[3] != '-' {
+				return resp
+			}
+		}
+	}
+
+	send("EHLO host.example.com")
+	send("MAIL FROM:<sender@example.com>")
+	send("RCPT TO:<recipient@example.com>")
+	send("DATA")
+	if resp := send("Test message.\r\n."); !strings.HasPrefix(resp, "451") {
+		t.Errorf("response after panic = %q, want 451", resp)
+	}
+	// the server closes only this connection
+	if _, err := br.ReadString('\n'); err == nil {
+		t.Error("connection still open after panic")
+	}
+	_ = conn.Close()
+
+	// control: the same flow with a normal handler is accepted
+	m := mockHandler{}
+	conn = newConn(t, &Server{Handler: m.handler(nil)})
+	cmdCode(t, conn, "EHLO host.example.com", "250")
+	cmdCode(t, conn, "MAIL FROM:<sender@example.com>", "250")
+	cmdCode(t, conn, "RCPT TO:<recipient@example.com>", "250")
+	cmdCode(t, conn, "DATA", "354")
+	cmdCode(t, conn, "Test message.\r\n.", "250")
+	_ = conn.Close()
+}
+
 func TestCmdSTARTTLS(t *testing.T) {
 	conn := newConn(t, &Server{})
 	cmdCode(t, conn, "EHLO host.example.com", "250")

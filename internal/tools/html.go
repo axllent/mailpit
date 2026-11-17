@@ -2,6 +2,7 @@ package tools
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -64,7 +65,22 @@ func WalkHTML(n *html.Node, fn func(*html.Node)) {
 // the HTML, but only for documents which would otherwise have bypassed the filter.
 //
 // An error is returned if the HTML cannot be processed, so the caller can fail closed.
-func StripHTMLRedirects(htmlStr string) (string, error) {
+func StripHTMLRedirects(ctx context.Context, htmlStr string) (string, error) {
+	// An element needs its "<base" or "<meta", whatever the parser makes of the rest, so a document
+	// without either has nothing to remove and is not tokenised or parsed (which for a large one
+	// takes seconds and about 25 times its size in memory).
+	if !mayContainRedirectElement(htmlStr) {
+		return htmlStr, nil
+	}
+
+	// Others wait while this many documents are being done, so many requests for large documents at
+	// once can not use all the memory. A request which is over (the client has gone) stops waiting.
+	release, err := AcquireHTMLSlot(ctx)
+	if err != nil {
+		return "", err
+	}
+	defer release()
+
 	out, err := stripHTMLRedirectTags(htmlStr)
 	if err != nil {
 		return "", err
@@ -109,6 +125,61 @@ func StripHTMLRedirects(htmlStr string) (string, error) {
 	}
 
 	return out, nil
+}
+
+// maxConcurrentHTMLProcessing is the number of large HTML documents which are processed at once.
+// Parsing one takes about 25 times its size in memory (a 20 MiB document peaked at 1.7 GiB with 2 at
+// once, against 3.5 GiB for 8 at once, in the time which 2 took as well), so the others wait.
+const maxConcurrentHTMLProcessing = 2
+
+// htmlSlots limits the documents which are processed at once. It is a variable for the tests.
+var htmlSlots = make(chan struct{}, maxConcurrentHTMLProcessing)
+
+// AcquireHTMLSlot waits until HTML of a message may be processed, which is anything which parses it
+// (see maxConcurrentHTMLProcessing), and returns the function which gives the slot back. It stops
+// waiting, and returns the error of the context, when the request is over. A slot is not to be held
+// while calling StripHTMLRedirects, which takes one of its own.
+func AcquireHTMLSlot(ctx context.Context) (func(), error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+
+	select {
+	case htmlSlots <- struct{}{}:
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	}
+
+	// the slot and the end of the context can both be ready, and select then chooses either
+	if err := ctx.Err(); err != nil {
+		<-htmlSlots
+		return nil, err
+	}
+
+	return func() { <-htmlSlots }, nil
+}
+
+// mayContainRedirectElement returns whether the HTML has "<base" or "<meta" (in any case), which
+// every `<base>` and `<meta>` element needs. It does not mean there is one, only that there may be.
+// Tag names are never made from character references, and a NUL in one is replaced, so the letters
+// are always together in the document.
+func mayContainRedirectElement(h string) bool {
+	for i := 0; i < len(h); {
+		j := strings.IndexByte(h[i:], '<')
+		if j < 0 {
+			return false
+		}
+		i += j + 1
+
+		if len(h)-i >= 4 {
+			switch strings.ToLower(h[i : i+4]) {
+			case "base", "meta":
+				return true
+			}
+		}
+	}
+
+	return false
 }
 
 // removeRedirectNodes replaces any `<base>` and `<meta http-equiv="refresh">` elements in the tree with

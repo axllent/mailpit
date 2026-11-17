@@ -120,3 +120,30 @@ func TestEnvelopeCacheKeepsOversizedNewestEntry(t *testing.T) {
 		t.Error("newest entry should be cached")
 	}
 }
+
+// A parse which panics returns an error to the caller which parsed it, as it does to those which waited for it. The
+// results were not set when the panic was recovered, so the caller got no envelope and no error, and the callers
+// which used the envelope then panicked on it. One which parses (the control) returns the envelope.
+func TestEnvelopeCacheParsePanicReturnsAnError(t *testing.T) {
+	orig := parseCachedEnvelope
+	t.Cleanup(func() { parseCachedEnvelope = orig })
+
+	parseCachedEnvelope = func(string) (*enmime.Envelope, uint64, error) { panic("bad message") }
+
+	env, size, err := getCachedEnvelope("panics")
+	if err == nil || env != nil || size != 0 {
+		t.Fatalf("got env=%v size=%d err=%v, want an error", env, size, err)
+	}
+	if _, ok := cachedEnvelope("panics"); ok {
+		t.Fatal("a parse which panicked was cached")
+	}
+
+	// control: it is parsed again, as it was not cached
+	want := imageEnvelope(10)
+	parseCachedEnvelope = func(string) (*enmime.Envelope, uint64, error) { return want, 10, nil }
+
+	env, size, err = getCachedEnvelope("panics")
+	if err != nil || env != want || size != 10 {
+		t.Fatalf("got env=%v size=%d err=%v, want the envelope", env, size, err)
+	}
+}

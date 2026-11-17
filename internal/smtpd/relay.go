@@ -71,15 +71,9 @@ func createRelaySMTPClient(config config.SMTPRelayConfigStruct, addr string) (*s
 		tlsConf := &tls.Config{ServerName: config.Host} // #nosec
 		tlsConf.InsecureSkipVerify = config.AllowInsecure
 
-		conn, err := tls.Dial("tcp", addr, tlsConf)
+		client, err := dialSMTP(addr, config.Host, true, tlsConf)
 		if err != nil {
-			return nil, fmt.Errorf("TLS dial error: %v", err)
-		}
-
-		client, err := smtp.NewClient(conn, tlsConf.ServerName)
-		if err != nil {
-			_ = conn.Close()
-			return nil, fmt.Errorf("SMTP client error: %v", err)
+			return nil, err
 		}
 
 		// Set the hostname for HELO/EHLO
@@ -94,9 +88,9 @@ func createRelaySMTPClient(config config.SMTPRelayConfigStruct, addr string) (*s
 		return client, nil
 	}
 
-	client, err := smtp.Dial(addr)
+	client, err := dialSMTP(addr, config.Host, false, nil)
 	if err != nil {
-		return nil, fmt.Errorf("error connecting to %s: %v", addr, err)
+		return nil, err
 	}
 
 	// Set the hostname for HELO/EHLO
@@ -139,6 +133,11 @@ func Relay(from string, to []string, msg []byte) error {
 		}
 	}
 
+	// Whatever is sent has <CR><LF> line breaks only, and no whitespace before the colon of a header, as the receiving
+	// server may read others differently.
+	// A <CR> on its own is not changed by the SMTP client, and could end the message for the server.
+	msg, _ = tools.NormaliseForSending(msg)
+
 	if config.SMTPRelayConfig.OverrideFrom != "" {
 		msg, err = tools.OverrideFromHeader(msg, config.SMTPRelayConfig.OverrideFrom)
 		if err != nil {
@@ -146,6 +145,16 @@ func Relay(from string, to []string, msg []byte) error {
 		}
 
 		from = config.SMTPRelayConfig.OverrideFrom
+	}
+
+	// after override-from, so the return-path is the envelope sender
+	if config.SMTPRelayConfig.ReturnPath != "" {
+		msg, err = setReturnPath(msg, config.SMTPRelayConfig.ReturnPath)
+		if err != nil {
+			return err
+		}
+
+		from = config.SMTPRelayConfig.ReturnPath
 	}
 
 	if config.SMTPRelayConfig.SubjectPrefix != "" {

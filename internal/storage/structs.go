@@ -116,7 +116,11 @@ type MailboxStats struct {
 	Tags   []string
 }
 
-// Metadata struct for storing message metadata
+// Metadata struct for storing message metadata.
+//
+// Field searches (eg: `from:`) use a case-folded copy of this in the mailbox MetaSearchText
+// column, so any code that writes Metadata must also write MetaSearchText (see
+// createMetaSearchText), otherwise searches will match stale values.
 type Metadata struct {
 	From     *mail.Address   `json:"From,omitempty"`
 	To       []*mail.Address `json:"To,omitempty"`

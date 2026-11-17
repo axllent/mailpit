@@ -4,7 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"math"
 	"regexp"
 	"strconv"
 	"strings"
@@ -17,27 +19,35 @@ import (
 	"github.com/leporo/sqlf"
 )
 
+// MaxSearchTerms is the maximum number of terms (words, or quoted phrases) in a search.
+const MaxSearchTerms = 100
+
 // Search will search a mailbox for search terms.
 // The search is broken up by segments (exact phrases can be quoted), and interprets specific terms such as:
 // is:read, is:unread, has:attachment, to:<term>, from:<term> & subject:<term>
 // Negative searches also also included by prefixing the search term with a `-` or `!`
 func Search(search, timezone string, start int, beforeTS int64, limit int) ([]MessageSummary, int, error) {
 	results := []MessageSummary{}
-	allResults := []MessageSummary{}
 	tsStart := time.Now()
 	nrResults := 0
 	if limit < 0 {
 		limit = 50
 	}
+	if start < 0 {
+		start = 0
+	}
 
-	q := searchQueryBuilder(search, timezone)
+	q, err := searchQueryBuilder(search, timezone)
+	if err != nil {
+		return results, nrResults, err
+	}
 
 	if beforeTS > 0 {
 		q = q.Where(`m.Created < ?`, beforeTS)
 	}
 
-	var err error
-
+	// Every match is counted, but only the messages of the page are kept: a search which matches most of a
+	// large mailbox would otherwise hold all of them (with their metadata) in memory for every request.
 	if err := q.QueryAndClose(context.TODO(), db, func(row *sql.Rows) {
 		var created float64 // use float64 for rqlite compatibility
 		var id string
@@ -56,6 +66,13 @@ func Search(search, timezone string, start int, beforeTS int64, limit int) ([]Me
 			return
 		}
 
+		position := nrResults
+		nrResults++
+
+		if position < start || position-start >= limit {
+			return
+		}
+
 		if err := json.Unmarshal([]byte(metadata), &em); err != nil {
 			logger.Log().Errorf("[db] %s", err.Error())
 			return
@@ -70,20 +87,12 @@ func Search(search, timezone string, start int, beforeTS int64, limit int) ([]Me
 		em.Read = read == 1
 		em.Snippet = snippet
 
-		allResults = append(allResults, em)
+		results = append(results, em)
 	}); err != nil {
-		return results, nrResults, err
+		return []MessageSummary{}, 0, err
 	}
 
-	dbLastAction = time.Now()
-
-	nrResults = len(allResults)
-
-	if nrResults > start {
-		end := min(nrResults, start+limit)
-
-		results = allResults[start:end]
-	}
+	dbLastAction.touch()
 
 	// set tags for listed messages only
 	if len(results) > 0 {
@@ -113,7 +122,10 @@ func Search(search, timezone string, start int, beforeTS int64, limit int) ([]Me
 func SearchUnreadCount(search, timezone string, beforeTS int64) (int64, error) {
 	tsStart := time.Now()
 
-	q := searchQueryBuilder(search, timezone)
+	q, err := searchQueryBuilder(search, timezone)
+	if err != nil {
+		return 0, err
+	}
 
 	if beforeTS > 0 {
 		q = q.Where(`m.Created < ?`, beforeTS)
@@ -123,7 +135,7 @@ func SearchUnreadCount(search, timezone string, beforeTS int64) (int64, error) {
 
 	q = q.Where("m.Read = 0").Select(`COUNT(*)`)
 
-	err := q.QueryAndClose(context.TODO(), db, func(row *sql.Rows) {
+	err = q.QueryAndClose(context.TODO(), db, func(row *sql.Rows) {
 		var ignore sql.NullString
 		if err := row.Scan(&ignore, &ignore, &ignore, &ignore, &ignore, &ignore, &ignore, &ignore, &ignore, &ignore, &ignore, &ignore, &ignore, &ignore, &unread); err != nil {
 			logger.Log().Errorf("[db] %s", err.Error())
@@ -132,7 +144,7 @@ func SearchUnreadCount(search, timezone string, beforeTS int64) (int64, error) {
 
 	})
 
-	dbLastAction = time.Now()
+	dbLastAction.touch()
 
 	elapsed := time.Since(tsStart)
 
@@ -146,7 +158,10 @@ func SearchUnreadCount(search, timezone string, beforeTS int64) (int64, error) {
 // is:read, is:unread, has:attachment, to:<term>, from:<term> & subject:<term>
 // Negative searches also also included by prefixing the search term with a `-` or `!`
 func DeleteSearch(search, timezone string) error {
-	q := searchQueryBuilder(search, timezone)
+	q, err := searchQueryBuilder(search, timezone)
+	if err != nil {
+		return err
+	}
 
 	ids := []string{}
 	deleteSize := uint64(0)
@@ -177,21 +192,9 @@ func DeleteSearch(search, timezone string) error {
 	if len(ids) > 0 {
 		total := len(ids)
 
-		// split ids into chunks of 1000 ids
-		var chunks [][]string
-		if total > 1000 {
-			chunkSize := 1000
-			chunks = make([][]string, 0, (len(ids)+chunkSize-1)/chunkSize)
-			for chunkSize < len(ids) {
-				ids, chunks = ids[chunkSize:], append(chunks, ids[0:chunkSize:chunkSize])
-			}
-			if len(ids) > 0 {
-				// add remaining ids <= 1000
-				chunks = append(chunks, ids)
-			}
-		} else {
-			chunks = append(chunks, ids)
-		}
+		// split ids into chunks, as a statement can only have so many placeholders (this must not change
+		// ids, which are used again below)
+		chunks := chunkBy(ids, maxSQLVariables)
 
 		// begin a transaction to ensure both the message
 		// and data are deleted successfully
@@ -241,10 +244,10 @@ func DeleteSearch(search, timezone string) error {
 
 		logger.Log().Debugf("[db] deleted %d messages matching %s", total, search)
 
-		dbLastAction = time.Now()
+		dbLastAction.touch()
 
 		// broadcast changes
-		if len(ids) > 200 {
+		if total > 200 {
 			websockets.Broadcast("prune", nil)
 		} else {
 			for _, id := range ids {
@@ -253,6 +256,10 @@ func DeleteSearch(search, timezone string) error {
 				}{ID: id}
 				websockets.Broadcast("delete", d)
 			}
+		}
+
+		for _, id := range ids {
+			invalidateEnvelopeCache(id)
 		}
 
 		addDeletedSize(deleteSize)
@@ -267,7 +274,12 @@ func DeleteSearch(search, timezone string) error {
 
 // SetSearchReadStatus marks all messages matching the search as read or unread
 func SetSearchReadStatus(search, timezone string, read bool) error {
-	q := searchQueryBuilder(search, timezone).Where("m.Read = ?", !read)
+	q, err := searchQueryBuilder(search, timezone)
+	if err != nil {
+		return err
+	}
+
+	q = q.Where("m.Read = ?", !read)
 
 	ids := []string{}
 
@@ -306,10 +318,26 @@ func SetSearchReadStatus(search, timezone string, read bool) error {
 	return nil
 }
 
+// MetaSearchTextField returns the SQL expression for a searchable address field (eg: To). It uses
+// the case-folded copy in MetaSearchText, as search terms are case-folded and SQLite's LIKE only
+// folds ASCII case. Messages without MetaSearchText (see backfillMetaSearchText) use the
+// original metadata.
+func metaSearchTextField(field string) string {
+	return fmt.Sprintf(`IFNULL(json_extract(m.MetaSearchText, '$.%[1]s'), IFNULL(json_extract(m.Metadata, '$.%[1]s'), '{}'))`, field)
+}
+
 // SearchParser returns the SQL syntax for the database search based on the search arguments
-func searchQueryBuilder(searchString, timezone string) *sqlf.Stmt {
+func searchQueryBuilder(searchString, timezone string) (*sqlf.Stmt, error) {
 	// group strings with quotes as a single argument and remove quotes
 	args := tools.ArgsParser(searchString)
+
+	// Every term is a condition of the query, which costs memory to build and time to run (and SQLite
+	// refuses more than a thousand levels of them anyway). This is an error rather than a limit on the
+	// terms which are used, because dropping terms from a search which deletes messages would delete more
+	// than was asked for.
+	if len(args) > MaxSearchTerms {
+		return nil, fmt.Errorf("a search can have at most %d terms, %d were given", MaxSearchTerms, len(args))
+	}
 
 	loc := time.Local
 	if timezone != "" {
@@ -323,11 +351,11 @@ func searchQueryBuilder(searchString, timezone string) *sqlf.Stmt {
 	q := sqlf.From(tenant("mailbox") + " m").
 		Select(`m.Created, m.ID, m.MessageID, m.Subject, m.Metadata, m.Size, m.Attachments, m.Read,
 			m.Snippet,
-			IFNULL(json_extract(Metadata, '$.To'), '{}') as ToJSON,
-			IFNULL(json_extract(Metadata, '$.From'), '{}') as FromJSON,
-			IFNULL(json_extract(Metadata, '$.Cc'), '{}') as CcJSON,
-			IFNULL(json_extract(Metadata, '$.Bcc'), '{}') as BccJSON,
-			IFNULL(json_extract(Metadata, '$.ReplyTo'), '{}') as ReplyToJSON
+			` + metaSearchTextField("To") + ` as ToJSON,
+			` + metaSearchTextField("From") + ` as FromJSON,
+			` + metaSearchTextField("Cc") + ` as CcJSON,
+			` + metaSearchTextField("Bcc") + ` as BccJSON,
+			` + metaSearchTextField("ReplyTo") + ` as ReplyToJSON
 		`).
 		OrderBy("m.Created DESC")
 
@@ -408,12 +436,13 @@ func searchQueryBuilder(searchString, timezone string) *sqlf.Stmt {
 				}
 			}
 		} else if strings.HasPrefix(lw, "subject:") {
-			w = w[8:]
+			w = foldCase(w[8:])
 			if w != "" {
+				// messages without MetaSearchText (see backfillMetaSearchText) use the original subject
 				if exclude {
-					q.Where("m.Subject NOT LIKE ? ESCAPE '\\'", "%"+escLikeChars(w)+"%")
+					q.Where("IFNULL(json_extract(m.MetaSearchText, '$.Subject'), m.Subject) NOT LIKE ? ESCAPE '\\'", "%"+escLikeChars(w)+"%")
 				} else {
-					q.Where("m.Subject LIKE ? ESCAPE '\\'", "%"+escLikeChars(w)+"%")
+					q.Where("IFNULL(json_extract(m.MetaSearchText, '$.Subject'), m.Subject) LIKE ? ESCAPE '\\'", "%"+escLikeChars(w)+"%")
 				}
 			}
 		} else if strings.HasPrefix(lw, "message-id:") {
@@ -520,18 +549,23 @@ func searchQueryBuilder(searchString, timezone string) *sqlf.Stmt {
 		}
 	}
 
-	return q
+	return q, nil
 }
+
+// sizeRe matches a size such as 2kb, 4MB or 1.5m
+var sizeRe = regexp.MustCompile(`^(\d+)(\.\d+)?\s?([a-z]{1,2})?$`)
 
 // Simple function to return a size in bytes, eg 2kb, 4MB or 1.5m.
 //
 // K, k, Kb, KB, kB and kb are treated as Kilobytes.
 // M, m, Mb, MB and mb are treated as Megabytes.
+//
+// A size is at most math.MaxInt64, which is more than any message can be and the most a database can
+// compare with (a larger number made the search fail).
 func sizeToBytes(v string) uint64 {
 	v = strings.ToLower(v)
-	re := regexp.MustCompile(`^(\d+)(\.\d+)?\s?([a-z]{1,2})?$`)
 
-	m := re.FindAllStringSubmatch(v, -1)
+	m := sizeRe.FindAllStringSubmatch(v, -1)
 	if len(m) == 0 {
 		return 0
 	}
@@ -540,21 +574,24 @@ func sizeToBytes(v string) uint64 {
 	unit := m[0][3]
 
 	i, err := strconv.ParseFloat(strings.TrimSpace(val), 64)
-	if err != nil {
+	if err != nil && !errors.Is(err, strconv.ErrRange) {
 		return 0
 	}
 
-	if unit == "" {
-		return uint64(i)
+	switch unit {
+	case "":
+	case "k", "kb":
+		i *= 1024
+	case "m", "mb":
+		i *= 1024 * 1024
+	default:
+		return 0
 	}
 
-	if unit == "k" || unit == "kb" {
-		return uint64(i * 1024)
+	// the float is converted only when it fits, as the result of converting one which does not is undefined
+	if i >= math.MaxInt64 {
+		return math.MaxInt64
 	}
 
-	if unit == "m" || unit == "mb" {
-		return uint64(i * 1024 * 1024)
-	}
-
-	return 0
+	return uint64(i)
 }

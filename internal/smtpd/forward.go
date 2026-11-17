@@ -36,15 +36,9 @@ func createForwardingSMTPClient(config config.SMTPForwardConfigStruct, addr stri
 		tlsConf := &tls.Config{ServerName: config.Host} // #nosec
 		tlsConf.InsecureSkipVerify = config.AllowInsecure
 
-		conn, err := tls.Dial("tcp", addr, tlsConf)
+		client, err := dialSMTP(addr, config.Host, true, tlsConf)
 		if err != nil {
-			return nil, fmt.Errorf("TLS dial error: %v", err)
-		}
-
-		client, err := smtp.NewClient(conn, tlsConf.ServerName)
-		if err != nil {
-			_ = conn.Close()
-			return nil, fmt.Errorf("SMTP client error: %v", err)
+			return nil, err
 		}
 
 		// Set the hostname for HELO/EHLO
@@ -59,9 +53,9 @@ func createForwardingSMTPClient(config config.SMTPForwardConfigStruct, addr stri
 		return client, nil
 	}
 
-	client, err := smtp.Dial(addr)
+	client, err := dialSMTP(addr, config.Host, false, nil)
 	if err != nil {
-		return nil, fmt.Errorf("error connecting to %s: %v", addr, err)
+		return nil, err
 	}
 
 	// Set the hostname for HELO/EHLO
@@ -104,6 +98,11 @@ func forward(from string, msg []byte) error {
 		}
 	}
 
+	// Whatever is sent has <CR><LF> line breaks only, and no whitespace before the colon of a header, as the receiving
+	// server may read others differently.
+	// A <CR> on its own is not changed by the SMTP client, and could end the message for the server.
+	msg, _ = tools.NormaliseForSending(msg)
+
 	if config.SMTPForwardConfig.OverrideFrom != "" {
 		msg, err = tools.OverrideFromHeader(msg, config.SMTPForwardConfig.OverrideFrom)
 		if err != nil {
@@ -111,6 +110,16 @@ func forward(from string, msg []byte) error {
 		}
 
 		from = config.SMTPForwardConfig.OverrideFrom
+	}
+
+	// after override-from, so the return-path is the envelope sender
+	if config.SMTPForwardConfig.ReturnPath != "" {
+		msg, err = setReturnPath(msg, config.SMTPForwardConfig.ReturnPath)
+		if err != nil {
+			return err
+		}
+
+		from = config.SMTPForwardConfig.ReturnPath
 	}
 
 	if config.SMTPForwardConfig.SubjectPrefix != "" {
@@ -149,6 +158,23 @@ func forward(from string, msg []byte) error {
 	}
 
 	return c.Quit()
+}
+
+// setReturnPath replaces any Return-Path header in msg with the given address. Callers
+// also use the address as the envelope sender (MAIL FROM), and do so after applying
+// override-from, as receiving servers check the envelope sender (SPF / DMARC), not the
+// From header. Used for both relaying and forwarding so the two behave the same.
+func setReturnPath(msg []byte, returnPath string) ([]byte, error) {
+	if tools.HasLineBreak(returnPath) {
+		return nil, tools.ErrHeaderLineBreak
+	}
+
+	msg, err := tools.RemoveMessageHeaders(msg, []string{"Return-Path"})
+	if err != nil {
+		return nil, fmt.Errorf("error removing Return-Path header: %s", err.Error())
+	}
+
+	return append([]byte("Return-Path: <"+returnPath+">\r\n"), msg...), nil
 }
 
 // Return the SMTP forwarding authentication based on config

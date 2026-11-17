@@ -32,8 +32,47 @@ jobs:
       if: startsWith(matrix.os, 'ubuntu') == true
       # https://olegk.dev/github-actions-and-go
       run: gofmt -s -w . && git diff --exit-code
+    - name: Add extra loopback addresses
+      # macOS only has 127.0.0.1 on lo0, the smtpd tests connect from 127.0.0.2 and 127.0.0.3
+      if: startsWith(matrix.os, 'macos') == true
+      run: |
+        sudo ifconfig lo0 alias 127.0.0.2 up
+        sudo ifconfig lo0 alias 127.0.0.3 up
     - name: Run Go tests
-      run: go test -p 1 ./internal/storage ./server ./server/apiv1 ./internal/smtpd ./internal/pop3 ./internal/tools ./internal/html2text ./internal/htmlcheck ./internal/linkcheck ./internal/shortuuid ./internal/healthcheck ./internal/thumbnail -v
+      # use bash on all platforms: PowerShell (Windows default) does not support "\" line continuation
+      shell: bash
+      run: |
+        go test -v \
+          ./cmd \
+          ./config \
+          ./internal/auth \
+          ./internal/connlimit \
+          ./internal/dump \
+          ./internal/healthcheck \
+          ./internal/html2text \
+          ./internal/htmlcheck \
+          ./internal/linkcheck \
+          ./internal/logger \
+          ./internal/mimeparser \
+          ./internal/pop3 \
+          ./internal/prometheus \
+          ./internal/rspamd \
+          ./internal/shortuuid \
+          ./internal/smtpd \
+          ./internal/smtpd/chaos \
+          ./internal/snakeoil \
+          ./internal/spamassassin \
+          ./internal/spamassassin/spamc \
+          ./internal/spamassassin/postmark \
+          ./internal/stats \
+          ./internal/storage \
+          ./internal/thumbnail \
+          ./internal/tools \
+          ./server \
+          ./server/apiv1 \
+          ./server/handlers \
+          ./server/websockets \
+          ./sendmail/cmd
     - name: Run Go benchmarking
       run: go test -p 1 ./internal/storage ./internal/html2text -bench=.
     

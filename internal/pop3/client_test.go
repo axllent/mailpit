@@ -1,6 +1,12 @@
-// Package pop3client is borrowed directly from https://github.com/knadh/go-pop3 to reduce dependencies.
-// This is used solely for testing the POP3 server
-package pop3client
+package pop3
+
+// A small POP3 client used only to test the POP3 server.
+//
+// It is based on https://github.com/knadh/go-pop3 (borrowed to reduce dependencies), with changes so
+// that it behaves as an RFC 1939 client: multi-line responses are un-stuffed (a leading "." is removed
+// from any line that has one), lines of any length are read whole, replies that are too short are
+// reported as errors instead of causing a panic, and every read and write has a deadline so that a
+// server which stops responding fails a test promptly instead of hanging it.
 
 import (
 	"bufio"
@@ -11,46 +17,48 @@ import (
 	"net"
 	"net/mail"
 	"strconv"
-	"strings"
 	"time"
 )
 
-// Client implements a Client e-mail client.
-type Client struct {
-	opt    Opt
-	dialer Dialer
+// testClient implements a POP3 client.
+type testClient struct {
+	opt    testClientOpt
+	dialer testDialer
 }
 
-// Conn is a stateful connection with the POP3 server/
-type Conn struct {
-	conn net.Conn
-	r    *bufio.Reader
-	w    *bufio.Writer
+// testConn is a stateful connection with the POP3 server.
+type testConn struct {
+	conn    net.Conn
+	r       *bufio.Reader
+	w       *bufio.Writer
+	timeout time.Duration
 }
 
-// Opt represents the client configuration.
-type Opt struct {
+// testClientOpt represents the client configuration.
+type testClientOpt struct {
 	// Host name
-	Host string `json:"host"`
+	Host string
 	// Port number
-	Port int `json:"port"`
+	Port int
 	// DialTimeout default is 3 seconds.
-	DialTimeout time.Duration `json:"dial_timeout"`
+	DialTimeout time.Duration
+	// Timeout is how long a single read or write may take, the default is 10 seconds.
+	Timeout time.Duration
 	// Dialer
-	Dialer Dialer `json:"-"`
-	// TLSEnabled sets whether SLS is enabled
-	TLSEnabled bool `json:"tls_enabled"`
+	Dialer testDialer
+	// TLSEnabled sets whether TLS is enabled
+	TLSEnabled bool
 	// TLSSkipVerify skips TLS verification (ie: self-signed)
-	TLSSkipVerify bool `json:"tls_skip_verify"`
+	TLSSkipVerify bool
 }
 
-// Dialer interface
-type Dialer interface {
+// testDialer interface
+type testDialer interface {
 	Dial(network, address string) (net.Conn, error)
 }
 
-// MessageID contains the ID and size of an individual message.
-type MessageID struct {
+// testMessageID contains the ID and size of an individual message.
+type testMessageID struct {
 	// ID is the numerical index (non-unique) of the message.
 	ID int
 	// Size in bytes
@@ -67,13 +75,16 @@ var (
 	respErrInfo = []byte("-ERR ") // `-ERR <info>`
 )
 
-// New returns a new client object using an existing connection.
-func New(opt Opt) *Client {
+// newTestClient returns a new client object.
+func newTestClient(opt testClientOpt) *testClient {
 	if opt.DialTimeout < time.Millisecond {
 		opt.DialTimeout = time.Second * 3
 	}
+	if opt.Timeout < time.Millisecond {
+		opt.Timeout = time.Second * 10
+	}
 
-	c := &Client{
+	c := &testClient{
 		opt:    opt,
 		dialer: opt.Dialer,
 	}
@@ -86,22 +97,19 @@ func New(opt Opt) *Client {
 }
 
 // NewConn creates and returns live POP3 server connection.
-func (c *Client) NewConn() (*Conn, error) {
-	var (
-		addr = fmt.Sprintf("%s:%d", c.opt.Host, c.opt.Port)
-	)
+func (c *testClient) NewConn() (*testConn, error) {
+	addr := fmt.Sprintf("%s:%d", c.opt.Host, c.opt.Port)
 
 	conn, err := c.dialer.Dial("tcp", addr)
 	if err != nil {
 		return nil, err
 	}
 
-	// No TLS.
 	if c.opt.TLSEnabled {
-		// Skip TLS host verification.
 		tlsCfg := tls.Config{} // #nosec
 		if c.opt.TLSSkipVerify {
-			tlsCfg.InsecureSkipVerify = c.opt.TLSSkipVerify // #nosec
+			// skip TLS host verification
+			tlsCfg.InsecureSkipVerify = true // #nosec
 		} else {
 			tlsCfg.ServerName = c.opt.Host
 		}
@@ -109,22 +117,27 @@ func (c *Client) NewConn() (*Conn, error) {
 		conn = tls.Client(conn, &tlsCfg)
 	}
 
-	pCon := &Conn{
-		conn: conn,
-		r:    bufio.NewReader(conn),
-		w:    bufio.NewWriter(conn),
+	pCon := &testConn{
+		conn:    conn,
+		r:       bufio.NewReader(conn),
+		w:       bufio.NewWriter(conn),
+		timeout: c.opt.Timeout,
 	}
 
 	// Verify the connection by reading the welcome +OK greeting.
 	if _, err := pCon.ReadOne(); err != nil {
+		_ = conn.Close()
+
 		return nil, err
 	}
 
 	return pCon, nil
 }
 
-// Send sends a POP3 command to the server. The given comand is suffixed with "\r\n".
-func (c *Conn) Send(b string) error {
+// Send sends a POP3 command to the server. The given command is suffixed with "\r\n".
+func (c *testConn) Send(b string) error {
+	_ = c.conn.SetWriteDeadline(time.Now().Add(c.timeout))
+
 	if _, err := c.w.WriteString(b + "\r\n"); err != nil {
 		return err
 	}
@@ -134,21 +147,13 @@ func (c *Conn) Send(b string) error {
 
 // Cmd sends a command to the server. POP3 responses are either single line or multi-line.
 // The first line always with -ERR in case of an error or +OK in case of a successful operation.
-// OK+ is always followed by a response on the same line which is either the actual response data
+// +OK is always followed by a response on the same line which is either the actual response data
 // in case of single line responses, or a help message followed by multiple lines of actual response
 // data in case of multiline responses.
-// See https://www.shellhacks.com/retrieve-email-pop3-server-command-line/ for examples.
-func (c *Conn) Cmd(cmd string, isMulti bool, args ...any) (*bytes.Buffer, error) {
-	var cmdLine string
-
-	// Repeat a %v to format each arg.
-	if len(args) > 0 {
-		format := " " + strings.TrimRight(strings.Repeat("%v ", len(args)), " ")
-
-		// CMD arg1 argn ...\r\n
-		cmdLine = fmt.Sprintf(cmd+format, args...)
-	} else {
-		cmdLine = cmd
+func (c *testConn) Cmd(cmd string, isMulti bool, args ...any) (*bytes.Buffer, error) {
+	cmdLine := cmd
+	for _, a := range args {
+		cmdLine += fmt.Sprintf(" %v", a)
 	}
 
 	if err := c.Send(cmdLine); err != nil {
@@ -166,50 +171,64 @@ func (c *Conn) Cmd(cmd string, isMulti bool, args ...any) (*bytes.Buffer, error)
 		return bytes.NewBuffer(b), err
 	}
 
-	buf, err := c.ReadAll()
-	return buf, err
+	return c.ReadAll()
+}
+
+// readLine reads one whole line, of any length, without its line ending.
+func (c *testConn) readLine() ([]byte, error) {
+	_ = c.conn.SetReadDeadline(time.Now().Add(c.timeout))
+
+	var line []byte
+	for {
+		b, isPrefix, err := c.r.ReadLine()
+		if err != nil {
+			return nil, err
+		}
+		line = append(line, b...)
+		if !isPrefix {
+			return line, nil
+		}
+	}
 }
 
 // ReadOne reads a single line response from the conn.
-func (c *Conn) ReadOne() ([]byte, error) {
-	b, _, err := c.r.ReadLine()
+func (c *testConn) ReadOne() ([]byte, error) {
+	b, err := c.readLine()
 	if err != nil {
 		return nil, err
 	}
 
-	r, err := parseResp(b)
-	return r, err
+	return parseResp(b)
 }
 
-// ReadAll reads all lines from the connection until the POP3 multiline terminator "." is encountered
-// and returns a bytes.Buffer of all the read lines.
-func (c *Conn) ReadAll() (*bytes.Buffer, error) {
+// ReadAll reads the lines of a multi-line response until the terminating "." line, and returns
+// them with the byte-stuffing removed (RFC 1939, section 3), each ended with CRLF.
+func (c *testConn) ReadAll() (*bytes.Buffer, error) {
 	buf := &bytes.Buffer{}
 
 	for {
-		b, _, err := c.r.ReadLine()
+		b, err := c.readLine()
 		if err != nil {
 			return nil, err
 		}
 
-		// "." indicates the end of a multi-line response.
+		// "." on its own indicates the end of a multi-line response.
 		if bytes.Equal(b, []byte(".")) {
 			break
 		}
 
-		if _, err := buf.Write(b); err != nil {
-			return nil, err
-		}
-		if _, err := buf.Write(lineBreak); err != nil {
-			return nil, err
-		}
+		// a line which begins with the termination octet has had another added
+		b = bytes.TrimPrefix(b, []byte("."))
+
+		buf.Write(b)
+		buf.Write(lineBreak)
 	}
 
 	return buf, nil
 }
 
 // Auth authenticates the given credentials with the server.
-func (c *Conn) Auth(user, password string) error {
+func (c *testConn) Auth(user, password string) error {
 	if err := c.User(user); err != nil {
 		return err
 	}
@@ -219,26 +238,25 @@ func (c *Conn) Auth(user, password string) error {
 	}
 
 	// Issue a NOOP to force the server to respond to the auth.
-	// Courtesy: github.com/TheCreeper/go-pop3
 	return c.Noop()
 }
 
 // User sends the username to the server.
-func (c *Conn) User(s string) error {
+func (c *testConn) User(s string) error {
 	_, err := c.Cmd("USER", false, s)
 
 	return err
 }
 
 // Pass sends the password to the server.
-func (c *Conn) Pass(s string) error {
+func (c *testConn) Pass(s string) error {
 	_, err := c.Cmd("PASS", false, s)
 
 	return err
 }
 
 // Stat returns the number of messages and their total size in bytes in the inbox.
-func (c *Conn) Stat() (int, int, error) {
+func (c *testConn) Stat() (int, int, error) {
 	b, err := c.Cmd("STAT", false)
 	if err != nil {
 		return 0, 0, err
@@ -246,17 +264,15 @@ func (c *Conn) Stat() (int, int, error) {
 
 	// count size
 	f := bytes.Fields(b.Bytes())
+	if len(f) < 2 {
+		return 0, 0, fmt.Errorf("invalid STAT response, expected a count and a size: %q", b.String())
+	}
 
-	// Total number of messages.
 	count, err := strconv.Atoi(string(f[0]))
 	if err != nil {
 		return 0, 0, err
 	}
-	if count == 0 {
-		return 0, 0, nil
-	}
 
-	// Total size of all messages in bytes.
 	size, err := strconv.Atoi(string(f[1]))
 	if err != nil {
 		return 0, 0, err
@@ -268,7 +284,7 @@ func (c *Conn) Stat() (int, int, error) {
 // List returns a list of (message ID, message Size) pairs.
 // If the optional msgID > 0, then only that particular message is listed.
 // The message IDs are sequential, 1 to N.
-func (c *Conn) List(msgID int) ([]MessageID, error) {
+func (c *testConn) List(msgID int) ([]testMessageID, error) {
 	var (
 		buf *bytes.Buffer
 		err error
@@ -285,16 +301,16 @@ func (c *Conn) List(msgID int) ([]MessageID, error) {
 		return nil, err
 	}
 
-	var (
-		out   []MessageID
-		lines = bytes.Split(buf.Bytes(), lineBreak)
-	)
+	var out []testMessageID
 
-	for _, l := range lines {
+	for _, l := range bytes.Split(buf.Bytes(), lineBreak) {
 		// id size
 		f := bytes.Fields(l)
 		if len(f) == 0 {
 			break
+		}
+		if len(f) < 2 {
+			return nil, fmt.Errorf("invalid LIST line, expected an id and a size: %q", l)
 		}
 
 		id, err := strconv.Atoi(string(f[0]))
@@ -307,7 +323,7 @@ func (c *Conn) List(msgID int) ([]MessageID, error) {
 			return nil, err
 		}
 
-		out = append(out, MessageID{ID: id, Size: size})
+		out = append(out, testMessageID{ID: id, Size: size})
 	}
 
 	return out, nil
@@ -316,7 +332,7 @@ func (c *Conn) List(msgID int) ([]MessageID, error) {
 // Uidl returns a list of (message ID, message UID) pairs. If the optional msgID
 // is > 0, then only that particular message is listed. It works like Top() but only works on
 // servers that support the UIDL command. Messages size field is not available in the UIDL response.
-func (c *Conn) Uidl(msgID int) ([]MessageID, error) {
+func (c *testConn) Uidl(msgID int) ([]testMessageID, error) {
 	var (
 		buf *bytes.Buffer
 		err error
@@ -333,16 +349,16 @@ func (c *Conn) Uidl(msgID int) ([]MessageID, error) {
 		return nil, err
 	}
 
-	var (
-		out   []MessageID
-		lines = bytes.Split(buf.Bytes(), lineBreak)
-	)
+	var out []testMessageID
 
-	for _, l := range lines {
-		// id size
+	for _, l := range bytes.Split(buf.Bytes(), lineBreak) {
+		// id uid
 		f := bytes.Fields(l)
 		if len(f) == 0 {
 			break
+		}
+		if len(f) < 2 {
+			return nil, fmt.Errorf("invalid UIDL line, expected an id and a unique id: %q", l)
 		}
 
 		id, err := strconv.Atoi(string(f[0]))
@@ -350,85 +366,79 @@ func (c *Conn) Uidl(msgID int) ([]MessageID, error) {
 			return nil, err
 		}
 
-		out = append(out, MessageID{ID: id, UID: string(f[1])})
+		out = append(out, testMessageID{ID: id, UID: string(f[1])})
 	}
 
 	return out, nil
 }
 
 // Retr downloads a message by the given msgID, parses it and returns it as a *mail.Message.
-func (c *Conn) Retr(msgID int) (*mail.Message, error) {
+func (c *testConn) Retr(msgID int) (*mail.Message, error) {
 	b, err := c.Cmd("RETR", true, msgID)
 	if err != nil {
 		return nil, err
 	}
 
-	m, err := mail.ReadMessage(b)
-	if err != nil {
-		return nil, err
-	}
-
-	return m, nil
+	return mail.ReadMessage(b)
 }
 
 // RetrRaw downloads a message by the given msgID and returns the raw []byte
 // of the entire message.
-func (c *Conn) RetrRaw(msgID int) (*bytes.Buffer, error) {
-	b, err := c.Cmd("RETR", true, msgID)
-	return b, err
+func (c *testConn) RetrRaw(msgID int) (*bytes.Buffer, error) {
+	return c.Cmd("RETR", true, msgID)
 }
 
 // Top retrieves a message by its ID with full headers and numLines lines of the body.
-func (c *Conn) Top(msgID int, numLines int) (*mail.Message, error) {
+func (c *testConn) Top(msgID int, numLines int) (*mail.Message, error) {
 	b, err := c.Cmd("TOP", true, msgID, numLines)
 	if err != nil {
 		return nil, err
 	}
 
-	m, err := mail.ReadMessage(b)
-	if err != nil {
-		return nil, err
-	}
+	return mail.ReadMessage(b)
+}
 
-	return m, nil
+// TopRaw retrieves the headers and numLines lines of the body of a message, as sent.
+func (c *testConn) TopRaw(msgID int, numLines int) (*bytes.Buffer, error) {
+	return c.Cmd("TOP", true, msgID, numLines)
 }
 
 // Dele deletes one or more messages. The server only executes the
 // deletions after a successful Quit().
-func (c *Conn) Dele(msgID ...int) error {
+func (c *testConn) Dele(msgID ...int) error {
 	for _, id := range msgID {
-		_, err := c.Cmd("DELE", false, id)
-		if err != nil {
+		if _, err := c.Cmd("DELE", false, id); err != nil {
 			return err
 		}
 	}
+
 	return nil
 }
 
 // Rset clears the messages marked for deletion in the current session.
-func (c *Conn) Rset() error {
+func (c *testConn) Rset() error {
 	_, err := c.Cmd("RSET", false)
+
 	return err
 }
 
 // Noop issues a do-nothing NOOP command to the server. This is useful for
 // prolonging open connections.
-func (c *Conn) Noop() error {
+func (c *testConn) Noop() error {
 	_, err := c.Cmd("NOOP", false)
+
 	return err
 }
 
 // Quit sends the QUIT command to server and gracefully closes the connection.
 // Message deletions (DELE command) are only executed by the server on a graceful
 // quit and close.
-func (c *Conn) Quit() error {
+func (c *testConn) Quit() error {
 	defer func() { _ = c.conn.Close() }()
 
-	if _, err := c.Cmd("QUIT", false); err != nil {
-		return err
-	}
+	_, err := c.Cmd("QUIT", false)
 
-	return nil
+	return err
 }
 
 // parseResp checks if the response is an error that starts with `-ERR`

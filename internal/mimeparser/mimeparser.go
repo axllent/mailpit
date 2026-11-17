@@ -7,6 +7,7 @@ package mimeparser
 
 import (
 	"bytes"
+	"maps"
 	"net/url"
 	"sort"
 	"strconv"
@@ -19,12 +20,13 @@ import (
 )
 
 // New returns an enmime parser with Mailpit's options and RFC 2231 charset support.
-func New() *enmime.Parser {
-	return enmime.NewParser(
+// Additional options are applied after Mailpit's defaults.
+func New(opts ...enmime.Option) *enmime.Parser {
+	return enmime.NewParser(append([]enmime.Option{
 		enmime.DisableCharacterDetection(true),
 		enmime.MaxMIMEParts(500),
 		enmime.SetCustomParseMediaType(ParseMediaType),
-	)
+	}, opts...)...)
 }
 
 // ParseMediaType wraps enmime's tolerant media type parser, adding back any RFC 2231
@@ -35,10 +37,14 @@ func ParseMediaType(ctype string) (string, map[string]string, []string, error) {
 		return mtype, params, invalid, err
 	}
 
-	for name, value := range decodeExtendedParams(ctype) {
-		// overrides any partial value the standard library kept from later continuation sections
-		params[name] = value
+	// mediatype.Parse returns a nil map (and nil error) when the media type is unparseable,
+	// eg: a non-token character before the first ';'
+	if params == nil {
+		params = make(map[string]string)
 	}
+
+	// overrides any partial value the standard library kept from later continuation sections
+	maps.Copy(params, decodeExtendedParams(ctype))
 
 	return mtype, params, invalid, nil
 }

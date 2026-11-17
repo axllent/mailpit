@@ -195,8 +195,7 @@ export default {
 						</li>
 						<li v-if="mailbox.uiConfig.MessageRelay.OverrideFrom != ''" class="form-text">
 							The <code>From</code> email address has been overridden by the relay configuration to
-							<code>{{ mailbox.uiConfig.MessageRelay.OverrideFrom }}</code
-							>.
+							<code>{{ mailbox.uiConfig.MessageRelay.OverrideFrom }}</code>.
 						</li>
 						<li class="form-text">
 							SMTP delivery failures will bounce back to
@@ -206,8 +205,7 @@ export default {
 							<code v-else-if="mailbox.uiConfig.MessageRelay.OverrideFrom != ''">
 								{{ mailbox.uiConfig.MessageRelay.OverrideFrom }}
 							</code>
-							<code v-else>{{ message.ReturnPath }}</code
-							>.
+							<code v-else>{{ message.ReturnPath }}</code>.
 						</li>
 					</ul>
 				</div>

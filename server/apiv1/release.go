@@ -69,6 +69,11 @@ func ReleaseMessage(w http.ResponseWriter, r *http.Request) {
 	blocked := []string{}
 	notAllowed := []string{}
 
+	// The addresses which are sent to are the ones which were checked, as the parser read them. What was received
+	// (which can have a name, comments and quotes) is not sent as it is: another server could read it as another
+	// address than the allow and block lists were matched against.
+	recipients := make([]string, 0, len(data.To))
+
 	for _, to := range data.To {
 		address, err := mail.ParseAddress(to)
 
@@ -76,6 +81,8 @@ func ReleaseMessage(w http.ResponseWriter, r *http.Request) {
 			httpError(w, "Invalid email address: "+to)
 			return
 		}
+
+		recipients = append(recipients, tools.EnvelopeAddress(address))
 
 		if config.SMTPRelayConfig.AllowedRecipientsRegexp != nil && !config.SMTPRelayConfig.AllowedRecipientsRegexp.MatchString(address.Address) {
 			notAllowed = append(notAllowed, to)
@@ -136,19 +143,7 @@ func ReleaseMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// set the Return-Path and SMTP from
-	if config.SMTPRelayConfig.ReturnPath != "" {
-		if m.Header.Get("Return-Path") != "<"+config.SMTPRelayConfig.ReturnPath+">" {
-			msg, err = tools.RemoveMessageHeaders(msg, []string{"Return-Path"})
-			if err != nil {
-				httpError(w, err.Error())
-				return
-			}
-			msg = append([]byte("Return-Path: <"+config.SMTPRelayConfig.ReturnPath+">\r\n"), msg...)
-		}
-
-		from = config.SMTPRelayConfig.ReturnPath
-	}
+	// the Return-Path (if configured) is set by smtpd.Relay
 
 	// update message date
 	msg, err = tools.SetMessageHeader(msg, "Date", time.Now().Format(time.RFC1123Z))
@@ -167,7 +162,7 @@ func ReleaseMessage(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if err := smtpd.Relay(from, data.To, msg); err != nil {
+	if err := smtpd.Relay(from, recipients, msg); err != nil {
 		logger.Log().Errorf("[smtp] error sending message: %s", err.Error())
 		httpError(w, "SMTP error: "+err.Error())
 		return

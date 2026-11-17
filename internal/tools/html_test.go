@@ -1,6 +1,7 @@
 package tools
 
 import (
+	"context"
 	"strings"
 	"testing"
 
@@ -45,7 +46,7 @@ func TestStripHTMLRedirects(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := StripHTMLRedirects(tt.in)
+			got, err := StripHTMLRedirects(context.Background(), tt.in)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -67,7 +68,7 @@ func TestStripHTMLRedirectsPreservesDocument(t *testing.T) {
 		"<P>unclosed <b>bold <img src=x alt=\"a>b\"> \xff\xfe <a href='y'>z</a>\n" +
 		"<table><tr><td>cell</table><!--[if !mso]><!--><span>x</span><!--<![endif]--></body></HTML>"
 
-	got, err := StripHTMLRedirects(doc)
+	got, err := StripHTMLRedirects(context.Background(), doc)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -77,7 +78,7 @@ func TestStripHTMLRedirectsPreservesDocument(t *testing.T) {
 
 	// the same document with the tags is changed only at those tags
 	withTags := strings.Replace(doc, "<head>", `<head><base href="//x"><meta http-equiv=refresh content="0;url=//x">`, 1)
-	got, err = StripHTMLRedirects(withTags)
+	got, err = StripHTMLRedirects(context.Background(), withTags)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -123,7 +124,7 @@ func TestStripHTMLRedirectsTokenizerMismatch(t *testing.T) {
 			if !hasRedirectElement(t, in) {
 				t.Fatal("test document does not contain a live redirect element")
 			}
-			got, err := StripHTMLRedirects(in)
+			got, err := StripHTMLRedirects(context.Background(), in)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -144,7 +145,7 @@ func TestStripHTMLRedirectsTokenizerMismatch(t *testing.T) {
 
 	for name, in := range controls {
 		t.Run("control "+name, func(t *testing.T) {
-			got, err := StripHTMLRedirects(in)
+			got, err := StripHTMLRedirects(context.Background(), in)
 			if err != nil {
 				t.Fatal(err)
 			}

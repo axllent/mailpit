@@ -8,13 +8,14 @@ import (
 	"net"
 	"os"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
 	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/internal/auth"
 	"github.com/axllent/mailpit/internal/logger"
-	"github.com/axllent/mailpit/internal/pop3client"
 	"github.com/axllent/mailpit/internal/storage"
 	"github.com/jhillyerd/enmime/v2"
 )
@@ -23,10 +24,37 @@ var (
 	testingPort int
 )
 
+// broadcasts counts the client errors that would have been sent to the web UI.
+var broadcasts atomic.Int64
+
+// TestMain silences the logger, sets the configuration shared by every test, and shortens the
+// timeouts and delays before any test runs.
+// These are read by every goroutine that serves a client, including the servers started by
+// earlier tests which are still running during later ones, so they must not be changed once
+// tests have started.
+func TestMain(m *testing.M) {
+	logger.NoLogging = true
+
+	// the storage cron job reads these every minute, and setup() runs for every test
+	config.MaxMessages = 0
+	config.Database = os.Getenv("MP_DATABASE")
+
+	failedLoginDelay = 250 * time.Millisecond
+	authTimeout = time.Second
+	handshakeTimeout = 1500 * time.Millisecond
+	writeTimeout = 500 * time.Millisecond
+	broadcastClientError = func(_, _, _, _ string) { broadcasts.Add(1) }
+
+	code := m.Run()
+	if setupRan.Load() {
+		storage.Close()
+	}
+	os.Exit(code)
+}
+
 func TestPOP3(t *testing.T) {
 	t.Log("Testing POP3 server")
 	setup()
-	defer storage.Close()
 
 	// connect with bad password
 	t.Log("Testing invalid login")
@@ -220,7 +248,6 @@ func TestAuthentication(t *testing.T) {
 
 	t.Log("Testing authenticated commands while not logged in")
 	setup()
-	defer storage.Close()
 
 	insertEmailData(t) // insert 50 messages
 
@@ -278,7 +305,6 @@ func TestAuthentication(t *testing.T) {
 func TestBruteForceDisconnect(t *testing.T) {
 	t.Log("Testing brute force login protection")
 	setup()
-	defer storage.Close()
 
 	c, err := connect()
 	if err != nil {
@@ -318,7 +344,6 @@ func TestPOP3DotStuffing(t *testing.T) {
 	// RFC 1939 requires that lines beginning with "." be escaped as ".."
 	t.Log("Testing POP3 dot-stuffing for TOP and RETR commands")
 	setup()
-	defer storage.Close()
 
 	// Create a message with content that has lines starting with dots
 	textBody := []byte("Line 1\n.This line starts with a dot\n..This line starts with two dots\nNormal line")
@@ -363,11 +388,9 @@ func TestPOP3DotStuffing(t *testing.T) {
 		t.Fatal("error reading RETR body:", err)
 	}
 
-	bodyStr := string(retrivedBody)
-	// The dot-stuffing should be transparent - the body should contain the original text
-	if !strings.Contains(bodyStr, ".This line starts with a dot") {
-		t.Errorf("RETR did not properly handle dot-stuffing: %s", bodyStr)
-	}
+	// The dot-stuffing must be transparent: every line comes back exactly as it was written. The
+	// client removes the stuffing, so a server which does not add it would return "This line..."
+	assertBodyLines(t, "RETR", string(retrivedBody))
 
 	// Test TOP command with dot-stuffing
 	t.Log("Testing TOP with dot-stuffing")
@@ -381,49 +404,84 @@ func TestPOP3DotStuffing(t *testing.T) {
 		t.Fatal("error reading TOP body:", err)
 	}
 
-	topBodyStr := string(topBody)
-	// The dot-stuffing should be transparent - the body should contain the original text
-	if !strings.Contains(topBodyStr, ".This line starts with a dot") {
-		t.Errorf("TOP did not properly handle dot-stuffing: %s", topBodyStr)
-	}
-
-	if !strings.Contains(topBodyStr, "..This line starts with two dots") {
-		t.Errorf("TOP did not properly handle double-dot-stuffing: %s", topBodyStr)
-	}
+	assertBodyLines(t, "TOP", string(topBody))
 }
 
-func setup() {
-	if err := auth.SetPOP3Auth("username:password"); err != nil {
-		panic(err)
+// assertBodyLines checks the lines of the dot-stuffing test message are exactly as written, as
+// whole lines. Substring checks are not enough: ".This line" is also a substring of the stuffed
+// "..This line", so they cannot tell a server that stuffs from one that does not.
+func assertBodyLines(t *testing.T, cmd, body string) {
+	t.Helper()
+
+	have := map[string]bool{}
+	for _, l := range strings.Split(strings.ReplaceAll(body, "\r\n", "\n"), "\n") {
+		have[l] = true
 	}
-	logger.NoLogging = true
-	config.MaxMessages = 0
-	config.Database = os.Getenv("MP_DATABASE")
-	var foundPort bool
-	for !foundPort {
-		testingPort = randRange(1111, 2000)
-		if portFree(testingPort) {
-			foundPort = true
+
+	for _, want := range []string{
+		"Line 1",
+		".This line starts with a dot",
+		"..This line starts with two dots",
+		"Normal line",
+	} {
+		if !have[want] {
+			t.Errorf("%s did not return the line %q as written, got:\n%s", cmd, want, body)
 		}
 	}
 
-	config.POP3Listen = fmt.Sprintf("localhost:%d", testingPort)
-
-	if err := storage.InitDB(); err != nil {
-		panic(err)
+	// the lines as they would be if the stuffing was wrongly kept or wrongly removed
+	for _, wrong := range []string{
+		"..This line starts with a dot",
+		"...This line starts with two dots",
+		"This line starts with a dot",
+		".This line starts with two dots",
+	} {
+		if have[wrong] {
+			t.Errorf("%s returned the line %q, the byte-stuffing was not handled correctly", cmd, wrong)
+		}
 	}
+}
+
+var (
+	setupOnce sync.Once
+	setupRan  atomic.Bool
+)
+
+// setup starts the POP3 server and database on the first call, and gives every test an empty
+// mailbox. The server, database and their background goroutines run for the whole package, so
+// the global state they read is only set once.
+func setup() {
+	setupOnce.Do(func() {
+		if err := auth.SetPOP3Auth("username:password"); err != nil {
+			panic(err)
+		}
+		var foundPort bool
+		for !foundPort {
+			testingPort = randRange(1111, 2000)
+			if portFree(testingPort) {
+				foundPort = true
+			}
+		}
+
+		config.POP3Listen = fmt.Sprintf("localhost:%d", testingPort)
+
+		if err := storage.InitDB(); err != nil {
+			panic(err)
+		}
+		setupRan.Store(true)
+
+		go Run()
+
+		time.Sleep(time.Second)
+	})
 
 	if err := storage.DeleteAllMessages(); err != nil {
 		panic(err)
 	}
-
-	go Run()
-
-	time.Sleep(time.Second)
 }
 
 // connect and authenticate
-func connectAuth() (*pop3client.Conn, error) {
+func connectAuth() (*testConn, error) {
 	c, err := connect()
 	if err != nil {
 		return c, err
@@ -435,7 +493,7 @@ func connectAuth() (*pop3client.Conn, error) {
 }
 
 // connect and authenticate
-func connectBadAuth() (*pop3client.Conn, error) {
+func connectBadAuth() (*testConn, error) {
 	c, err := connect()
 	if err != nil {
 		return c, err
@@ -447,8 +505,8 @@ func connectBadAuth() (*pop3client.Conn, error) {
 }
 
 // connect but do not authenticate
-func connect() (*pop3client.Conn, error) {
-	p := pop3client.New(pop3client.Opt{
+func connect() (*testConn, error) {
+	p := newTestClient(testClientOpt{
 		Host:       "localhost",
 		Port:       testingPort,
 		TLSEnabled: false,
@@ -475,8 +533,8 @@ func portFree(port int) bool {
 	return true
 }
 
-func randRange(min, max int) int {
-	return rand.IntN(max-min) + min
+func randRange(lowerBound, upperBound int) int {
+	return rand.IntN(upperBound-lowerBound) + lowerBound
 }
 
 func insertEmailData(t *testing.T) {

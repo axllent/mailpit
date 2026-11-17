@@ -23,6 +23,13 @@ const (
 
 	// Send pings to peer with this period. Must be less than pongWait.
 	pingPeriod = (pongWait * 9) / 10
+
+	// maxClientMessageSize is the largest message which is read from a client, as it is sent (so a compressed
+	// message is counted by its compressed size). Clients are only listened to to see if they are still there,
+	// nothing is expected from them (the web UI sends nothing), so anything more than a little is not wanted.
+	// Without a limit a client can send a message of any size, which is read (and decompressed, if the connection
+	// is compressed, where a few kilobytes can be a gigabyte) to be thrown away.
+	maxClientMessageSize = 512
 )
 
 var (
@@ -136,6 +143,8 @@ func ServeWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
 		logger.Log().Errorf("[websocket] %s", err.Error())
 		return
 	}
+
+	conn.SetReadLimit(maxClientMessageSize)
 
 	client := &Client{hub: hub, conn: conn, send: make(chan *websocket.PreparedMessage, 256)}
 	client.hub.register <- client

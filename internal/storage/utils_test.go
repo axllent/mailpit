@@ -2,6 +2,9 @@ package storage
 
 import (
 	"net/mail"
+	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -47,5 +50,72 @@ func TestNormalizeAddressWithName(t *testing.T) {
 	}
 	if a.Name != "Bob" {
 		t.Errorf("Name was modified: got %q, want %q", a.Name, "Bob")
+	}
+}
+
+func TestFoldCase(t *testing.T) {
+	// pairs which must be equal after folding
+	equal := [][2]string{
+		{"Ärger Öl", "ÄRGER öl"},
+		{"Bjørn", "BJØRN"},
+		{"Иван Петров", "ИВАН ПЕТРОВ"},
+		{"Straße", "STRASSE"},
+		{"Straße", "STRAẞE"},
+		{"Οδυσσεύς", "ΟΔΥΣΣΕΎΣ"},
+		{"İstanbul", "istanbul"},
+		{"oﬃce", "OFFICE"},
+		{"John Smith", "JOHN SMITH"},
+	}
+	for _, p := range equal {
+		if foldCase(p[0]) != foldCase(p[1]) {
+			t.Errorf("expected %q (%q) and %q (%q) to fold equally", p[0], foldCase(p[0]), p[1], foldCase(p[1]))
+		}
+	}
+
+	// controls: different letters (not case variants) must stay different
+	different := [][2]string{
+		{"Straße", "Strase"},
+		{"Οδυσσεύς", "Οδυσσευς"},
+		{"Ärger", "Arger"},
+	}
+	for _, p := range different {
+		if foldCase(p[0]) == foldCase(p[1]) {
+			t.Errorf("expected %q and %q to fold differently", p[0], p[1])
+		}
+	}
+
+	// folding stored (already folded or lowercased) text again must not change it further
+	for _, s := range []string{"jörg strasse", "οδυσσεύσ", "ärger öl"} {
+		if foldCase(s) != foldCase(foldCase(s)) {
+			t.Errorf("expected foldCase to be idempotent for %q", s)
+		}
+	}
+}
+
+// os.Stat can fail for other reasons than a missing file (eg: a parent which is a file), which has no FileInfo.
+// That used to be a nil pointer dereference, and a panic for an invalid --database path.
+func TestIsFile(t *testing.T) {
+	dir := t.TempDir()
+	file := filepath.Join(dir, "file.db")
+	if err := os.WriteFile(file, []byte("x"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	for name, tt := range map[string]struct {
+		path string
+		want bool
+	}{
+		"control: a file":                   {file, true},
+		"control: a directory":              {dir, false},
+		"control: a file which is missing":  {filepath.Join(dir, "missing.db"), false},
+		"exploit: below a file":             {filepath.Join(file, "x.db"), false},
+		"exploit: a name which is too long": {filepath.Join(dir, strings.Repeat("a", 5000)), false},
+		"empty":                             {"", false},
+	} {
+		t.Run(name, func(t *testing.T) {
+			if got := isFile(tt.path); got != tt.want {
+				t.Errorf("isFile(%.60q) = %v, want %v", tt.path, got, tt.want)
+			}
+		})
 	}
 }

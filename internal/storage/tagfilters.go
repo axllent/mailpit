@@ -52,7 +52,13 @@ func LoadTagFilters() {
 			continue
 		}
 
-		tagFilters = append(tagFilters, TagFilter{Match: match, Tags: validTags, SQL: searchQueryBuilder(match, "")})
+		stmt, err := searchQueryBuilder(match, "")
+		if err != nil {
+			logger.Log().Warnf("[tags] ignoring tag item \"%s\": %s", match, err.Error())
+			continue
+		}
+
+		tagFilters = append(tagFilters, TagFilter{Match: match, Tags: validTags, SQL: stmt})
 	}
 }
 

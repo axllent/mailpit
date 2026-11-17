@@ -3,15 +3,18 @@ package config
 import (
 	"errors"
 	"fmt"
+	"math"
 	"net/mail"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/axllent/mailpit/internal/logger"
 	"github.com/axllent/mailpit/internal/smtpd/chaos"
+	"github.com/axllent/mailpit/internal/tools"
 	"github.com/goccy/go-yaml"
 )
 
@@ -26,10 +29,19 @@ func parseMaxAge() error {
 		return fmt.Errorf("max-age must be either <int>h for hours or <int>d for days: %s", MaxAge)
 	}
 
+	// the largest age that can be represented as a time.Duration (about 292 years). Larger
+	// values overflow when the prune cutoff is calculated, which can put the cutoff in the
+	// future and delete every message.
+	const maxHours = math.MaxInt64 / int64(time.Hour)
+	tooLarge := fmt.Errorf("max-age is too large: %s (maximum is %dh or %dd)", MaxAge, maxHours, maxHours/24)
+
 	if before, ok := strings.CutSuffix(MaxAge, "h"); ok {
 		hours, err := strconv.Atoi(before)
 		if err != nil {
-			return err
+			return tooLarge // the regexp allows only digits, so this can only be out of range
+		}
+		if int64(hours) > maxHours {
+			return tooLarge
 		}
 
 		MaxAgeInHours = hours
@@ -39,7 +51,11 @@ func parseMaxAge() error {
 
 	days, err := strconv.Atoi(strings.TrimSuffix(MaxAge, "d"))
 	if err != nil {
-		return err
+		return tooLarge // the regexp allows only digits, so this can only be out of range
+	}
+	// checked before multiplying, so days * 24 cannot overflow
+	if int64(days) > maxHours/24 {
+		return tooLarge
 	}
 
 	logger.Log().Debugf("[db] auto-deleting messages older than %s", MaxAge)
@@ -69,16 +85,19 @@ func parseRelayConfig(c string) error {
 		return err
 	}
 
-	if SMTPRelayConfig.Host == "" {
-		return errors.New("[relay] host not set")
+	// Removed keys are refused rather than ignored, as the YAML parser silently skips keys it does not know, which
+	// for recipient-allowlist would lift the restriction on who messages can be released to.
+	var keys map[string]any
+	if err := yaml.Unmarshal(data, &keys); err != nil {
+		return err
 	}
 
-	// DEPRECATED 2024/03/12
-	if SMTPRelayConfig.RecipientAllowlist != "" {
-		logger.Log().Warn("[relay] 'recipient-allowlist' is deprecated, use 'allowed-recipients' instead")
-		if SMTPRelayConfig.AllowedRecipients == "" {
-			SMTPRelayConfig.AllowedRecipients = SMTPRelayConfig.RecipientAllowlist
-		}
+	if _, ok := keys["recipient-allowlist"]; ok {
+		return errors.New("[relay] 'recipient-allowlist' is no longer supported, use 'allowed-recipients' instead")
+	}
+
+	if SMTPRelayConfig.Host == "" {
+		return errors.New("[relay] host not set")
 	}
 
 	return nil
@@ -92,6 +111,9 @@ func validateRelayConfig() error {
 
 	if SMTPRelayConfig.Port == 0 {
 		SMTPRelayConfig.Port = 25 // default
+	}
+	if SMTPRelayConfig.Port < 1 || SMTPRelayConfig.Port > 65535 {
+		return fmt.Errorf("[relay] port must be between 1 and 65535: %d", SMTPRelayConfig.Port)
 	}
 
 	SMTPRelayConfig.Auth = strings.ToLower(SMTPRelayConfig.Auth)
@@ -143,6 +165,16 @@ func validateRelayConfig() error {
 		}
 
 		SMTPRelayConfig.OverrideFrom = m.Address
+	}
+
+	if SMTPRelayConfig.ReturnPath != "" {
+		m, err := mail.ParseAddress(SMTPRelayConfig.ReturnPath)
+		if err != nil {
+			return fmt.Errorf("[relay] return-path is not a valid email address: %s", SMTPRelayConfig.ReturnPath)
+		}
+
+		// as it is sent in MAIL FROM and the Return-Path header, with the local part quoted if it has to be
+		SMTPRelayConfig.ReturnPath = tools.EnvelopeAddress(m)
 	}
 
 	SMTPRelayConfig.SubjectPrefix = strings.TrimSpace(SMTPRelayConfig.SubjectPrefix)
@@ -198,6 +230,9 @@ func validateForwardConfig() error {
 	if SMTPForwardConfig.Port == 0 {
 		SMTPForwardConfig.Port = 25 // default
 	}
+	if SMTPForwardConfig.Port < 1 || SMTPForwardConfig.Port > 65535 {
+		return fmt.Errorf("[forward] port must be between 1 and 65535: %d", SMTPForwardConfig.Port)
+	}
 
 	SMTPForwardConfig.Auth = strings.ToLower(SMTPForwardConfig.Auth)
 
@@ -252,6 +287,16 @@ func validateForwardConfig() error {
 		SMTPForwardConfig.OverrideFrom = m.Address
 	}
 
+	if SMTPForwardConfig.ReturnPath != "" {
+		m, err := mail.ParseAddress(SMTPForwardConfig.ReturnPath)
+		if err != nil {
+			return fmt.Errorf("[forward] return-path is not a valid email address: %s", SMTPForwardConfig.ReturnPath)
+		}
+
+		// as it is sent in MAIL FROM and the Return-Path header, with the local part quoted if it has to be
+		SMTPForwardConfig.ReturnPath = tools.EnvelopeAddress(m)
+	}
+
 	SMTPForwardConfig.SubjectPrefix = strings.TrimSpace(SMTPForwardConfig.SubjectPrefix)
 	if strings.ContainsAny(SMTPForwardConfig.SubjectPrefix, "\r\n") {
 		return fmt.Errorf("[forward] subject-prefix must not contain line breaks")
@@ -271,7 +316,7 @@ func parseChaosTriggers() error {
 		return nil
 	}
 
-	re := regexp.MustCompile(`^([a-zA-Z0-0]+):(\d\d\d):(\d+(\.\d)?)$`)
+	re := regexp.MustCompile(`^([a-zA-Z0-9]+):(\d\d\d):(\d+)$`)
 
 	parts := strings.SplitSeq(ChaosTriggers, ",")
 	for p := range parts {

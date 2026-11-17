@@ -8,6 +8,7 @@ package thumbnail
 
 import (
 	"bytes"
+	"context"
 	"image"
 	"image/color"
 	"image/draw"
@@ -30,17 +31,75 @@ import (
 // At 4 bytes per RGBA pixel, 20 MP = 80 MB per decode.
 const maxDecodedPixels int64 = 20_000_000
 
+// maxProgressivePixels is the limit for progressive JPEGs, which need 7.5 bytes per pixel while
+// decoding (15 with full colour resolution, 4:4:4), as all the DCT coefficients are kept until the
+// last scan. Baseline JPEGs need 1.5 (3). Measured: 12.5 MP (a 4000x3000 photo) takes 90 MB (179 MB
+// at 4:4:4), where 20 MP would take 143 MB (286 MB).
+const maxProgressivePixels int64 = 12_500_000
+
+// maxConcurrentDecodes is the number of images that are decoded at once. Each decode needs
+// memory in proportion to the image (up to about 180 MB at the pixel limit), so without a
+// limit the number of simultaneous requests decides how much is used. The others wait.
+//
+// Measured with 8 of the largest progressive JPEGs at once (12.5 MP, 4:4:4), the peak memory of the
+// process was 1263 MB with 4 decodes at a time, 773 MB with 2 and 366 MB with 1, and 2 took no
+// longer than 4 (2.7 and 3.4 seconds) as the decoding is limited by the processor, not the waiting.
+const maxConcurrentDecodes = 2
+
+// decodeSlots limits the number of simultaneous decodes. It is a variable for the tests.
+var decodeSlots = make(chan struct{}, maxConcurrentDecodes)
+
+// decode decodes an image within the pixel budget. It is a variable for the tests.
+var decode = safeDecode
+
 // Generate produces a JPEG thumbnail of exactly width × height pixels
 // from the given image data, on a white background.
 //
-// If the data is not a recognised image, exceeds the pixel budget, or
-// cannot be decoded, a blank white JPEG of the requested dimensions is
+// If the data is not a recognised image, exceeds the pixel budget (which is lower for progressive
+// JPEGs, as they need more memory to decode), or cannot be decoded, a blank white JPEG of the requested dimensions is
 // returned with no error. This matches the UI expectation that the
 // endpoint always returns a displayable image.
-func Generate(data []byte, width, height int) ([]byte, error) {
-	img, err := safeDecode(data)
+//
+// The context is the request's. If it is done (the client has gone, or it timed out) nothing more is
+// done and its error is returned, so a request which is waiting for a decode slot gives it up, and one
+// which has been abandoned does not take one. A decode which has started is not stopped.
+func Generate(ctx context.Context, data []byte, width, height int) (out []byte, err error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+
+	if len(data) == 0 {
+		return encodeJPEG(whiteCanvas(width, height))
+	}
+
+	// a failure while decoding an image must not stop Mailpit, as the image comes from a message
+	defer func() {
+		if r := recover(); r != nil {
+			logger.Log().Errorf("[thumbnail] recovered from panic decoding an image: %v", r)
+			out, err = encodeJPEG(whiteCanvas(width, height))
+		}
+	}()
+
+	select {
+	case decodeSlots <- struct{}{}:
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	}
+	defer func() { <-decodeSlots }()
+
+	// the slot and the end of the context can both be ready, and select then chooses either
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+
+	img, err := decode(data)
 	if err != nil || img == nil {
 		return encodeJPEG(whiteCanvas(width, height))
+	}
+
+	// the decode could not be stopped, but the rest is not done for a client which has gone
+	if err := ctx.Err(); err != nil {
+		return nil, err
 	}
 
 	img = fixOrientation(data, img)
@@ -51,13 +110,18 @@ func Generate(data []byte, width, height int) ([]byte, error) {
 // safeDecode decodes a single image frame after checking that the
 // declared dimensions fall within the pixel budget.
 func safeDecode(data []byte) (image.Image, error) {
-	cfg, _, err := image.DecodeConfig(bytes.NewReader(data))
+	cfg, format, err := image.DecodeConfig(bytes.NewReader(data))
 	if err != nil {
 		return nil, err
 	}
 
 	if int64(cfg.Width)*int64(cfg.Height) > maxDecodedPixels {
 		logger.Log().Warnf("[thumbnail] rejected oversized image dimensions %dx%d (exceeds %d pixel limit)", cfg.Width, cfg.Height, maxDecodedPixels)
+		return nil, nil
+	}
+
+	if format == "jpeg" && int64(cfg.Width)*int64(cfg.Height) > maxProgressivePixels && isProgressiveJPEG(data) {
+		logger.Log().Warnf("[thumbnail] rejected large progressive JPEG %dx%d (exceeds %d pixel limit for progressive images)", cfg.Width, cfg.Height, maxProgressivePixels)
 		return nil, nil
 	}
 

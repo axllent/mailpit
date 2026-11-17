@@ -35,10 +35,23 @@ func runCSSTests(ctx context.Context, html string) ([]Warning, int, error) {
 		inlined = html
 	}
 
-	// merge all CSS inline
-	merged, err := mergeInlineCSS(inlined)
+	// parse the HTML once to collect the CSS code and estimate the cost of merging it
+	inlinedDoc, err := goquery.NewDocumentFromReader(strings.NewReader(inlined))
 	if err != nil {
-		merged = inlined
+		return results, totalTests, err
+	}
+
+	cssCode := collectStyleCSS(inlinedDoc)
+
+	// merge all CSS inline, unless the document is so large that doing so would take
+	// an unreasonable amount of CPU
+	merged := inlined
+	if elements := len(inlinedDoc.Find("*").Nodes); mergeWithinBudget(elements, len(cssCode)) {
+		if m, err := mergeInlineCSS(inlined); err == nil {
+			merged = m
+		}
+	} else {
+		logger.Log().Warnf("[html-check] skipping merging of CSS into elements, the HTML is too large (%d elements, %d bytes of CSS)", elements, len(cssCode))
 	}
 
 	reader := strings.NewReader(merged)
@@ -88,19 +101,6 @@ func runCSSTests(ctx context.Context, html string) ([]Warning, int, error) {
 		}
 	}
 
-	// get all inline CSS block data
-	reader = strings.NewReader(inlined)
-
-	// Load the HTML document
-	doc, _ = goquery.NewDocumentFromReader(reader)
-
-	cssCode := ""
-	for _, n := range doc.Find("style").Nodes {
-		for c := n.FirstChild; c != nil; c = c.NextSibling {
-			cssCode = cssCode + c.Data
-		}
-	}
-
 	for key, re := range cssRegexpTests {
 		totalTests++
 		result, err := cie.getTest(key)
@@ -116,6 +116,30 @@ func runCSSTests(ctx context.Context, html string) ([]Warning, int, error) {
 	}
 
 	return results, totalTests, nil
+}
+
+// maxMergeWork is the maximum value of (number of elements * bytes of CSS) for which the
+// CSS is merged into the elements. Merging matches every rule against every element, so
+// its cost grows with both and is otherwise only bounded by the message size.
+// At this value merging takes in the order of seconds, while real emails are well below it.
+const maxMergeWork int64 = 1_000_000_000
+
+// mergeWithinBudget returns true if merging the CSS into the elements is within the work limit.
+func mergeWithinBudget(elements, cssBytes int) bool {
+	return int64(elements)*int64(cssBytes) <= maxMergeWork
+}
+
+// collectStyleCSS returns the content of all <style> elements concatenated.
+func collectStyleCSS(doc *goquery.Document) string {
+	var sb strings.Builder
+
+	for _, n := range doc.Find("style").Nodes {
+		for c := n.FirstChild; c != nil; c = c.NextSibling {
+			sb.WriteString(c.Data)
+		}
+	}
+
+	return sb.String()
 }
 
 // MergeInlineCSS merges header CSS into element attributes

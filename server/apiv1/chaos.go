@@ -30,7 +30,7 @@ func GetChaos(w http.ResponseWriter, _ *http.Request) {
 		return
 	}
 
-	conf := chaos.Config
+	conf := chaos.Get()
 
 	w.Header().Add("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(conf); err != nil {
@@ -83,7 +83,7 @@ func SetChaos(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	conf := chaos.Config
+	conf := chaos.Get()
 
 	w.Header().Add("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(conf); err != nil {

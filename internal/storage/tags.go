@@ -19,7 +19,33 @@ var (
 	addressPlusRe = regexp.MustCompile(`(?U)^(.*){1,}\+(.*)@`)
 )
 
-// SetMessageTags will set the tags for a given database ID, removing any not in the array
+const (
+	// MaxTagsPerMessage is the maximum number of tags a single message can have. Every tag is a
+	// database row (and a series in the Prometheus metrics), and tags come from message content,
+	// so without a limit one message can create tens of thousands.
+	MaxTagsPerMessage = 100
+
+	// maxRawXTags is how many entries of an X-Tags header are looked at. Entries are cleaned and
+	// de-duplicated, so this is a multiple of MaxTagsPerMessage, which stops a very long header
+	// costing more to read than the tags that can be kept.
+	maxRawXTags = MaxTagsPerMessage * 10
+)
+
+// xTagsFromHeader returns the first maxRawXTags comma-separated entries of an X-Tags header. The header is only
+// split as far as that, as splitting all of it makes a slice of every entry (16 bytes each, so a 40 MiB header of
+// commas was over 600 MiB) before any could be dropped.
+func xTagsFromHeader(hdr string) []string {
+	xTags := strings.SplitN(strings.TrimSpace(hdr), ",", maxRawXTags+1)
+	if len(xTags) > maxRawXTags {
+		// the last is the rest of the header, which is not split
+		xTags = xTags[:maxRawXTags]
+	}
+
+	return xTags
+}
+
+// SetMessageTags will set the tags for a given database ID, removing any not in the array.
+// A message can have at most MaxTagsPerMessage different tags, more is an error.
 func SetMessageTags(id string, tags []string) ([]string, error) {
 	// Clean and deduplicate incoming tags (case-insensitive)
 	seen := make(map[string]struct{})
@@ -35,6 +61,10 @@ func SetMessageTags(id string, tags []string) ([]string, error) {
 		}
 		seen[lc] = struct{}{}
 		applyTags = append(applyTags, t)
+	}
+
+	if len(applyTags) > MaxTagsPerMessage {
+		return []string{}, fmt.Errorf("a message can have at most %d tags, %d were given", MaxTagsPerMessage, len(applyTags))
 	}
 
 	// Fetch existing tags once and index by lowercase name for O(1) lookup
@@ -360,28 +390,34 @@ func (d Metadata) tagsFromPlusAddresses() []string {
 	return tools.SetTagCasing(tags)
 }
 
-// getTagsForIDs fetches tags for a set of message IDs in a single query,
-// returning a map of message ID to tag names.
+// getTagsForIDs fetches tags for a set of message IDs, returning a map of message ID to tag names.
+// A long list of IDs is looked up in parts, as a query can only have so many placeholders.
 func getTagsForIDs(ids []string) map[string][]string {
 	result := make(map[string][]string, len(ids))
 	if len(ids) == 0 {
 		return result
 	}
 
-	args := make([]any, len(ids))
-	for i, id := range ids {
-		args[i] = id
+	for _, chunk := range chunkBy(ids, maxSQLVariables) {
+		query := fmt.Sprintf(
+			`SELECT mt.ID, t.Name FROM %s t JOIN %s mt ON t.ID = mt.TagID WHERE mt.ID IN %s ORDER BY mt.ID, t.Name`,
+			tenant("Tags"), tenant("message_tags"), inPlaceholders(len(chunk)),
+		) // #nosec
+
+		if !queryTags(query, idArgs(chunk), result) {
+			return result
+		}
 	}
 
-	query := fmt.Sprintf(
-		`SELECT mt.ID, t.Name FROM %s t JOIN %s mt ON t.ID = mt.TagID WHERE mt.ID IN (?%s) ORDER BY mt.ID, t.Name`,
-		tenant("Tags"), tenant("message_tags"), strings.Repeat(",?", len(ids)-1),
-	) // #nosec
+	return result
+}
 
+// queryTags adds the (message ID, tag name) rows of a query to result, and returns whether it succeeded.
+func queryTags(query string, args []any, result map[string][]string) bool {
 	rows, err := db.Query(query, args...)
 	if err != nil {
 		logger.Log().Errorf("[tags] %s", err.Error())
-		return result
+		return false
 	}
 	defer func() { _ = rows.Close() }()
 
@@ -389,16 +425,17 @@ func getTagsForIDs(ids []string) map[string][]string {
 		var id, name string
 		if err := rows.Scan(&id, &name); err != nil {
 			logger.Log().Errorf("[tags] %s", err.Error())
-			return result
+			return false
 		}
 		result[id] = append(result[id], name)
 	}
 
 	if err := rows.Err(); err != nil {
 		logger.Log().Errorf("[tags] %s", err.Error())
+		return false
 	}
 
-	return result
+	return true
 }
 
 // Get message tags from the database for a given database ID
@@ -423,14 +460,11 @@ func getMessageTags(id string) []string {
 	return tags
 }
 
-// SortedUniqueTags will return a unique slice of normalised tags
-func sortedUniqueTags(s []string) []string {
+// uniqueTags cleans the tags, and removes any that are invalid or repeated (ignoring case),
+// keeping the first of each in the order given.
+func uniqueTags(s []string) []string {
 	tags := []string{}
 	added := make(map[string]bool)
-
-	if len(s) == 0 {
-		return tags
-	}
 
 	for _, p := range s {
 		w := tools.CleanTag(p)
@@ -448,6 +482,13 @@ func sortedUniqueTags(s []string) []string {
 			logger.Log().Debugf("[tags] ignoring invalid tag: %s", w)
 		}
 	}
+
+	return tags
+}
+
+// SortedUniqueTags will return a unique slice of normalised tags
+func sortedUniqueTags(s []string) []string {
+	tags := uniqueTags(s)
 
 	sort.Strings(tags)
 

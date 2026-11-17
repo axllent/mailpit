@@ -3,6 +3,7 @@ import CommonMixins from "../mixins/CommonMixins";
 import Tags from "bootstrap5-tags";
 import timezones from "timezones-list";
 import { mailbox } from "../stores/mailbox";
+import { timezoneOptions } from "../utils/timezones";
 
 export default {
 	mixins: [CommonMixins],
@@ -11,7 +12,7 @@ export default {
 		return {
 			mailbox,
 			theme: localStorage.getItem("mp-theme") ? localStorage.getItem("mp-theme") : "auto",
-			timezones,
+			timezones: timezoneOptions(timezones),
 			chaosConfig: false,
 			chaosUpdated: false,
 			defaultReleaseAddressesOptions: mailbox.defaultReleaseAddresses.slice(), // set with default release addresses
@@ -183,7 +184,9 @@ export default {
 									data-allow-same="true"
 								>
 									<option disabled hidden value="">Select a timezone...</option>
-									<option v-for="t in timezones" :key="t" :value="t.tzCode">{{ t.label }}</option>
+									<option v-for="t in timezones" :key="t.tzCode" :value="t.tzCode">
+										{{ t.label }}
+									</option>
 								</select>
 							</div>
 							<div class="mb-3">

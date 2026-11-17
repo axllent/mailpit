@@ -25,11 +25,32 @@ import (
 
 const (
 	// maxProxyBodySize is the maximum number of bytes read from a proxied
-	// response body (fonts, images, CSS). Prevents OOM on oversized responses.
-	maxProxyBodySize = 50 * 1024 * 1024 // 50 MB
+	// response body (fonts, images), each of which is held in memory while it
+	// is sent. Prevents OOM on oversized responses. The fonts and images of
+	// an email are far smaller than this.
+	maxProxyBodySize = 10 * 1024 * 1024 // 10 MiB
+
+	// maxProxyCSSSize is the maximum number of bytes of a proxied stylesheet, which is also rewritten (each
+	// url() is looked at, made absolute, recorded and encoded): a 20 MiB one of many different urls took 5
+	// seconds and 1.1 GiB. Real stylesheets are far smaller (a full copy of Bootstrap is 200 KB).
+	maxProxyCSSSize = 2 * 1024 * 1024
+
+	// maxConcurrentCSSRewrites is how many stylesheets are rewritten at once, as each needs many times its size
+	// in memory.
+	maxConcurrentCSSRewrites = 4
 )
 
 var (
+	// maxCSSAssets is the most urls which the stylesheets proxied for a message may add to its assets. It is a
+	// variable for the tests.
+	maxCSSAssets = 1000
+
+	// cssSlots limits the stylesheets which are rewritten at once. It is a variable for the tests.
+	cssSlots = make(chan struct{}, maxConcurrentCSSRewrites)
+
+	// cssURLRe matches a url() of a stylesheet
+	cssURLRe = regexp.MustCompile(`(?mi)(url\((\'|\")?([^\)\'\"]+)(\'|\")?\))`)
+
 	linkRe = regexp.MustCompile(`(?i)^https?:\/\/`)
 
 	urlRe = regexp.MustCompile(`(?mU)url\(('|")?(https?:\/\/[^)'"]+)('|")?\)`)
@@ -51,6 +72,8 @@ type MessageAssets struct {
 	// previous linear tools.InArray scan is quadratic in unique URL count
 	// when a proxied stylesheet contains many url() references.
 	index map[string]struct{}
+	// fromCSS is how many of the assets were added by proxied stylesheets, which are limited to maxCSSAssets.
+	fromCSS int
 }
 
 func init() {
@@ -121,9 +144,14 @@ func ProxyHandler(w http.ResponseWriter, r *http.Request) {
 		KeepAlive: 30 * time.Second,
 	}
 
+	// Every request uses its own transport and a single request, so connections are never reused. Without these a
+	// server which keeps the connection open would hold a file descriptor and goroutines for as long as it liked
+	// (a transport has no idle timeout), and every request would add another.
 	tr := &http.Transport{
-		DialContext: safeDialContext(dialer),
+		DialContext:       safeDialContext(dialer),
+		DisableKeepAlives: true,
 	}
+	defer tr.CloseIdleConnections()
 
 	if config.AllowUntrustedTLS {
 		tr.TLSClientConfig = &tls.Config{InsecureSkipVerify: true} // #nosec
@@ -175,15 +203,23 @@ func ProxyHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	limitedBody := io.LimitReader(resp.Body, maxProxyBodySize+1)
+	isCSS := strings.HasPrefix(ct, "text/css")
+
+	// a stylesheet is also rewritten, so it has a smaller limit
+	limit := int64(maxProxyBodySize)
+	if isCSS {
+		limit = maxProxyCSSSize
+	}
+
+	limitedBody := io.LimitReader(resp.Body, limit+1)
 	body, err := io.ReadAll(limitedBody)
 	if err != nil {
 		logger.Log().Warnf("[proxy] %s", err.Error())
 		httpError(w, "Error: invalid request")
 		return
 	}
-	if int64(len(body)) > maxProxyBodySize {
-		logger.Log().Warnf("[proxy] response body for %s exceeds %d bytes, blocking", uri, maxProxyBodySize)
+	if int64(len(body)) > limit {
+		logger.Log().Warnf("[proxy] response body for %s exceeds %d bytes, blocking", uri, limit)
 		httpError(w, "Error: response too large")
 		return
 	}
@@ -201,30 +237,16 @@ func ProxyHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// replace CSS url() values with proxy address, eg: fonts & images
-	if strings.HasPrefix(resp.Header.Get("content-type"), "text/css") {
-		var re = regexp.MustCompile(`(?mi)(url\((\'|\")?([^\)\'\"]+)(\'|\")?\))`)
-		body = re.ReplaceAllFunc(body, func(s []byte) []byte {
-			parts := re.FindStringSubmatch(string(s))
+	if isCSS {
+		release, err := acquireCSSSlot(r.Context())
+		if err != nil {
+			// the client has gone, so there is nobody to send anything to
+			return
+		}
 
-			// don't resolve inline `data:..`
-			if strings.HasPrefix(parts[3], "data:") {
-				return []byte(parts[3])
-			}
+		body = rewriteCSS(id, resp.Request.URL.String(), body)
 
-			address, err := absoluteURL(parts[3], uri)
-			if err != nil {
-				logger.Log().Errorf("[proxy] %s", err.Error())
-				return []byte(parts[3])
-			}
-
-			// store asset address against message ID
-			recordAsset(id, address)
-
-			// encode with base64 to handle any special characters and group message ID with URL
-			encoded := base64.StdEncoding.EncodeToString([]byte(id + ":" + address))
-
-			return []byte("url(" + parts[2] + config.Webroot + "proxy?data=" + encoded + parts[4] + ")")
-		})
+		release()
 	}
 
 	logger.Log().Debugf("[proxy] %s (%d)", uri, resp.StatusCode)
@@ -237,26 +259,77 @@ func ProxyHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// acquireCSSSlot waits until a stylesheet may be rewritten (see maxConcurrentCSSRewrites), and returns the function
+// which gives the slot back. It stops waiting, and returns the error of the context, when the request is over.
+func acquireCSSSlot(ctx context.Context) (func(), error) {
+	select {
+	case cssSlots <- struct{}{}:
+		return func() { <-cssSlots }, nil
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	}
+}
+
+// rewriteCSS replaces the url() values of a stylesheet, which was fetched from uri for the message id, with the proxy
+// address of each. One which can not be (it is not valid, or the message has had as many added as it may) is left
+// without the url(), which makes that declaration invalid, so the browser ignores it and does not fetch it.
+func rewriteCSS(id, uri string, body []byte) []byte {
+	return cssURLRe.ReplaceAllFunc(body, func(s []byte) []byte {
+		parts := cssURLRe.FindStringSubmatch(string(s))
+
+		// don't resolve inline `data:..`
+		if strings.HasPrefix(strings.ToLower(strings.TrimSpace(parts[3])), "data:") {
+			return s
+		}
+
+		address, err := absoluteURL(parts[3], uri)
+		if err != nil {
+			logger.Log().Errorf("[proxy] %s", err.Error())
+			return []byte(parts[3])
+		}
+
+		// store asset address against message ID
+		if !recordAsset(id, address) {
+			return []byte(parts[3])
+		}
+
+		// encode with base64 to handle any special characters and group message ID with URL
+		encoded := base64.StdEncoding.EncodeToString([]byte(id + ":" + address))
+
+		return []byte("url(" + parts[2] + config.Webroot + "proxy?data=" + url.QueryEscape(encoded) + parts[4] + ")")
+	})
+}
+
 // recordAsset appends url to the cached asset set for the given message ID if
 // the message is already in the cache and the URL has not been seen. Membership
 // is O(1) via MessageAssets.index; the previous linear tools.InArray scan is
 // quadratic in unique URL count when a proxied stylesheet contains many url()
 // references.
-func recordAsset(id, url string) {
+//
+// A stylesheet is from anywhere, and can name as many different urls as it is long, so the message may only have
+// maxCSSAssets added to it. It returns false if this one was not, as that is reached. It is true if it was, it was
+// there already, or there is nothing cached for the message.
+func recordAsset(id, url string) bool {
 	assetsMutex.Lock()
 	defer assetsMutex.Unlock()
 
 	result, ok := assets[id]
 	if !ok {
-		return
+		return true
 	}
 	key := strings.ToLower(url)
 	if _, seen := result.index[key]; seen {
-		return
+		return true
+	}
+	if result.fromCSS >= maxCSSAssets {
+		return false
 	}
 	result.Assets = append(result.Assets, url)
 	result.index[key] = struct{}{}
+	result.fromCSS++
 	assets[id] = result
+
+	return true
 }
 
 // hasAsset reports whether url is a known asset URL for the message ID,

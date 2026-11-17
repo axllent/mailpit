@@ -3,6 +3,7 @@ import AjaxLoader from "../AjaxLoader.vue";
 import CommonMixins from "../../mixins/CommonMixins";
 import { domToPng } from "modern-screenshot";
 import DOMPurify from "dompurify";
+import { screenshotProxyURL } from "../../utils/screenshotProxyURL";
 
 export default {
 	components: {
@@ -30,7 +31,8 @@ export default {
 			this.loading = 1;
 			const baseUrl = `${location.protocol}//${location.host}/`;
 			// absolute proxy URL
-			const proxy = new URL(this.resolve("/proxy"), baseUrl).href;
+			const proxy = new URL(this.resolve("/proxy"), baseUrl);
+			const proxyURL = (src) => screenshotProxyURL(proxy, this.message.ID, this.decodeEntities(src));
 			const urlRegex = /(url\(('|")?(https?:\/\/[^)'"]+)('|")?\))/gim;
 
 			// remove base tag, if set
@@ -77,14 +79,8 @@ export default {
 			// replace any url(...) links in <style> blocks
 			const styles = doc.getElementsByTagName("style");
 			for (const i of styles) {
-				i.innerHTML = i.innerHTML.replaceAll(urlRegex, (match, p1, p2, p3) => {
-					if (typeof p2 === "string") {
-						// quoted URL
-						return (
-							`url(${p2}${proxy}?data=` + btoa(this.message.ID + ":" + this.decodeEntities(p3)) + `${p2})`
-						);
-					}
-					return `url(${proxy}?data=` + btoa(this.message.ID + ":" + this.decodeEntities(p3)) + `)`;
+				i.innerHTML = i.innerHTML.replaceAll(urlRegex, (_match, _url, quote = "", src) => {
+					return `url(${quote}${proxyURL(src)}${quote})`;
 				});
 			}
 
@@ -97,7 +93,7 @@ export default {
 					src.match(/^https?:\/\//i) &&
 					src.indexOf(window.location.origin + window.location.pathname) !== 0
 				) {
-					i.setAttribute("href", `${proxy}?data=` + btoa(this.message.ID + ":" + this.decodeEntities(src)));
+					i.setAttribute("href", proxyURL(src));
 				}
 			}
 
@@ -110,7 +106,7 @@ export default {
 					src.match(/^https?:\/\//i) &&
 					src.indexOf(window.location.origin + window.location.pathname) !== 0
 				) {
-					i.setAttribute("src", `${proxy}?data=` + btoa(this.message.ID + ":" + this.decodeEntities(src)));
+					i.setAttribute("src", proxyURL(src));
 				}
 			}
 
@@ -125,10 +121,7 @@ export default {
 					src.indexOf(window.location.origin + window.location.pathname) !== 0
 				) {
 					// replace with proxy link
-					i.setAttribute(
-						"background",
-						`${proxy}?data=` + btoa(this.message.ID + ":" + this.decodeEntities(src)),
-					);
+					i.setAttribute("background", proxyURL(src));
 				}
 			}
 

@@ -1,6 +1,7 @@
 package apiv1
 
 import (
+	"context"
 	"net/http"
 	"net/url"
 	"path"
@@ -57,8 +58,13 @@ func Thumbnail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data, err := thumbnail.Generate(a.Content, thumbWidth, thumbHeight)
+	data, err := thumbnail.Generate(r.Context(), a.Content, thumbWidth, thumbHeight)
 	if err != nil {
+		if r.Context().Err() != nil {
+			// the client has gone, so there is nobody to send anything to
+			return
+		}
+
 		writeBlank(w, fileName)
 		return
 	}
@@ -71,7 +77,7 @@ func Thumbnail(w http.ResponseWriter, r *http.Request) {
 // writeBlank returns a blank thumbnail when the attachment is not a
 // supported image or cannot be decoded.
 func writeBlank(w http.ResponseWriter, fileName string) {
-	data, _ := thumbnail.Generate(nil, thumbWidth, thumbHeight)
+	data, _ := thumbnail.Generate(context.Background(), nil, thumbWidth, thumbHeight)
 	w.Header().Add("Content-Type", "image/jpeg")
 	w.Header().Set("Content-Disposition", "filename=\""+url.PathEscape(jpegName(fileName))+"\"")
 	_, _ = w.Write(data) // #nosec G705 -- blank JPEG from thumbnail.Generate, served as image/jpeg

@@ -1,7 +1,9 @@
 package handlers
 
 import (
+	"encoding/base64"
 	"fmt"
+	"net/url"
 	"strings"
 	"testing"
 	"time"
@@ -39,6 +41,11 @@ func snapshotAssets(id string) []string {
 func TestRecordAssetUniqueURLsScaleLinearly(t *testing.T) {
 	const id = "msg-quadratic"
 	const n = 100000
+
+	// the limit on what a stylesheet may add (see TestCSSAssetsAreLimited) is raised to test the speed of the rest
+	origMax := maxCSSAssets
+	maxCSSAssets = n + 1
+	t.Cleanup(func() { maxCSSAssets = origMax })
 
 	seedAssets(id)
 
@@ -164,5 +171,24 @@ func TestHasAssetCaseInsensitive(t *testing.T) {
 				t.Fatalf("hasAsset(%q) = %v, want %v", tc.url, got, tc.want)
 			}
 		})
+	}
+}
+
+func TestRewriteCSSProxyQueryEncoding(t *testing.T) {
+	const id = "1234567890123456789012"
+	const asset = "https://example.test/~asset.png"
+	seedAssets(id)
+
+	css := string(rewriteCSS(id, "https://example.test/style.css", []byte("url("+asset+")")))
+	proxyURL, err := url.Parse(strings.TrimSuffix(strings.TrimPrefix(css, "url("), ")"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	data, err := base64.StdEncoding.DecodeString(proxyURL.Query().Get("data"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := id + ":" + asset; string(data) != want {
+		t.Fatalf("decoded proxy data = %q, want %q", data, want)
 	}
 }

@@ -33,7 +33,8 @@ func isValidURL(s string) bool {
 		return false
 	}
 
-	return strings.HasPrefix(u.Scheme, "http")
+	// url.Parse lowercases the scheme
+	return u.Scheme == "http" || u.Scheme == "https"
 }
 
 // DBTenantID converts a tenant ID to a DB-friendly value if set

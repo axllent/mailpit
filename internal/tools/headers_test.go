@@ -2,6 +2,7 @@ package tools
 
 import (
 	"bytes"
+	"errors"
 	"mime"
 	"net/mail"
 	"strings"
@@ -359,5 +360,43 @@ func TestAddressList_MatchesNetMail(t *testing.T) {
 
 	if _, err := AddressList(mail.Header{}, "To"); err != mail.ErrHeaderNotPresent {
 		t.Errorf("missing header: got %v, want ErrHeaderNotPresent", err)
+	}
+}
+
+// A header name or value with a line break is refused, as it would be a header (or the end of the headers) of its
+// own. The control, the same header without one, is set.
+func TestSetMessageHeader_LineBreaks(t *testing.T) {
+	msg := buildMessage("From: someone@example.test")
+
+	out, err := SetMessageHeader(msg, "Return-Path", "<a@example.test>")
+	if err != nil || !bytes.Contains(out, []byte("Return-Path: <a@example.test>\r\n")) {
+		t.Fatalf("control: err %v, out %q", err, out)
+	}
+
+	for _, c := range []struct{ name, value string }{
+		{"Return-Path", "<a@example.test\r\nX-Injected: proof>"},
+		{"Return-Path", "<a@example.test\nX-Injected: proof>"},
+		{"Return-Path", "<a@example.test\r\n\r\nbody>"},
+		{"Return-Path", "<a@example.test\rX-Injected: proof>"},
+		{"Return-Path\r\nX-Injected", "x"},
+	} {
+		out, err := SetMessageHeader(msg, c.name, c.value)
+		if !errors.Is(err, ErrHeaderLineBreak) || out != nil {
+			t.Errorf("SetMessageHeader(%q, %q): err %v, out %q", c.name, c.value, err, out)
+		}
+	}
+}
+
+func TestOverrideFromHeader_LineBreaks(t *testing.T) {
+	msg := buildMessage("From: someone@example.test")
+
+	if _, err := OverrideFromHeader(msg, "a@example.test"); err != nil { // control
+		t.Fatalf("control: %v", err)
+	}
+
+	for _, address := range []string{"a@example.test\r\nX-Injected: proof", "a@example.test\nX-Injected: proof"} {
+		if out, err := OverrideFromHeader(msg, address); !errors.Is(err, ErrHeaderLineBreak) || out != nil {
+			t.Errorf("OverrideFromHeader(%q): err %v, out %q", address, err, out)
+		}
 	}
 }

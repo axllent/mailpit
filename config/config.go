@@ -85,6 +85,9 @@ var (
 	// UIAuthFile for UI & API authentication
 	UIAuthFile string
 
+	// EnvErrors holds errors from invalid settings supplied via environment variables, reported by VerifyConfig
+	EnvErrors []error
+
 	// Webroot to define the base path for the UI and API
 	Webroot = "/"
 
@@ -190,7 +193,10 @@ var (
 	// SMTPForwardConfig to parse a yaml file and store config of the forwarding SMTP server
 	SMTPForwardConfig SMTPForwardConfigStruct
 
-	// SMTPStrictRFCHeaders will return an error if the email headers contain <CR><CR><LF> (\r\r\n)
+	// SMTPStrictRFCHeaders will return an error if the email headers contain line breaks which are not
+	// <CR><LF>: <CR><CR><LF> (\r\r\n), <LF> (\n) or <CR> (\r) on its own, or whitespace between the name of
+	// a header and its colon ("From : a"). Without it all but a <CR> on its own are fixed (which is text,
+	// as it is to Go and Postfix, and is replaced when a message is sent).
 	// @see https://github.com/axllent/mailpit/issues/87 & https://github.com/axllent/mailpit/issues/153
 	SMTPStrictRFCHeaders bool
 
@@ -215,7 +221,7 @@ var (
 	// POP3TLSKey TLS certificate key
 	POP3TLSKey string
 
-	// EnableSpamAssassin must be either <host>:<port> or "postmark"
+	// EnableSpamAssassin must be <host>:<port>, unix:<path> or "postmark"
 	EnableSpamAssassin string
 
 	// EnableRspamd must be either <host>:<port> or a URL, optionally including the password
@@ -240,9 +246,6 @@ var (
 
 	// ChaosTriggers are parsed and set in the chaos module
 	ChaosTriggers string
-
-	// DisableHTMLCheck DEPRECATED 2024/04/13 - kept here to display console warning only
-	DisableHTMLCheck = false
 
 	// DisableVersionCheck disables version checking
 	DisableVersionCheck bool
@@ -277,9 +280,6 @@ type SMTPRelayConfigStruct struct {
 	BlockedRecipientsRegexp *regexp.Regexp // compiled regexp using BlockedRecipients
 	PreserveMessageIDs      bool           `yaml:"preserve-message-ids"` // preserve the original Message-ID when relaying
 	ForwardSMTPErrors       bool           `yaml:"forward-smtp-errors"`  // whether to log smtp-errors or forward them to upstream-client
-
-	// DEPRECATED 2024/03/12
-	RecipientAllowlist string `yaml:"recipient-allowlist"`
 }
 
 // SMTPForwardConfigStruct struct for parsing yaml & storing variables
@@ -300,8 +300,13 @@ type SMTPForwardConfigStruct struct {
 	ForwardSMTPErrors bool   `yaml:"forward-smtp-errors"` // whether to log smtp-errors or forward them to upstream-client
 }
 
-// VerifyConfig wil do some basic checking
+// VerifyConfig will do some basic checking
 func VerifyConfig() error {
+	// invalid settings supplied via environment variables must not fail open
+	if len(EnvErrors) > 0 {
+		return errors.Join(EnvErrors...)
+	}
+
 	cssFontRestriction := "*"
 	if BlockRemoteCSSAndFonts {
 		cssFontRestriction = "'self'"
@@ -342,7 +347,7 @@ func VerifyConfig() error {
 		return errors.New("[ui] HTTP bind should be in the format of <ip>:<port>")
 	}
 
-	if MaxMessageSize == 0 {
+	if MaxMessageSize <= 0 {
 		logger.Log().Warnf("[smtpd] no message limit set, this is not recommended for network-reachable listeners")
 	}
 
@@ -360,7 +365,7 @@ func VerifyConfig() error {
 		}
 
 		if err := auth.SetUIAuth(string(b)); err != nil {
-			return err
+			return fmt.Errorf("[ui] invalid password file %s: %w", UIAuthFile, err)
 		}
 	}
 
@@ -406,7 +411,7 @@ func VerifyConfig() error {
 		}
 
 		if err := auth.SetSendAPIAuth(string(b)); err != nil {
-			return err
+			return fmt.Errorf("[send-api] invalid password file %s: %w", SendAPIAuthFile, err)
 		}
 
 		logger.Log().Info("[send-api] enabling basic authentication")
@@ -486,7 +491,7 @@ func VerifyConfig() error {
 		}
 
 		if err := auth.SetSMTPAuth(string(b)); err != nil {
-			return err
+			return fmt.Errorf("[smtp] invalid password file %s: %w", SMTPAuthFile, err)
 		}
 
 		if !SMTPAuthAllowInsecure {
@@ -563,7 +568,7 @@ func VerifyConfig() error {
 		}
 
 		if err := auth.SetPOP3Auth(string(b)); err != nil {
-			return err
+			return fmt.Errorf("[pop3] invalid password file %s: %w", POP3AuthFile, err)
 		}
 	}
 
@@ -578,11 +583,6 @@ func VerifyConfig() error {
 
 	if WebhookURL != "" && !isValidURL(WebhookURL) {
 		return fmt.Errorf("webhook URL does not appear to be a valid URL (%s)", WebhookURL)
-	}
-
-	// DEPRECATED 2024/04/13
-	if DisableHTMLCheck {
-		logger.Log().Warn("--disable-html-check has been deprecated and is no longer used")
 	}
 
 	if EnableSpamAssassin != "" {

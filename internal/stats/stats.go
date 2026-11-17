@@ -4,6 +4,7 @@ package stats
 import (
 	"runtime"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/axllent/mailpit/config"
@@ -21,22 +22,40 @@ type versionCache struct {
 	expiry time.Time
 	// count of consecutive errors
 	errCount int
+	// whether a lookup is in progress
+	refreshing bool
+}
+
+// maxBackoff is the longest time between version lookups after errors.
+const maxBackoff = 30 * time.Minute
+
+// fetchLatest looks up the latest release version. It is a variable so that the tests can replace it.
+var fetchLatest = func() (string, error) {
+	latest, err := config.GHRUConfig.Latest()
+	if err != nil {
+		return "", err
+	}
+
+	return latest.Tag, nil
 }
 
 var (
 	// Version cache storing the latest GitHub version
 	vCache versionCache
 
-	// StartedAt is set to the current ime when Mailpit starts
-	startedAt time.Time
+	// startedAt is when Mailpit started. It is set when the package is loaded and never changed,
+	// so it is set before anything (such as the Prometheus updater) reads it, and not written
+	// while it is being read.
+	startedAt = time.Now()
 
-	// sync mutex to prevent race condition with simultaneous requests
-	mu sync.RWMutex
+	// versionMu protects vCache. It is never held while looking up the version.
+	versionMu sync.Mutex
 
-	smtpAccepted     uint64
-	smtpAcceptedSize uint64
-	smtpRejected     uint64
-	smtpIgnored      uint64
+	// the SMTP counters, which are updated by the SMTP server while being read here
+	smtpAccepted     atomic.Uint64
+	smtpAcceptedSize atomic.Uint64
+	smtpRejected     atomic.Uint64
+	smtpIgnored      atomic.Uint64
 )
 
 // AppInformation struct
@@ -75,10 +94,49 @@ type AppInformation struct {
 	}
 }
 
-// Calculates exponential backoff duration based on the error count.
+// Calculates exponential backoff duration based on the error count, from 2 minutes up to maxBackoff.
 func getBackoff(errCount int) time.Duration {
-	backoff := min(time.Duration(1<<errCount)*time.Minute, 30*time.Minute)
-	return backoff
+	// the count is limited before it is shifted, as a large one overflows (and goes negative)
+	shift := min(max(errCount, 0), 5)
+
+	return min(time.Duration(1<<shift)*time.Minute, maxBackoff)
+}
+
+// latestVersion returns the cached latest version, looking it up when the cache has expired. The
+// lookup is a network request which can take as long as its timeout, so it is made without holding
+// the lock, and a request that arrives during it gets the current cached value instead of waiting.
+func latestVersion() string {
+	versionMu.Lock()
+	if time.Now().Before(vCache.expiry) || vCache.refreshing {
+		value := vCache.value
+		versionMu.Unlock()
+
+		return value
+	}
+	vCache.refreshing = true
+	versionMu.Unlock()
+
+	tag, err := fetchLatest()
+
+	versionMu.Lock()
+	defer versionMu.Unlock()
+
+	vCache.refreshing = false
+
+	if err == nil {
+		vCache.value = tag
+		vCache.errCount = 0
+		vCache.expiry = time.Now().Add(15 * time.Minute)
+
+		return tag
+	}
+
+	logger.Log().Errorf("Failed to fetch latest version: %v", err)
+	vCache.errCount++
+	vCache.value = ""
+	vCache.expiry = time.Now().Add(getBackoff(vCache.errCount))
+
+	return ""
 }
 
 // Load the current statistics
@@ -90,43 +148,17 @@ func Load(detectLatestVersion bool) AppInformation {
 	runtime.ReadMemStats(&m)
 
 	info.RuntimeStats.Memory = m.Sys - m.HeapReleased
-	info.RuntimeStats.Uptime = uint64(time.Since(startedAt).Seconds())
-	info.RuntimeStats.MessagesDeleted = storage.StatsDeleted
-	info.RuntimeStats.SMTPAccepted = smtpAccepted
-	info.RuntimeStats.SMTPAcceptedSize = smtpAcceptedSize
-	info.RuntimeStats.SMTPRejected = smtpRejected
-	info.RuntimeStats.SMTPIgnored = smtpIgnored
+	info.RuntimeStats.Uptime = uptimeSeconds()
+	info.RuntimeStats.MessagesDeleted = storage.StatsDeleted.Load()
+	info.RuntimeStats.SMTPAccepted = smtpAccepted.Load()
+	info.RuntimeStats.SMTPAcceptedSize = smtpAcceptedSize.Load()
+	info.RuntimeStats.SMTPRejected = smtpRejected.Load()
+	info.RuntimeStats.SMTPIgnored = smtpIgnored.Load()
 
 	if config.DisableVersionCheck {
 		info.LatestVersion = "disabled"
 	} else if detectLatestVersion {
-		mu.RLock()
-		cacheValid := time.Now().Before(vCache.expiry)
-		cacheValue := vCache.value
-		mu.RUnlock()
-
-		if cacheValid {
-			info.LatestVersion = cacheValue
-		} else {
-			mu.Lock()
-			// Re-check after acquiring write lock in case another goroutine refreshed it
-			if time.Now().Before(vCache.expiry) {
-				info.LatestVersion = vCache.value
-			} else {
-				latest, err := config.GHRUConfig.Latest()
-				if err == nil {
-					vCache = versionCache{value: latest.Tag, expiry: time.Now().Add(15 * time.Minute)}
-					info.LatestVersion = latest.Tag
-				} else {
-					logger.Log().Errorf("Failed to fetch latest version: %v", err)
-					vCache.errCount++
-					vCache.value = ""
-					vCache.expiry = time.Now().Add(getBackoff(vCache.errCount))
-					info.LatestVersion = ""
-				}
-			}
-			mu.Unlock()
-		}
+		info.LatestVersion = latestVersion()
 	}
 
 	info.Database = config.Database
@@ -138,29 +170,23 @@ func Load(detectLatestVersion bool) AppInformation {
 	return info
 }
 
-// Track will start the statistics logging in memory
-func Track() {
-	startedAt = time.Now()
+// uptimeSeconds returns how long Mailpit has been running, in seconds
+func uptimeSeconds() uint64 {
+	return uint64(time.Since(startedAt).Seconds())
 }
 
 // LogSMTPAccepted logs a successful SMTP transaction
 func LogSMTPAccepted(size int) {
-	mu.Lock()
-	smtpAccepted = smtpAccepted + 1
-	smtpAcceptedSize = smtpAcceptedSize + tools.SafeUint64(size)
-	mu.Unlock()
+	smtpAccepted.Add(1)
+	smtpAcceptedSize.Add(tools.SafeUint64(size))
 }
 
 // LogSMTPRejected logs a rejected SMTP transaction
 func LogSMTPRejected() {
-	mu.Lock()
-	smtpRejected = smtpRejected + 1
-	mu.Unlock()
+	smtpRejected.Add(1)
 }
 
 // LogSMTPIgnored logs an ignored SMTP transaction
 func LogSMTPIgnored() {
-	mu.Lock()
-	smtpIgnored = smtpIgnored + 1
-	mu.Unlock()
+	smtpIgnored.Add(1)
 }

@@ -50,6 +50,7 @@ func mustCIDR(s string) *net.IPNet {
 }
 
 // IsInternalIP checks if the given IP address is an internal IP address (e.g., loopback, private, link-local, or multicast).
+// An invalid IP address (nil, or not 4 or 16 bytes) is also reported as internal, so that it is not used.
 // IsLoopback - 127.0.0.0/8, ::1
 // IsPrivate - 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, fc00::/7
 // IsLinkLocalUnicast - 169.254.0.0/16, fe80::/10 (covers AWS/GCP cloud metadata 169.254.169.254)
@@ -67,6 +68,12 @@ func mustCIDR(s string) *net.IPNet {
 // IPv6 transition forms - NAT64 (RFC 6052/8215), 6to4 (RFC 3056), Teredo (RFC 4380),
 // IPv4-compatible (RFC 4291), IPv4-translated (RFC 2765/6145) - re-checked against their embedded IPv4.
 func IsInternalIP(ip net.IP) bool {
+	// Anything which is not an IPv4 or IPv6 address (nil, empty or a wrong length) is not known to be
+	// an external one, and the checks below would all say it is. It is treated as internal.
+	if len(ip) != net.IPv4len && len(ip) != net.IPv6len {
+		return true
+	}
+
 	if ip.IsLoopback() ||
 		ip.IsPrivate() ||
 		ip.IsLinkLocalUnicast() ||

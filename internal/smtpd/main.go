@@ -3,11 +3,13 @@ package smtpd
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"net"
 	"net/mail"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/internal/auth"
@@ -35,17 +37,31 @@ func mailHandler(origin net.Addr, from string, to []string, data []byte, smtpUse
 
 // SaveToDatabase will attempt to save a message to the database
 func SaveToDatabase(origin net.Addr, from string, to []string, data []byte, smtpUser *string) (string, error) {
-	if !config.SMTPStrictRFCHeaders && bytes.Contains(data, []byte("\r\r\n")) {
-		// replace all <CR><CR><LF> (\r\r\n) with <CR><LF> (\r\n)
-		// @see https://github.com/axllent/mailpit/issues/87 & https://github.com/axllent/mailpit/issues/153
-		data = bytes.ReplaceAll(data, []byte("\r\r\n"), []byte("\r\n"))
+	if config.SMTPStrictRFCHeaders {
+		// reject headers which are not as RFC 5322 has them: line breaks which are not <CR><LF> (<CR><CR><LF> or
+		// <LF>), a <CR> on its own, and whitespace between the name of a header and its colon
+		if _, invalid := tools.NormaliseHeaders(data); invalid || tools.HeadersHaveBareCR(data) {
+			logger.Log().Warn("[smtpd] rejected message, the headers have line breaks which are not <CR><LF>, or whitespace before a colon")
+			stats.LogSMTPRejected()
+
+			return "", errors.New("550 5.6.0 Message headers must have <CR><LF> line breaks and no whitespace before the colon")
+		}
+	} else {
+		// Fix the line breaks of the headers: <CR><CR><LF> (@see https://github.com/axllent/mailpit/issues/87
+		// & https://github.com/axllent/mailpit/issues/153) and <LF> on its own, and remove the whitespace before
+		// the colon of a header name, so the headers are the same to everything which reads the message. A <CR> on
+		// its own is text, as it is to Go and Postfix, and is left (and replaced when it is sent on). The body is
+		// stored as it was received (it used to have its <CR><CR><LF> changed as well), and its line breaks are
+		// made <CR><LF> when it is sent on.
+		data, _ = tools.NormaliseHeaders(data)
 	}
 
 	msg, err := mail.ReadMessage(bytes.NewReader(data))
 	if err != nil {
 		logger.Log().Warnf("[smtpd] error parsing message: %s", err.Error())
 		stats.LogSMTPRejected()
-		return "", err
+
+		return "", invalidHeadersError(err)
 	}
 
 	// check / set the Return-Path based on SMTP from
@@ -53,7 +69,10 @@ func SaveToDatabase(origin net.Addr, from string, to []string, data []byte, smtp
 	if returnPath != from {
 		data, err = tools.SetMessageHeader(data, "Return-Path", "<"+from+">")
 		if err != nil {
-			return "", err
+			logger.Log().Warnf("[smtpd] error setting the Return-Path: %s", err.Error())
+			stats.LogSMTPRejected()
+
+			return "", invalidHeadersError(err)
 		}
 	}
 
@@ -125,13 +144,16 @@ func SaveToDatabase(origin net.Addr, from string, to []string, data []byte, smtp
 	if len(missingAddresses) > 0 {
 		data, err = addBccAddresses(data, msg.Header, hasBccHeader, missingAddresses)
 		if err != nil {
-			return "", err
+			logger.Log().Warnf("[smtpd] error adding the Bcc recipients: %s", err.Error())
+			stats.LogSMTPRejected()
+
+			return "", invalidHeadersError(err)
 		}
 
 		logger.Log().Debugf("[smtpd] added missing addresses to Bcc header: %s", strings.Join(missingAddresses, ", "))
 	}
 
-	id, err := storage.Store(&data, smtpUser)
+	id, err := storeWithinBudget(&data, smtpUser)
 	if err != nil {
 		logger.Log().Errorf("[db] error storing message: %s", err.Error())
 		return "", err
@@ -145,6 +167,74 @@ func SaveToDatabase(origin net.Addr, from string, to []string, data []byte, smtp
 	logger.Log().Debugf("[smtpd] received (%s) from:%s subject:%q", cleanIP(origin), from, subject)
 
 	return id, err
+}
+
+// ingestBudgetBytes is how many bytes of messages are parsed, indexed, compressed and stored at the same
+// time. Doing so needs about 7 times the size of a plain text message in memory, and about 21 times that of
+// an HTML message made of many small tags. Nothing else limited how many were in progress at once.
+//
+// With four 20 MiB HTML messages arriving together, the process peaked at 1774 MiB without a limit (4.5
+// seconds) and 895 MiB with this one (5.8 seconds). Eight at once ran a machine with 15 GB out of memory.
+// A message larger than the budget is stored on its own, and a smaller one only waits when the budget is
+// full.
+const ingestBudgetBytes = 20 << 20
+
+var (
+	// ingestBudget is shared by every message which is received. It is a variable for the tests.
+	ingestBudget = tools.NewBudget(ingestBudgetBytes)
+
+	// ingestWait is how long a message waits for its turn before the sender is told to try again later. It
+	// is a variable for the tests.
+	ingestWait = 2 * time.Minute
+)
+
+// storeWithinBudget stores the message when there is room for it in the budget, waiting for its turn if
+// there is not. The sender is told to try again later (a temporary failure) if it waits too long.
+func storeWithinBudget(data *[]byte, smtpUser *string) (string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), ingestWait)
+	defer cancel()
+
+	release, err := ingestBudget.Acquire(ctx, int64(len(*data)))
+	if err != nil {
+		logger.Log().Warnf("[smtpd] message of %d bytes not stored, as too many large messages are being processed", len(*data))
+
+		return "", errors.New("451 4.3.2 Too many large messages are being processed, please try again later")
+	}
+	defer release()
+
+	return storage.Store(data, smtpUser)
+}
+
+// maxReasonLength is the longest reason (from the error of the parser) which is sent to the client.
+const maxReasonLength = 120
+
+// invalidHeadersError is the error for a message whose headers can not be read. It is a permanent
+// failure (550) as sending the same message again can not work. Without a code it was sent to the
+// client as a temporary failure (451), which a client retries.
+//
+// The reason is the parser's error, which can include text from the message, so it is cut down to
+// printable ASCII on a single line before it is sent in the response.
+func invalidHeadersError(err error) error {
+	reason := strings.Map(func(r rune) rune {
+		switch {
+		case r == '\t' || r == '\r' || r == '\n' || r < 0x20 || r == 0x7f:
+			return ' '
+		case r > 0x7e:
+			return '?'
+		}
+
+		return r
+	}, err.Error())
+
+	reason = strings.Join(strings.Fields(reason), " ")
+	if reason == "" {
+		reason = "unknown error"
+	}
+	if len(reason) > maxReasonLength {
+		reason = reason[:maxReasonLength] + "..."
+	}
+
+	return errors.New("550 5.6.0 Message headers could not be parsed: " + reason)
 }
 
 func authHandler(remoteAddr net.Addr, mechanism string, username []byte, password []byte, _ []byte) (bool, error) {

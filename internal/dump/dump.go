@@ -4,6 +4,7 @@ package dump
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -31,6 +32,11 @@ const maxSummarySize = 20 * 1024 * 1024 // 20 MiB
 // pageSize is the per-request limit when paging through the remote messages
 // summary endpoint.
 const pageSize = 10000
+
+// maxRemoteMessages caps how many message IDs will be accepted from a remote
+// instance, so a hostile server cannot grow the ID map without bound by
+// advertising an enormous total and serving endless unique pages.
+const maxRemoteMessages = 1000000
 
 var (
 	linkRe = regexp.MustCompile(`(?i)^https?:\/\/`)
@@ -101,9 +107,16 @@ func loadIDs() error {
 
 			if start == 0 {
 				total = data.Total
+				if total > maxRemoteMessages {
+					return fmt.Errorf("remote instance reports %d messages, exceeding the %d message limit", total, maxRemoteMessages)
+				}
 			}
 
+			added := 0
 			for _, m := range data.Messages {
+				if _, exists := dumpIDs[m.ID]; !exists {
+					added++
+				}
 				dumpIDs[m.ID] = struct {
 					Timestamp time.Time
 				}{Timestamp: m.Created}
@@ -120,7 +133,22 @@ func loadIDs() error {
 				break
 			}
 
-			start += pageSize
+			// a page of only already-seen IDs means the server is not making progress
+			if added == 0 {
+				return errors.New("remote instance returned no new messages before reaching its reported total")
+			}
+
+			if len(dumpIDs) > maxRemoteMessages {
+				return fmt.Errorf("remote instance returned more than %d messages", maxRemoteMessages)
+			}
+
+			// advance by what was actually returned, as a proxy or server may
+			// return fewer messages than requested
+			start += len(data.Messages)
+		}
+
+		if uint64(len(dumpIDs)) < total {
+			logger.Log().Warnf("remote instance reported %d messages but only %d were listed", total, len(dumpIDs))
 		}
 
 	} else {
@@ -194,9 +222,12 @@ func fetchSummaryPage(start int) (*apiv1.MessagesSummary, error) {
 }
 
 func saveMessages() error {
+	failed := 0
+
 	for id, m := range dumpIDs {
 		if !idRe.MatchString(id) {
 			logger.Log().Errorf("skipping message with invalid ID: %q", id)
+			failed++
 			continue
 		}
 
@@ -216,12 +247,14 @@ func saveMessages() error {
 
 			if err != nil {
 				logger.Log().Errorf("error fetching message %s: %s", id, err.Error())
+				failed++
 				continue
 			}
 
 			if res.StatusCode != http.StatusOK {
 				_ = res.Body.Close()
 				logger.Log().Errorf("error fetching message %s: HTTP %d", id, res.StatusCode)
+				failed++
 				continue
 			}
 
@@ -231,11 +264,13 @@ func saveMessages() error {
 
 				if err != nil {
 					logger.Log().Errorf("error fetching message %s: %s", id, err.Error())
+					failed++
 					continue
 				}
 
 				if int64(len(b)) > limit {
 					logger.Log().Warnf("message %s exceeds %d MiB size cap, skipping", id, config.MaxMessageSize)
+					failed++
 					continue
 				}
 			} else {
@@ -244,6 +279,7 @@ func saveMessages() error {
 
 				if err != nil {
 					logger.Log().Errorf("error fetching message %s: %s", id, err.Error())
+					failed++
 					continue
 				}
 			}
@@ -252,23 +288,30 @@ func saveMessages() error {
 			b, err = storage.GetMessageRaw(id)
 			if err != nil {
 				logger.Log().Errorf("error fetching message %s: %s", id, err.Error())
+				failed++
 				continue
 			}
 
 			if config.MaxMessageSize > 0 && int64(len(b)) > limit {
 				logger.Log().Warnf("message %s exceeds %d MiB size cap, skipping", id, config.MaxMessageSize)
+				failed++
 				continue
 			}
 		}
 
 		if err := os.WriteFile(out, b, 0644); /* #nosec */ err != nil {
 			logger.Log().Errorf("error writing message %s: %s", id, err.Error())
+			failed++
 			continue
 		}
 
 		_ = os.Chtimes(out, m.Timestamp, m.Timestamp)
 
 		logger.Log().Debugf("Saved message %s to %s", id, out)
+	}
+
+	if failed > 0 {
+		return fmt.Errorf("%d of %d messages could not be saved", failed, len(dumpIDs))
 	}
 
 	return nil

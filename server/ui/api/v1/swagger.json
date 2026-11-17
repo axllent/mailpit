@@ -801,7 +801,7 @@
     },
     "/api/v1/send": {
       "post": {
-        "description": "Send a message via the HTTP API.",
+        "description": "Send a message via the HTTP API.\n\nA message (and so a request) which is larger than the maximum message size is rejected with a 413 response, a\nrequest which says that it is too large is rejected without being read. If too many messages are being sent at once a\nrequest waits for its turn for a few seconds, and then gets a 503 response with a Retry-After header.",
         "consumes": [
           "application/json"
         ],
@@ -1001,6 +1001,12 @@
           },
           "400": {
             "$ref": "#/responses/JSONErrorResponse"
+          },
+          "413": {
+            "$ref": "#/responses/JSONErrorResponse"
+          },
+          "503": {
+            "$ref": "#/responses/JSONErrorResponse"
           }
         }
       }
@@ -1030,7 +1036,7 @@
         }
       },
       "put": {
-        "description": "This will overwrite any existing tags for selected message database IDs. To remove all tags from a message, pass an empty tags array.",
+        "description": "This will overwrite any existing tags for selected message database IDs. To remove all tags from a message, pass an empty tags array.\nA message can have at most 100 tags, passing more is an error.",
         "consumes": [
           "application/json"
         ],
@@ -1203,7 +1209,7 @@
     },
     "/view/{ID}.html": {
       "get": {
-        "description": "Renders just the message's HTML part which can be used for UI integration testing.\nAttached inline images are modified to link to the API provided they exist.\nNote that is the message does not contain a HTML part then an 404 error is returned.\n\nThe ID can be set to `latest` to return the latest message.",
+        "description": "Renders just the message's HTML part which can be used for UI integration testing.\nAttached inline images are modified to link to the API provided they exist.\nNote that is the message does not contain a HTML part then an 404 error is returned.\nA HTML part which is larger than 10 MiB is not rendered, and a 413 error is returned.\n\nThe ID can be set to `latest` to return the latest message.",
         "produces": [
           "text/html"
         ],
@@ -1990,20 +1996,20 @@
       "type": "object",
       "properties": {
         "Description": {
-          "description": "Rspamd symbol description",
+          "description": "SpamAssassin rule description",
           "type": "string"
         },
         "Name": {
-          "description": "Rspamd symbol name",
+          "description": "SpamAssassin rule name",
           "type": "string"
         },
         "Score": {
-          "description": "Symbol score",
+          "description": "Spam rule score",
           "type": "number",
           "format": "double"
         }
       },
-      "x-go-package": "github.com/axllent/mailpit/internal/rspamd"
+      "x-go-package": "github.com/axllent/mailpit/internal/spamassassin"
     },
     "SpamAssassinResponse": {
       "description": "Result is a SpamAssassin result",
@@ -2028,13 +2034,18 @@
           "description": "Total spam score based on triggered rules",
           "type": "number",
           "format": "double"
+        },
+        "Threshold": {
+          "description": "Score at which a message is treated as spam: the required score of the SpamAssassin server\n(5 for Postmark)",
+          "type": "number",
+          "format": "double"
         }
       },
       "x-go-name": "Result",
       "x-go-package": "github.com/axllent/mailpit/internal/spamassassin"
     },
     "WebUIConfiguration": {
-      "description": "Web UI configuration settings",
+      "description": "WebUIConfiguration returns the Web UI configuration settings",
       "type": "object",
       "properties": {
         "ChaosEnabled": {

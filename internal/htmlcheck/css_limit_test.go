@@ -29,7 +29,7 @@ func TestRemoteCSSLimits(t *testing.T) {
 
 	body := "/*" + strings.Repeat("A", 1000) + "*/"
 	var hits atomic.Int64
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		hits.Add(1)
 		w.Header().Set("Content-Type", "text/css")
 		_, _ = w.Write([]byte(body))
@@ -85,7 +85,7 @@ func TestRemoteCSSCancelled(t *testing.T) {
 	t.Cleanup(func() { config.AllowInternalHTTPRequests = false })
 
 	var hits atomic.Int64
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		hits.Add(1)
 		w.Header().Set("Content-Type", "text/css")
 		_, _ = w.Write([]byte("body{}"))

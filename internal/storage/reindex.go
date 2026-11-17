@@ -11,7 +11,6 @@ import (
 
 	"github.com/axllent/mailpit/internal/logger"
 	"github.com/axllent/mailpit/internal/mimeparser"
-	"github.com/axllent/mailpit/internal/tools"
 	"github.com/leporo/sqlf"
 )
 
@@ -42,6 +41,11 @@ func ReindexAll() {
 
 	logger.Log().Infof("reindexing %d messages", total)
 
+	// there is nothing to do, and the progress below divides by the total
+	if total == 0 {
+		return
+	}
+
 	type updateStruct struct {
 		// ID in database
 		ID string
@@ -51,6 +55,8 @@ func ReindexAll() {
 		Snippet string
 		// Metadata info
 		Metadata string
+		// MetaSearchText for field searches
+		MetaSearchText string
 	}
 
 	parser := mimeparser.New()
@@ -94,14 +100,20 @@ func ReindexAll() {
 				continue
 			}
 
-			searchText := createSearchText(env)
-			snippet := tools.CreateSnippet(env.Text, env.HTML)
+			metaSearchText, err := createMetaSearchText(meta, env.GetHeader("Subject"))
+			if err != nil {
+				logger.Log().Errorf("[message] %s", err.Error())
+				continue
+			}
+
+			searchText, snippet := searchTextAndSnippet(env)
 
 			u := updateStruct{}
 			u.ID = id
 			u.SearchText = searchText
 			u.Snippet = snippet
 			u.Metadata = string(MetadataJSON)
+			u.MetaSearchText = metaSearchText
 
 			updates = append(updates, u)
 		}
@@ -118,7 +130,7 @@ func ReindexAll() {
 
 		// insert mail summary data
 		for _, u := range updates {
-			_, err = tx.Exec(fmt.Sprintf(`UPDATE %s SET SearchText = ?, Snippet = ?, Metadata = ? WHERE ID = ?`, tenant("mailbox")), u.SearchText, u.Snippet, u.Metadata, u.ID)
+			_, err = tx.Exec(fmt.Sprintf(`UPDATE %s SET SearchText = ?, Snippet = ?, Metadata = ?, MetaSearchText = ? WHERE ID = ?`, tenant("mailbox")), u.SearchText, u.Snippet, u.Metadata, u.MetaSearchText, u.ID)
 			if err != nil {
 				logger.Log().Errorf("[db] %s", err.Error())
 				continue

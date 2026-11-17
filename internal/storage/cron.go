@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"math"
-	"strings"
 	"time"
 
 	"github.com/axllent/mailpit/config"
@@ -14,7 +13,7 @@ import (
 )
 
 // Database cron runs every minute
-func dbCron() {
+func dbCron(ctx context.Context) {
 	if config.DisableAutoVACUUM {
 		if sqlDriver == "rqlite" {
 			logger.Log().Warn("[db] disable-auto-vacuum has no effect as rqlite handles vacuuming automatically")
@@ -24,10 +23,13 @@ func dbCron() {
 	}
 
 	for {
-		time.Sleep(60 * time.Second)
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(60 * time.Second):
+		}
 
-		currentTime := time.Now()
-		sinceLastDbAction := currentTime.Sub(dbLastAction)
+		sinceLastDbAction := dbLastAction.since()
 
 		// only run the database has been idle for 5 minutes
 		if math.Floor(sinceLastDbAction.Minutes()) == 5 {
@@ -55,6 +57,18 @@ func dbCron() {
 
 // PruneMessages will auto-delete the oldest messages if messages > config.MaxMessages.
 // Set config.MaxMessages to 0 to disable.
+// maxAgeCutoff returns the Unix timestamp (in milliseconds) before which messages are
+// older than the given number of hours. ok is false when hours is not positive, or is
+// too large to represent as a time.Duration: an overflowed duration can put the cutoff
+// in the future, which would delete every message.
+func maxAgeCutoff(now time.Time, hours int) (ts int64, ok bool) {
+	if hours <= 0 || int64(hours) > math.MaxInt64/int64(time.Hour) {
+		return 0, false
+	}
+
+	return now.Add(-time.Duration(hours) * time.Hour).UnixMilli(), true
+}
+
 func pruneMessages() {
 	if config.MaxMessages < 1 && config.MaxAgeInHours == 0 {
 		return
@@ -99,10 +113,11 @@ func pruneMessages() {
 	}
 
 	// prune using `--max-age` if set
-	if config.MaxAgeInHours > 0 {
-		// now() minus the number of hours
-		ts := time.Now().Add(time.Duration(-config.MaxAgeInHours) * time.Hour).UnixMilli()
-
+	ts, maxAgeOK := maxAgeCutoff(time.Now(), config.MaxAgeInHours)
+	if config.MaxAgeInHours > 0 && !maxAgeOK {
+		logger.Log().Errorf("[db] max-age of %d hours is out of range, skipping age-based pruning", config.MaxAgeInHours)
+	}
+	if maxAgeOK {
 		q := sqlf.Select("ID, Size").
 			From(tenant("mailbox")).
 			Where("Created < ?", ts).
@@ -141,27 +156,16 @@ func pruneMessages() {
 	// roll back if it fails
 	defer func() { _ = tx.Rollback() }()
 
-	args := make([]any, len(ids))
-	for i, id := range ids {
-		args[i] = id
-	}
+	// the IDs are deleted in parts, as a statement can only have so many placeholders
+	for _, chunk := range chunkBy(ids, maxSQLVariables) {
+		args := idArgs(chunk)
 
-	_, err = tx.Exec(`DELETE FROM `+tenant("mailbox_data")+` WHERE ID IN (?`+strings.Repeat(",?", len(ids)-1)+`)`, args...) // #nosec
-	if err != nil {
-		logger.Log().Errorf("[db] %s", err.Error())
-		return
-	}
-
-	_, err = tx.Exec(`DELETE FROM `+tenant("message_tags")+` WHERE ID IN (?`+strings.Repeat(",?", len(ids)-1)+`)`, args...) // #nosec
-	if err != nil {
-		logger.Log().Errorf("[db] %s", err.Error())
-		return
-	}
-
-	_, err = tx.Exec(`DELETE FROM `+tenant("mailbox")+` WHERE ID IN (?`+strings.Repeat(",?", len(ids)-1)+`)`, args...) // #nosec
-	if err != nil {
-		logger.Log().Errorf("[db] %s", err.Error())
-		return
+		for _, table := range []string{"mailbox_data", "message_tags", "mailbox"} {
+			if _, err = tx.Exec(`DELETE FROM `+tenant(table)+` WHERE ID IN `+inPlaceholders(len(chunk)), args...); err != nil { // #nosec
+				logger.Log().Errorf("[db] %s", err.Error())
+				return
+			}
+		}
 	}
 
 	if err = tx.Commit(); err != nil {
@@ -177,7 +181,7 @@ func pruneMessages() {
 	}
 
 	addDeletedSize(prunedSize)
-	dbLastAction = time.Now()
+	dbLastAction.touch()
 
 	elapsed := time.Since(start)
 	logger.Log().Debugf("[db] auto-pruned %d messages in %s", len(ids), elapsed)

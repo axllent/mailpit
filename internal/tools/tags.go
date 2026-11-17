@@ -30,7 +30,9 @@ func CleanTag(s string) string {
 	)
 
 	if len(t) > 100 {
-		return t[:100]
+		// only ASCII is left, so this can not cut a character. It can end with the space between
+		// two words, so the result is trimmed again.
+		return strings.TrimSpace(t[:100])
 	}
 
 	return t
