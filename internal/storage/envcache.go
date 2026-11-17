@@ -50,10 +50,14 @@ type envelopeInflight struct {
 	err  error
 }
 
+// parseCachedEnvelope parses a message for getCachedEnvelope. It is a variable for the tests.
+var parseCachedEnvelope = parseEnvelope
+
 // getCachedEnvelope returns a parsed envelope for the given message ID,
 // using the cache if available and deduplicating concurrent parses so
-// only one goroutine does the actual work.
-func getCachedEnvelope(id string) (*enmime.Envelope, uint64, error) {
+// only one goroutine does the actual work. The results are named so that
+// a parse which panics returns the error, as it does to those waiting.
+func getCachedEnvelope(id string) (env *enmime.Envelope, size uint64, err error) {
 	envelopeCache.Lock()
 
 	// check for a valid cached entry
@@ -80,7 +84,9 @@ func getCachedEnvelope(id string) (*enmime.Envelope, uint64, error) {
 	// ensure waiters are always unblocked, even on panic
 	defer func() {
 		if r := recover(); r != nil {
-			inf.err = fmt.Errorf("panic parsing message %s: %v", id, r)
+			// the results were never set, so without this the caller got no envelope and no error
+			inf.env, inf.size, inf.err = nil, 0, fmt.Errorf("panic parsing message %s: %v", id, r)
+			env, size, err = inf.env, inf.size, inf.err
 		}
 		close(inf.done)
 
@@ -92,7 +98,7 @@ func getCachedEnvelope(id string) (*enmime.Envelope, uint64, error) {
 		envelopeCache.Unlock()
 	}()
 
-	inf.env, inf.size, inf.err = parseEnvelope(id)
+	inf.env, inf.size, inf.err = parseCachedEnvelope(id)
 
 	return inf.env, inf.size, inf.err
 }
