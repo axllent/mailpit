@@ -37,23 +37,44 @@ func TestIsProgressiveJPEG(t *testing.T) {
 		{"control: baseline SOF0", joinBytes(soi, frameHeader(0xC0, 10, 10), sos), false},
 		{"control: extended sequential SOF1", joinBytes(soi, frameHeader(0xC1, 10, 10), sos), false},
 		{"progressive SOF2", joinBytes(soi, frameHeader(0xC2, 10, 10), sos), true},
+		// frame headers which the decoder does not support are refused by it, so the answer does not matter, and
+		// the safe one is given
 		{"differential progressive SOF6", joinBytes(soi, frameHeader(0xC6, 10, 10), sos), true},
 		{"progressive arithmetic SOF10", joinBytes(soi, frameHeader(0xCA, 10, 10), sos), true},
 		{"differential progressive arithmetic SOF14", joinBytes(soi, frameHeader(0xCE, 10, 10), sos), true},
-		{"control: sequential arithmetic SOF9", joinBytes(soi, frameHeader(0xC9, 10, 10), sos), false},
+		{"sequential arithmetic SOF9", joinBytes(soi, frameHeader(0xC9, 10, 10), sos), true},
 		{"after other segments", joinBytes(soi, app1, segment(0xDB, make([]byte, 65)...), segment(jpegDHT, make([]byte, 17)...), frameHeader(0xC2, 10, 10), sos), true},
-		{"DHT, JPG and DAC are not frame headers", joinBytes(soi, segment(jpegDHT, 0, 0), segment(jpegJPG, 0, 0), segment(jpegDAC, 0, 0), frameHeader(0xC0, 10, 10), sos), false},
-		{"fill bytes and standalone markers", joinBytes(soi, []byte{0xFF, 0xFF, 0xFF, 0x01, 0xFF, 0xD3}, frameHeader(0xC2, 10, 10), sos), true},
-		{"frame header only after the image data starts", joinBytes(soi, sos, frameHeader(0xC2, 10, 10)), false},
-		{"empty", nil, false},
-		{"not a JPEG", []byte("\x89PNG\r\n\x1a\n\x00\x00\x00\x0d"), false},
-		{"SOI only", soi, false},
-		// the marker is enough, and it is the safer answer (the decoder refuses such data anyway)
+		{"control: baseline after other segments", joinBytes(soi, app1, segment(jpegCOM, 'h', 'i'), segment(0xDB, make([]byte, 65)...), segment(jpegDRI, 0, 0), frameHeader(0xC0, 10, 10), sos), false},
+		{"JPG and DAC are not frame headers (and the decoder refuses them)", joinBytes(soi, segment(jpegJPG, 0, 0), segment(jpegDAC, 0, 0), frameHeader(0xC0, 10, 10), sos), true},
+		{"fill bytes and restart markers", joinBytes(soi, []byte{0xFF, 0xFF, 0xFF, 0xD3}, frameHeader(0xC2, 10, 10), sos), true},
+		{"control: baseline after fill bytes and restart markers", joinBytes(soi, []byte{0xFF, 0xFF, 0xFF, 0xD3}, frameHeader(0xC0, 10, 10), sos), false},
+		{"TEM, which the decoder refuses", joinBytes(soi, []byte{0xFF, 0x01}, frameHeader(0xC0, 10, 10), sos), true},
+		{"frame header only after the image data starts", joinBytes(soi, sos, frameHeader(0xC0, 10, 10)), true},
+		{"end of image before a frame header", joinBytes(soi, []byte{0xFF, 0xD9}, frameHeader(0xC0, 10, 10)), true},
+
+		// what the decoder skips, which once made this answer false for a progressive JPEG
+		{"bytes before a marker", joinBytes(soi, []byte{0x00}, frameHeader(0xC2, 10, 10), sos), true},
+		{"bytes between segments", joinBytes(soi, app1, []byte{0x12, 0x34}, frameHeader(0xC2, 10, 10), sos), true},
+		{"0xFF 0x00", joinBytes(soi, []byte{0xFF, 0x00}, frameHeader(0xC2, 10, 10), sos), true},
+		// controls: the same for a baseline JPEG, which is still found to be baseline
+		{"control: baseline after bytes before a marker", joinBytes(soi, []byte{0x00}, frameHeader(0xC0, 10, 10), sos), false},
+		{"control: baseline after bytes between segments", joinBytes(soi, app1, []byte{0x12, 0x34}, frameHeader(0xC0, 10, 10), sos), false},
+		{"control: baseline after 0xFF 0x00", joinBytes(soi, []byte{0xFF, 0x00}, frameHeader(0xC0, 10, 10), sos), false},
+
+		// a frame header inside another segment is not read, as the decoder does not read it
+		{"progressive frame header inside a segment", joinBytes(soi, segment(jpegAPP1, frameHeader(0xC2, 10, 10)...), frameHeader(0xC0, 10, 10), sos), false},
+		{"baseline frame header inside a segment", joinBytes(soi, segment(jpegAPP1, frameHeader(0xC0, 10, 10)...), frameHeader(0xC2, 10, 10), sos), true},
+
+		// what can not be followed is treated as progressive
+		{"empty", nil, true},
+		{"not a JPEG", []byte("\x89PNG\r\n\x1a\n\x00\x00\x00\x0d"), true},
+		{"SOI only", soi, true},
 		{"progressive frame header cut short", joinBytes(soi, frameHeader(0xC2, 10, 10)[:6]), true},
-		{"other segment cut short", joinBytes(soi, segment(0xDB, make([]byte, 65)...)[:20]), false},
-		{"segment length below 2", joinBytes(soi, []byte{0xFF, 0xDB, 0x00, 0x01}, frameHeader(0xC2, 10, 10)), false},
-		{"segment longer than the data", joinBytes(soi, []byte{0xFF, 0xDB, 0xFF, 0xFF}, frameHeader(0xC2, 10, 10)), false},
-		{"not at a marker", joinBytes(soi, []byte{0x00, 0x00, 0x00, 0x00}, frameHeader(0xC2, 10, 10)), false},
+		{"other segment cut short", joinBytes(soi, segment(0xDB, make([]byte, 65)...)[:20]), true},
+		{"segment length below 2", joinBytes(soi, []byte{0xFF, 0xDB, 0x00, 0x01}, frameHeader(0xC0, 10, 10)), true},
+		{"segment longer than the data", joinBytes(soi, []byte{0xFF, 0xDB, 0xFF, 0xFF}, frameHeader(0xC0, 10, 10)), true},
+		{"length cut short", joinBytes(soi, []byte{0xFF, 0xDB, 0x00}), true},
+		{"fill bytes to the end", joinBytes(soi, []byte{0xFF, 0xFF, 0xFF}), true},
 	}
 
 	for _, tt := range tests {
@@ -170,33 +191,67 @@ func TestProgressiveJPEGLimit(t *testing.T) {
 	checkThumbnail(t, out)
 }
 
-// The scan never panics, and only reports progressive for data that really has a progressive
-// frame marker.
+// insertAfterSOI returns data with extra inserted straight after the start of image marker.
+func insertAfterSOI(data, extra []byte) []byte {
+	return joinBytes(data[:2], extra, data[2:])
+}
+
+// A progressive JPEG with bytes the decoder skips (a byte which is not a marker, or 0xFF 0x00) is still held to the
+// lower limit. The check once stopped at such bytes and said the image was not progressive, so a single byte let a
+// progressive JPEG of up to the general limit be decoded. The decoder reads these images as it does without the bytes,
+// which shows that they are real images and not just data it refuses. A baseline JPEG with the same bytes (the
+// control) is decoded.
+func TestProgressiveJPEGLimitWithSkippedBytes(t *testing.T) {
+	baseline := grayJPEG(t, 4000, 4000)
+	progressive := patchFrame(t, baseline, jpegSOF2, 4000, 4000)
+
+	for name, extra := range map[string][]byte{
+		"a byte which is not a marker": {0x00},
+		"several bytes":                {0x12, 0x34, 0x56},
+		"0xFF 0x00":                    {0xFF, 0x00},
+	} {
+		t.Run(name, func(t *testing.T) {
+			data := insertAfterSOI(progressive, extra)
+
+			cfg, err := jpeg.DecodeConfig(bytes.NewReader(data))
+			if err != nil || cfg.Width != 4000 || cfg.Height != 4000 {
+				t.Fatalf("the decoder does not read the image: %v (%dx%d)", err, cfg.Width, cfg.Height)
+			}
+
+			if img, err := safeDecode(data); img != nil || err != nil {
+				t.Errorf("a 16 MP progressive JPEG was not rejected: %v", err)
+			}
+
+			// control
+			img, err := safeDecode(insertAfterSOI(baseline, extra))
+			if err != nil || img == nil {
+				t.Errorf("a 16 MP baseline JPEG was not decoded: %v", err)
+			}
+		})
+	}
+}
+
+// The scan never panics, and only reports a JPEG as not progressive when it has a sequential frame header which the
+// decoder reads (it is then decoded as such, or refused).
 func FuzzIsProgressiveJPEG(f *testing.F) {
 	soi := []byte{0xFF, 0xD8}
 	f.Add(joinBytes(soi, frameHeader(0xC2, 10, 10)))
 	f.Add(joinBytes(soi, frameHeader(0xC0, 10, 10)))
+	f.Add(joinBytes(soi, []byte{0x00, 0xFF, 0x00}, frameHeader(0xC2, 10, 10)))
 	f.Add(joinBytes(soi, segment(jpegAPP1, []byte("Exif\x00\x00II*\x00")...), frameHeader(0xCA, 1, 1)))
 	f.Add([]byte{0xFF, 0xD8, 0xFF, 0xFF, 0xFF, 0x01, 0xFF, 0xC2})
 	f.Add([]byte{})
 
 	f.Fuzz(func(t *testing.T, data []byte) {
-		if !isProgressiveJPEG(data) {
+		if isProgressiveJPEG(data) {
 			return
 		}
 
 		if len(data) < 4 || data[0] != 0xFF || data[1] != 0xD8 {
-			t.Fatal("progressive without a JPEG header")
+			t.Fatal("not progressive without a JPEG header")
 		}
-
-		found := false
-		for i := 2; i+1 < len(data); i++ {
-			if data[i] == 0xFF && (data[i+1] == jpegSOF2 || data[i+1] == jpegSOF6 || data[i+1] == jpegSOF10 || data[i+1] == jpegSOF14) {
-				found = true
-			}
-		}
-		if !found {
-			t.Fatal("progressive without a progressive frame marker")
+		if !bytes.Contains(data, []byte{0xFF, jpegSOF0}) && !bytes.Contains(data, []byte{0xFF, jpegSOF1}) {
+			t.Fatal("not progressive without a sequential frame marker")
 		}
 	})
 }

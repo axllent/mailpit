@@ -15,8 +15,14 @@ const (
 	jpegSOI          = 0xD8 // start of image
 	jpegEOI          = 0xD9 // end of image
 	jpegSOS          = 0xDA // start of scan (entropy-coded data follows)
+	jpegAPP0         = 0xE0
 	jpegAPP1         = 0xE1
+	jpegAPP15        = 0xEF
+	jpegDQT          = 0xDB
+	jpegDRI          = 0xDD
+	jpegCOM          = 0xFE
 	jpegSOF0         = 0xC0 // baseline frame header (SOF0-SOF15 are frame headers)
+	jpegSOF1         = 0xC1 // extended sequential
 	jpegSOF2         = 0xC2 // progressive
 	jpegSOF6         = 0xC6 // differential progressive
 	jpegSOF10        = 0xCA // progressive, arithmetic coding
