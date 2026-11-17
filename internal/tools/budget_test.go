@@ -18,7 +18,7 @@ func (b *Budget) state() (used int64, waiting int) {
 }
 
 // acquireAsync starts an Acquire, and reports when it has it.
-func acquireAsync(b *Budget, ctx context.Context, n int64) <-chan func() {
+func acquireAsync(ctx context.Context, b *Budget, n int64) <-chan func() {
 	got := make(chan func(), 1)
 	go func() {
 		release, err := b.Acquire(ctx, n)
@@ -111,11 +111,11 @@ func TestBudgetWaitsForRoom(t *testing.T) {
 	hold, _ := b.Acquire(context.Background(), 6)
 
 	// exploit: more than is free waits
-	got := acquireAsync(b, context.Background(), 6)
+	got := acquireAsync(context.Background(), b, 6)
 	mustWait(t, got, "6 with 6 in use")
 
 	// what would fit still waits behind the one in front of it (see the next test)
-	small := acquireAsync(b, context.Background(), 4)
+	small := acquireAsync(context.Background(), b, 4)
 	waitQueued(t, b, 2)
 	mustWait(t, small, "4 behind 6")
 
@@ -135,13 +135,13 @@ func TestBudgetIsFirstComeFirstServed(t *testing.T) {
 	b := NewBudget(10)
 	hold, _ := b.Acquire(context.Background(), 5)
 
-	big := acquireAsync(b, context.Background(), 10)
+	big := acquireAsync(context.Background(), b, 10)
 	waitQueued(t, b, 1)
 
 	// these fit alongside what is held, but they are behind the big one
 	var smalls []<-chan func()
 	for range 5 {
-		smalls = append(smalls, acquireAsync(b, context.Background(), 1))
+		smalls = append(smalls, acquireAsync(context.Background(), b, 1))
 	}
 	waitQueued(t, b, 6)
 	for i, s := range smalls {
@@ -181,14 +181,14 @@ func TestBudgetLargerThanTheBudgetRunsAlone(t *testing.T) {
 	}
 
 	// and others wait for it
-	small := acquireAsync(b, context.Background(), 1)
+	small := acquireAsync(context.Background(), b, 1)
 	mustWait(t, small, "a small one while a very large one runs")
 	release()
 	mustHave(t, small, "a small one after")()
 
 	// when something is already running it waits, as the others do
 	hold, _ := b.Acquire(context.Background(), 1)
-	huge := acquireAsync(b, context.Background(), 1000)
+	huge := acquireAsync(context.Background(), b, 1000)
 	mustWait(t, huge, "a very large one with 1 in use")
 	hold()
 	mustHave(t, huge, "a very large one once it is free")()
@@ -204,7 +204,7 @@ func TestBudgetStopsWaitingWhenTheContextIsDone(t *testing.T) {
 	go func() { _, err := b.Acquire(first, 6); firstResult <- err }()
 	waitQueued(t, b, 1)
 
-	second := acquireAsync(b, context.Background(), 4)
+	second := acquireAsync(context.Background(), b, 4)
 	waitQueued(t, b, 2)
 	mustWait(t, second, "4 behind 6")
 
