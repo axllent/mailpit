@@ -42,7 +42,7 @@ jobs:
       # use bash on all platforms: PowerShell (Windows default) does not support "\" line continuation
       shell: bash
       run: |
-        go test -p 1 \
+        go test -v \
           ./cmd \
           ./config \
           ./internal/auth \
@@ -72,8 +72,7 @@ jobs:
           ./server/apiv1 \
           ./server/handlers \
           ./server/websockets \
-          ./sendmail/cmd \
-          -v
+          ./sendmail/cmd
     - name: Run Go benchmarking
       run: go test -p 1 ./internal/storage ./internal/html2text -bench=.
     
