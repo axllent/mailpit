@@ -2,6 +2,97 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.34.0]
+
+### Chore
+- Reduce CPU cost of message ingestion ([#771](https://github.com/axllent/mailpit/issues/771))
+- Recover from panics in SMTP sessions
+- Use the SpamAssassin server's required score to decide what is spam
+- Limit the HTML parsing of the embedded message view
+- Refuse to render HTML over 10 MiB in the message view
+- Limit how many bytes of messages are stored at once
+- Treat a bare CR in headers as text, as Go and Postfix do
+- Stop the storage background goroutines before re-initialising
+- Limit the terms of a search and the memory a search holds
+- Cache host names of SMTP clients for a short time
+- Lower the size limit of proxied images and fonts to 10 MiB
+- Limit the size of the messages a websocket client can send
+- Remove deprecated flags and environment settings
+- Validate relay and forward ports and return-path at startup
+- Update Go dependencies
+- Update node dependencies
+- Update Github Actions dependencies
+
+### Fix
+- Make field searches case-insensitive for non-ASCII characters
+- Show the current UTC offset in the timezone setting ([#773](https://github.com/axllent/mailpit/issues/773))
+- Make dump paging and failure handling fail closed
+- Make credential loading and matching fail closed
+- Harden the HTML checker against slow and concurrent input
+- Bound and clean up link checking
+- Stop log messages injecting terminal control sequences
+- Silence the logger once for the POP3 tests
+- Correct POP3 TOP and dot-stuffing, and harden connection handling
+- Make the database last-action time safe for concurrent use
+- Limit the number of tags on a message to 100
+- Bound the Prometheus tag series and harden the metrics server
+- Harden the Rspamd integration
+- Harden the snakeoil self-signed certificate generator
+- Harden the SpamAssassin integration
+- Reuse webhook connections to prevent dropped webhooks under load ([#772](https://github.com/axllent/mailpit/issues/772))
+- Prevent SMTP crash on unparseable media type with RFC 2231 parameter (GHSA-v887-64wg-qqc9)
+- Stop the version lookup blocking requests and fix its backoff
+- Stop EXIF rotation copying large images and limit thumbnail decodes
+- Limit the size of progressive JPEGs that are thumbnailed
+- Remove List-Unsubscribe comments in a single pass and limit its length
+- Locate message headers by position when rewriting them
+- Use the text part for the snippet when the HTML has no text
+- Keep text that is the same as a skipped element's name
+- Trim truncated tags and stop PrepareSocket removing files
+- Make --smtp-strict-rfc-headers cover all non-CRLF header line breaks
+- Reduce the cost of HTML redirect stripping and text snippets
+- Set the start time when the stats package loads
+- Stream the message to Postmark without copying it
+- Stop thumbnails for requests whose client has gone
+- Reject messages with unreadable headers permanently
+- Send only CRLF line breaks when relaying, and keep the stored body
+- Remove whitespace before the colon of header names
+- Handle more IDs than SQLite has placeholders for
+- Tell the web UI about every message a search deleted
+- Do not fail searches for sizes beyond what a database can compare
+- Look up the client's host name without holding up other connections
+- Time out TLS clients who never start the handshake
+- Limit how much memory messages being received can use
+- Make SMTP Shutdown wait for the open sessions
+- Give relaying and forwarding time limits
+- End the transaction when a MAIL command is refused
+- Close the connections the proxy opens to fetch assets
+- Allow sending messages through the API over a Unix socket
+- Limit the cost of proxying a stylesheet
+- Limit and cache the SpamAssassin checks of messages
+- Make the Chaos settings and the HTML preview route safe for concurrent use
+- Release a message to the addresses which were checked
+- Rewrite the inline image links of a message in a single pass
+- Limit the memory used by messages sent through the API
+- Reject invalid integer environment variables instead of using 0
+- Use the default sender when ingesting messages without a From address
+- Reject --max-age values too large to calculate the prune cutoff
+- Apply the return-path option to forwarded and auto-relayed messages
+- Keep the quotes of an address in the sender and recipients which are sent
+- Give the sendmail command and ingest time limits when sending
+- Send the messages of the sendmail command with CR LF line breaks
+- Reject line breaks in the From address of the send API
+- Resolve proxied CSS assets after redirects ([#774](https://github.com/axllent/mailpit/issues/774))
+- Preserve inline data URLs in proxied CSS ([#776](https://github.com/axllent/mailpit/issues/776))
+- Encode screenshot proxy query parameters ([#775](https://github.com/axllent/mailpit/issues/775))
+- Send PLAIN credentials when relaying or forwarding over implicit TLS
+- Hold progressive JPEGs with skipped bytes to the progressive limit
+- End the SMTP transaction when a message is refused
+- Do not crash when reindexing an empty database
+- Return an error when parsing a message for the envelope cache panics
+- Give the readyz probe a time limit
+
+
 ## [v1.33.1]
 
 ### Chore
