@@ -2,6 +2,7 @@
 package healthcheck
 
 import (
+	"context"
 	"crypto/tls"
 	"fmt"
 	"net/http"
@@ -13,6 +14,12 @@ import (
 // PollInterval is the delay between polls in Wait. Exported as a variable so
 // tests can shorten it.
 var PollInterval = time.Second
+
+// CheckTimeout is how long a single probe may take, including reading the
+// response. A server which accepts the connection but never answers would
+// otherwise hold the probe (and Wait, whatever its timeout) for ever. It is a
+// variable for the tests.
+var CheckTimeout = 5 * time.Second
 
 // URI builds the readyz URL from a listen address, webroot, and TLS flag.
 func URI(listen, webroot string, https bool) string {
@@ -36,10 +43,24 @@ func NewClient() *http.Client {
 	}}
 }
 
-// Check makes a single readiness probe. Returns nil if the server responds
-// with 200 OK.
+// Check makes a single readiness probe, of up to CheckTimeout. Returns nil if
+// the server responds with 200 OK.
 func Check(client *http.Client, uri string) error {
-	res, err := client.Get(uri)
+	return check(context.Background(), client, uri)
+}
+
+// check makes a single readiness probe, of up to CheckTimeout and no longer
+// than ctx allows.
+func check(ctx context.Context, client *http.Client, uri string) error {
+	ctx, cancel := context.WithTimeout(ctx, CheckTimeout)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, uri, nil)
+	if err != nil {
+		return err
+	}
+
+	res, err := client.Do(req)
 	if err != nil {
 		return err
 	}
@@ -52,12 +73,16 @@ func Check(client *http.Client, uri string) error {
 	return nil
 }
 
-// Wait polls uri until Check succeeds or timeout elapses.
+// Wait polls uri until Check succeeds or timeout elapses. No probe runs past
+// the timeout.
 func Wait(client *http.Client, uri string, timeout time.Duration) error {
 	deadline := time.Now().Add(timeout)
 
+	ctx, cancel := context.WithDeadline(context.Background(), deadline)
+	defer cancel()
+
 	for {
-		if err := Check(client, uri); err == nil {
+		if err := check(ctx, client, uri); err == nil {
 			return nil
 		}
 

@@ -1,6 +1,7 @@
 package healthcheck
 
 import (
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -84,5 +85,76 @@ func TestURI(t *testing.T) {
 				t.Errorf("URI() = %q, want %q", got, tc.want)
 			}
 		})
+	}
+}
+
+// silentServer accepts connections and never answers.
+func silentServer(t *testing.T) string {
+	t.Helper()
+
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = ln.Close() })
+
+	go func() {
+		for {
+			c, err := ln.Accept()
+			if err != nil {
+				return
+			}
+			t.Cleanup(func() { _ = c.Close() })
+		}
+	}()
+
+	return "http://" + ln.Addr().String() + "/readyz"
+}
+
+// A server which accepts the connection and never answers is given up on. The probe had no time limit, so Check (and
+// Wait, whatever its timeout) waited for ever. The tests above, of servers which answer, are the controls.
+func TestCheckOfAServerWhichDoesNotAnswer(t *testing.T) {
+	oldTimeout := CheckTimeout
+	CheckTimeout = 200 * time.Millisecond
+	t.Cleanup(func() { CheckTimeout = oldTimeout })
+
+	uri := silentServer(t)
+
+	done := make(chan error, 1)
+	go func() { done <- Check(NewClient(), uri) }()
+
+	select {
+	case err := <-done:
+		if err == nil {
+			t.Fatal("Check() error = nil for a server which does not answer")
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("Check() is still waiting, the probe time is 200ms")
+	}
+}
+
+// Wait does not run past its timeout for a server which does not answer, even when that is shorter than the time a
+// single probe may take.
+func TestWaitForAServerWhichDoesNotAnswer(t *testing.T) {
+	oldPoll := PollInterval
+	PollInterval = time.Millisecond
+	t.Cleanup(func() { PollInterval = oldPoll })
+
+	uri := silentServer(t)
+
+	start := time.Now()
+	done := make(chan error, 1)
+	go func() { done <- Wait(NewClient(), uri, 300*time.Millisecond) }()
+
+	select {
+	case err := <-done:
+		if err == nil {
+			t.Fatal("Wait() error = nil for a server which does not answer")
+		}
+		if took := time.Since(start); took > 2*time.Second {
+			t.Fatalf("Wait() took %v, the timeout is 300ms", took)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("Wait() is still waiting, the timeout is 300ms")
 	}
 }
