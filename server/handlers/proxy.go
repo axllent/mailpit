@@ -296,7 +296,7 @@ func rewriteCSS(id, uri string, body []byte) []byte {
 		// encode with base64 to handle any special characters and group message ID with URL
 		encoded := base64.StdEncoding.EncodeToString([]byte(id + ":" + address))
 
-		return []byte("url(" + parts[2] + config.Webroot + "proxy?data=" + encoded + parts[4] + ")")
+		return []byte("url(" + parts[2] + config.Webroot + "proxy?data=" + url.QueryEscape(encoded) + parts[4] + ")")
 	})
 }
 
