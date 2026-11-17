@@ -278,8 +278,8 @@ func rewriteCSS(id, uri string, body []byte) []byte {
 		parts := cssURLRe.FindStringSubmatch(string(s))
 
 		// don't resolve inline `data:..`
-		if strings.HasPrefix(parts[3], "data:") {
-			return []byte(parts[3])
+		if strings.HasPrefix(strings.ToLower(strings.TrimSpace(parts[3])), "data:") {
+			return s
 		}
 
 		address, err := absoluteURL(parts[3], uri)
