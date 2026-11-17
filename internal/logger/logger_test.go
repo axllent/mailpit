@@ -133,17 +133,43 @@ func TestFileOutputIsQuoted(t *testing.T) {
 }
 
 // setLogging applies logging settings for a test and restores them (and closes any
-// log file that was opened) afterwards.
+// log file that was opened) afterwards. The default level is the one Mailpit runs
+// with, not the one tests otherwise log with (errors only).
 func setLogging(t *testing.T, logFile string, verbose, quiet, none bool) {
 	t.Helper()
 
-	oFile, oVerbose, oQuiet, oNone := LogFile, VerboseLogging, QuietLogging, NoLogging
+	oFile, oVerbose, oQuiet, oNone, oDefault := LogFile, VerboseLogging, QuietLogging, NoLogging, defaultLevel
 	t.Cleanup(func() {
-		LogFile, VerboseLogging, QuietLogging, NoLogging = oFile, oVerbose, oQuiet, oNone
+		LogFile, VerboseLogging, QuietLogging, NoLogging, defaultLevel = oFile, oVerbose, oQuiet, oNone, oDefault
 		Log().sl.Handler().(*logrusHandler).refreshOutput() // closes the test's log file
 	})
 
-	LogFile, VerboseLogging, QuietLogging, NoLogging = logFile, verbose, quiet, none
+	LogFile, VerboseLogging, QuietLogging, NoLogging, defaultLevel = logFile, verbose, quiet, none, slog.LevelInfo
+}
+
+// Tests log only errors unless a level is set: the info and warning messages of the
+// code they run used to fill the output of the tests (17,000 lines for one package).
+func TestTestsLogOnlyErrors(t *testing.T) {
+	if defaultLevel != slog.LevelError {
+		t.Fatalf("the default level in tests is %v, want %v", defaultLevel, slog.LevelError)
+	}
+
+	oVerbose, oQuiet, oNone := VerboseLogging, QuietLogging, NoLogging
+	t.Cleanup(func() { VerboseLogging, QuietLogging, NoLogging = oVerbose, oQuiet, oNone })
+	VerboseLogging, QuietLogging, NoLogging = false, false, false
+
+	h := Log().sl.Handler()
+	for level, want := range map[slog.Level]bool{slog.LevelDebug: false, slog.LevelInfo: false, slog.LevelWarn: false, slog.LevelError: true} {
+		if got := h.Enabled(context.Background(), level); got != want {
+			t.Errorf("level %v enabled = %v, want %v", level, got, want)
+		}
+	}
+
+	// control: a level which is set still applies
+	VerboseLogging = true
+	if !h.Enabled(context.Background(), slog.LevelDebug) {
+		t.Error("debug messages are not logged with VerboseLogging set")
+	}
 }
 
 func readFile(t *testing.T, path string) string {

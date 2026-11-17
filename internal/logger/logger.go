@@ -14,6 +14,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"testing"
 	"unicode"
 	"unicode/utf8"
 )
@@ -34,7 +35,17 @@ var (
 	NoLogging bool
 	// LogFile sets a log file
 	LogFile string
+
+	// defaultLevel is the minimum level to log when none of the settings above is set. Tests log only errors, as
+	// the info and warning messages of the code they run (thousands, for some) bury what the tests say.
+	defaultLevel = slog.LevelInfo
 )
+
+func init() {
+	if testing.Testing() {
+		defaultLevel = slog.LevelError
+	}
+}
 
 // Log returns the logger instance, initialising it on first call.
 //
@@ -67,7 +78,7 @@ func currentLevel() slog.Level {
 		return slog.Level(100) // above all real levels, silences all output
 	}
 
-	return slog.LevelInfo
+	return defaultLevel
 }
 
 // logrusHandler is a slog.Handler that formats output to match logrus TextFormatter.
