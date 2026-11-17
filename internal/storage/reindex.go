@@ -41,6 +41,11 @@ func ReindexAll() {
 
 	logger.Log().Infof("reindexing %d messages", total)
 
+	// there is nothing to do, and the progress below divides by the total
+	if total == 0 {
+		return
+	}
+
 	type updateStruct struct {
 		// ID in database
 		ID string
