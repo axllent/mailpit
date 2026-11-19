@@ -38,8 +38,9 @@ export default {
 			// remove base tag, if set
 			let h = this.message.HTML.replace(/<base .*>/im, "");
 
-			// Outlook hacks - else screenshot returns blank image
-			h = h.replace(/<html [^>]+>/gim, "<html>"); // remove html attributes
+			// Outlook hacks - else screenshot returns blank image.
+			// Outlook's xmlns:* attributes on the html element are removed by DOMPurify below, so its other
+			// attributes such as style (root font-size, used by rem units) and lang are kept.
 			h = h.replace(/<o:p><\/o:p>/gm, ""); // remove empty `<o:p></o:p>` tags
 			h = h.replace(/<o:/gm, "<"); // replace `<o:p>` tags with `<p>`
 			h = h.replace(/<\/o:/gm, "</"); // replace `</o:p>` tags with `</p>`
