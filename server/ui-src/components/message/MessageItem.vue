@@ -487,6 +487,37 @@ export default {
 			</div>
 		</div>
 
+		<div
+			v-if="message.Actions && message.Actions.length"
+			id="email-actions"
+			data-testid="email-actions"
+			class="my-3 d-print-none"
+		>
+			<div class="small text-muted mb-1">Email markup actions (preview only, these buttons do nothing)</div>
+			<div class="d-flex flex-wrap gap-2">
+				<span
+					v-for="(a, i) in message.Actions"
+					:key="i"
+					data-testid="email-action"
+					class="btn btn-sm rounded-pill"
+					style="cursor: default"
+					:class="a.Errors && a.Errors.length ? 'btn-outline-danger' : 'btn-outline-primary'"
+					:title="(a.URL || 'no target') + (a.Errors && a.Errors.length ? '\n' + a.Errors.join('\n') : '')"
+				>
+					<i v-if="a.Errors && a.Errors.length" class="bi bi-exclamation-triangle me-1"></i>
+					{{ a.Name || "(no name)" }}
+					<span class="text-muted small ms-1">{{ a.Type }}</span>
+				</span>
+			</div>
+			<ul v-if="message.Actions.some((a) => a.Errors && a.Errors.length)" class="small text-danger mt-1 mb-0">
+				<template v-for="(a, i) in message.Actions">
+					<li v-for="(e, j) in a.Errors" :key="i + '-' + j">
+						{{ a.Name || a.Type || "Action " + (i + 1) }}: {{ e }}
+					</li>
+				</template>
+			</ul>
+		</div>
+
 		<nav id="nav-tab" class="nav nav-tabs my-3 d-print-none" :class="'checks-' + enabledCheckCount" role="tablist">
 			<template v-if="message.HTML">
 				<div class="btn-group">
