@@ -427,6 +427,9 @@ func GetMessage(id string) (*Message, error) {
 		obj.ListUnsubscribe.HeaderPost = env.GetHeader("List-Unsubscribe-Post")
 	}
 
+	// email actions (schema.org JSON-LD markup)
+	obj.Actions = tools.ParseEmailActions(obj.HTML)
+
 	// mark message as read
 	if err := MarkRead([]string{id}); err != nil {
 		return &obj, err

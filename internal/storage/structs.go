@@ -3,6 +3,8 @@ package storage
 import (
 	"net/mail"
 	"time"
+
+	"github.com/axllent/mailpit/internal/tools"
 )
 
 // Message data excluding physical attachments
@@ -29,6 +31,8 @@ type Message struct {
 	Subject string
 	// List-Unsubscribe header information
 	ListUnsubscribe ListUnsubscribe
+	// Email actions (quick action buttons) found in the HTML schema.org JSON-LD markup
+	Actions []tools.EmailAction
 	// Message RFC3339Nano date & time (if set), else date & time received
 	// ([extended RFC3339](https://tools.ietf.org/html/rfc3339#section-5.6) format with optional nano seconds)
 	Date time.Time

@@ -1474,6 +1474,36 @@
       "x-go-name": "Triggers",
       "x-go-package": "github.com/axllent/mailpit/internal/smtpd/chaos"
     },
+    "EmailAction": {
+      "description": "EmailAction is an email action (quick action button, as rendered by Gmail and\nother clients that support it) found in the schema.org JSON-LD markup of an HTML message",
+      "type": "object",
+      "properties": {
+        "Description": {
+          "description": "Description (if set)",
+          "type": "string"
+        },
+        "Errors": {
+          "description": "Validation errors that would prevent mail clients from showing the action",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "Name": {
+          "description": "Button label",
+          "type": "string"
+        },
+        "Type": {
+          "description": "schema.org action type, eg: ConfirmAction",
+          "type": "string"
+        },
+        "URL": {
+          "description": "Action target URL (if any)",
+          "type": "string"
+        }
+      },
+      "x-go-package": "github.com/axllent/mailpit/internal/tools"
+    },
     "HTMLCheckResponse": {
       "description": "Response represents the HTML check response struct",
       "type": "object",
@@ -1721,6 +1751,13 @@
       "description": "Message data excluding physical attachments",
       "type": "object",
       "properties": {
+        "Actions": {
+          "description": "Email actions (quick action buttons) found in the HTML schema.org JSON-LD markup",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/EmailAction"
+          }
+        },
         "Attachments": {
           "description": "Message attachments",
           "type": "array",
