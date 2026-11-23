@@ -9,6 +9,7 @@ import { Tooltip } from "bootstrap";
 import commonMixins from "../../mixins/CommonMixins";
 import { mailbox } from "../../stores/mailbox";
 import { sanitizeHTML } from "../../utils/sanitize";
+import { extractStructuredData } from "../../utils/structuredData";
 import { textToHTML } from "../../utils/textToHTML";
 import hljs from "highlight.js/lib/core";
 import xml from "highlight.js/lib/languages/xml";
@@ -85,6 +86,11 @@ export default {
 				mailbox.showLinkCheck ||
 				(mailbox.showSpamCheck && (mailbox.uiConfig.SpamAssassin || mailbox.uiConfig.Rspamd))
 			);
+		},
+
+		// JSON-LD blocks in the HTML, which are removed from the preview
+		structuredData() {
+			return extractStructuredData(this.message.HTML);
 		},
 
 		// remove bad HTML, JavaScript, iframes etc
@@ -787,6 +793,26 @@ export default {
 				aria-labelledby="nav-html-source-tab"
 				tabindex="0"
 			>
+				<div v-if="structuredData.blocks.length" data-testid="structured-data" class="mb-3">
+					<h6 class="mb-1">
+						Structured data (JSON-LD)
+						<span class="text-muted small fw-normal">
+							- {{ structuredData.blocks.length }}
+							{{ structuredData.blocks.length === 1 ? "block" : "blocks" }} found in the HTML, not
+							validated or interpreted
+						</span>
+					</h6>
+					<div v-for="(b, i) in structuredData.blocks" :key="i" class="mb-2">
+						<div v-if="b.error" class="small text-danger">Invalid JSON: {{ b.error }}</div>
+						<div v-if="b.note" class="small text-muted">{{ b.note }}</div>
+						<pre data-testid="structured-data-block"><code>{{ b.text }}</code></pre>
+					</div>
+					<div v-if="structuredData.truncated" class="small text-muted">
+						Some blocks are not shown because there are too many, or they are too large.
+					</div>
+					<hr />
+					<h6 class="mb-1">HTML source</h6>
+				</div>
 				<pre class="language-html"><code class="language-html">{{ message.HTML }}</code></pre>
 			</div>
 			<div
