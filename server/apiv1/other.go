@@ -16,24 +16,6 @@ import (
 
 // HTMLCheck returns a summary of the HTML client support
 func HTMLCheck(w http.ResponseWriter, r *http.Request) {
-	// swagger:route GET /api/v1/message/{ID}/html-check other HTMLCheckParams
-	//
-	// # HTML check
-	//
-	// Returns the summary of the message HTML checker.
-	//
-	// The ID can be set to `latest` to return the latest message.
-	//
-	//	Produces:
-	//	  - application/json
-	//
-	//	Schemes: http, https
-	//
-	//	Responses:
-	//	  200: HTMLCheckResponse
-	//    400: ErrorResponse
-	//    404: NotFoundResponse
-
 	id, ok := resolveMessageID(w, r, r.PathValue("id"))
 	if !ok {
 		return
@@ -74,24 +56,6 @@ func HTMLCheck(w http.ResponseWriter, r *http.Request) {
 
 // LinkCheck returns a summary of links in the email
 func LinkCheck(w http.ResponseWriter, r *http.Request) {
-	// swagger:route GET /api/v1/message/{ID}/link-check other LinkCheckParams
-	//
-	// # Link check
-	//
-	// Returns the summary of the message Link checker.
-	//
-	// The ID can be set to `latest` to return the latest message.
-	//
-	//	Produces:
-	//	  - application/json
-	//
-	//	Schemes: http, https
-	//
-	//	Responses:
-	//	  200: LinkCheckResponse
-	//    400: ErrorResponse
-	//    404: NotFoundResponse
-
 	if config.DemoMode {
 		httpError(w, "this functionality has been disabled for demonstration purposes")
 		return
@@ -125,24 +89,6 @@ func LinkCheck(w http.ResponseWriter, r *http.Request) {
 
 // SpamAssassinCheck returns a summary of SpamAssassin results (if enabled)
 func SpamAssassinCheck(w http.ResponseWriter, r *http.Request) {
-	// swagger:route GET /api/v1/message/{ID}/sa-check other SpamAssassinCheckParams
-	//
-	// # SpamAssassin check
-	//
-	// Returns the SpamAssassin summary (if enabled) of the message.
-	//
-	// The ID can be set to `latest` to return the latest message.
-	//
-	//	Produces:
-	//	  - application/json
-	//
-	//	Schemes: http, https
-	//
-	//	Responses:
-	//	  200: SpamAssassinResponse
-	//    400: ErrorResponse
-	//    404: NotFoundResponse
-
 	id, ok := resolveMessageID(w, r, r.PathValue("id"))
 	if !ok {
 		return
@@ -176,24 +122,6 @@ func SpamAssassinCheck(w http.ResponseWriter, r *http.Request) {
 
 // RspamdCheck returns a summary of Rspamd results (if enabled)
 func RspamdCheck(w http.ResponseWriter, r *http.Request) {
-	// swagger:route GET /api/v1/message/{ID}/rspamd-check other RspamdCheckParams
-	//
-	// # Rspamd check
-	//
-	// Returns the Rspamd summary (if enabled) of the message.
-	//
-	// The ID can be set to `latest` to return the latest message.
-	//
-	//	Produces:
-	//	  - application/json
-	//
-	//	Schemes: http, https
-	//
-	//	Responses:
-	//	  200: RspamdResponse
-	//    400: ErrorResponse
-	//    404: NotFoundResponse
-
 	id, ok := resolveMessageID(w, r, r.PathValue("id"))
 	if !ok {
 		return

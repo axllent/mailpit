@@ -200,7 +200,7 @@ export default {
 											<div class="col-12">
 												<RouterLink to="/api/v1/" class="btn btn-primary w-100" target="_blank">
 													<i class="bi bi-braces"></i>
-													OpenAPI / Swagger API documentation
+													OpenAPI documentation
 												</RouterLink>
 											</div>
 											<div class="col-sm-6">

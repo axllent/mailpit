@@ -16,29 +16,19 @@ import (
 	"github.com/axllent/mailpit/internal/tools"
 )
 
+// ReleaseRequest is the request body for releasing a message
+//
+// openapi:model ReleaseRequest
+type ReleaseRequest struct {
+	// Array of email addresses to relay the message to
+	//
+	// required: true
+	// example: ["user1@example.com", "user2@example.com"]
+	To []string
+}
+
 // ReleaseMessage (method: POST) will release a message via a pre-configured external SMTP server.
 func ReleaseMessage(w http.ResponseWriter, r *http.Request) {
-	// swagger:route POST /api/v1/message/{ID}/release message ReleaseMessageParams
-	//
-	// # Release message
-	//
-	// Release a message via a pre-configured external SMTP server. This is only enabled if message relaying has been configured.
-	//
-	// The ID can be set to `latest` to reference the latest message.
-	//
-	//	Consumes:
-	//	  - application/json
-	//
-	//	Produces:
-	//	  - text/plain
-	//
-	//	Schemes: http, https
-	//
-	//	Responses:
-	//	  200: OKResponse
-	//    400: ErrorResponse
-	//    404: NotFoundResponse
-
 	if config.DemoMode {
 		httpError(w, "this functionality has been disabled for demonstration purposes")
 		return
@@ -57,9 +47,7 @@ func ReleaseMessage(w http.ResponseWriter, r *http.Request) {
 
 	decoder := json.NewDecoder(r.Body)
 
-	var data struct {
-		To []string
-	}
+	var data ReleaseRequest
 
 	if err := decoder.Decode(&data); err != nil {
 		httpError(w, err.Error())

@@ -2,7 +2,7 @@ package htmlcheck
 
 // Response represents the HTML check response struct
 //
-// swagger:model HTMLCheckResponse
+// openapi:model HTMLCheckResponse
 type Response struct {
 	// List of warnings from tests
 	Warnings []Warning `json:"Warnings"`
@@ -14,7 +14,7 @@ type Response struct {
 
 // Warning represents a failed test
 //
-// swagger:model HTMLCheckWarning
+// openapi:model HTMLCheckWarning
 type Warning struct {
 	// Slug identifier
 	Slug string `json:"Slug"`
@@ -40,7 +40,7 @@ type Warning struct {
 
 // Result struct
 //
-// swagger:model HTMLCheckResult
+// openapi:model HTMLCheckResult
 type Result struct {
 	// Friendly name of result, combining family, platform & version
 	Name string `json:"Name"`
@@ -58,7 +58,7 @@ type Result struct {
 
 // Score struct
 //
-// swagger:model HTMLCheckScore
+// openapi:model HTMLCheckScore
 type Score struct {
 	// Number of matches in the document
 	Found int `json:"Found"`
@@ -72,7 +72,7 @@ type Score struct {
 
 // Total weighted result for all scores
 //
-// swagger:model HTMLCheckTotal
+// openapi:model HTMLCheckTotal
 type Total struct {
 	// Total number of tests done
 	Tests int `json:"Tests"`

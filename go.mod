@@ -19,6 +19,8 @@ require (
 	github.com/rqlite/gorqlite v0.0.0-20261020015727-7224ce2bd419
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/pflag v1.1.0
+	github.com/swaggest/jsonschema-go v0.3.78
+	github.com/swaggest/openapi-go v0.2.61
 	github.com/tg123/go-htpasswd v1.2.5
 	github.com/vanng822/go-premailer v1.38.0
 	golang.org/x/crypto v0.59.0
@@ -52,10 +54,12 @@ require (
 	github.com/olekukonko/tablewriter v1.1.5 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	github.com/ssor/bom v0.0.0-20170718123548-6386211fdfcf // indirect
+	github.com/swaggest/refl v1.4.0 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/vanng822/css v1.0.1 // indirect
 	golang.org/x/mod v0.43.0 // indirect
 	golang.org/x/sys v0.50.0 // indirect
+	gopkg.in/yaml.v2 v2.4.0 // indirect
 	modernc.org/libc v1.81.2 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.13.0 // indirect

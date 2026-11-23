@@ -54,6 +54,7 @@ jobs:
           ./internal/linkcheck \
           ./internal/logger \
           ./internal/mimeparser \
+          ./internal/openapi \
           ./internal/pop3 \
           ./internal/prometheus \
           ./internal/rspamd \
@@ -95,10 +96,10 @@ jobs:
       if: startsWith(matrix.os, 'ubuntu') == true
       run: npm run package
 
-    # # validate the swagger file
+    # # validate the OpenAPI file
     # - name: Validate OpenAPI definition
     #   if: startsWith(matrix.os, 'ubuntu') == true
     #   uses: swaggerexpert/swagger-editor-validate@v1
     #   with:
-    #     definition-file: server/ui/api/v1/swagger.json
+    #     definition-file: server/ui/api/v1/openapi.json
     #     default-timeout: 20000

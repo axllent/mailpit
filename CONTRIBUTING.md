@@ -18,6 +18,8 @@ Please ensure your code is clean and well-commented, and [passes linting](https:
 
 For frontend changes, run `npm test`, `npm run lint`, and `npm run package`.
 
+For API changes (adding or changing a route, or its request and response types), edit the route table in `server/apiv1/routes.go` and regenerate the OpenAPI specification with `go run ./internal/openapi/gen`, then commit the updated `server/ui/api/v1/openapi.json`. See the [OpenAPI README](https://github.com/axllent/mailpit/blob/develop/internal/openapi/README.md) for details.
+
 Note that while assistance from AI tools is perfectly acceptable, **"[vibe coded](https://en.wikipedia.org/wiki/Vibe_coding)" pull requests will most likely not be accepted.**
 We value the unique insights and creativity that individual contributors bring to the project.
 

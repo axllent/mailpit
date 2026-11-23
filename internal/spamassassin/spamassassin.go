@@ -25,7 +25,7 @@ var (
 
 // Result is a SpamAssassin result
 //
-// swagger:model SpamAssassinResponse
+// openapi:model SpamAssassinResponse
 type Result struct {
 	// Whether the message is spam or not
 	IsSpam bool
@@ -41,6 +41,8 @@ type Result struct {
 }
 
 // Rule struct
+//
+// openapi:model Rule
 type Rule struct {
 	// Spam rule score
 	Score float64

@@ -18,24 +18,6 @@ var (
 
 // Thumbnail returns a thumbnail image for an attachment (images only)
 func Thumbnail(w http.ResponseWriter, r *http.Request) {
-	// swagger:route GET /api/v1/message/{ID}/part/{PartID}/thumb message ThumbnailParams
-	//
-	// # Get an attachment image thumbnail
-	//
-	// This will return a cropped 180x120 JPEG thumbnail of an image attachment.
-	// If the image is smaller than 180x120 then the image is padded. If the attachment is not an image then a blank image is returned.
-	//
-	// The ID can be set to `latest` to return the latest message.
-	//
-	//	Produces:
-	//	  - image/jpeg
-	//
-	//	Schemes: http, https
-	//
-	//	Responses:
-	//	  200: BinaryResponse
-	//    400: ErrorResponse
-
 	id, ok := resolveMessageID(w, r, r.PathValue("id"))
 	if !ok {
 		return

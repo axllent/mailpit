@@ -21,27 +21,6 @@ var maxRenderHTMLBytes = 10 << 20
 
 // GetMessageHTML (method: GET) returns a rendered version of a message's HTML part
 func GetMessageHTML(w http.ResponseWriter, r *http.Request) {
-	// swagger:route GET /view/{ID}.html testing GetMessageHTMLParams
-	//
-	// # Render message HTML part
-	//
-	// Renders just the message's HTML part which can be used for UI integration testing.
-	// Attached inline images are modified to link to the API provided they exist.
-	// Note that is the message does not contain a HTML part then an 404 error is returned.
-	// A HTML part which is larger than 10 MiB is not rendered, and a 413 error is returned.
-	//
-	// The ID can be set to `latest` to return the latest message.
-	//
-	//	Produces:
-	//	- text/html
-	//
-	//	Schemes: http, https
-	//
-	//	Responses:
-	//		200: HTMLResponse
-	//		400: ErrorResponse
-	//      404: NotFoundResponse
-
 	path := strings.TrimPrefix(r.URL.Path, config.Webroot+"view/")
 	id, ok := resolveMessageID(w, r, strings.TrimSuffix(path, ".html"))
 	if !ok {
@@ -140,24 +119,6 @@ func embedLinks(htmlStr, nonce string) string {
 
 // GetMessageText (method: GET) returns a message's text part
 func GetMessageText(w http.ResponseWriter, r *http.Request) {
-	// swagger:route GET /view/{ID}.txt testing GetMessageTextParams
-	//
-	// # Render message text part
-	//
-	// Renders just the message's text part which can be used for UI integration testing.
-	//
-	// The ID can be set to `latest` to return the latest message.
-	//
-	//	Produces:
-	//	- text/plain
-	//
-	//	Schemes: http, https
-	//
-	//	Responses:
-	//		200: TextResponse
-	//		400: ErrorResponse
-	//      404: NotFoundResponse
-
 	path := strings.TrimPrefix(r.URL.Path, config.Webroot+"view/")
 	id, ok := resolveMessageID(w, r, strings.TrimSuffix(path, ".txt"))
 	if !ok {

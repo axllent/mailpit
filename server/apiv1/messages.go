@@ -11,53 +11,84 @@ import (
 	"github.com/axllent/mailpit/internal/tools"
 )
 
+// SetReadStatusRequest is the request body for setting the read status of messages
+//
+// openapi:model SetReadStatusRequest
+type SetReadStatusRequest struct {
+	// Read status
+	//
+	// required: false
+	// default: false
+	// example: true
+	Read bool
+
+	// Optional array of message database IDs
+	//
+	// required: false
+	// default: []
+	// example: ["4oRBnPtCXgAqZniRhzLNmS", "hXayS6wnCgNnt6aFTvmOF6"]
+	IDs []string
+
+	// Optional messages matching a search
+	//
+	// required: false
+	// example: tag:backups
+	Search string
+}
+
+// DeleteMessagesRequest is the request body for deleting messages
+//
+// openapi:model DeleteMessagesRequest
+type DeleteMessagesRequest struct {
+	// Array of message database IDs
+	//
+	// required: false
+	// example: ["4oRBnPtCXgAqZniRhzLNmS", "hXayS6wnCgNnt6aFTvmOF6"]
+	IDs []string
+}
+
+// ForceRequestBody is a marker which makes the OpenAPI generator document the body of this DELETE request.
+func (DeleteMessagesRequest) ForceRequestBody() {}
+
 // MessagesSummary is a summary of a list of messages
+//
+// openapi:model MessagesSummary
 type MessagesSummary struct {
 	// Total number of messages in mailbox
+	// example: 42
 	Total uint64 `json:"total"`
 
 	// Total number of unread messages in mailbox
+	// example: 10
 	Unread uint64 `json:"unread"`
 
 	// Legacy - now undocumented in API specs but left for backwards compatibility.
 	// Removed from API documentation 2023-07-12
-	// swagger:ignore
+	// openapi:ignore
 	Count uint64 `json:"count"`
 
 	// Total number of messages matching current query
+	// example: 12
 	MessagesCount uint64 `json:"messages_count"`
 
 	// Total number of unread messages matching current query
+	// example: 2
 	MessagesUnreadCount uint64 `json:"messages_unread"`
 
 	// Pagination offset
+	// example: 0
 	Start int `json:"start"`
 
 	// All current tags
+	// example: ["Tag 1", "Tag 2"]
 	Tags []string `json:"tags"`
 
 	// Messages summary
-	// in: body
 	Messages []storage.MessageSummary `json:"messages"`
 }
 
 // GetMessages returns a paginated list of messages as JSON
 func GetMessages(w http.ResponseWriter, r *http.Request) {
-	// swagger:route GET /api/v1/messages messages GetMessagesParams
-	//
-	// # List messages
-	//
-	// Returns messages from the mailbox ordered from newest to oldest.
-	//
-	//	Produces:
-	//	  - application/json
-	//
-	//	Schemes: http, https
-	//
-	//	Responses:
-	//	  200: MessagesSummaryResponse
-	//    400: ErrorResponse
-
 	start, beforeTS, limit := getStartLimit(r)
 
 	messages, err := storage.List(start, beforeTS, limit)
@@ -87,32 +118,9 @@ func GetMessages(w http.ResponseWriter, r *http.Request) {
 
 // SetReadStatus (method: PUT) will update the status to Read/Unread for all provided IDs.
 func SetReadStatus(w http.ResponseWriter, r *http.Request) {
-	// swagger:route PUT /api/v1/messages messages SetReadStatusParams
-	//
-	// # Set read status
-	//
-	// You can optionally provide an array of IDs or a search string.
-	// If neither IDs nor search is provided then all mailbox messages are updated.
-	//
-	//	Consumes:
-	//	  - application/json
-	//
-	//	Produces:
-	//	  - text/plain
-	//
-	//	Schemes: http, https
-	//
-	//	Responses:
-	//	  200: OKResponse
-	//    400: ErrorResponse
-
 	decoder := json.NewDecoder(r.Body)
 
-	var data struct {
-		Read   bool
-		IDs    []string
-		Search string
-	}
+	var data SetReadStatusRequest
 
 	err := decoder.Decode(&data)
 	if err != nil {
@@ -168,28 +176,8 @@ func SetReadStatus(w http.ResponseWriter, r *http.Request) {
 
 // DeleteMessages (method: DELETE) deletes all messages matching IDS.
 func DeleteMessages(w http.ResponseWriter, r *http.Request) {
-	// swagger:route DELETE /api/v1/messages messages DeleteMessagesParams
-	//
-	// # Delete messages
-	//
-	// Delete individual or all messages. If no IDs are provided then all messages are deleted.
-	//
-	//	Consumes:
-	//	  - application/json
-	//
-	//	Produces:
-	//	  - text/plain
-	//
-	//	Schemes: http, https
-	//
-	//	Responses:
-	//	  200: OKResponse
-	//    400: ErrorResponse
-
 	decoder := json.NewDecoder(r.Body)
-	var data struct {
-		IDs []string
-	}
+	var data DeleteMessagesRequest
 	// an empty body (io.EOF) is a valid request to delete all messages
 	if err := decoder.Decode(&data); err != nil && !errors.Is(err, io.EOF) {
 		httpError(w, err.Error())
@@ -214,21 +202,6 @@ func DeleteMessages(w http.ResponseWriter, r *http.Request) {
 
 // Search returns the latest messages as JSON
 func Search(w http.ResponseWriter, r *http.Request) {
-	// swagger:route GET /api/v1/search messages SearchParams
-	//
-	// # Search messages
-	//
-	// Returns messages matching [a search](https://mailpit.axllent.org/docs/usage/search-filters/), sorted by received date (descending).
-	//
-	//	Produces:
-	//	  - application/json
-	//
-	//	Schemes: http, https
-	//
-	//	Responses:
-	//	  200: MessagesSummaryResponse
-	//    400: ErrorResponse
-
 	search := strings.TrimSpace(r.URL.Query().Get("query"))
 	if search == "" {
 		httpError(w, "Error: no search query")
@@ -271,21 +244,6 @@ func Search(w http.ResponseWriter, r *http.Request) {
 
 // DeleteSearch will delete all messages matching a search
 func DeleteSearch(w http.ResponseWriter, r *http.Request) {
-	// swagger:route DELETE /api/v1/search messages DeleteSearchParams
-	//
-	// # Delete messages by search
-	//
-	// Delete all messages matching [a search](https://mailpit.axllent.org/docs/usage/search-filters/).
-	//
-	//	Produces:
-	//	  - application/json
-	//
-	//	Schemes: http, https
-	//
-	//	Responses:
-	//	  200: OKResponse
-	//    400: ErrorResponse
-
 	search := strings.TrimSpace(r.URL.Query().Get("query"))
 	if search == "" {
 		httpError(w, "Error: no search query")
