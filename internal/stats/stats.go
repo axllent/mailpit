@@ -58,40 +58,59 @@ var (
 	smtpIgnored      atomic.Uint64
 )
 
+// RuntimeStats are the statistics since Mailpit was started
+//
+// openapi:model RuntimeStats
+type RuntimeStats struct {
+	// Mailpit server uptime in seconds
+	// example: 3600
+	Uptime uint64
+	// Current memory usage in bytes
+	// example: 1048576
+	Memory uint64
+	// Database runtime messages deleted
+	// example: 5
+	MessagesDeleted uint64
+	// Accepted runtime SMTP messages
+	// example: 100
+	SMTPAccepted uint64
+	// Total runtime accepted messages size in bytes
+	// example: 204800
+	SMTPAcceptedSize uint64
+	// Rejected runtime SMTP messages
+	// example: 10
+	SMTPRejected uint64
+	// Ignored runtime SMTP messages (when using --ignore-duplicate-ids)
+	// example: 2
+	SMTPIgnored uint64
+}
+
 // AppInformation struct
-// swagger:model AppInformation
+// openapi:model AppInformation
 type AppInformation struct {
 	// Current Mailpit version
+	// example: v1.2.3
 	Version string
 	// Latest Mailpit version
+	// example: v1.3.0
 	LatestVersion string
 	// Database path
+	// example: /path/to/database.db
 	Database string
 	// Database size in bytes
+	// example: 123456
 	DatabaseSize uint64
 	// Total number of messages in the database
+	// example: 42
 	Messages uint64
 	// Total number of messages in the database
+	// example: 10
 	Unread uint64
 	// Tags and message totals per tag
+	// example: {"My Tag 1": 5, "Other Tag": 2}
 	Tags map[string]int64
 	// Runtime statistics
-	RuntimeStats struct {
-		// Mailpit server uptime in seconds
-		Uptime uint64
-		// Current memory usage in bytes
-		Memory uint64
-		// Database runtime messages deleted
-		MessagesDeleted uint64
-		// Accepted runtime SMTP messages
-		SMTPAccepted uint64
-		// Total runtime accepted messages size in bytes
-		SMTPAcceptedSize uint64
-		// Rejected runtime SMTP messages
-		SMTPRejected uint64
-		// Ignored runtime SMTP messages (when using --ignore-duplicate-ids)
-		SMTPIgnored uint64
-	}
+	RuntimeStats RuntimeStats
 }
 
 // Calculates exponential backoff duration based on the error count, from 2 minutes up to maxBackoff.

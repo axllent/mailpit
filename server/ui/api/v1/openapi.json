@@ -1,0 +1,2863 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Mailpit API",
+    "description": "OpenAPI 3.1 documentation for [Mailpit](https://github.com/axllent/mailpit).",
+    "contact": {
+      "name": "GitHub",
+      "url": "https://github.com/axllent/mailpit"
+    },
+    "license": {
+      "name": "MIT license",
+      "url": "https://github.com/axllent/mailpit/blob/develop/LICENSE"
+    },
+    "version": "v1"
+  },
+  "paths": {
+    "/api/v1/chaos": {
+      "get": {
+        "tags": [
+          "testing"
+        ],
+        "summary": "Get Chaos triggers",
+        "description": "Returns the current Chaos triggers configuration.\nThis API route will return an error if Chaos is not enabled at runtime.",
+        "operationId": "getChaos",
+        "responses": {
+          "200": {
+            "description": "Response for the Chaos triggers configuration",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChaosTriggers"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Server error will return with a 400 status code\nwith the error message in the body",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "testing"
+        ],
+        "summary": "Set Chaos triggers",
+        "description": "Set the Chaos triggers configuration and return the updated values.\nThis API route will return an error if Chaos is not enabled at runtime.\n\nIf any triggers are omitted from the request, then those are reset to their\ndefault values with a 0% probability (ie: disabled).\nSetting a blank `{}` will reset all triggers to their default values.",
+        "operationId": "setChaosParams",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChaosTriggers"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Response for the Chaos triggers configuration",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChaosTriggers"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Server error will return with a 400 status code\nwith the error message in the body",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/info": {
+      "get": {
+        "tags": [
+          "application"
+        ],
+        "summary": "Get application information",
+        "description": "Returns basic runtime information, message totals and latest release version.",
+        "operationId": "AppInformation",
+        "responses": {
+          "200": {
+            "description": "Application information",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppInformation"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Server error will return with a 400 status code\nwith the error message in the body",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/message/{id}": {
+      "get": {
+        "tags": [
+          "message"
+        ],
+        "summary": "Get message summary",
+        "description": "Returns the summary of a message, marking the message as read.\n\nThe ID can be set to `latest` to return the latest message.",
+        "operationId": "GetMessageParams",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Message database ID or \"latest\"",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Message",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Message"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Server error will return with a 400 status code\nwith the error message in the body",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found error will return a 404 status code",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/message/{id}/headers": {
+      "get": {
+        "tags": [
+          "message"
+        ],
+        "summary": "Get message headers",
+        "description": "Returns the message headers as an array. Note that header keys are returned alphabetically.\n\nThe ID can be set to `latest` to return the latest message headers.",
+        "operationId": "GetHeadersParams",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Message database ID or \"latest\"",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Message headers",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "type": "object"
+                },
+                "examples": {
+                  "Example": {
+                    "value": {
+                      "Content-Type": [
+                        "text/plain; charset=utf-8"
+                      ],
+                      "Date": [
+                        "Mon, 02 Jan 2006 15:04:05 -0700"
+                      ],
+                      "From": [
+                        "John Doe \u003cjohn@example.com\u003e"
+                      ],
+                      "Message-Id": [
+                        "\u003cCA+12345@example.com\u003e"
+                      ],
+                      "Subject": [
+                        "Message subject"
+                      ],
+                      "To": [
+                        "Jane Doe \u003cjane@example.com\u003e"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Server error will return with a 400 status code\nwith the error message in the body",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found error will return a 404 status code",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/message/{id}/html-check": {
+      "get": {
+        "tags": [
+          "other"
+        ],
+        "summary": "HTML check",
+        "description": "Returns the summary of the message HTML checker.\n\nThe ID can be set to `latest` to return the latest message.",
+        "operationId": "HTMLCheckParams",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Message database ID or \"latest\"",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "HTMLCheckResponse",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTMLCheckResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Server error will return with a 400 status code\nwith the error message in the body",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found error will return a 404 status code",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/message/{id}/link-check": {
+      "get": {
+        "tags": [
+          "other"
+        ],
+        "summary": "Link check",
+        "description": "Returns the summary of the message Link checker.\n\nThe ID can be set to `latest` to return the latest message.",
+        "operationId": "LinkCheckParams",
+        "parameters": [
+          {
+            "name": "follow",
+            "in": "query",
+            "description": "Follow redirects",
+            "schema": {
+              "default": "false",
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Message database ID or \"latest\"",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "LinkCheckResponse",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LinkCheckResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Server error will return with a 400 status code\nwith the error message in the body",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found error will return a 404 status code",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/message/{id}/part/{partID}": {
+      "get": {
+        "tags": [
+          "message"
+        ],
+        "summary": "Get message attachment",
+        "description": "This will return the attachment part using the appropriate Content-Type.\n\nThe ID can be set to `latest` to reference the latest message.",
+        "operationId": "AttachmentParams",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Message database ID or \"latest\"",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "partID",
+            "in": "path",
+            "description": "Attachment part ID",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Binary data response which inherits the attachment's content type.",
+            "content": {
+              "application/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BinaryData"
+                }
+              },
+              "image/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BinaryData"
+                }
+              },
+              "text/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BinaryData"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Server error will return with a 400 status code\nwith the error message in the body",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found error will return a 404 status code",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/message/{id}/part/{partID}/thumb": {
+      "get": {
+        "tags": [
+          "message"
+        ],
+        "summary": "Get an attachment image thumbnail",
+        "description": "This will return a cropped 180x120 JPEG thumbnail of an image attachment.\nIf the image is smaller than 180x120 then the image is padded. If the attachment is not an image then a blank image is returned.\n\nThe ID can be set to `latest` to return the latest message.",
+        "operationId": "ThumbnailParams",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Message database ID or \"latest\"",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "partID",
+            "in": "path",
+            "description": "Attachment part ID",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Binary data response which inherits the attachment's content type.",
+            "content": {
+              "image/jpeg": {
+                "schema": {
+                  "$ref": "#/components/schemas/BinaryData"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Server error will return with a 400 status code\nwith the error message in the body",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/message/{id}/raw": {
+      "get": {
+        "tags": [
+          "message"
+        ],
+        "summary": "Get message source",
+        "description": "Returns the full email source as plain text.\n\nThe ID can be set to `latest` to return the latest message source.",
+        "operationId": "DownloadRawParams",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Message database ID or \"latest\"",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Plain text response",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                },
+                "examples": {
+                  "Example": {
+                    "value": "Date: Mon, 02 Jan 2006 15:04:05 -0700\nFrom: John Doe \u003cjohn@example.com\u003e\nTo: Jane Doe \u003cjane@example.com\u003e\nSubject: Message subject\nMessage-Id: \u003cCA+12345@example.com\u003e\nContent-Type: text/plain; charset=utf-8\n\nMessage body"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Server error will return with a 400 status code\nwith the error message in the body",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found error will return a 404 status code",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/message/{id}/release": {
+      "post": {
+        "tags": [
+          "message"
+        ],
+        "summary": "Release message",
+        "description": "Release a message via a pre-configured external SMTP server. This is only enabled if message relaying has been configured.\n\nThe ID can be set to `latest` to reference the latest message.",
+        "operationId": "ReleaseMessageParams",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Message database ID",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReleaseRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Plain text \"ok\" response",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                },
+                "examples": {
+                  "Example": {
+                    "value": "ok"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Server error will return with a 400 status code\nwith the error message in the body",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found error will return a 404 status code",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/message/{id}/rspamd-check": {
+      "get": {
+        "tags": [
+          "other"
+        ],
+        "summary": "Rspamd check",
+        "description": "Returns the Rspamd summary (if enabled) of the message.\n\nThe ID can be set to `latest` to return the latest message.",
+        "operationId": "RspamdCheckParams",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Message database ID or \"latest\"",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "RspamdResponse",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RspamdResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Server error will return with a 400 status code\nwith the error message in the body",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found error will return a 404 status code",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/message/{id}/sa-check": {
+      "get": {
+        "tags": [
+          "other"
+        ],
+        "summary": "SpamAssassin check",
+        "description": "Returns the SpamAssassin summary (if enabled) of the message.\n\nThe ID can be set to `latest` to return the latest message.",
+        "operationId": "SpamAssassinCheckParams",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Message database ID or \"latest\"",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "SpamAssassinResponse",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SpamAssassinResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Server error will return with a 400 status code\nwith the error message in the body",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found error will return a 404 status code",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/messages": {
+      "get": {
+        "tags": [
+          "messages"
+        ],
+        "summary": "List messages",
+        "description": "Returns messages from the mailbox ordered from newest to oldest.",
+        "operationId": "GetMessagesParams",
+        "parameters": [
+          {
+            "name": "start",
+            "in": "query",
+            "description": "Pagination offset",
+            "schema": {
+              "default": 0,
+              "format": "int64",
+              "type": "integer"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Limit number of results",
+            "schema": {
+              "default": 50,
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Summary of messages",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessagesSummary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Server error will return with a 400 status code\nwith the error message in the body",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "messages"
+        ],
+        "summary": "Set read status",
+        "description": "You can optionally provide an array of IDs or a search string.\nIf neither IDs nor search is provided then all mailbox messages are updated.",
+        "operationId": "SetReadStatusParams",
+        "parameters": [
+          {
+            "name": "tz",
+            "in": "query",
+            "description": "Optional [timezone identifier](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) used only for `before:` \u0026 `after:` searches (eg: \"Pacific/Auckland\").",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetReadStatusRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Plain text \"ok\" response",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                },
+                "examples": {
+                  "Example": {
+                    "value": "ok"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Server error will return with a 400 status code\nwith the error message in the body",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "messages"
+        ],
+        "summary": "Delete messages",
+        "description": "Delete individual or all messages. If no IDs are provided then all messages are deleted.",
+        "operationId": "DeleteMessagesParams",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteMessagesRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Plain text \"ok\" response",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                },
+                "examples": {
+                  "Example": {
+                    "value": "ok"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Server error will return with a 400 status code\nwith the error message in the body",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/search": {
+      "get": {
+        "tags": [
+          "messages"
+        ],
+        "summary": "Search messages",
+        "description": "Returns messages matching [a search](https://mailpit.axllent.org/docs/usage/search-filters/), sorted by received date (descending).",
+        "operationId": "SearchParams",
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "description": "Search query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "start",
+            "in": "query",
+            "description": "Pagination offset",
+            "schema": {
+              "default": "0",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Limit results",
+            "schema": {
+              "default": "50",
+              "type": "string"
+            }
+          },
+          {
+            "name": "tz",
+            "in": "query",
+            "description": "Optional [timezone identifier](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) used only for `before:` \u0026 `after:` searches (eg: \"Pacific/Auckland\").",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Summary of messages",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessagesSummary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Server error will return with a 400 status code\nwith the error message in the body",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "messages"
+        ],
+        "summary": "Delete messages by search",
+        "description": "Delete all messages matching [a search](https://mailpit.axllent.org/docs/usage/search-filters/).",
+        "operationId": "DeleteSearchParams",
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "description": "Search query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tz",
+            "in": "query",
+            "description": "[Timezone identifier](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) used only for `before:` \u0026 `after:` searches (eg: \"Pacific/Auckland\").",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Plain text \"ok\" response",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                },
+                "examples": {
+                  "Example": {
+                    "value": "ok"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Server error will return with a 400 status code\nwith the error message in the body",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/send": {
+      "post": {
+        "tags": [
+          "message"
+        ],
+        "summary": "Send a message",
+        "description": "Send a message via the HTTP API.\n\nA message (and so a request) which is larger than the maximum message size is rejected with a 413 response, a\nrequest which says that it is too large is rejected without being read. If too many messages are being sent at once a\nrequest waits for its turn for a few seconds, and then gets a 503 response with a Retry-After header.",
+        "operationId": "SendMessageParams",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Confirmation message for HTTP send API",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SendResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "JSON error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JSONError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "JSON error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JSONError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "JSON error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JSONError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tags": {
+      "get": {
+        "tags": [
+          "tags"
+        ],
+        "summary": "Get all current tags",
+        "description": "Returns a JSON array of all unique message tags.",
+        "operationId": "GetAllTags",
+        "responses": {
+          "200": {
+            "description": "Plain JSON array response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Server error will return with a 400 status code\nwith the error message in the body",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "tags"
+        ],
+        "summary": "Set message tags",
+        "description": "This will overwrite any existing tags for selected message database IDs. To remove all tags from a message, pass an empty tags array.\nA message can have at most 100 tags, passing more is an error.",
+        "operationId": "SetTagsParams",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetTagsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Plain text \"ok\" response",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                },
+                "examples": {
+                  "Example": {
+                    "value": "ok"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Server error will return with a 400 status code\nwith the error message in the body",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tags/{tag}": {
+      "put": {
+        "tags": [
+          "tags"
+        ],
+        "summary": "Rename a tag",
+        "description": "Renames an existing tag.",
+        "operationId": "RenameTagParams",
+        "parameters": [
+          {
+            "name": "tag",
+            "in": "path",
+            "description": "The url-encoded tag name to rename",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RenameTagRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Plain text \"ok\" response",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                },
+                "examples": {
+                  "Example": {
+                    "value": "ok"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Server error will return with a 400 status code\nwith the error message in the body",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "tags"
+        ],
+        "summary": "Delete a tag",
+        "description": "Deletes a tag. This will not delete any messages with the tag, but will remove the tag from any messages containing the tag.",
+        "operationId": "DeleteTagParams",
+        "parameters": [
+          {
+            "name": "tag",
+            "in": "path",
+            "description": "The url-encoded tag name to delete",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Plain text \"ok\" response",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                },
+                "examples": {
+                  "Example": {
+                    "value": "ok"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Server error will return with a 400 status code\nwith the error message in the body",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/webui": {
+      "get": {
+        "tags": [
+          "application"
+        ],
+        "summary": "Get web UI configuration",
+        "description": "Returns configuration settings for the web UI.\nIntended for web UI only!",
+        "operationId": "WebUIConfigurationResponse",
+        "responses": {
+          "200": {
+            "description": "Web UI configuration response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebUIConfiguration"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Server error will return with a 400 status code\nwith the error message in the body",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/view/{id}.html": {
+      "get": {
+        "tags": [
+          "testing"
+        ],
+        "summary": "Render message HTML part",
+        "description": "Renders just the message's HTML part which can be used for UI integration testing.\nAttached inline images are modified to link to the API provided they exist.\nNote that is the message does not contain a HTML part then an 404 error is returned.\nA HTML part which is larger than 10 MiB is not rendered, and a 413 error is returned.\n\nThe ID can be set to `latest` to return the latest message.",
+        "operationId": "GetMessageHTMLParams",
+        "parameters": [
+          {
+            "name": "embed",
+            "in": "query",
+            "description": "If this is route is to be embedded in an iframe, set embed to `1` in the URL to add `target=\"_blank\"` and `rel=\"noreferrer noopener\"` to all links.\n\nIn addition, a small script will be added to the end of the document to post (postMessage()) the height of the document back to the parent window for optional iframe height resizing.\n\nNote that this will also *transform* the message into a full HTML document (if it isn't already), so this option is useful for viewing but not programmatic testing.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Message database ID or \"latest\"",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "HTML response",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Server error will return with a 400 status code\nwith the error message in the body",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found error will return a 404 status code",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/view/{id}.txt": {
+      "get": {
+        "tags": [
+          "testing"
+        ],
+        "summary": "Render message text part",
+        "description": "Renders just the message's text part which can be used for UI integration testing.\n\nThe ID can be set to `latest` to return the latest message.",
+        "operationId": "GetMessageTextParams",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Message database ID or \"latest\"",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Plain text response",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Server error will return with a 400 status code\nwith the error message in the body",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found error will return a 404 status code",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Address": {
+        "properties": {
+          "Address": {
+            "type": "string"
+          },
+          "Name": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "AppInformation": {
+        "description": "AppInformation struct",
+        "properties": {
+          "Database": {
+            "description": "Database path",
+            "examples": [
+              "/path/to/database.db"
+            ],
+            "type": "string"
+          },
+          "DatabaseSize": {
+            "description": "Database size in bytes",
+            "examples": [
+              123456
+            ],
+            "format": "uint64",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "LatestVersion": {
+            "description": "Latest Mailpit version",
+            "examples": [
+              "v1.3.0"
+            ],
+            "type": "string"
+          },
+          "Messages": {
+            "description": "Total number of messages in the database",
+            "examples": [
+              42
+            ],
+            "format": "uint64",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "RuntimeStats": {
+            "$ref": "#/components/schemas/RuntimeStats",
+            "description": "Runtime statistics"
+          },
+          "Tags": {
+            "additionalProperties": {
+              "format": "int64",
+              "type": "integer"
+            },
+            "description": "Tags and message totals per tag",
+            "examples": [
+              {
+                "My Tag 1": 5,
+                "Other Tag": 2
+              }
+            ],
+            "type": "object"
+          },
+          "Unread": {
+            "description": "Total number of messages in the database",
+            "examples": [
+              10
+            ],
+            "format": "uint64",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "Version": {
+            "description": "Current Mailpit version",
+            "examples": [
+              "v1.2.3"
+            ],
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "Attachment": {
+        "description": "Attachment struct for inline images and attachments",
+        "properties": {
+          "Checksums": {
+            "$ref": "#/components/schemas/AttachmentChecksums",
+            "description": "File checksums"
+          },
+          "ContentID": {
+            "description": "Content ID",
+            "examples": [
+              "bd940e14-cb97-4f22-bf7b-84098013fdb1"
+            ],
+            "type": "string"
+          },
+          "ContentType": {
+            "description": "Content type",
+            "examples": [
+              "application/pdf"
+            ],
+            "type": "string"
+          },
+          "FileName": {
+            "description": "File name",
+            "examples": [
+              "document.pdf"
+            ],
+            "type": "string"
+          },
+          "PartID": {
+            "description": "Attachment part ID",
+            "examples": [
+              "1.2"
+            ],
+            "type": "string"
+          },
+          "Size": {
+            "description": "Size in bytes",
+            "examples": [
+              1024
+            ],
+            "format": "uint64",
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "AttachmentChecksums": {
+        "description": "AttachmentChecksums are the checksums of an attachment file",
+        "properties": {
+          "MD5": {
+            "description": "MD5 checksum hash of file",
+            "examples": [
+              "adae40ffa3f6b0b6492e1b02f1760052"
+            ],
+            "type": "string"
+          },
+          "SHA1": {
+            "description": "SHA1 checksum hash of file",
+            "examples": [
+              "37c219db300060d15a2a6215b7b1fa523d5365bb"
+            ],
+            "type": "string"
+          },
+          "SHA256": {
+            "description": "SHA256 checksum hash of file",
+            "examples": [
+              "1f752e4b2e8840153c9e74f37f099cb2de9d815a179a3abbb487ffc489de8e8c"
+            ],
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "BinaryData": {
+        "format": "binary",
+        "type": "string"
+      },
+      "ChaosTrigger": {
+        "description": "Trigger for Chaos",
+        "properties": {
+          "ErrorCode": {
+            "description": "SMTP error code to return. The value must range from 400 to 599.",
+            "examples": [
+              451
+            ],
+            "format": "int64",
+            "type": "integer"
+          },
+          "Probability": {
+            "description": "Probability (chance) of triggering the error. The value must range from 0 to 100.",
+            "examples": [
+              5
+            ],
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "ErrorCode",
+          "Probability"
+        ],
+        "type": "object"
+      },
+      "ChaosTriggers": {
+        "description": "Triggers for the Chaos configuration",
+        "properties": {
+          "Authentication": {
+            "$ref": "#/components/schemas/ChaosTrigger",
+            "description": "Authentication trigger to fail while authenticating (auth must be configured)"
+          },
+          "Recipient": {
+            "$ref": "#/components/schemas/ChaosTrigger",
+            "description": "Recipient trigger to fail on To, Cc, Bcc"
+          },
+          "Sender": {
+            "$ref": "#/components/schemas/ChaosTrigger",
+            "description": "Sender trigger to fail on From, Sender"
+          }
+        },
+        "type": "object"
+      },
+      "DeleteMessagesRequest": {
+        "description": "DeleteMessagesRequest is the request body for deleting messages",
+        "properties": {
+          "IDs": {
+            "description": "Array of message database IDs",
+            "examples": [
+              [
+                "4oRBnPtCXgAqZniRhzLNmS",
+                "hXayS6wnCgNnt6aFTvmOF6"
+              ]
+            ],
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "HTMLCheckResponse": {
+        "description": "Response represents the HTML check response struct",
+        "properties": {
+          "Platforms": {
+            "additionalProperties": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "description": "All platforms tested, mainly for the web UI",
+            "type": "object"
+          },
+          "Total": {
+            "$ref": "#/components/schemas/HTMLCheckTotal",
+            "description": "Total overall score"
+          },
+          "Warnings": {
+            "description": "List of warnings from tests",
+            "items": {
+              "$ref": "#/components/schemas/HTMLCheckWarning"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "HTMLCheckResult": {
+        "description": "Result struct",
+        "properties": {
+          "Family": {
+            "description": "Family eg: Outlook, Mozilla Thunderbird",
+            "type": "string"
+          },
+          "Name": {
+            "description": "Friendly name of result, combining family, platform \u0026 version",
+            "type": "string"
+          },
+          "NoteNumber": {
+            "description": "Note number for partially supported if applicable",
+            "type": "string"
+          },
+          "Platform": {
+            "description": "Platform eg: ios, android, windows",
+            "type": "string"
+          },
+          "Support": {
+            "description": "Support [yes, no, partial]",
+            "type": "string"
+          },
+          "Version": {
+            "description": "Family version eg: 4.7.1, 2019-10, 10.3",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "HTMLCheckScore": {
+        "description": "Score struct",
+        "properties": {
+          "Found": {
+            "description": "Number of matches in the document",
+            "format": "int64",
+            "type": "integer"
+          },
+          "Partial": {
+            "description": "Total percentage partially supported",
+            "format": "float",
+            "type": "number"
+          },
+          "Supported": {
+            "description": "Total percentage supported",
+            "format": "float",
+            "type": "number"
+          },
+          "Unsupported": {
+            "description": "Total percentage unsupported",
+            "format": "float",
+            "type": "number"
+          }
+        },
+        "type": "object"
+      },
+      "HTMLCheckTotal": {
+        "description": "Total weighted result for all scores",
+        "properties": {
+          "Nodes": {
+            "description": "Total number of HTML nodes detected in message",
+            "format": "int64",
+            "type": "integer"
+          },
+          "Partial": {
+            "description": "Overall percentage partially supported",
+            "format": "float",
+            "type": "number"
+          },
+          "Supported": {
+            "description": "Overall percentage supported",
+            "format": "float",
+            "type": "number"
+          },
+          "Tests": {
+            "description": "Total number of tests done",
+            "format": "int64",
+            "type": "integer"
+          },
+          "Unsupported": {
+            "description": "Overall percentage unsupported",
+            "format": "float",
+            "type": "number"
+          }
+        },
+        "type": "object"
+      },
+      "HTMLCheckWarning": {
+        "description": "Warning represents a failed test",
+        "properties": {
+          "Category": {
+            "description": "Category [css, html]",
+            "type": "string"
+          },
+          "Description": {
+            "description": "Description",
+            "type": "string"
+          },
+          "Keywords": {
+            "description": "Keywords",
+            "type": "string"
+          },
+          "NotesByNumber": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Notes based on results",
+            "type": "object"
+          },
+          "Results": {
+            "description": "Test results",
+            "items": {
+              "$ref": "#/components/schemas/HTMLCheckResult"
+            },
+            "type": "array"
+          },
+          "Score": {
+            "$ref": "#/components/schemas/HTMLCheckScore",
+            "description": "Test score calculated from results"
+          },
+          "Slug": {
+            "description": "Slug identifier",
+            "type": "string"
+          },
+          "Tags": {
+            "description": "Tags",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "Title": {
+            "description": "Friendly title",
+            "type": "string"
+          },
+          "URL": {
+            "description": "URL to caniemail.com",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "JSONError": {
+        "description": "jsonError is the body of JSON error responses.",
+        "properties": {
+          "Error": {
+            "description": "Error message",
+            "examples": [
+              "invalid format"
+            ],
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "Link": {
+        "description": "Link struct",
+        "properties": {
+          "Status": {
+            "description": "HTTP status definition",
+            "type": "string"
+          },
+          "StatusCode": {
+            "description": "HTTP status code",
+            "format": "int64",
+            "type": "integer"
+          },
+          "URL": {
+            "description": "Link URL",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "LinkCheckResponse": {
+        "description": "Response represents the Link check response",
+        "properties": {
+          "Errors": {
+            "description": "Total number of errors",
+            "format": "int64",
+            "type": "integer"
+          },
+          "Links": {
+            "description": "Tested links",
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "ListUnsubscribe": {
+        "description": "ListUnsubscribe contains a summary of List-Unsubscribe \u0026 List-Unsubscribe-Post headers\nincluding validation of the link structure",
+        "properties": {
+          "Errors": {
+            "description": "Validation errors (if any)",
+            "examples": [
+              ""
+            ],
+            "type": "string"
+          },
+          "Header": {
+            "description": "List-Unsubscribe header value",
+            "examples": [
+              "\u003cmailto:unsubscribe@example.com\u003e, \u003chttps://example.com/unsubscribe\u003e"
+            ],
+            "type": "string"
+          },
+          "HeaderPost": {
+            "description": "List-Unsubscribe-Post value (if set)",
+            "examples": [
+              "List-Unsubscribe=One-Click"
+            ],
+            "type": "string"
+          },
+          "Links": {
+            "description": "Detected links, maximum one email and one HTTP(S) link",
+            "examples": [
+              [
+                "mailto:unsubscribe@example.com",
+                "https://example.com/unsubscribe"
+              ]
+            ],
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "Message": {
+        "description": "Message data excluding physical attachments",
+        "properties": {
+          "Attachments": {
+            "description": "Message attachments",
+            "items": {
+              "$ref": "#/components/schemas/Attachment"
+            },
+            "type": "array"
+          },
+          "Bcc": {
+            "description": "Bcc addresses",
+            "examples": [
+              [
+                {
+                  "Address": "bcc@example.com",
+                  "Name": "John Doe"
+                }
+              ]
+            ],
+            "items": {
+              "$ref": "#/components/schemas/Address"
+            },
+            "type": "array"
+          },
+          "Cc": {
+            "description": "Cc addresses",
+            "examples": [
+              [
+                {
+                  "Address": "cc@example.com",
+                  "Name": "John Doe"
+                }
+              ]
+            ],
+            "items": {
+              "$ref": "#/components/schemas/Address"
+            },
+            "type": "array"
+          },
+          "Date": {
+            "description": "Message RFC3339Nano date \u0026 time (if set), else date \u0026 time received\n([extended RFC3339](https://tools.ietf.org/html/rfc3339#section-5.6) format with optional nano seconds)",
+            "examples": [
+              "2026-11-17T04:22:55Z"
+            ],
+            "format": "date-time",
+            "type": "string"
+          },
+          "From": {
+            "$ref": "#/components/schemas/Address",
+            "description": "From address",
+            "examples": [
+              {
+                "Address": "from@example.com",
+                "Name": "John Doe"
+              }
+            ]
+          },
+          "HTML": {
+            "description": "Message body HTML",
+            "examples": [
+              "\u003cp\u003eThis is the body HTML of the message.\u003c/p\u003e"
+            ],
+            "type": "string"
+          },
+          "ID": {
+            "description": "Database ID",
+            "examples": [
+              "2FBBJL7M7OKnpVWZgh2ped"
+            ],
+            "type": "string"
+          },
+          "Inline": {
+            "description": "Inline message attachments",
+            "items": {
+              "$ref": "#/components/schemas/Attachment"
+            },
+            "type": "array"
+          },
+          "ListUnsubscribe": {
+            "$ref": "#/components/schemas/ListUnsubscribe",
+            "description": "List-Unsubscribe header information"
+          },
+          "MessageID": {
+            "description": "Message ID",
+            "examples": [
+              "3UUdoPhRumhsHven3aBTxj"
+            ],
+            "type": "string"
+          },
+          "ReplyTo": {
+            "description": "ReplyTo addresses",
+            "examples": [
+              [
+                {
+                  "Address": "reply-to@example.com",
+                  "Name": "John Doe"
+                }
+              ]
+            ],
+            "items": {
+              "$ref": "#/components/schemas/Address"
+            },
+            "type": "array"
+          },
+          "ReturnPath": {
+            "description": "Return-Path",
+            "examples": [
+              "return-path@example.com"
+            ],
+            "type": "string"
+          },
+          "Size": {
+            "description": "Message size in bytes",
+            "examples": [
+              1024
+            ],
+            "format": "uint64",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "Subject": {
+            "description": "Message subject",
+            "examples": [
+              "Message subject"
+            ],
+            "type": "string"
+          },
+          "Tags": {
+            "description": "Message tags",
+            "examples": [
+              [
+                "tag1",
+                "tag2"
+              ]
+            ],
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "Text": {
+            "description": "Message body text",
+            "examples": [
+              "This is the body text of the message."
+            ],
+            "type": "string"
+          },
+          "To": {
+            "description": "To addresses",
+            "examples": [
+              [
+                {
+                  "Address": "to@example.com",
+                  "Name": "John Doe"
+                }
+              ]
+            ],
+            "items": {
+              "$ref": "#/components/schemas/Address"
+            },
+            "type": "array"
+          },
+          "Username": {
+            "description": "Username used for authentication (if provided) with the SMTP or Send API",
+            "examples": [
+              "username@example.com"
+            ],
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "MessageSummary": {
+        "description": "MessageSummary struct for frontend messages",
+        "properties": {
+          "Attachments": {
+            "description": "Whether the message has any attachments",
+            "examples": [
+              1
+            ],
+            "format": "int64",
+            "type": "integer"
+          },
+          "Bcc": {
+            "description": "Bcc addresses",
+            "examples": [
+              [
+                {
+                  "Address": "bcc@example.com",
+                  "Name": "John Doe"
+                }
+              ]
+            ],
+            "items": {
+              "$ref": "#/components/schemas/Address"
+            },
+            "type": "array"
+          },
+          "Cc": {
+            "description": "Cc addresses",
+            "examples": [
+              [
+                {
+                  "Address": "cc@example.com",
+                  "Name": "John Doe"
+                }
+              ]
+            ],
+            "items": {
+              "$ref": "#/components/schemas/Address"
+            },
+            "type": "array"
+          },
+          "Created": {
+            "description": "Received RFC3339Nano date \u0026 time ([extended RFC3339](https://tools.ietf.org/html/rfc3339#section-5.6) format with optional nano seconds)",
+            "examples": [
+              "2026-11-17T04:22:55Z"
+            ],
+            "format": "date-time",
+            "type": "string"
+          },
+          "From": {
+            "$ref": "#/components/schemas/Address",
+            "description": "From address",
+            "examples": [
+              {
+                "Address": "from@example.com",
+                "Name": "John Doe"
+              }
+            ]
+          },
+          "ID": {
+            "description": "Database ID",
+            "examples": [
+              "2FBBJL7M7OKnpVWZgh2ped"
+            ],
+            "type": "string"
+          },
+          "MessageID": {
+            "description": "Message ID",
+            "examples": [
+              "3UUdoPhRumhsHven3aBTxj"
+            ],
+            "type": "string"
+          },
+          "Read": {
+            "description": "Read status",
+            "examples": [
+              false
+            ],
+            "type": "boolean"
+          },
+          "ReplyTo": {
+            "description": "ReplyTo addresses",
+            "examples": [
+              [
+                {
+                  "Address": "reply-to@example.com",
+                  "Name": "John Doe"
+                }
+              ]
+            ],
+            "items": {
+              "$ref": "#/components/schemas/Address"
+            },
+            "type": "array"
+          },
+          "Size": {
+            "description": "Message size in bytes (total)",
+            "examples": [
+              1024
+            ],
+            "format": "uint64",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "Snippet": {
+            "description": "Message snippet includes up to 250 characters",
+            "examples": [
+              "This is a message snippet that includes up to 250 characters."
+            ],
+            "type": "string"
+          },
+          "Subject": {
+            "description": "Email subject",
+            "examples": [
+              "Message subject"
+            ],
+            "type": "string"
+          },
+          "Tags": {
+            "description": "Message tags",
+            "examples": [
+              [
+                "tag1",
+                "tag2"
+              ]
+            ],
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "To": {
+            "description": "To addresses",
+            "examples": [
+              [
+                {
+                  "Address": "to@example.com",
+                  "Name": "John Doe"
+                }
+              ]
+            ],
+            "items": {
+              "$ref": "#/components/schemas/Address"
+            },
+            "type": "array"
+          },
+          "Username": {
+            "description": "Username used for authentication (if provided) with the SMTP or Send API",
+            "examples": [
+              "username@example.com"
+            ],
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "MessagesSummary": {
+        "description": "MessagesSummary is a summary of a list of messages",
+        "properties": {
+          "messages": {
+            "description": "Messages summary",
+            "items": {
+              "$ref": "#/components/schemas/MessageSummary"
+            },
+            "type": "array"
+          },
+          "messages_count": {
+            "description": "Total number of messages matching current query",
+            "examples": [
+              12
+            ],
+            "format": "uint64",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "messages_unread": {
+            "description": "Total number of unread messages matching current query",
+            "examples": [
+              2
+            ],
+            "format": "uint64",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "start": {
+            "description": "Pagination offset",
+            "examples": [
+              0
+            ],
+            "format": "int64",
+            "type": "integer"
+          },
+          "tags": {
+            "description": "All current tags",
+            "examples": [
+              [
+                "Tag 1",
+                "Tag 2"
+              ]
+            ],
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "total": {
+            "description": "Total number of messages in mailbox",
+            "examples": [
+              42
+            ],
+            "format": "uint64",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "unread": {
+            "description": "Total number of unread messages in mailbox",
+            "examples": [
+              10
+            ],
+            "format": "uint64",
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "ReleaseRequest": {
+        "description": "ReleaseRequest is the request body for releasing a message",
+        "properties": {
+          "To": {
+            "description": "Array of email addresses to relay the message to",
+            "examples": [
+              [
+                "user1@example.com",
+                "user2@example.com"
+              ]
+            ],
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "To"
+        ],
+        "type": "object"
+      },
+      "RenameTagRequest": {
+        "description": "RenameTagRequest is the request body for renaming a tag",
+        "properties": {
+          "Name": {
+            "description": "New name",
+            "examples": [
+              "New name"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "Name"
+        ],
+        "type": "object"
+      },
+      "RspamdResponse": {
+        "description": "Result is a Rspamd result",
+        "properties": {
+          "Action": {
+            "description": "Action Rspamd recommends, eg: \"no action\", \"greylist\", \"add header\", \"reject\"",
+            "type": "string"
+          },
+          "Error": {
+            "description": "If populated will return an error string",
+            "type": "string"
+          },
+          "IsSpam": {
+            "description": "Whether the message is spam or not",
+            "type": "boolean"
+          },
+          "Rules": {
+            "description": "Rspamd symbols triggered",
+            "items": {
+              "$ref": "#/components/schemas/RspamdRule"
+            },
+            "type": "array"
+          },
+          "Score": {
+            "description": "Total spam score based on triggered symbols",
+            "format": "double",
+            "type": "number"
+          },
+          "Threshold": {
+            "description": "Score at which Rspamd will start to treat a message as spam",
+            "format": "double",
+            "type": "number"
+          }
+        },
+        "type": "object"
+      },
+      "RspamdRule": {
+        "description": "Rule struct",
+        "properties": {
+          "Description": {
+            "description": "Rspamd symbol description",
+            "type": "string"
+          },
+          "Name": {
+            "description": "Rspamd symbol name",
+            "type": "string"
+          },
+          "Score": {
+            "description": "Symbol score",
+            "format": "double",
+            "type": "number"
+          }
+        },
+        "type": "object"
+      },
+      "Rule": {
+        "description": "Rule struct",
+        "properties": {
+          "Description": {
+            "description": "SpamAssassin rule description",
+            "type": "string"
+          },
+          "Name": {
+            "description": "SpamAssassin rule name",
+            "type": "string"
+          },
+          "Score": {
+            "description": "Spam rule score",
+            "format": "double",
+            "type": "number"
+          }
+        },
+        "type": "object"
+      },
+      "RuntimeStats": {
+        "description": "RuntimeStats are the statistics since Mailpit was started",
+        "properties": {
+          "Memory": {
+            "description": "Current memory usage in bytes",
+            "examples": [
+              1048576
+            ],
+            "format": "uint64",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "MessagesDeleted": {
+            "description": "Database runtime messages deleted",
+            "examples": [
+              5
+            ],
+            "format": "uint64",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "SMTPAccepted": {
+            "description": "Accepted runtime SMTP messages",
+            "examples": [
+              100
+            ],
+            "format": "uint64",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "SMTPAcceptedSize": {
+            "description": "Total runtime accepted messages size in bytes",
+            "examples": [
+              204800
+            ],
+            "format": "uint64",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "SMTPIgnored": {
+            "description": "Ignored runtime SMTP messages (when using --ignore-duplicate-ids)",
+            "examples": [
+              2
+            ],
+            "format": "uint64",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "SMTPRejected": {
+            "description": "Rejected runtime SMTP messages",
+            "examples": [
+              10
+            ],
+            "format": "uint64",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "Uptime": {
+            "description": "Mailpit server uptime in seconds",
+            "examples": [
+              3600
+            ],
+            "format": "uint64",
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "SendAddress": {
+        "description": "SendAddress is an email address with an optional name",
+        "properties": {
+          "Email": {
+            "description": "Email address",
+            "examples": [
+              "john@example.com"
+            ],
+            "type": "string"
+          },
+          "Name": {
+            "description": "Optional name",
+            "examples": [
+              "John Doe"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "Email"
+        ],
+        "type": "object"
+      },
+      "SendAttachment": {
+        "description": "SendAttachment is a message attachment for the send API",
+        "properties": {
+          "Content": {
+            "description": "Base64-encoded string of the file content",
+            "examples": [
+              "iVBORw0KGgoAAAANSUhEUgAAAEEAAAA8CAMAAAAOlSdoAAAACXBIWXMAAAHrAAAB6wGM2bZBAAAAS1BMVEVHcEwRfnUkZ2gAt4UsSF8At4UtSV4At4YsSV4At4YsSV8At4YsSV4At4YsSV4sSV4At4YsSV4At4YtSV4At4YsSV4At4YtSV8At4YsUWYNAAAAGHRSTlMAAwoXGiktRE5dbnd7kpOlr7zJ0d3h8PD8PCSRAAACWUlEQVR42pXT4ZaqIBSG4W9rhqQYocG+/ys9Y0Z0Br+x3j8zaxUPewFh65K+7yrIMeIY4MT3wPfEJCidKXEMnLaVkxDiELiMz4WEOAZSFghxBIypCOlKiAMgXfIqTnBgSm8CIQ6BImxEUxEckClVQiHGj4Ba4AQHikAIClwTE9KtIghAhUJwoLkmLnCiAHJLRKgIMsEtVUKbBUIwoAg2C4QgQBE6l4VCnApBgSKYLLApCnCa0+96AEMW2BQcmC+Pr3nfp7o5Exy49gIADcIqUELGfeA+bp93LmAJp8QJoEcN3C7NY3sbVANixMyI0nku20/n5/ZRf3KI2k6JEDWQtxcbdGuAqu3TAXG+/799Oyyas1B1MnMiA+XyxHp9q0PUKGPiRAau1fZbLRZV09wZcT8/gHk8QQAxXn8VgaDqcUmU6O/r28nbVwXAqca2mRNtPAF5+zoP2MeN9Fy4NgC6RfcbgE7XITBRYTtOE3U3C2DVff7pk+PkUxgAbvtnPXJaD6DxulMLwOhPS/M3MQkgg1ZFrIXnmfaZoOfpKiFgzeZD/WuKqQEGrfJYkyWf6vlG3xUgTuscnkNkQsb599q124kdpMUjCa/XARHs1gZymVtGt3wLkiFv8rUgTxitYCex5EVGec0Y9VmoDTFBSQte2TfXGXlf7hbdaUM9Sk7fisEN9qfBBTK+FZcvM9fQSdkl2vj4W2oX/bRogO3XasiNH7R0eW7fgRM834ImTg+Lg6BEnx4vz81rhr+MYPBBQg1v8GndEOrthxaCTxNAOut8WKLGZQl+MPz88Q9tAO/hVuSeqQAAAABJRU5ErkJggg=="
+            ],
+            "type": "string"
+          },
+          "ContentID": {
+            "description": "Optional Content-ID (`cid`) for attachment.\nIf this field is set then the file is attached inline.",
+            "examples": [
+              "mailpit-logo"
+            ],
+            "type": "string"
+          },
+          "ContentType": {
+            "description": "Optional Content Type for the the attachment.\nIf this field is not set (or empty) then the content type is automatically detected.",
+            "examples": [
+              "image/png"
+            ],
+            "type": "string"
+          },
+          "Filename": {
+            "description": "Filename",
+            "examples": [
+              "mailpit.png"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "Content",
+          "Filename"
+        ],
+        "type": "object"
+      },
+      "SendRequest": {
+        "description": "SendRequest is the request body for the send API",
+        "properties": {
+          "Attachments": {
+            "description": "Attachments",
+            "items": {
+              "$ref": "#/components/schemas/SendAttachment"
+            },
+            "type": "array"
+          },
+          "Bcc": {
+            "description": "Bcc recipients email addresses only",
+            "examples": [
+              [
+                "jack@example.com"
+              ]
+            ],
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "Cc": {
+            "description": "Cc recipients",
+            "examples": [
+              [
+                {
+                  "Email": "manager@example.com",
+                  "Name": "Manager"
+                }
+              ]
+            ],
+            "items": {
+              "$ref": "#/components/schemas/SendAddress"
+            },
+            "type": "array"
+          },
+          "From": {
+            "$ref": "#/components/schemas/SendAddress",
+            "description": "\"From\" recipient"
+          },
+          "HTML": {
+            "description": "Message body (HTML)",
+            "examples": [
+              "\u003cdiv style=\"text-align:center\"\u003e\u003cp style=\"font-family: arial; font-size: 24px;\"\u003eMailpit is \u003cb\u003eawesome\u003c/b\u003e!\u003c/p\u003e\u003cp\u003e\u003cimg src=\"cid:mailpit-logo\" /\u003e\u003c/p\u003e\u003c/div\u003e"
+            ],
+            "type": "string"
+          },
+          "Headers": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Optional headers in {\"key\":\"value\"} format",
+            "examples": [
+              {
+                "X-IP": "1.2.3.4"
+              }
+            ],
+            "type": "object"
+          },
+          "ReplyTo": {
+            "description": "Optional Reply-To recipients",
+            "examples": [
+              [
+                {
+                  "Email": "secretary@example.com",
+                  "Name": "Secretary"
+                }
+              ]
+            ],
+            "items": {
+              "$ref": "#/components/schemas/SendAddress"
+            },
+            "type": "array"
+          },
+          "Subject": {
+            "description": "Subject",
+            "examples": [
+              "Mailpit message via the HTTP API"
+            ],
+            "type": "string"
+          },
+          "Tags": {
+            "description": "Mailpit tags",
+            "examples": [
+              [
+                "Tag 1",
+                "Tag 2"
+              ]
+            ],
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "Text": {
+            "description": "Message body (text)",
+            "examples": [
+              "Mailpit is awesome!"
+            ],
+            "type": "string"
+          },
+          "To": {
+            "description": "\"To\" recipients",
+            "examples": [
+              [
+                {
+                  "Email": "jane@example.com",
+                  "Name": "Jane Doe"
+                }
+              ]
+            ],
+            "items": {
+              "$ref": "#/components/schemas/SendAddress"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "From"
+        ],
+        "type": "object"
+      },
+      "SendResponse": {
+        "description": "sendResponse is the response of a successfully sent message",
+        "properties": {
+          "ID": {
+            "description": "Database ID",
+            "examples": [
+              "iAfZVVe2UQfNSG5BAjgYwa"
+            ],
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "SetReadStatusRequest": {
+        "description": "SetReadStatusRequest is the request body for setting the read status of messages",
+        "properties": {
+          "IDs": {
+            "default": [],
+            "description": "Optional array of message database IDs",
+            "examples": [
+              [
+                "4oRBnPtCXgAqZniRhzLNmS",
+                "hXayS6wnCgNnt6aFTvmOF6"
+              ]
+            ],
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "Read": {
+            "default": false,
+            "description": "Read status",
+            "examples": [
+              true
+            ],
+            "type": "boolean"
+          },
+          "Search": {
+            "description": "Optional messages matching a search",
+            "examples": [
+              "tag:backups"
+            ],
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "SetTagsRequest": {
+        "description": "SetTagsRequest is the request body for setting message tags",
+        "properties": {
+          "IDs": {
+            "description": "Array of message database IDs",
+            "examples": [
+              [
+                "4oRBnPtCXgAqZniRhzLNmS",
+                "hXayS6wnCgNnt6aFTvmOF6"
+              ]
+            ],
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "Tags": {
+            "description": "Array of tag names to set",
+            "examples": [
+              [
+                "Tag 1",
+                "Tag 2"
+              ]
+            ],
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "Tags",
+          "IDs"
+        ],
+        "type": "object"
+      },
+      "SpamAssassinResponse": {
+        "description": "Result is a SpamAssassin result",
+        "properties": {
+          "Error": {
+            "description": "If populated will return an error string",
+            "type": "string"
+          },
+          "IsSpam": {
+            "description": "Whether the message is spam or not",
+            "type": "boolean"
+          },
+          "Rules": {
+            "description": "Spam rules triggered",
+            "items": {
+              "$ref": "#/components/schemas/Rule"
+            },
+            "type": "array"
+          },
+          "Score": {
+            "description": "Total spam score based on triggered rules",
+            "format": "double",
+            "type": "number"
+          },
+          "Threshold": {
+            "description": "Score at which a message is treated as spam: the required score of the SpamAssassin server\n(5 for Postmark)",
+            "format": "double",
+            "type": "number"
+          }
+        },
+        "type": "object"
+      },
+      "WebUIConfiguration": {
+        "description": "WebUIConfiguration returns the Web UI configuration settings",
+        "properties": {
+          "ChaosEnabled": {
+            "description": "Whether Chaos support is enabled at runtime",
+            "examples": [
+              false
+            ],
+            "type": "boolean"
+          },
+          "DuplicatesIgnored": {
+            "description": "Whether messages with duplicate IDs are ignored",
+            "examples": [
+              true
+            ],
+            "type": "boolean"
+          },
+          "HideDeleteAllButton": {
+            "description": "Whether the delete button should be hidden",
+            "examples": [
+              false
+            ],
+            "type": "boolean"
+          },
+          "Label": {
+            "description": "Optional label to identify this Mailpit instance",
+            "examples": [
+              "Local Mailpit dev"
+            ],
+            "type": "string"
+          },
+          "MessageRelay": {
+            "$ref": "#/components/schemas/WebUIMessageRelay",
+            "description": "Message Relay information"
+          },
+          "Rspamd": {
+            "description": "Whether Rspamd is enabled",
+            "examples": [
+              true
+            ],
+            "type": "boolean"
+          },
+          "SpamAssassin": {
+            "description": "Whether SpamAssassin is enabled",
+            "examples": [
+              false
+            ],
+            "type": "boolean"
+          }
+        },
+        "type": "object"
+      },
+      "WebUIMessageRelay": {
+        "description": "WebUIMessageRelay is the message relay (release) configuration for the web UI",
+        "properties": {
+          "AllowedRecipients": {
+            "description": "Only allow relaying to these recipients (regex)",
+            "examples": [
+              ".*@example.com"
+            ],
+            "type": "string"
+          },
+          "BlockedRecipients": {
+            "description": "Block relaying to these recipients (regex)",
+            "examples": [
+              ".*@blocked.com"
+            ],
+            "type": "string"
+          },
+          "Enabled": {
+            "description": "Whether message relaying (release) is enabled",
+            "examples": [
+              true
+            ],
+            "type": "boolean"
+          },
+          "OverrideFrom": {
+            "description": "Overrides the \"From\" address for all relayed messages",
+            "examples": [
+              "no-reply@example.com"
+            ],
+            "type": "string"
+          },
+          "PreserveMessageIDs": {
+            "description": "Preserve the original Message-IDs when relaying messages",
+            "examples": [
+              true
+            ],
+            "type": "boolean"
+          },
+          "ReturnPath": {
+            "description": "Enforced Return-Path (if set) for relay bounces",
+            "examples": [
+              "bounce@example.com"
+            ],
+            "type": "string"
+          },
+          "SMTPServer": {
+            "description": "The configured SMTP server address",
+            "examples": [
+              "smtp.example.com:587"
+            ],
+            "type": "string"
+          }
+        },
+        "type": "object"
+      }
+    }
+  }
+}

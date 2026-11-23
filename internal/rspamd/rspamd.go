@@ -46,7 +46,7 @@ var (
 
 // Result is a Rspamd result
 //
-// swagger:model RspamdResponse
+// openapi:model RspamdResponse
 type Result struct {
 	// Whether the message is spam or not
 	IsSpam bool
@@ -63,6 +63,8 @@ type Result struct {
 }
 
 // Rule struct
+//
+// openapi:model RspamdRule
 type Rule struct {
 	// Symbol score
 	Score float64

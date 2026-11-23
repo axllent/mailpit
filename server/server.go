@@ -233,39 +233,14 @@ func warnIfExposedWithoutHostProtection() {
 func apiRoutes() *http.ServeMux {
 	r := http.NewServeMux()
 
-	// API V1
-	r.HandleFunc("GET "+config.Webroot+"api/v1/messages", middleWareFunc(apiv1.GetMessages))
-	r.HandleFunc("PUT "+config.Webroot+"api/v1/messages", middleWareFunc(apiv1.SetReadStatus))
-	r.HandleFunc("DELETE "+config.Webroot+"api/v1/messages", middleWareFunc(apiv1.DeleteMessages))
-	r.HandleFunc("GET "+config.Webroot+"api/v1/search", middleWareFunc(apiv1.Search))
-	r.HandleFunc("DELETE "+config.Webroot+"api/v1/search", middleWareFunc(apiv1.DeleteSearch))
-	r.HandleFunc("POST "+config.Webroot+"api/v1/send", sendAPIAuthMiddleware(apiv1.SendMessageHandler))
-	r.HandleFunc("GET "+config.Webroot+"api/v1/tags", middleWareFunc(apiv1.GetAllTags))
-	r.HandleFunc("PUT "+config.Webroot+"api/v1/tags", middleWareFunc(apiv1.SetMessageTags))
-	r.HandleFunc("PUT "+config.Webroot+"api/v1/tags/{tag}", middleWareFunc(apiv1.RenameTag))
-	r.HandleFunc("DELETE "+config.Webroot+"api/v1/tags/{tag}", middleWareFunc(apiv1.DeleteTag))
-	r.HandleFunc("GET "+config.Webroot+"api/v1/message/{id}/part/{partID}", middleWareFunc(apiv1.DownloadAttachment))
-	r.HandleFunc("GET "+config.Webroot+"api/v1/message/{id}/part/{partID}/thumb", middleWareFunc(apiv1.Thumbnail))
-	r.HandleFunc("GET "+config.Webroot+"api/v1/message/{id}/headers", middleWareFunc(apiv1.GetHeaders))
-	r.HandleFunc("GET "+config.Webroot+"api/v1/message/{id}/raw", middleWareFunc(apiv1.DownloadRaw))
-	r.HandleFunc("POST "+config.Webroot+"api/v1/message/{id}/release", middleWareFunc(apiv1.ReleaseMessage))
-	r.HandleFunc("GET "+config.Webroot+"api/v1/message/{id}/html-check", middleWareFunc(apiv1.HTMLCheck))
-	r.HandleFunc("GET "+config.Webroot+"api/v1/message/{id}/link-check", middleWareFunc(apiv1.LinkCheck))
-	if config.EnableSpamAssassin != "" {
-		r.HandleFunc("GET "+config.Webroot+"api/v1/message/{id}/sa-check", middleWareFunc(apiv1.SpamAssassinCheck))
-	}
-	if config.EnableRspamd != "" {
-		r.HandleFunc("GET "+config.Webroot+"api/v1/message/{id}/rspamd-check", middleWareFunc(apiv1.RspamdCheck))
-	}
-	r.HandleFunc("GET "+config.Webroot+"api/v1/message/{id}", middleWareFunc(apiv1.GetMessage))
-	r.HandleFunc("GET "+config.Webroot+"api/v1/info", middleWareFunc(apiv1.AppInfo))
-	r.HandleFunc("GET "+config.Webroot+"api/licenses", middleWareFunc(licenseInfo))
-	r.HandleFunc("GET "+config.Webroot+"api/v1/webui", middleWareFunc(apiv1.WebUIConfig))
-	r.HandleFunc("GET "+config.Webroot+"api/v1/swagger.json", middleWareFunc(swaggerBasePath))
+	// API v1, the routes are defined (and documented) by apiv1.Routes
+	registerAPIRoutes(r)
 
-	// Chaos
-	r.HandleFunc("GET "+config.Webroot+"api/v1/chaos", middleWareFunc(apiv1.GetChaos))
-	r.HandleFunc("PUT "+config.Webroot+"api/v1/chaos", middleWareFunc(apiv1.SetChaos))
+	r.HandleFunc("GET "+config.Webroot+"api/licenses", middleWareFunc(licenseInfo))
+
+	// the OpenAPI specification, swagger.json being the original name of it
+	r.HandleFunc("GET "+config.Webroot+"api/v1/openapi.json", middleWareFunc(openAPISpec))
+	r.HandleFunc("GET "+config.Webroot+"api/v1/swagger.json", middleWareFunc(openAPISpec))
 
 	// Prometheus metrics (if enabled and using existing server)
 	if prometheus.GetMode() == "integrated" {
@@ -486,18 +461,45 @@ func licenseInfo(w http.ResponseWriter, _ *http.Request) {
 	}
 }
 
-// Wrapper to artificially inject a basePath to the swagger.json if a webroot has been specified
-func swaggerBasePath(w http.ResponseWriter, _ *http.Request) {
-	f, err := distFS.ReadFile("ui/api/v1/swagger.json")
+// registerAPIRoutes registers the API routes defined by apiv1.Routes.
+func registerAPIRoutes(r *http.ServeMux) {
+	for _, rt := range apiv1.Routes {
+		if rt.Handler == nil || (rt.Enabled != nil && !rt.Enabled()) {
+			continue
+		}
+
+		handler := middleWareFunc(rt.Handler)
+		if rt.SendAPI {
+			handler = sendAPIAuthMiddleware(rt.Handler)
+		}
+
+		r.HandleFunc(rt.Method+" "+config.Webroot+strings.TrimPrefix(rt.Path, "/"), handler)
+	}
+}
+
+// openAPISpec serves the OpenAPI specification. If Mailpit is served from a webroot then the
+// webroot is added to the specification as its server URL.
+func openAPISpec(w http.ResponseWriter, _ *http.Request) {
+	f, err := distFS.ReadFile("ui/api/v1/openapi.json")
 	if err != nil {
-		panic(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	if config.Webroot != "/" {
-		// artificially inject a path at the start
-		replacement := fmt.Sprintf("{\n  \"basePath\": \"%s\",", strings.TrimRight(config.Webroot, "/"))
+		var doc map[string]json.RawMessage
+		if err := json.Unmarshal(f, &doc); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 
-		f = bytes.Replace(f, []byte("{"), []byte(replacement), 1)
+		servers, _ := json.Marshal([]map[string]string{{"url": strings.TrimRight(config.Webroot, "/")}})
+		doc["servers"] = servers
+
+		if f, err = json.MarshalIndent(doc, "", "  "); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 
 	w.Header().Add("Content-Type", "application/json")

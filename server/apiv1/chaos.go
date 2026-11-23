@@ -9,22 +9,6 @@ import (
 
 // GetChaos returns the current Chaos triggers
 func GetChaos(w http.ResponseWriter, _ *http.Request) {
-	// swagger:route GET /api/v1/chaos testing getChaos
-	//
-	// # Get Chaos triggers
-	//
-	// Returns the current Chaos triggers configuration.
-	// This API route will return an error if Chaos is not enabled at runtime.
-	//
-	//	Produces:
-	//	  - application/json
-	//
-	//	Schemes: http, https
-	//
-	//	Responses:
-	//	  200: ChaosResponse
-	//	  400: ErrorResponse
-
 	if !chaos.Enabled {
 		httpError(w, "Chaos is not enabled")
 		return
@@ -40,29 +24,6 @@ func GetChaos(w http.ResponseWriter, _ *http.Request) {
 
 // SetChaos sets the Chaos configuration.
 func SetChaos(w http.ResponseWriter, r *http.Request) {
-	// swagger:route PUT /api/v1/chaos testing setChaosParams
-	//
-	// # Set Chaos triggers
-	//
-	// Set the Chaos triggers configuration and return the updated values.
-	// This API route will return an error if Chaos is not enabled at runtime.
-	//
-	// If any triggers are omitted from the request, then those are reset to their
-	// default values with a 0% probability (ie: disabled).
-	// Setting a blank `{}` will reset all triggers to their default values.
-	//
-	//	Consumes:
-	//	  - application/json
-	//
-	//	Produces:
-	//	  - application/json
-	//
-	//	Schemes: http, https
-	//
-	//	Responses:
-	//	  200: ChaosResponse
-	//	  400: ErrorResponse
-
 	if !chaos.Enabled {
 		httpError(w, "Chaos is not enabled")
 		return

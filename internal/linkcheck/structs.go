@@ -2,7 +2,7 @@ package linkcheck
 
 // Response represents the Link check response
 //
-// swagger:model LinkCheckResponse
+// openapi:model LinkCheckResponse
 type Response struct {
 	// Total number of errors
 	Errors int `json:"Errors"`
@@ -11,6 +11,8 @@ type Response struct {
 }
 
 // Link struct
+//
+// openapi:model Link
 type Link struct {
 	// Link URL
 	URL string `json:"URL"`
