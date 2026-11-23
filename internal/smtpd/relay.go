@@ -3,6 +3,7 @@ package smtpd
 import (
 	"crypto/tls"
 	"fmt"
+	"net/mail"
 	"net/smtp"
 	"os"
 	"strings"
@@ -13,19 +14,53 @@ import (
 	"github.com/pkg/errors"
 )
 
+// relayRecipient is a recipient as it is matched (the parsed address) and as it is sent (the envelope address).
+type relayRecipient struct {
+	match string
+	send  string
+}
+
+// parseRelayRecipients parses each recipient which was received. What was received can have comments, a name or
+// quotes (which the SMTP server and the send API accept), so the block list and the matching expression are matched
+// against the address as the parser reads it, and that address (and not what was received) is what is sent on: another
+// server could read what was received as another address than the one which was matched. A recipient which does not
+// parse is not relayed.
+func parseRelayRecipients(to []string) []relayRecipient {
+	recipients := make([]relayRecipient, 0, len(to))
+
+	for _, address := range to {
+		parsed, err := mail.ParseAddress(address)
+		if err != nil {
+			logger.Log().Warnf("[relay] ignoring auto-relay to %q: invalid address", address)
+			continue
+		}
+
+		recipients = append(recipients, relayRecipient{match: parsed.Address, send: tools.EnvelopeAddress(parsed)})
+	}
+
+	return recipients
+}
+
 // Wrapper to auto relay messages if configured
-func autoRelayMessage(from string, to []string, data *[]byte) error {
+func autoRelayMessage(from string, received []string, data *[]byte) error {
+	recipients := parseRelayRecipients(received)
+
 	if config.SMTPRelayConfig.BlockedRecipientsRegexp != nil {
-		filteredTo := []string{}
-		for _, address := range to {
-			if config.SMTPRelayConfig.BlockedRecipientsRegexp.MatchString(address) {
-				logger.Log().Debugf("[relay] ignoring auto-relay to %s: found in blocklist", address)
+		filtered := []relayRecipient{}
+		for _, r := range recipients {
+			if config.SMTPRelayConfig.BlockedRecipientsRegexp.MatchString(r.match) {
+				logger.Log().Debugf("[relay] ignoring auto-relay to %s: found in blocklist", r.match)
 				continue
 			}
 
-			filteredTo = append(filteredTo, address)
+			filtered = append(filtered, r)
 		}
-		to = filteredTo
+		recipients = filtered
+	}
+
+	to := make([]string, 0, len(recipients))
+	for _, r := range recipients {
+		to = append(to, r.send)
 	}
 
 	if len(to) == 0 {
@@ -43,9 +78,9 @@ func autoRelayMessage(from string, to []string, data *[]byte) error {
 		)
 	} else if config.SMTPRelayMatchingRegexp != nil {
 		filtered := []string{}
-		for _, t := range to {
-			if config.SMTPRelayMatchingRegexp.MatchString(t) {
-				filtered = append(filtered, t)
+		for _, r := range recipients {
+			if config.SMTPRelayMatchingRegexp.MatchString(r.match) {
+				filtered = append(filtered, r.send)
 			}
 		}
 
