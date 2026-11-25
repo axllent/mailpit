@@ -335,6 +335,11 @@ export default {
 			if (mailbox.searching) {
 				apiURI = this.resolve(`/api/v1/search`);
 				p.query = mailbox.searching;
+				// date filters are evaluated in the user's time zone, matching the search view
+				const s = mailbox.searching;
+				if (mailbox.timeZone !== "" && (s.indexOf("after:") !== -1 || s.indexOf("before:") !== -1)) {
+					p.tz = mailbox.timeZone;
+				}
 			}
 
 			if (pagination.limit !== pagination.defaultLimit) {
