@@ -77,6 +77,16 @@ export default {
 
 			mailbox.searching = s;
 
+			const paginationParams = this.getPaginationParams();
+			if (paginationParams?.start) {
+				pagination.start = paginationParams.start;
+			} else {
+				pagination.start = 0;
+			}
+			if (paginationParams?.limit) {
+				pagination.limit = paginationParams.limit;
+			}
+
 			this.apiURI = this.resolve(`/api/v1/search`) + "?query=" + encodeURIComponent(s);
 			if (mailbox.timeZone !== "" && (s.indexOf("after:") !== -1 || s.indexOf("before:") !== -1)) {
 				this.apiURI += "&tz=" + encodeURIComponent(mailbox.timeZone);
